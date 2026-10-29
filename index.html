@@ -213,6 +213,14 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .vs-box{border-radius:var(--radius-s);padding:16px;background:var(--surface2)}
 .vs-box h3{font-size:13px;color:var(--muted);font-weight:600;margin-bottom:6px}
 .ext-links{display:flex;flex-wrap:wrap;gap:8px}
+.ph{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:var(--radius-s);padding:10px;background:var(--surface)}
+.ph + .ph{margin-top:8px}
+.ph img{width:56px;height:56px;object-fit:contain;border-radius:6px;background:#fff;flex:none}
+.ph-body{flex:1;min-width:0}
+.ph-name{font-size:13px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-all}
+.ph-price{font-weight:700;font-size:17px;white-space:nowrap;text-align:right}
+.ph-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.pr-tag{display:inline-block;font-size:10px;font-weight:700;border:1px solid currentColor;border-radius:4px;padding:0 4px;margin-right:4px;color:var(--muted)}
 
 /* ---------- Logs ---------- */
 .log-month{font-size:13px;color:var(--muted);font-weight:600;margin:20px 0 10px;letter-spacing:.06em}
@@ -538,7 +546,7 @@ const STORE_TYPES = [
   {k:'chemist', l:'ドラッグストア', q:'nwr["shop"="chemist"]', g:'commercial.chemist'},
   {k:'cosmetics', l:'化粧品店', q:'nwr["shop"="cosmetics"]', g:'commercial.health_and_beauty.cosmetics'},
   {k:'variety', l:'バラエティショップ・百貨店', q:'nwr["shop"~"^(variety_store|department_store)$"]', g:'commercial.department_store,commercial.discount_store'},
-  {k:'pharmacy', l:'薬局', q:'nwr["amenity"="pharmacy"]', g:'healthcare.pharmacy'}
+  {k:'pharmacy', l:'薬局（全国の届出データ）', q:'nwr["amenity"="pharmacy"]', g:'healthcare.pharmacy'}
 ];
 // 店舗・場所の検索サービス Geoapify（無料プラン：1日3,000回まで。キーは hadatomo.github.io からだけ使えるよう制限）
 const GEOAPIFY_KEY = '62196491f4be442c8e3a051e294c620f';
@@ -1244,7 +1252,7 @@ function timelineChart(w, o) {
 
 /* ---------- UI状態（画面の絞り込みなど） ---------- */
 const scanInit = () => ({photo:null, jan:'', name:'', brand:'', ings:'', searched:false, msg:'', janErr:''});
-const ui = {geoHelp:'', geoConsent:false, visitRange:30, visitPhotos:false, visitNote:'', q:'', brand:'', cat:'', origin:'', ing:false, purpose:'', maxPrice:'', sort:'std', myFilter:'使用中', chartRange:30, reportOffset:0,
+const ui = {priceRes:{}, geoHelp:'', geoConsent:false, visitRange:30, visitPhotos:false, visitNote:'', q:'', brand:'', cat:'', origin:'', ing:false, purpose:'', maxPrice:'', sort:'std', myFilter:'使用中', chartRange:30, reportOffset:0,
   spendMonth:monthKey(todayStr()), logTab:'list', cmpA:'', cmpB:'', checkCat:'', checkPurpose:'', storeArea:'', storeProduct:'', geo:null, ingQ:'', photoA:'', photoB:'', scan:scanInit(), storeTypes:['chemist','cosmetics'], storeRadius:1000, storeRes:null, storeCands:[], storeBusy:false, storeLast:0, osmConsent:false};
 
 /* =========================================================
@@ -1572,12 +1580,61 @@ function offerIssues(o, p) {
   return out;
 }
 function searchLinks(p) {
-  const q = encodeURIComponent(`${p.brand} ${p.name}`.replace(/【サンプル】/g, '').trim());
+  const raw = `${p.brand} ${p.name}`.replace(/【サンプル】/g, '').trim(), q = encodeURIComponent(raw);
+  const gsite = site => `https://www.google.com/search?q=${encodeURIComponent('site:' + site + ' ' + raw)}`;
   return [
-    {label:'Amazonで探す', url:`https://www.amazon.co.jp/s?k=${q}`},
-    {label:'楽天市場で探す', url:`https://search.rakuten.co.jp/search/mall/${q}/`},
-    {label:'Yahoo!ショッピングで探す', url:`https://shopping.yahoo.co.jp/search?p=${q}`}
+    {label:'Amazon', url:`https://www.amazon.co.jp/s?k=${q}`},
+    {label:'楽天市場', url:`https://search.rakuten.co.jp/search/mall/${q}/`},
+    {label:'Yahoo!ショッピング', url:`https://shopping.yahoo.co.jp/search?p=${q}`},
+    {label:'Qoo10', url:`https://www.qoo10.jp/gmkt.inc/Search/Search.aspx?keyword=${q}`},
+    {label:'@cosme SHOPPING', url:gsite('cosme.com')},
+    {label:'LOHACO', url:gsite('lohaco.yahoo.co.jp')},
+    {label:'au PAY マーケット', url:`https://wowma.jp/itemlist?keyword=${q}`},
+    {label:'マツキヨココカラオンライン', url:gsite('matsukiyococokara-online.com')},
+    {label:'ZOZOCOSME', url:`https://zozo.jp/search/?p_keyv=${q}`},
+    {label:'ロフト', url:gsite('loft.co.jp')}
   ];
+}
+const PRICE_SHIP = {included:'送料込み', conditional:'条件付き送料無料', extra:'送料別'};
+async function priceSearch(pid) {
+  const p = getCat(pid); if (!p) return;
+  const st = ui.priceRes[pid] = {loading:true, items:[], errors:[], msg:''};
+  render();
+  try {
+    const res = await fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', headers:{'Content-Type':'application/json', apikey:CLOUD.key},
+      body:JSON.stringify({q:`${p.brand} ${p.name}`.replace(/【サンプル】/g, '').trim(), jan:p.jan || ''})});
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok || j.error) throw new Error(j.error || '価格を調べられませんでした。');
+    st.items = Array.isArray(j.items) ? j.items : []; st.errors = Array.isArray(j.errors) ? j.errors : []; st.at = j.fetchedAt || '';
+  } catch (e) {
+    st.msg = /fetch|network|Failed/i.test(String(e && e.message)) ? 'サーバーに接続できませんでした。インターネットの接続を確認して、もう一度お試しください。' : String((e && e.message) || e);
+  }
+  st.loading = false;
+  if (location.hash.startsWith('#/prices/')) render();
+}
+function priceHitsHtml(p) {
+  const st = ui.priceRes[p.id];
+  let h = `<div class="card"><div class="card-h"><h2>ネットの価格を自動で調べる</h2><span class="small muted">楽天市場・Yahoo!ショッピング</span></div>`;
+  if (p.isSample) return h + '<p class="small muted">サンプル（架空）の商品のため、検索できません。</p></div>';
+  h += `<p class="small muted">商品名${p.jan ? '（JANコードがあればJANコード）' : ''}で、楽天市場とYahoo!ショッピングの公式APIから検索します。<b>商品価格の安い順</b>に並べます（送料は含みません）。</p>
+    <div class="page-actions" style="margin-top:8px"><button class="btn btn-primary btn-sm" data-action="price-search" data-id="${esc(p.id)}" ${st && st.loading ? 'disabled' : ''}>${st && st.loading ? '調べています…' : (st ? 'もう一度調べる' : '価格を調べる')}</button></div>`;
+  if (st && !st.loading) {
+    if (st.msg) h += `<p class="small" style="color:var(--warn);margin-top:10px">${esc(st.msg)}</p>`;
+    else {
+      if (st.errors.length) h += `<p class="small" style="color:var(--warn);margin-top:10px">一部のサイトは調べられませんでした：${esc(st.errors.join('／'))}</p>`;
+      if (!st.items.length) h += '<p class="small muted" style="margin-top:10px">見つかりませんでした。商品名を短くする（ブランド名と商品名だけにする）と見つかることがあります。</p>';
+      else {
+        h += `<div style="margin-top:12px">${st.items.slice(0, 30).map((x, i) => `<div class="ph">${safeUrl(x.image) ? `<img src="${esc(x.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}
+          <div class="ph-body"><div class="ph-name">${x.ad ? '<span class="pr-tag">PR</span>' : ''}${esc(x.name)}</div>
+            <div class="small muted" style="margin-top:2px">${esc(x.site)}｜${esc(x.shop || 'ショップ名不明')}</div>
+            <div class="chips" style="margin-top:4px"><span class="chip ${x.shipping === 'included' ? 'green' : x.shipping === 'conditional' ? 'beige' : 'gray'}">${esc(PRICE_SHIP[x.shipping] || '送料別')}</span></div>
+            <div class="ph-acts">${extLink(safeUrl(x.url), '商品ページ')}<button class="btn btn-ghost btn-sm" data-action="add-price-hit" data-id="${esc(p.id)}|${i}">${icon('plus')}比較に追加</button></div></div>
+          <div class="ph-price">${yen(x.price)}<div class="small muted" style="font-weight:400">商品価格</div></div></div>`).join('')}</div>
+          <p class="small muted" style="margin-top:10px">${st.at ? `取得：${esc(new Date(st.at).toLocaleString('ja-JP'))}。` : ''}価格や在庫は変わることがあります。購入前に各サイトで確認してください。検索結果には、容量違い・セット品・別の商品が含まれることがあります。${st.items.some(x => x.ad) ? '「PR」はアフィリエイト（広告）リンクです。並び順は広告かどうかに関係なく、商品価格の安い順です。' : '並び順は商品価格の安い順です。'}</p>`;
+      }
+    }
+  }
+  return h + '<p class="small muted" style="margin-top:8px">Supported by Rakuten Developers ／ Web Services by Yahoo! JAPAN</p></div>';
 }
 function mapLink(query) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`; }
 function viewPrices(id) {
@@ -1591,7 +1648,7 @@ function viewPrices(id) {
   const fast = storesSorted.find(s => s.stock !== '在庫なし（確認済）');
   let html = `<a class="back" href="#/product/${encodeURIComponent(p.id)}">← 商品詳細</a>` +
     pageHead('価格・店舗の比較', `${p.brand}｜${p.name}${p.volume ? '（' + p.volume + '）' : ''}`, `<button class="btn btn-primary btn-sm" data-action="new-offer" data-id="${esc(p.id)}|online">${icon('plus')}通販の価格</button><button class="btn btn-ghost btn-sm" data-action="new-offer" data-id="${esc(p.id)}|store">${icon('plus')}店舗</button>`) +
-    `<div class="notice">現在、通販サイトや店舗の価格・在庫を<b>自動で取得する機能はありません</b>（各社のAPI契約と利用規約の確認が必要なため）。ここに表示されるのは、<b>あなたが確認して入力した情報</b>、または「サンプル」と表示された架空の情報だけです。取得できない価格や送料は推測せず「未確認」と表示します。</div>`;
+    `<div class="notice">楽天市場・Yahoo!ショッピングは、下の「価格を調べる」で自動で検索できます。ほかのサイト（Amazon・Qoo10・@cosme SHOPPING など）は、「外部サイトで探す」で確認して、価格を入力してください。比較表には、<b>同じ商品だと確認したもの</b>だけが最安値として表示されます。</div>` + priceHitsHtml(p);
 
   html += `<div class="card"><div class="card-h"><h2>安さ優先？ すぐ欲しい？</h2></div><div class="vs">
     <div class="vs-box"><h3>安さ優先（通販・送料込み）</h3>
@@ -1618,7 +1675,7 @@ function viewPrices(id) {
   html += `<div class="card"><div class="card-h"><h2>外部サイトで探す</h2></div>
     ${p.isSample ? '<p class="small muted">サンプル（架空）の商品のため、外部サイトでは検索できません。</p>'
       : `<div class="ext-links">${searchLinks(p).map(l => extLink(l.url, l.label)).join('')}</div>
-      <p class="small muted" style="margin-top:10px">各サイトの検索結果が開きます。内容量・セット内容・リニューアル前後を確認したうえで、上の比較表に追加してください。これらは広告・アフィリエイトリンクではありません。</p>`}</div>`;
+      <p class="small muted" style="margin-top:10px">各サイトの検索結果が開きます（一部はGoogleのサイト内検索）。内容量・セット内容・リニューアル前後を確認したうえで、「通販の価格」から比較表に追加してください。これらは広告・アフィリエイトリンクではありません。</p>`}</div>`;
   return html;
 }
 function stockChip(s) {
@@ -1862,6 +1919,34 @@ async function storeSearchByName() {
   if (cands.length === 1 || (looksAddress && gsi.length === 1) || (/駅$/.test(raw.trim()) && stations.length === 1)) { await storeSearchAt(looksAddress && gsi.length === 1 ? gsi[0] : (stations[0] || cands[0]), true); return; }
   setStoreRes({status:'pick'});
 }
+/* ---------- 薬局：厚生労働省「医療情報ネット」オープンデータ（GitHubの pharmacy フォルダに置いたもの） ---------- */
+const PHARMACY_BASE = 'pharmacy/';
+const pharmacyCache = {index:null, tiles:{}};
+async function pharmacyIndex() {
+  if (pharmacyCache.index) return pharmacyCache.index;
+  const r = await fetch(PHARMACY_BASE + 'index.json');
+  if (!r.ok) throw new Error('no-data');
+  return (pharmacyCache.index = await r.json());
+}
+async function pharmacyNear(center, radius) {
+  const idx = await pharmacyIndex();
+  const dLat = radius / 111000, dLng = radius / (111000 * Math.cos(center.lat * Math.PI / 180));
+  const keys = [];
+  for (let a = Math.floor(center.lat - dLat); a <= Math.floor(center.lat + dLat); a++)
+    for (let b = Math.floor(center.lng - dLng); b <= Math.floor(center.lng + dLng); b++)
+      if (idx.tiles[`${a}_${b}`]) keys.push(`${a}_${b}`);
+  const rows = (await Promise.all(keys.map(async k => {
+    if (!pharmacyCache.tiles[k]) { const r = await fetch(PHARMACY_BASE + k + '.json'); if (!r.ok) throw new Error('no-data'); pharmacyCache.tiles[k] = await r.json(); }
+    return pharmacyCache.tiles[k];
+  }))).flat();
+  const out = [];
+  rows.forEach(([name, address, lat, lng, url, hours, approx]) => {
+    const km = kmBetween(center.lat, center.lng, lat, lng);
+    if (km * 1000 <= radius) out.push({name, brand:'', type:'薬局', lat, lng, km, address, hours, phone:'', url:safeUrl(url), src:'mhlw', approx:!!approx});
+  });
+  return out;
+}
+const normName = n => String(n || '').replace(/[\s　・\-－（）()]/g, '').replace(/薬局|調剤|店$/g, '');
 async function storeSearchAt(center, chained) {
   if (!chained) {
     if (!ui.storeTypes.length) { toast('店舗の種類を1つ以上選んでください', 'error'); return; }
@@ -1869,29 +1954,44 @@ async function storeSearchAt(center, chained) {
   }
   ui.storeSeq = (ui.storeSeq || 0) + 1; ui.stationPending = false;
   setStoreRes({status:'loading', note:`「${center.label}」の近くの店舗を探しています…`});
-  try {
-    const R = ui.storeRadius, la = center.lat.toFixed(5), ln = center.lng.toFixed(5);
-    try {
-      const items = await geoapifyPlaces(center, R, ui.storeTypes);
-      items.sort((a, b) => a.km - b.km);
-      setStoreRes({status:'done', center, items:items.slice(0, 60), radius:R, source:'geoapify'});
-      return;
-    } catch (e) { setStoreRes({status:'loading', note:'予備のサーバーで探しています…'}); }
-    const parts = ui.storeTypes.map(k => (STORE_TYPES.find(x => x.k === k) || {}).q).filter(Boolean).map(q => `${q}(around:${R},${la},${ln});`).join('');
-    const js = await overpass(`[out:json][timeout:25];(${parts});out center tags 150;`, i => setStoreRes({status:'loading', note:`地図データのサーバーが混み合っているため、別のサーバーで試しています（${i + 1}/${OVERPASS_URLS.length}）…`}));
-    const seen = new Set(), items = [];
-    (js.elements || []).forEach(el => {
-      const key = el.type + el.id; if (seen.has(key)) return; seen.add(key);
-      const lat = el.lat != null ? el.lat : (el.center && el.center.lat), lng = el.lon != null ? el.lon : (el.center && el.center.lon);
-      if (lat == null || lng == null) return;
-      const t = el.tags || {}, name = t['name:ja'] || t.name || t.brand || '';
-      if (!name || items.some(x => x.name === name && kmBetween(x.lat, x.lng, lat, lng) < 0.05)) return;
-      items.push({name, brand:t.brand && t.brand !== name ? t.brand : '', type:shopType(t), lat, lng, km:kmBetween(center.lat, center.lng, lat, lng),
-        address:shopAddress(t), hours:t.opening_hours || '', phone:String(t.phone || t['contact:phone'] || '').split(';')[0].trim(), url:safeUrl(t.website || t['contact:website'] || '')});
-    });
-    items.sort((a, b) => a.km - b.km);
-    setStoreRes({status:'done', center, items:items.slice(0, 60), radius:R, source:'osm'});
-  } catch (e) { setStoreRes({status:'error', msg:storeErrMsg(e)}); }
+  const R = ui.storeRadius, la = center.lat.toFixed(5), ln = center.lng.toFixed(5);
+  const wantPharm = ui.storeTypes.includes('pharmacy');
+  // 薬局は国のデータで探す（読み込めないときだけ、ほかの検索に含める）
+  let pharm = [], pharmOk = false, pharmIdx = null;
+  if (wantPharm) {
+    try { pharm = await pharmacyNear(center, R); pharmIdx = pharmacyCache.index; pharmOk = true; } catch (e) { pharmOk = false; }
+  }
+  const otherTypes = ui.storeTypes.filter(k => !(k === 'pharmacy' && pharmOk));
+  let others = [], source = 'geoapify';
+  if (otherTypes.length) {
+    try { others = await geoapifyPlaces(center, R, otherTypes); }
+    catch (e) {
+      source = 'osm';
+      try {
+        setStoreRes({status:'loading', note:'予備のサーバーで探しています…'});
+        const parts = otherTypes.map(k => (STORE_TYPES.find(x => x.k === k) || {}).q).filter(Boolean).map(q => `${q}(around:${R},${la},${ln});`).join('');
+        const js = await overpass(`[out:json][timeout:25];(${parts});out center tags 150;`, i => setStoreRes({status:'loading', note:`地図データのサーバーが混み合っているため、別のサーバーで試しています（${i + 1}/${OVERPASS_URLS.length}）…`}));
+        const seen = new Set();
+        (js.elements || []).forEach(el => {
+          const key = el.type + el.id; if (seen.has(key)) return; seen.add(key);
+          const lat = el.lat != null ? el.lat : (el.center && el.center.lat), lng = el.lon != null ? el.lon : (el.center && el.center.lon);
+          if (lat == null || lng == null) return;
+          const t = el.tags || {}, name = t['name:ja'] || t.name || t.brand || '';
+          if (!name || others.some(x => x.name === name && kmBetween(x.lat, x.lng, lat, lng) < 0.05)) return;
+          others.push({name, brand:t.brand && t.brand !== name ? t.brand : '', type:shopType(t), lat, lng, km:kmBetween(center.lat, center.lng, lat, lng),
+            address:shopAddress(t), hours:t.opening_hours || '', phone:String(t.phone || t['contact:phone'] || '').split(';')[0].trim(), url:safeUrl(t.website || t['contact:website'] || '')});
+        });
+      } catch (e2) { if (!pharm.length) { setStoreRes({status:'error', msg:storeErrMsg(e2)}); return; } }
+    }
+  }
+  // 薬局を国のデータで探したときは、ほかの検索に出てきた同じ店（調剤のあるドラッグストアなど）の重なりを除く
+  if (pharmOk) {
+    const otherOnly = others.filter(x => !(x.type === '薬局' && pharm.some(p => kmBetween(p.lat, p.lng, x.lat, x.lng) < 0.06)));
+    pharm = pharm.filter(p => !otherOnly.some(x => kmBetween(p.lat, p.lng, x.lat, x.lng) < 0.06 && (normName(p.name).includes(normName(x.name)) || normName(x.name).includes(normName(p.name)))));
+    others = otherOnly;
+  }
+  const items = others.concat(pharm).sort((a, b) => a.km - b.km);
+  setStoreRes({status:'done', center, items:items.slice(0, 80), radius:R, source, pharm:pharmOk ? {n:pharm.length, date:pharmIdx && pharmIdx.date} : null, pharmFailed:wantPharm && !pharmOk});
 }
 // 地図データの営業時間の書き方（例：Mo-Su 10:00-22:00）を日本語に直す
 function jaHours(h) {
@@ -1908,7 +2008,7 @@ function shopCard(s, i) {
   return `<div class="offer"><div class="offer-top"><div><div class="offer-name">${esc(s.name)}</div>
       <div class="chips" style="margin-top:4px"><span class="chip">${esc(s.type)}</span>${s.brand ? `<span class="chip beige">${esc(s.brand)}</span>` : ''}${stockChip('未確認')}</div></div>
       <div class="offer-total" style="font-size:16px">${esc(fmtDist(s.km))}</div></div>
-    <div class="offer-grid" style="grid-template-columns:1fr"><div><span>営業時間（地図データの登録内容・未確認）</span>${esc(jaHours(s.hours) || '登録なし')}</div><div><span>住所</span>${esc(s.address || '登録なし')}</div>${s.phone ? `<div><span>電話</span>${esc(s.phone)}</div>` : ''}</div>
+    <div class="offer-grid" style="grid-template-columns:1fr"><div><span>${s.src === 'mhlw' ? '営業時間（医療情報ネットへの届出内容）' : '営業時間（地図データの登録内容・未確認）'}</span>${esc(jaHours(s.hours) || '登録なし')}</div><div><span>住所</span>${esc(s.address || '登録なし')}${s.approx ? '<div class="small muted">※位置は住所から推定しています</div>' : ''}</div>${s.phone ? `<div><span>電話</span>${esc(s.phone)}</div>` : ''}</div>
     <div class="offer-actions">${extLink(`https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}`, '地図')}${extLink(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}`, '経路')}${extLink(`https://maps.apple.com/?q=${encodeURIComponent(s.name)}&ll=${s.lat},${s.lng}`, 'Appleマップ')}
       ${tel ? `<a class="btn btn-ghost btn-sm" href="tel:${esc(tel)}">電話で在庫を確認</a>` : ''}${extLink(s.url, '公式サイト')}<button class="btn btn-soft btn-sm" data-action="store-add" data-id="${i}">価格比較に追加</button></div></div>`;
 }
@@ -1930,6 +2030,8 @@ function storeResultsHtml() {
     <iframe class="map-frame" title="検索した場所の周辺地図" src="${esc(src)}" loading="lazy" referrerpolicy="no-referrer"></iframe>
     <p class="small muted" style="margin:4px 0 12px">地図の印は検索の中心です。各店舗の場所は「地図」ボタンで確認できます。距離は検索の中心からの直線距離です。</p>
     ${R.items.length ? R.items.map((s, i) => shopCard(s, i)).join('') : '<p class="small muted">この範囲では、条件に合う店舗が地図データに見つかりませんでした。範囲を広げるか、下の「地図アプリで探す」をお試しください。</p>'}
+    ${R.pharm ? `<p class="small muted" style="margin-top:12px">薬局のデータ：「医療情報ネット」オープンデータ（厚生労働省、${R.pharm.date ? esc(R.pharm.date.replace(/-/g, '/')) + '時点' : ''}）を加工して作成。届出の内容のため、実際と異なる場合があります。</p>` : ''}
+    ${R.pharmFailed ? '<p class="small muted" style="margin-top:8px">国の薬局データを読み込めなかったため、薬局は地図データから探しています（一部の薬局が表示されない場合があります）。</p>' : ''}
     <p class="small muted" style="margin-top:12px">${R.source === 'geoapify' ? 'Powered by <a href="https://www.geoapify.com/" target="_blank" rel="noopener noreferrer">Geoapify</a>／' : ''}店舗データ：<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>（ODbL）。閉店・移転している店舗や、登録されていない店舗がある場合があります。</p></div>`;
 }
 function openStoreAddForm(i) {
@@ -3401,6 +3503,7 @@ function viewSettings() {
         <li><b>肌写真</b>：保存は任意です。「ブラウザ内に保存する」にチェックした写真だけを保存し、外部には送信しません。</li>
         <li><b>位置情報</b>：「現在地の近くを探す」を押し、確認画面とブラウザの許可の両方で同意した場合だけ使います。保存はしません。地図のリンクを開くと、地図サービスに位置が送られます。</li>
         <li><b>アカウント</b>：有料プランの申し込み・管理のため、ログインした場合だけ、メールアドレスと契約状況をサーバー（Supabase・東京リージョン）に保存します。決済はStripeの画面で行い、カード情報は肌トモに保存されません。ログイン機能の部品は、プラン・アカウントの画面を開いたときに jsDelivr から読み込みます。</li>
+        <li><b>薬局のデータ</b>：「医療情報ネット」オープンデータ（厚生労働省）を加工して、アプリと一緒に置いています。検索のときに外部に送る情報はありません。</li>
         <li><b>店舗検索</b>：「検索」ボタンを押したときだけ、入力した駅名・地名・住所と、検索する場所（または許可した現在地）を、店舗検索サービスGeoapifyと国土地理院の地名検索に送ります（Geoapifyが使えないときは、予備としてOpenStreetMapのサーバーに送ります）。検索結果の地図には、OpenStreetMapの地図を読み込みます。</li>
         <li><b>食事の写真</b>：撮影した写真は端末内だけで使い、「保存する」にチェックしたものだけをこのブラウザ内に保存します。</li>
         <li><b>外部リンク</b>：通販サイト・地図のリンクを開くと、そのサイトの利用規約・プライバシーポリシーが適用されます。</li>
@@ -3543,6 +3646,15 @@ const actions = {
     state.myProducts.forEach(m => { if (m.catalogId === id) { if (!m.ingredients) m.ingredients = p.ingredients; m.catalogId = ''; } });
     state.catalog = state.catalog.filter(x => x.id !== id);
     if (save()) { toast('商品を削除しました'); location.hash = '#/search'; }
+  },
+  'price-search': id => priceSearch(id),
+  'add-price-hit': v => {
+    const [pid, idx] = split2(v); const p = getCat(pid); const st = ui.priceRes[pid];
+    const x = p && st && st.items[Number(idx)]; if (!x) return;
+    const o = normOffer({id:uid(), kind:'online', shop:`${x.shop || x.site}（${x.site}）`, url:safeUrl(x.url), price:x.price,
+      shipping:x.shipping === 'included' ? 0 : null, volume:p.volume, same:false, checkedAt:todayStr(), memo:x.name.slice(0, 100)});
+    p.offers.push(o);
+    if (save()) { toast('追加しました。送料と、同じ商品かどうかを確認してください'); render(); openOfferForm(pid, o.id, true); }
   },
   'new-offer': v => { const [pid, kind] = split2(v); openOfferForm(pid, kind, false); },
   'edit-offer': v => { const [pid, oid] = split2(v); openOfferForm(pid, oid, true); },
