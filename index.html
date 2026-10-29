@@ -1252,7 +1252,7 @@ function timelineChart(w, o) {
 
 /* ---------- UI状態（画面の絞り込みなど） ---------- */
 const scanInit = () => ({photo:null, jan:'', name:'', brand:'', ings:'', searched:false, msg:'', janErr:''});
-const ui = {priceRes:{}, geoHelp:'', geoConsent:false, visitRange:30, visitPhotos:false, visitNote:'', q:'', brand:'', cat:'', origin:'', ing:false, purpose:'', maxPrice:'', sort:'std', myFilter:'使用中', chartRange:30, reportOffset:0,
+const ui = {priceRes:{}, priceSet:true, priceVol:true, geoHelp:'', geoConsent:false, visitRange:30, visitPhotos:false, visitNote:'', q:'', brand:'', cat:'', origin:'', ing:false, purpose:'', maxPrice:'', sort:'std', myFilter:'使用中', chartRange:30, reportOffset:0,
   spendMonth:monthKey(todayStr()), logTab:'list', cmpA:'', cmpB:'', checkCat:'', checkPurpose:'', storeArea:'', storeProduct:'', geo:null, ingQ:'', photoA:'', photoB:'', scan:scanInit(), storeTypes:['chemist','cosmetics'], storeRadius:1000, storeRes:null, storeCands:[], storeBusy:false, storeLast:0, osmConsent:false};
 
 /* =========================================================
@@ -1612,6 +1612,20 @@ async function priceSearch(pid) {
   st.loading = false;
   if (location.hash.startsWith('#/prices/')) render();
 }
+// ミニ・セット・お試し・詰め替えなど、元の商品と違う可能性が高いものを見分ける（元の商品名に含まれる言葉は対象外）
+const PRICE_SET_WORDS = [['セット', /セット/], ['ミニ', /ミニ|mini/i], ['お試し', /お試し|トライアル|サンプル|試供/], ['まとめ買い', /まとめ買い|(\d+)\s*(個|本|点|袋)\s*(セット|組)|[×x✕]\s*\d+\s*(個|本|袋)?(?!\s*(ml|g))/i], ['詰め替え', /詰め?替え?|つめかえ|レフィル|refill/i]];
+function priceSetWord(name, base) {
+  const n = toHalf(name), b = toHalf(base);
+  const hit = PRICE_SET_WORDS.find(([, re]) => re.test(n) && !re.test(b));
+  return hit ? hit[0] : '';
+}
+// 商品名に書かれた容量と、登録した容量を比べる。'same'：一致／'diff'：違う／''：商品名に容量が書かれていない
+function priceVolMatch(name, vol) {
+  const v = parseVol(vol); if (!v) return '';
+  const found = [...toHalf(name).toLowerCase().matchAll(/(\d+(?:\.\d+)?)\s*(ml|g|枚)(?![a-z])/g)].map(m => ({amt:parseFloat(m[1]), unit:m[2]}));
+  if (!found.length) return '';
+  return found.some(f => f.unit === v.unit && Math.abs(f.amt - v.amt) < 0.01) ? 'same' : 'diff';
+}
 function priceHitsHtml(p) {
   const st = ui.priceRes[p.id];
   let h = `<div class="card"><div class="card-h"><h2>ネットの価格を自動で調べる</h2><span class="small muted">楽天市場・Yahoo!ショッピング</span></div>`;
@@ -1624,11 +1638,23 @@ function priceHitsHtml(p) {
       if (st.errors.length) h += `<p class="small" style="color:var(--warn);margin-top:10px">一部のサイトは調べられませんでした：${esc(st.errors.join('／'))}</p>`;
       if (!st.items.length) h += '<p class="small muted" style="margin-top:10px">見つかりませんでした。商品名を短くする（ブランド名と商品名だけにする）と見つかることがあります。</p>';
       else {
-        h += `<div style="margin-top:12px">${st.items.slice(0, 30).map((x, i) => `<div class="ph">${safeUrl(x.image) ? `<img src="${esc(x.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}
+        const hasVol = !!parseVol(p.volume);
+        const rows = st.items.map((x, i) => ({x, i, set:priceSetWord(x.name, p.name), vol:priceVolMatch(x.name, p.volume)}));
+        const shown = rows.filter(r => !(ui.priceSet && r.set) && !(ui.priceVol && hasVol && r.vol === 'diff'));
+        const anyJan = st.items.some(x => x.byJan);
+        h += `<div class="notice" style="margin-top:12px">${p.jan ? (anyJan ? `JANコード（${esc(p.jan)}）で探しました。<b>「JAN一致」</b>の付いた商品は、同じ商品です。` : `JANコード（${esc(p.jan)}）では見つからなかったため、商品名で探しました。`)
+            : `この商品には<b>JANコードが登録されていません</b>。下の結果から同じ商品を見つけて<b>「これと同じ商品」</b>を押すと、JANコードが登録され、次から同じ商品だけを探せます（Yahoo!ショッピングの結果のみ）。`}</div>
+          <div class="chips" style="margin-top:10px;gap:14px">
+            <label class="check"><input type="checkbox" data-change="price-set" ${ui.priceSet ? 'checked' : ''}> ミニ・セット・お試し・詰め替えを除く</label>
+            ${hasVol ? `<label class="check"><input type="checkbox" data-change="price-vol" ${ui.priceVol ? 'checked' : ''}> 容量が違うもの（${esc(p.volume)}以外）を除く</label>` : ''}
+          </div>
+          <p class="small muted" style="margin-top:6px">${st.items.length}件中 ${shown.length}件を表示${shown.length < st.items.length ? '（条件に合わないものを除外）' : ''}</p>`;
+        if (!shown.length) h += '<p class="small muted" style="margin-top:8px">条件に合う商品がありません。上のチェックを外すと、すべて表示されます。</p>';
+        h += `<div style="margin-top:8px">${shown.slice(0, 30).map(({x, i, set, vol}) => `<div class="ph">${safeUrl(x.image) ? `<img src="${esc(x.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ''}
           <div class="ph-body"><div class="ph-name">${x.ad ? '<span class="pr-tag">PR</span>' : ''}${esc(x.name)}</div>
             <div class="small muted" style="margin-top:2px">${esc(x.site)}｜${esc(x.shop || 'ショップ名不明')}</div>
-            <div class="chips" style="margin-top:4px"><span class="chip ${x.shipping === 'included' ? 'green' : x.shipping === 'conditional' ? 'beige' : 'gray'}">${esc(PRICE_SHIP[x.shipping] || '送料別')}</span></div>
-            <div class="ph-acts">${extLink(safeUrl(x.url), '商品ページ')}<button class="btn btn-ghost btn-sm" data-action="add-price-hit" data-id="${esc(p.id)}|${i}">${icon('plus')}比較に追加</button></div></div>
+            <div class="chips" style="margin-top:4px"><span class="chip ${x.shipping === 'included' ? 'green' : x.shipping === 'conditional' ? 'beige' : 'gray'}">${esc(PRICE_SHIP[x.shipping] || '送料別')}</span>${x.byJan && p.jan ? '<span class="chip green">JAN一致</span>' : ''}${vol === 'same' ? '<span class="chip green">容量一致</span>' : vol === 'diff' ? '<span class="chip red">容量違い</span>' : hasVol ? '<span class="chip gray">容量不明</span>' : ''}${set ? `<span class="chip beige">${esc(set)}</span>` : ''}</div>
+            <div class="ph-acts">${extLink(safeUrl(x.url), '商品ページ')}<button class="btn btn-ghost btn-sm" data-action="add-price-hit" data-id="${esc(p.id)}|${i}">${icon('plus')}比較に追加</button>${!p.jan && isValidJan(x.jan || '') ? `<button class="btn btn-ghost btn-sm" data-action="price-set-jan" data-id="${esc(p.id)}|${i}">これと同じ商品</button>` : ''}</div></div>
           <div class="ph-price">${yen(x.price)}<div class="small muted" style="font-weight:400">商品価格</div></div></div>`).join('')}</div>
           <p class="small muted" style="margin-top:10px">${st.at ? `取得：${esc(new Date(st.at).toLocaleString('ja-JP'))}。` : ''}価格や在庫は変わることがあります。購入前に各サイトで確認してください。検索結果には、容量違い・セット品・別の商品が含まれることがあります。${st.items.some(x => x.ad) ? '「PR」はアフィリエイト（広告）リンクです。並び順は広告かどうかに関係なく、商品価格の安い順です。' : '並び順は商品価格の安い順です。'}</p>`;
       }
@@ -3648,6 +3674,15 @@ const actions = {
     if (save()) { toast('商品を削除しました'); location.hash = '#/search'; }
   },
   'price-search': id => priceSearch(id),
+  'price-set-jan': async v => {
+    const [pid, idx] = split2(v); const p = getCat(pid); const st = ui.priceRes[pid];
+    const x = p && st && st.items[Number(idx)]; if (!x || !isValidJan(x.jan || '')) return;
+    const other = state.catalog.find(c => c !== p && c.jan === x.jan);
+    if (other) { toast(`このJANコードは「${other.name}」に登録されています`, 'error'); return; }
+    if (!await confirmDialog(`「${x.name.slice(0, 60)}」と同じ商品として、JANコード ${x.jan} を登録しますか？\n内容量・セット内容が同じかを確認してから登録してください。`, {ok:'登録する', danger:false, title:'JANコードの登録'})) return;
+    p.jan = x.jan;
+    if (save()) { toast('JANコードを登録しました。同じ商品だけを探し直します'); priceSearch(pid); }
+  },
   'add-price-hit': v => {
     const [pid, idx] = split2(v); const p = getCat(pid); const st = ui.priceRes[pid];
     const x = p && st && st.items[Number(idx)]; if (!x) return;
@@ -3856,6 +3891,8 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('change', e => {
   if (e.target.id === 'scan-photo') { onScanPhoto(e.target); return; }
+  if (e.target.dataset && e.target.dataset.change === 'price-set') { ui.priceSet = e.target.checked; const y = scrollY; render(); scrollTo(0, y); return; }
+  if (e.target.dataset && e.target.dataset.change === 'price-vol') { ui.priceVol = e.target.checked; const y = scrollY; render(); scrollTo(0, y); return; }
   if (e.target.id === 'st-radius') { ui.storeRadius = Number(e.target.value) || 1000; return; }
   if (e.target.name === 'st-type') { ui.storeTypes = $$('input[name="st-type"]:checked').map(i => i.value); return; }
   if (/^flt-/.test(e.target.id)) { e.target.dispatchEvent(new Event('input', {bubbles:true})); return; }
