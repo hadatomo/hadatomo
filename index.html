@@ -432,12 +432,11 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .ld-arrow{width:40px;height:40px;border-radius:50%;border:1px solid var(--line2);background:var(--surface);color:var(--ink);font-size:24px;line-height:1;cursor:pointer;font-family:inherit}
 .ld-info{text-align:center;min-width:0}
 .ld-date{display:flex;flex-direction:column;align-items:center;line-height:1.4}
-.ld-date b{font-size:15.5px}
+.ld-date b{font-size:17px;white-space:nowrap}
 .ld-nums{display:flex;justify-content:center;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:12.5px;color:var(--muted)}
 .ld-nums b{color:var(--ink);font-size:14px}
-.ld-dots{display:flex;justify-content:center;gap:6px;margin-top:10px;flex-wrap:wrap}
-.ld-dot{width:12px;height:12px;border-radius:50%;border:2px solid transparent;padding:0;cursor:pointer;opacity:.55}
-.ld-dot.on{opacity:1;border-color:var(--ink);transform:scale(1.25)}
+.ld-detail{margin-top:14px;border-top:1px solid var(--line);padding-top:14px}
+.ld-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
 .ld-flash{animation:ldf .25s ease}
 @keyframes ldf{from{opacity:.3;transform:translateY(3px)}to{opacity:1;transform:none}}
 :root[data-theme="dark"] .t3-stage{background:transparent}
@@ -3023,29 +3022,6 @@ function viewLog() {
   if (!logs.length) return html + `<div class="card">${emptyBox('note', 'まだ肌の記録がありません', 'ニキビ・赤み・乾燥・皮脂などを、数タップで記録できます。', '<button class="btn btn-primary btn-sm" data-action="new-log">最初の記録をつける</button>')}</div>`;
   const lm = lifeMap();
   html += logDayCardHtml(logs);
-  let curMonth = '';
-  logs.forEach(l => {
-    const mk = monthKey(l.date);
-    if (mk !== curMonth) { curMonth = mk; html += `<div class="log-month">${fmtMonth(mk)}</div>`; }
-    const photo = safeImg(l.photo), life = lm[l.date];
-    const usedNames = l.usedProducts.map(id => getMy(id)).filter(Boolean).map(p => truncate(p.name, 16));
-    html += `<div class="log-item">
-      <div class="log-top"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap"><span class="log-date">${fmtMD(l.date)}</span>${condPill(l.condition)}${l.demo ? '<span class="badge-sample">デモ</span>' : ''}</div>
-        <div class="log-actions"><button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(l.id)}">編集</button><button class="btn btn-danger-ghost btn-sm" data-action="delete-log" data-id="${esc(l.id)}">削除</button></div></div>
-      <div class="log-grid">
-        <div class="stat"><div class="lbl">ニキビ</div><div class="val">${l.acneCount}<span class="small muted">個</span></div></div>
-        <div class="stat"><div class="lbl">赤み</div><div class="val">${l.redness}</div></div>
-        <div class="stat"><div class="lbl">乾燥</div><div class="val">${l.dryness}</div></div>
-        <div class="stat"><div class="lbl">皮脂</div><div class="val">${l.oil}</div></div>
-      </div>
-      ${l.acneSpots.length ? `<p class="sub-line"><b>ニキビの詳細</b>${l.acneSpots.map(s => esc(`${areaName(s.area)} ${s.count}個（${s.type}・${s.size.replace(/（.*）/, '')}・${s.status}）`)).join('／')}</p>` : ''}
-      ${l.areas.length || l.acneTypes.length || l.otherConcerns.length ? `<div class="chips" style="margin-top:10px">${l.areas.map(a => `<span class="chip beige">${esc(areaName(a))}</span>`).join('')}${l.acneTypes.map(a => `<span class="chip">${esc(a)}</span>`).join('')}${l.otherConcerns.map(a => `<span class="chip warn">${esc(a)}</span>`).join('')}</div>` : ''}
-      ${l.usageRecorded ? `<p class="sub-line"><b>使った化粧品</b>${usedNames.length ? esc(usedNames.join('、')) : 'なし'}</p>` : ''}
-      ${life ? `<p class="sub-line"><b>睡眠</b>${esc(fmtHM(sleepMin(life)))}</p>` : ''}
-      ${l.memo ? `<div class="log-memo">${esc(l.memo)}</div>` : ''}
-      ${photo ? `<img class="log-photo" src="${photo}" alt="${esc(l.date)}の肌写真">` : ''}
-    </div>`;
-  });
   html += `<p class="small muted" style="margin-top:16px">評価は0（なし）〜5（強い）の自己評価です。症状が強い・長引く場合は皮膚科医に相談してください。</p>`;
   return html;
 }
@@ -3059,13 +3035,28 @@ function logDayList() { return logsDesc().slice().reverse(); } // 古い順
 function logDayIdx(list) { let i = list.findIndex(l => l.date === ui.logDay); if (i < 0) i = list.length - 1; return i; }
 function logDayInfoHtml(list, i) {
   const l = list[i]; if (!l) return '';
-  return `<div class="ld-date"><b>${fmtDate(l.date)}</b><span class="small muted">${i + 1} / ${list.length}</span></div>
-    <div class="t3-tags" style="justify-content:center;margin-top:4px"><span class="t-cond" style="background:${COND_COLORS[l.condition] || '#999'}">${esc(COND_LABELS[l.condition] || '—')}</span>${l.areas.map(a => `<span>${esc(areaName(a))}</span>`).join('')}</div>
-    <div class="ld-nums"><span>ニキビ <b>${l.acneCount}</b>個</span><span>赤み <b>${l.redness}</b></span><span>乾燥 <b>${l.dryness}</b></span><span>皮脂 <b>${l.oil}</b></span></div>`;
+  const y = parseYmd(l.date).getFullYear();
+  return `<div class="ld-date"><span class="small muted">${y}年・${i + 1} / ${list.length}</span><b>${fmtMD(l.date)}</b></div>
+    <div class="t3-tags" style="justify-content:center;margin-top:4px"><span class="t-cond" style="background:${COND_COLORS[l.condition] || '#999'}">${esc(COND_LABELS[l.condition] || '—')}</span>${l.areas.map(a => `<span>${esc(areaName(a))}</span>`).join('')}${l.demo ? '<span class="badge-sample">デモ</span>' : ''}</div>`;
 }
-function logDayDotsHtml(list, i) {
-  const from = Math.max(0, Math.min(i - 7, list.length - 15)), arr = list.slice(from, from + 15);
-  return arr.map((l, k) => `<button class="ld-dot ${from + k === i ? 'on' : ''}" data-action="log-day" data-id="${esc(l.date)}" style="background:${COND_COLORS[l.condition] || '#999'}" aria-label="${esc(fmtMD(l.date))}"></button>`).join('');
+// その日の記録の詳しい内容（記録一覧にあった情報を、ここにまとめて表示）
+function logDayDetailHtml(list, i) {
+  const l = list[i]; if (!l) return '';
+  const life = lifeMap()[l.date], photo = safeImg(l.photo);
+  const usedNames = l.usedProducts.map(id => getMy(id)).filter(Boolean).map(p => truncate(p.name, 16));
+  return `<div class="log-grid">
+      <div class="stat"><div class="lbl">ニキビ</div><div class="val">${l.acneCount}<span class="small muted">個</span></div></div>
+      <div class="stat"><div class="lbl">赤み</div><div class="val">${l.redness}</div></div>
+      <div class="stat"><div class="lbl">乾燥</div><div class="val">${l.dryness}</div></div>
+      <div class="stat"><div class="lbl">皮脂</div><div class="val">${l.oil}</div></div>
+    </div>
+    ${l.acneSpots.length ? `<p class="sub-line"><b>ニキビの詳細</b>${l.acneSpots.map(s => esc(`${areaName(s.area)} ${s.count}個（${s.type}・${s.size.replace(/（.*）/, '')}・${s.status}）`)).join('／')}</p>` : ''}
+    ${l.acneTypes.length || l.otherConcerns.length ? `<div class="chips" style="margin-top:10px">${l.acneTypes.map(a => `<span class="chip">${esc(a)}</span>`).join('')}${l.otherConcerns.map(a => `<span class="chip">${esc(a)}</span>`).join('')}</div>` : ''}
+    ${l.usageRecorded ? `<p class="sub-line"><b>使った化粧品</b>${usedNames.length ? esc(usedNames.join('、')) : 'なし'}</p>` : ''}
+    ${life ? `<p class="sub-line"><b>睡眠</b>${esc(fmtHM(sleepMin(life)))}</p>` : ''}
+    ${l.memo ? `<div class="log-memo">${esc(l.memo)}</div>` : ''}
+    ${photo ? `<img class="log-photo" src="${photo}" alt="${esc(l.date)}の肌写真">` : ''}
+    <div class="ld-actions"><button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(l.id)}">編集</button><button class="btn btn-danger-ghost btn-sm" data-action="delete-log" data-id="${esc(l.id)}">削除</button></div>`;
 }
 function logDayCardHtml(logs) {
   const list = logs.slice().reverse(), i = logDayIdx(list);
@@ -3076,16 +3067,15 @@ function logDayCardHtml(logs) {
       <div class="ld-info" id="ld-info">${logDayInfoHtml(list, i)}</div>
       <button class="ld-arrow" data-action="log-day-step" data-id="1" aria-label="次の記録">›</button>
     </div>
-    <div class="ld-dots" id="ld-dots">${logDayDotsHtml(list, i)}</div>
-    <p class="small muted" style="margin:8px 0 0;text-align:center">赤いほど、その部位にニキビや気になる所が多い日です。顔は指でなぞると回せます。</p></div>`;
+    <div class="ld-detail" id="ld-detail">${logDayDetailHtml(list, i)}</div></div>`;
 }
 // 日付を変える（3Dの顔は作り直さず、色だけ塗り替える＝軽い）
 function logDaySet(date) {
   const list = logDayList(); if (!list.length) return;
   ui.logDay = date; const i = logDayIdx(list), l = list[i]; ui.logDay = l.date;
-  const info = document.getElementById('ld-info'), dots = document.getElementById('ld-dots');
+  const info = document.getElementById('ld-info'), det = document.getElementById('ld-detail');
   if (info) { info.innerHTML = logDayInfoHtml(list, i); info.classList.remove('ld-flash'); void info.offsetWidth; info.classList.add('ld-flash'); }
-  if (dots) dots.innerHTML = logDayDotsHtml(list, i);
+  if (det) det.innerHTML = logDayDetailHtml(list, i);
   const st = FACE3D.st; if (st && st.canvasId === 'face3d-log') { const d = logFaceData(l); face3dApply(st, d.counts, d.max, d.mode); }
 }
 function logDayStep(n) { const list = logDayList(); const i = logDayIdx(list) + n; if (i >= 0 && i < list.length) logDaySet(list[i].date); else toast(n < 0 ? 'これより前の記録はありません' : 'これが最新の記録です'); }
@@ -4655,7 +4645,6 @@ const actions = {
     if (save()) { toast('削除しました'); render(); }
   },
   'log-tab': v => { ui.logTab = v; render(); },
-  'log-day': v => logDaySet(v),
   'log-day-step': v => logDayStep(Number(v)),
   'new-my': () => openMyForm(),
   'new-my-from': id => openMyForm(null, id),
