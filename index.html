@@ -176,6 +176,8 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .notice.red{background:var(--danger-s);border-color:#EBCFC7;color:#8A3D2C}
 .notice:last-child{margin-bottom:0}
 .back{display:inline-block;font-size:13px;text-decoration:none;color:var(--muted);margin-bottom:12px}
+.back-btn{background:none;border:0;padding:4px 0;font-family:inherit;cursor:pointer}
+.back:hover{color:var(--ink)}
 .empty{text-align:center;padding:24px 12px}
 .empty .em-icon{width:56px;height:56px;border-radius:50%;background:var(--green-p);color:var(--green);display:inline-flex;align-items:center;justify-content:center;margin-bottom:10px}
 .empty .em-icon svg{width:26px;height:26px}
@@ -4162,6 +4164,7 @@ const actions = {
     if (save()) { toast('削除しました'); render(); }
   },
   'install-app': async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (e) { /* 何もしない */ } installEvt = null; render(); },
+  'go-back': () => { if (appNavCount > 0 && history.length > 1) { appNavCount = Math.max(0, appNavCount - 2); history.back(); } else location.hash = '#/home'; },
   'theme': v => { applyTheme(v); const y = scrollY; render(); scrollTo(0, y); },
   'map-layer': v => { ui.mapLayer = v; const y = scrollY; render(); scrollTo(0, y); },
   'store-more': () => { ui.storeShow += 40; const y = scrollY; render(); scrollTo(0, y); },
@@ -4501,6 +4504,8 @@ function render() {
   let html;
   try { html = (views[r.name] || viewHome)(); }
   catch (err) { console.error(err); html = `<div class="card">${emptyBox('note', '画面の表示中にエラーが発生しました', 'ページを再読み込みしてください。解決しない場合は、設定からバックアップを書き出したうえで「すべて削除」をお試しください。', '<a class="btn btn-primary btn-sm" href="#/settings">設定を開く</a>')}</div>`; }
+  // ホーム以外の画面には、上に「戻る」を付ける（その画面に専用の戻るリンクがある場合は付けない）
+  if (r.name !== 'home' && !/^\s*(<div class="notice[^>]*>.*?<\/div>\s*)?<a class="back"/s.test(html)) html = `<button type="button" class="back back-btn" data-action="go-back">← 戻る</button>` + html;
   $('#main').innerHTML = html;
   renderNav(navName);
   const key = r.name + '/' + r.id;
@@ -4516,6 +4521,8 @@ window.addEventListener('storage', e => {
   if (!$('#modal-root').innerHTML) render();
   toast('別のタブでの変更を反映しました');
 });
+let appNavCount = 0; // このアプリの中で画面を移った回数（「戻る」でアプリの外に出ないため）
+window.addEventListener('hashchange', () => { appNavCount++; });
 window.addEventListener('hashchange', () => { if ($('#modal-root').innerHTML) closeModal(); render(); });
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(drawCharts, 150); });
