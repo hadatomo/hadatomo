@@ -1264,7 +1264,7 @@ function timelineChart(w, o) {
 /* ---------- UI状態（画面の絞り込みなど） ---------- */
 const scanInit = () => ({photo:null, jan:'', name:'', brand:'', ings:'', searched:false, msg:'', janErr:''});
 const ui = {priceRes:{}, priceSet:true, priceVol:true, geoHelp:'', geoConsent:false, visitRange:30, visitPhotos:false, visitNote:'', q:'', brand:'', cat:'', origin:'', ing:false, purpose:'', maxPrice:'', sort:'std', myFilter:'使用中', chartRange:30, reportOffset:0,
-  spendMonth:monthKey(todayStr()), logTab:'list', cmpA:'', cmpB:'', checkCat:'', checkPurpose:'', storeArea:'', storeProduct:'', geo:null, ingQ:'', photoA:'', photoB:'', scan:scanInit(), storeTypes:['chemist','cosmetics'], storeRadius:1000, storeRes:null, storeCands:[], storeBusy:false, storeLast:0, osmConsent:false};
+  spendMonth:monthKey(todayStr()), logTab:'list', cmpA:'', cmpB:'', checkCat:'', checkPurpose:'', storeArea:'', storeProduct:'', geo:null, ingQ:'', photoA:'', photoB:'', scan:scanInit(), storeTypes:['chemist','cosmetics','pharmacy'], storeRadius:1000, storeShow:40, storeRes:null, storeCands:[], storeBusy:false, storeLast:0, osmConsent:false};
 
 /* =========================================================
    画面：ホーム
@@ -1922,6 +1922,10 @@ function storeErrMsg(e) {
   if (e && e.message === 'busy') return '無料の地図データのサーバーが、どれも混み合っています。数分おいてから、もう一度お試しください。急ぎの場合は、下の「地図アプリで探す」をお使いください。';
   return '店舗の情報を取得できませんでした。通信状況を確認するか、下の「地図アプリで探す」をお使いください。';
 }
+function storeTypeCounts(items) {
+  const m = {}; items.forEach(x => { const t = x.type || 'その他'; m[t] = (m[t] || 0) + 1; });
+  return '内訳：' + Object.entries(m).sort((a, b) => b[1] - a[1]).map(([t, n]) => `${esc(t)} ${n}件`).join('／') + '（近い順）';
+}
 function setStoreRes(r) { ui.storeRes = r; ui.storeBusy = r.status === 'loading'; if (parseRoute().name === 'stores') render(); }
 function storeThrottle() {
   if (ui.storeBusy) return false;
@@ -2028,7 +2032,8 @@ async function storeSearchAt(center, chained) {
     others = otherOnly;
   }
   const items = others.concat(pharm).sort((a, b) => a.km - b.km);
-  setStoreRes({status:'done', center, items:items.slice(0, 80), radius:R, source, pharm:pharmOk ? {n:pharm.length, date:pharmIdx && pharmIdx.date} : null, pharmFailed:wantPharm && !pharmOk});
+  ui.storeShow = 40;
+  setStoreRes({status:'done', center, items, radius:R, source, pharm:pharmOk ? {n:pharm.length, date:pharmIdx && pharmIdx.date} : null, pharmFailed:wantPharm && !pharmOk});
 }
 // 地図データの営業時間の書き方（例：Mo-Su 10:00-22:00）を日本語に直す
 function jaHours(h) {
@@ -2066,7 +2071,7 @@ function storeResultsHtml() {
     ${others ? `<p class="small muted" style="margin-bottom:6px">場所が違う場合は、ほかの候補を選んでください：</p><div class="chips" style="margin-bottom:12px">${others}</div>` : ''}
     <iframe class="map-frame" title="検索した場所の周辺地図" src="${esc(src)}" loading="lazy" referrerpolicy="no-referrer"></iframe>
     <p class="small muted" style="margin:4px 0 12px">地図の印は検索の中心です。各店舗の場所は「地図」ボタンで確認できます。距離は検索の中心からの直線距離です。</p>
-    ${R.items.length ? R.items.map((s, i) => shopCard(s, i)).join('') : '<p class="small muted">この範囲では、条件に合う店舗が地図データに見つかりませんでした。範囲を広げるか、下の「地図アプリで探す」をお試しください。</p>'}
+    ${R.items.length ? `<p class="small muted" style="margin-bottom:8px">${storeTypeCounts(R.items)}</p>` + R.items.slice(0, ui.storeShow).map((s, i) => shopCard(s, i)).join('') + (R.items.length > ui.storeShow ? `<button class="btn btn-ghost" style="width:100%;margin-top:10px" data-action="store-more">さらに表示（残り${R.items.length - ui.storeShow}件）</button>` : '') : '<p class="small muted">この範囲では、条件に合う店舗が地図データに見つかりませんでした。範囲を広げるか、下の「地図アプリで探す」をお試しください。</p>'}
     ${R.pharm ? `<p class="small muted" style="margin-top:12px">薬局のデータ：「医療情報ネット」オープンデータ（厚生労働省、${R.pharm.date ? esc(R.pharm.date.replace(/-/g, '/')) + '時点' : ''}）を加工して作成。届出の内容のため、実際と異なる場合があります。</p>` : ''}
     ${R.pharmFailed ? '<p class="small muted" style="margin-top:8px">国の薬局データを読み込めなかったため、薬局は地図データから探しています（一部の薬局が表示されない場合があります）。</p>' : ''}
     <p class="small muted" style="margin-top:12px">${R.source === 'geoapify' ? 'Powered by <a href="https://www.geoapify.com/" target="_blank" rel="noopener noreferrer">Geoapify</a>／' : ''}店舗データ：<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>（ODbL）。閉店・移転している店舗や、登録されていない店舗がある場合があります。</p></div>`;
@@ -2107,7 +2112,7 @@ function geoHelpHtml(kind) {
 }
 function viewStores() {
   const myStores = [];
-  state.catalog.forEach(p => p.offers.filter(o => o.kind === 'store').forEach(o => myStores.push({o, p})));
+  state.catalog.forEach(p => p.offers.filter(o => o.kind === 'store' && !o.isSample).forEach(o => myStores.push({o, p}))); // サンプル（架空）の店舗は出さない
   myStores.sort((a, b) => (a.o.distance == null ? 999 : a.o.distance) - (b.o.distance == null ? 999 : b.o.distance));
   const links = storeLinks(), busy = ui.storeBusy;
   return pageHead('取扱店舗を探す', 'ドラッグストアなど、日本国内でスキンケア商品を買える店舗を、アプリの中で探せます。') +
@@ -2135,7 +2140,7 @@ function viewStores() {
     <div class="card"><div class="card-h"><h2>価格比較に登録した店舗</h2><span class="small muted">${myStores.length}件</span></div>
       ${myStores.length ? myStores.map(({o, p}) => `<div style="padding:10px 0;border-bottom:1px solid var(--line)"><div style="display:flex;justify-content:space-between;gap:8px"><b style="font-size:14px">${esc(o.shop)}</b><span class="small">${o.distance != null ? `${o.distance}km` : ''}</span></div>
         <div class="chips" style="margin-top:4px">${o.isSample ? '<span class="badge-sample">サンプル</span>' : ''}${stockChip(o.stock)}<span class="chip">${esc(o.hours || '営業時間未確認')}</span></div>
-        <a class="small" href="#/prices/${encodeURIComponent(p.id)}">${esc(truncate(p.name, 30))}の価格比較 →</a></div>`).join('') : '<p class="small muted">検索結果の「価格比較に追加」から、店舗を商品の比較表に登録できます。</p>'}
+        <a class="small" href="#/prices/${encodeURIComponent(p.id)}">${esc(truncate(p.name, 30))}の価格比較 →</a></div>`).join('') : '<p class="small muted">まだありません。上の検索結果で「価格比較に追加」を押すと、その店舗を商品の価格比較に登録でき、ここに一覧で表示されます。</p>'}
     </div>${adSlot('stores')}`;
 }
 
@@ -3855,6 +3860,7 @@ const actions = {
     p.offers = p.offers.filter(x => x.id !== oid);
     if (save()) { toast('削除しました'); render(); }
   },
+  'store-more': () => { ui.storeShow += 40; const y = scrollY; render(); scrollTo(0, y); },
   'use-geo': async () => {
     ui.geoHelp = '';
     if (!window.isSecureContext) { ui.geoHelp = 'insecure'; render(); return; }
