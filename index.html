@@ -118,7 +118,7 @@ button{font-family:inherit}
 .wordmark{font-family:var(--serif);font-size:20px;letter-spacing:.24em;color:var(--ink);text-decoration:none;font-weight:500}
 .wordmark small{display:block;font-family:var(--font);font-size:10px;letter-spacing:.08em;color:var(--muted);margin-top:2px}
 main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area-inset-bottom))}
-.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(4,1fr);background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
 .bn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 0 7px;font-size:10.5px;color:var(--muted);text-decoration:none;background:none;border:0;cursor:pointer}
 .bn-item svg{width:23px;height:23px}
 .bn-item.active{color:var(--green-d);font-weight:600}
@@ -169,6 +169,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .btn:focus-visible,.input:focus-visible,.seg input:focus-visible + span{outline:3px solid #BFD6C5;outline-offset:2px}
 .icon-btn{width:40px;height:40px;border-radius:50%;border:0;background:var(--surface2);color:var(--ink2);font-size:20px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none}
 .icon-btn svg{width:20px;height:20px}
+.icon-btn.on{background:var(--green);color:#fff}
 .chip{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:999px;font-size:12px;background:var(--surface2);color:var(--ink2);border:1px solid var(--line);white-space:nowrap;text-decoration:none}
 .chip.green{background:var(--green-s);color:var(--green-d);border-color:transparent}
 .chip.beige{background:var(--beige-s);color:#7A6240;border-color:transparent}
@@ -538,7 +539,18 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 .store-pin.sel b{font-size:13px}
 .meal-block{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface)}
 .meal-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.meal-head label.btn{margin-left:auto}
+.meal-head label.btn{margin-left:0}
+/* 食事の枠：長い食品名でもはみ出さない */
+.meal-block{min-width:0;overflow-wrap:anywhere}
+.meal-block .chip{white-space:normal;max-width:100%;line-height:1.5;padding:3px 10px}
+.meal-block .check{max-width:100%;min-width:0}
+.meal-block .check>span{min-width:0;overflow-wrap:anywhere}
+.meal-block .notice{overflow-wrap:anywhere}
+.photo-prev{flex-wrap:wrap}
+.photo-prev>div{min-width:0;flex:1 1 160px}
+.meal-block .btn{white-space:normal;max-width:100%;text-align:left}
+.meal-block .chip .muted{white-space:nowrap}
+.meal-block .photo-prev img{width:96px;height:96px}
 .food-pick{display:grid;grid-template-columns:minmax(0,1fr) 104px auto;gap:6px;margin-top:8px;align-items:center}
 .food-pick .select,.food-pick .input{min-height:40px;font-size:16px;padding:6px 10px;min-width:0}
 .food-pick .select{padding-right:30px;background-position:right 10px center}
@@ -569,7 +581,7 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
   <div>
     <header class="topbar">
       <a class="wordmark" href="#/home">肌トモ<small>最小限で最大限を</small></a>
-      <button class="icon-btn" id="top-add" data-action="new-log" aria-label="肌を記録する" title="肌を記録する"></button>
+      <button class="icon-btn" id="top-menu" data-action="open-menu" aria-label="メニュー" title="メニュー"></button>
     </header>
     <main id="main" tabindex="-1"></main>
   </div>
@@ -3218,6 +3230,35 @@ function openLogForm(id) {
 
 /* 食事・運動・睡眠フォーム */
 const LIFE_PARTS = {sleep:{t:'睡眠', icon:'moon'}, exercise:{t:'運動', icon:'chart'}, meal:{t:'食事', icon:'note'}};
+// 写真を撮った時刻（"HH:MM"）を調べる：写真の中の撮影日時（Exif）→ なければファイルの日時
+async function photoTime(file) {
+  const hm = d => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  try {
+    const buf = await file.slice(0, 256 * 1024).arrayBuffer(), v = new DataView(buf);
+    if (v.getUint16(0) === 0xFFD8) {
+      let o = 2;
+      while (o + 4 < v.byteLength) {
+        const mk = v.getUint16(o), len = v.getUint16(o + 2);
+        if (mk === 0xFFE1 && v.getUint32(o + 4) === 0x45786966) { // "Exif"
+          const t = o + 10, le = v.getUint16(t) === 0x4949;
+          const u16 = x => v.getUint16(x, le), u32 = x => v.getUint32(x, le);
+          const str = (x, n) => { let r = ''; for (let i = 0; i < n; i++) r += String.fromCharCode(v.getUint8(x + i)); return r; };
+          const readIfd = (ifd, want) => { const n = u16(t + ifd); const out = {}; for (let i = 0; i < n; i++) { const e = t + ifd + 2 + i * 12, tag = u16(e); if (want.includes(tag)) out[tag] = tag === 0x8769 ? u32(e + 8) : str(t + u32(e + 8), 19); } return out; };
+          const i0 = readIfd(u32(t + 4), [0x0132, 0x8769]);
+          const ex = i0[0x8769] ? readIfd(i0[0x8769], [0x9003, 0x9004]) : {};
+          const dt = ex[0x9003] || ex[0x9004] || i0[0x0132];
+          const m = dt && dt.match(/^\d{4}:\d\d:\d\d (\d\d):(\d\d)/);
+          if (m) return `${m[1]}:${m[2]}`;
+          break;
+        }
+        if ((mk & 0xFF00) !== 0xFF00 || mk === 0xFFDA) break;
+        o += 2 + len;
+      }
+    }
+  } catch (e) { /* 読めなければ、ファイルの日時を使う */ }
+  if (file.lastModified) { const d = new Date(file.lastModified); if (Date.now() - d < 3 * 86400000) return hm(d); }
+  return '';
+}
 function openLifeForm(id, part) {
   part = LIFE_PARTS[part] ? part : '';
   const show = k => !part || part === k ? '' : 'hidden';
@@ -3370,7 +3411,12 @@ function openLifeForm(id, part) {
     if (el.dataset.fsel) { $(`[data-fcustom="${el.dataset.fsel}"]`, form).hidden = el.value !== '__custom'; return; }
     if (el.dataset.mphoto) {
       const k = el.dataset.mphoto, file = el.files && el.files[0]; if (!file) return;
-      try { pending[k] = await readImage(file, 480, 0.7); markAte(k); renderPhoto(k); } catch (err) { toast(err.message, 'error'); }
+      try {
+        pending[k] = await readImage(file, 480, 0.7); markAte(k); renderPhoto(k);
+        // 写真を撮った時刻を、食事の時刻に自動で入れる（間食は時刻の欄がないので入れない）
+        const tm = await photoTime(file), te = form.elements['time_' + k];
+        if (tm && te) { te.value = tm; toast(`写真を撮った時刻（${tm}）を入れました`); }
+      } catch (err) { toast(err.message, 'error'); }
       el.value = ''; return;
     }
     if (el.name === 'noEx' && el.checked && exercise.length) { exercise = []; renderExercise(); el.checked = true; }
@@ -4962,8 +5008,8 @@ function renderNav(active) {
   NAV.forEach(n => { if (n.g !== g) { g = n.g; if (g) side += `<div class="sn-group">${esc(g)}</div>`; } side += `<a class="sn-item ${active === n.r ? 'active' : ''}" href="#/${n.r}">${icon(n.icon)}${esc(n.label)}</a>`; });
   $('#side-nav').innerHTML = side;
   const moreActive = !BOTTOM_NAV.includes(active);
-  $('#bottom-nav').innerHTML = BOTTOM_NAV.map(r => NAV.find(n => n.r === r)).map(n => `<a class="bn-item ${active === n.r ? 'active' : ''}" href="#/${n.r}">${icon(n.icon)}<span>${esc(n.r === 'search' ? '商品検索' : n.label)}</span></a>`).join('') +
-    `<button class="bn-item ${moreActive ? 'active' : ''}" data-action="open-menu">${icon('menu')}<span>メニュー</span></button>`;
+  $('#bottom-nav').innerHTML = BOTTOM_NAV.map(r => NAV.find(n => n.r === r)).map(n => `<a class="bn-item ${active === n.r ? 'active' : ''}" href="#/${n.r}">${icon(n.icon)}<span>${esc(n.r === 'search' ? '商品検索' : n.label)}</span></a>`).join('');
+  const tm = document.getElementById('top-menu'); if (tm) tm.classList.toggle('on', moreActive);
 }
 let lastRoute = '';
 // スクロールの勢いが残ったまま別の画面に移ると、iPhoneでは画面が止まったように見えるため、勢いを止めてから一番上に戻す
@@ -5012,7 +5058,7 @@ window.addEventListener('hashchange', () => { appNavCount++; });
 window.addEventListener('hashchange', () => { if ($('#modal-root').innerHTML) closeModal(); render(); });
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(drawCharts, 150); });
-$('#top-add').innerHTML = icon('plus');
+$('#top-menu').innerHTML = icon('menu');
 if (hasSavedLogin()) setTimeout(initCloud, 0); // 以前ログインしていた場合だけ、ログイン状態を確認する
 document.title = `${SERVICE}｜最小限で最大限を`;
 render();
