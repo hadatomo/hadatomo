@@ -376,7 +376,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .face [data-area].on{fill:#C9DFCE;stroke:var(--green)}
 .face text{font-size:11px;fill:#5E574C;pointer-events:none;font-family:var(--font)}
 .face .deco{fill:none;stroke:#B9AE9E;stroke-width:1.4;stroke-linecap:round;pointer-events:none}
-.f3-stage{position:relative;width:100%;max-width:420px;margin:0 auto;aspect-ratio:1/1;border-radius:16px;background:radial-gradient(circle at 50% 40%,var(--surface2),var(--surface));overflow:hidden}
+.f3-stage{position:relative;width:100%;max-width:420px;margin:0 auto;aspect-ratio:1/1;border-radius:16px;background:transparent;overflow:hidden}
 .f3-stage canvas{width:100%;height:100%;display:block;cursor:grab;touch-action:none}
 .f3-stage canvas:active{cursor:grabbing}
 .f3-views{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
@@ -387,15 +387,35 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .life-btns .life-main{grid-column:1 / span 2;grid-row:1}
 .life-btns>:not(.life-main){grid-row:2}
 .life-links{display:inline-flex;gap:10px;margin-left:6px}
+.life-mini{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:12px}
+.life-mini button{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:5px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:12px;padding:7px 9px;font-family:inherit;cursor:pointer;min-width:0}
+.life-mini button svg{width:15px;height:15px;grid-row:1;color:var(--green-d)}
+.life-mini button span{font-size:11.5px;color:var(--muted);grid-row:1}
+.life-mini button b{grid-column:1 / span 2;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.life-mini button.none b{color:var(--muted);font-weight:500}
+.advice{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.advice h3{margin:0 0 4px;font-size:14.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.advice .ai-badge{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--green);color:#fff}
+.advice ol{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+.advice li{display:grid;grid-template-columns:22px 1fr;gap:8px;font-size:13.5px;line-height:1.6}
+.advice li i{font-style:normal;width:22px;height:22px;border-radius:50%;background:var(--surface2);color:var(--green-d);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.advice li b{display:block;font-size:13.5px}
+.advice li span{color:var(--muted);font-size:13px}
+.advice .adv-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px;flex-wrap:wrap}
 .f3-expand{position:absolute;right:8px;top:8px;z-index:2;border:1px solid var(--line2);background:var(--surface);color:var(--ink);border-radius:999px;padding:4px 10px;font-size:13px;font-family:inherit;cursor:pointer;box-shadow:var(--shadow);line-height:1.4}
 .f3-full{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;flex-direction:column}
 .f3-full-head{display:flex;align-items:center;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) 14px 6px}
 .f3-full-stage{position:relative;flex:1;min-height:0;background:radial-gradient(circle at 50% 40%,var(--surface2),var(--bg))}
 .f3-full-stage canvas{width:100%;height:100%;display:block;touch-action:none}
 .t3-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:12px;align-items:center}
-.t3-stage{max-width:none;margin:0}
+.t3-stage{max-width:none;margin:0;background:transparent}
+.f3-tags{position:absolute;left:8px;top:8px;right:52px;z-index:2;display:flex;flex-wrap:wrap;gap:4px;pointer-events:none}
+.f3-tags span{font-size:12px;line-height:1.4;padding:2px 8px;border-radius:999px;background:var(--surface);color:var(--ink);border:1px solid var(--line2);box-shadow:var(--shadow);white-space:nowrap}
+.f3-tags .t-cond{color:#fff;border-color:transparent}
 .t3-side{display:flex;flex-direction:column;gap:6px;min-width:0}
-.t3-side .cond-pill{align-self:flex-start;font-size:12px;padding:2px 10px}
+.t3-tags{display:flex;flex-wrap:wrap;gap:4px}
+.t3-tags span{font-size:12.5px;line-height:1.5;padding:1px 8px;border-radius:999px;background:var(--surface2);color:var(--ink);white-space:nowrap}
+.t3-tags .t-cond{color:#fff}
 .t3-acne{margin:2px 0 4px;font-size:12.5px;color:var(--muted)}
 .t3-acne b{font-size:18px;color:var(--ink);margin:0 2px}
 .t3-m{display:grid;grid-template-columns:2.6em 1fr 1.2em;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
@@ -1440,18 +1460,24 @@ function viewHome() {
     <p class="hero-date">${fmtDate(t)}${streakHtml(map, t)}</p>
     <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${icon('plus')}今日の肌を記録</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('chart')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('note')}食事</button></div></section>`;
 
-  const lifeLine = todayLife ? `<p class="sub-line" style="margin-top:12px"><b>食事・運動・睡眠</b>睡眠 ${esc(fmtHM(sleepMin(todayLife)))}／食事 ${MEALS.filter(m => todayLife.meals[m.k].ate).length}回／運動 ${todayLife.exRecorded ? esc(fmtMin(exTotal(todayLife))) : '記録なし'} <span class="life-links"><a href="#" data-action="life-part" data-id="sleep">睡眠</a><a href="#" data-action="life-part" data-id="exercise">運動</a><a href="#" data-action="life-part" data-id="meal">食事</a></span></p>`
-    : `<p class="sub-line" style="margin-top:12px"><b>食事・運動・睡眠</b>未記録 <span class="life-links"><a href="#" data-action="life-part" data-id="sleep">睡眠</a><a href="#" data-action="life-part" data-id="exercise">運動</a><a href="#" data-action="life-part" data-id="meal">食事</a></span></p>`;
+  // 睡眠・運動・食事：3つを小さな枠に並べてコンパクトに（押すとそれぞれの記録画面）
+  const lf = todayLife;
+  const lifeTiles = [
+    {id:'sleep', ic:'moon', l:'睡眠', v:lf && sleepMin(lf) != null ? fmtHM(sleepMin(lf)).replace('時間0分', '時間') : '未記録'},
+    {id:'exercise', ic:'chart', l:'運動', v:lf && lf.exRecorded ? (exTotal(lf) ? fmtMin(exTotal(lf)) : 'なし') : '未記録'},
+    {id:'meal', ic:'note', l:'食事', v:lf && MEALS.some(m => lf.meals[m.k] && lf.meals[m.k].ate) ? `${MEALS.filter(m => lf.meals[m.k] && lf.meals[m.k].ate).length}回` : '未記録'}
+  ];
+  const lifeLine = `<div class="life-mini" aria-label="今日の睡眠・運動・食事">${lifeTiles.map(x => `<button class="${x.v === '未記録' ? 'none' : ''}" data-action="life-part" data-id="${x.id}">${icon(x.ic)}<span>${x.l}</span><b>${esc(x.v)}</b></button>`).join('')}</div>`;
   // 今日の肌記録：3Dの顔を大きく、記録の数値を横に小さく
   const L = todayLog;
-  const side = L ? `<div class="t3-side">${condPill(L.condition)}<p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
-      ${['赤み','乾燥','皮脂'].map((lab, i) => { const v = [L.redness, L.dryness, L.oil][i]; return `<div class="t3-m"><span>${lab}</span><span class="bar"><i style="width:${v / 5 * 100}%"></i></span><b>${v}</b></div>`; }).join('')}
-      ${L.areas.length ? `<div class="chips" style="margin-top:6px">${L.areas.map(a => `<span class="chip beige">${esc(areaName(a))}</span>`).join('')}</div>` : ''}</div>`
+  const side = L ? `<div class="t3-side"><div class="t3-tags"><span class="t-cond" style="background:${COND_COLORS[L.condition] || '#999'}">（${esc(COND_LABELS[L.condition] || '—')}）</span>${L.areas.map(a => `<span>（${esc(areaName(a))}）</span>`).join('')}</div><p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
+      ${['赤み','乾燥','皮脂'].map((lab, i) => { const v = [L.redness, L.dryness, L.oil][i]; return `<div class="t3-m"><span>${lab}</span><span class="bar"><i style="width:${v / 5 * 100}%"></i></span><b>${v}</b></div>`; }).join('')}</div>`
     : `<div class="t3-side"><p class="small muted" style="margin:0 0 8px">まだ今日の記録がありません。1分ほどで記録できます。</p><button class="btn btn-primary btn-sm" data-action="new-log">${icon('plus')}記録する</button></div>`;
   const todayCard = `<div class="card"><div class="card-h"><h2>今日の肌記録</h2>${L ? `<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(L.id)}">編集</button>` : ''}</div>
       <div class="t3-grid">${side}<div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load">3Dの顔を読み込んでいます…</div></div></div>
-      <p class="small muted" style="margin-top:6px">${DEV.touch ? '顔は指でなぞると、どの向きにも回せます。' : '顔はドラッグすると、どの向きにも回せます。'}${L && (L.acneSpots.length || L.areas.length) ? '赤い部分が、今日記録した部位です。' : ''}</p>
-      ${lifeLine}</div>`;
+      ${L && (L.acneSpots.length || L.areas.length) ? '<p class="small muted" style="margin-top:6px">赤い部分が、今日記録した部位です。</p>' : ''}
+      ${lifeLine}
+      <div class="advice" id="advice-box">${adviceHtml()}</div></div>`;
 
   let activeCard;
   if (active.length) {
@@ -3353,7 +3379,7 @@ function face3dCardHtml() {
   const d = face3dWeeks(8), w = d.weeks[ui.f3Week] || d.weeks[7];
   const first = d.weeks.find(x => x.logs.length), diff = first && first !== w ? AREAS.map(a => ({n:a.name, v:(w.c[a.id] || 0) - (first.c[a.id] || 0)})).filter(x => x.v) : [];
   return `<div class="card"><div class="card-h"><h2>3Dで見る肌の変化</h2><span class="chip">8週間</span></div>
-    <p class="small muted" style="margin-bottom:8px">${d.mode === 'spots' ? '色の濃さと赤い印は、その週に記録したニキビの数（部位ごと）です。' : '色の濃さは、その週に「気になる部位」に選んだ日数です。'}${DEV.touch ? '顔を指でなぞると、どの向きにも回せます。部位をタップすると数が出ます。' : '顔をドラッグすると、どの向きにも回せます。部位をクリックすると数が出ます。'}下のボタンで、横・後ろ・上・下からも見られます。</p>
+    <p class="small muted" style="margin-bottom:8px">${d.mode === 'spots' ? '色の濃さと赤い印は、その週に記録したニキビの数（部位ごと）です。' : '色の濃さは、その週に「気になる部位」に選んだ日数です。'}下のボタンで、横・後ろ・上・下からも見られます。</p>
     <div class="f3-stage"><canvas id="face3d" aria-label="3Dの顔で表示した、部位ごとの記録"></canvas><button class="f3-expand" data-action="f3-full" data-id="charts" aria-label="大きく見る">⤢ 大きく見る</button><div class="f3-tip" id="f3-tip" hidden></div><div class="f3-load" id="f3-load">3Dの顔を読み込んでいます…</div></div>
     <div class="f3-ctrl">
       <button class="btn btn-ghost btn-sm" data-action="f3-step" data-id="-1" aria-label="前の週">◀</button>
@@ -3446,13 +3472,13 @@ function openFace3dFull(src) {
   const box = document.createElement('div'); box.className = 'f3-full'; box.id = 'f3-full';
   box.innerHTML = `<div class="f3-full-head"><b>${src === 'home' ? '今日の肌記録' : '肌の変化（' + esc(($('#f3-label') || {}).textContent || '') + '）'}</b><button class="icon-btn" data-action="f3-full-close" aria-label="閉じる">×</button></div>
     <div class="f3-full-stage"><canvas id="face3d-full" aria-label="3Dの顔（大きく表示）"></canvas><div class="f3-tip" id="f3full-tip" hidden></div><div class="f3-load" id="f3full-load">3Dの顔を読み込んでいます…</div></div>
-    <p class="small muted" style="text-align:center;margin:6px 12px 0">${DEV.touch ? '1本の指で回す／2本の指で広げると拡大' : 'ドラッグで回す／ホイールで拡大・縮小'}。部位を${DEV.tap}すると数が出ます。</p>
+    <p class="small muted" style="text-align:center;margin:6px 12px 0">${DEV.touch ? '1本の指で回す／2本の指で広げると拡大' : 'ドラッグで回す／ホイールで拡大・縮小'}。</p>
     <div class="f3-views" style="padding:8px 12px calc(12px + env(safe-area-inset-bottom))">${[['front','正面'],['right','右から'],['left','左から'],['back','後ろ'],['top','上から'],['bottom','下から']].map(([k, l]) => `<button class="tab" data-action="f3-view" data-id="${k}">${l}</button>`).join('')}<button class="tab" data-action="f3-zoom" data-id="in" aria-label="大きくする">＋</button><button class="tab" data-action="f3-zoom" data-id="out" aria-label="小さくする">－</button></div>`;
   document.body.appendChild(box); lockScroll();
   let data;
   if (src === 'home') { const hd = homeFaceData(); data = {counts:hd.counts, max:hd.max, mode:hd.mode, unit:hd.mode === 'spots' ? '個' : 'flag'}; }
   else { const d = face3dWeeks(8), w = d.weeks[ui.f3Week == null ? 7 : ui.f3Week]; data = {counts:w.c, max:d.max, mode:d.mode, unit:null}; }
-  drawFace3d({canvas:'face3d-full', load:'f3full-load', tip:'f3full-tip', camZ:46, full:true, unit:data.unit, ready:st => { face3dApply(st, data.counts, data.max, data.mode); st.intro = 0; st.yaw = 0; st.user = true; }});
+  drawFace3d({canvas:'face3d-full', load:'f3full-load', tip:'f3full-tip', camZ:46, full:true, auto:false, unit:data.unit, ready:st => { face3dApply(st, data.counts, data.max, data.mode); st.yaw = 0; st.user = true; }});
 }
 function closeFace3dFull() {
   const box = $('#f3-full'); if (!box) return;
@@ -3465,11 +3491,95 @@ function homeFaceData() {
   if (L.acneSpots.length) { const c = areaCounts([L], 'spots'); return {counts:c, max:Math.max(3, ...Object.values(c)), mode:'spots'}; }
   const c = {}; L.areas.forEach(a => c[a] = 1); return {counts:c, max:1.4, mode:'areas'};
 }
+// ---------- 改善ポイント（ホームの「今日の肌記録」の下） ----------
+// 直近7日の記録をまとめる（AIに送るのも、この数値のまとめだけ。メモや写真は送らない）
+function adviceInput() {
+  const t = todayStr(), from = addDays(t, -6), pFrom = addDays(t, -13), pTo = addDays(t, -7);
+  const logs = logsInRange(from, t), prev = logsInRange(pFrom, pTo);
+  const lifes = state.lifeLogs.filter(l => l.date >= from && l.date <= t);
+  const r1 = v => v == null ? null : Math.round(v * 10) / 10;
+  const S = stats(logs), P = stats(prev);
+  const sl = lifes.map(sleepMin).filter(v => v != null);
+  const beds = lifes.filter(l => l.bed).map(l => { const [h, m] = l.bed.split(':').map(Number); return (h < 12 ? h + 24 : h) * 60 + m; });
+  const cnt = (k, v) => lifes.filter(l => l[k] === v).length;
+  const tagC = {}; lifes.forEach(l => (l.tags || []).forEach(x => tagC[x] = (tagC[x] || 0) + 1));
+  const spots = areaCounts(logs, 'spots'), flags = areaCounts(logs, 'areas');
+  const conc = {}; logs.forEach(l => (l.otherConcerns || []).forEach(x => conc[x] = (conc[x] || 0) + 1));
+  const L = logMap()[t];
+  return {
+    skin:{days:logs.length, cond:r1(S.cond), condPrevWeek:r1(P.cond), acneTotal:S.acneTotal, acnePrevWeek:prev.length ? P.acneTotal : null, redness:r1(S.red), dryness:r1(S.dry), oil:r1(S.oil),
+      acneByArea:Object.fromEntries(Object.entries(spots).map(([k, v]) => [areaName(k), v])), concernAreasDays:Object.fromEntries(Object.entries(flags).map(([k, v]) => [areaName(k), v])), otherConcerns:conc,
+      today:L ? {cond:COND_LABELS[L.condition], acne:L.acneCount, redness:L.redness, dryness:L.dryness, oil:L.oil, areas:L.areas.map(areaName)} : null},
+    sleep:{days:sl.length, avgHours:sl.length ? r1(avg(sl) / 60) : null, minHours:sl.length ? r1(Math.min(...sl) / 60) : null, avgBedtime:beds.length ? (() => { const m = Math.round(avg(beds)) % 1440; return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`; })() : null},
+    exercise:{recordedDays:lifes.filter(l => l.exRecorded).length, activeDays:lifes.filter(l => l.exRecorded && exTotal(l) > 0).length, totalMin:lifes.reduce((a, l) => a + (l.exRecorded ? exTotal(l) : 0), 0)},
+    meal:{days:lifes.filter(l => MEALS.some(m => l.meals && l.meals[m.k] && l.meals[m.k].ate)).length, skippedBreakfast:lifes.filter(l => l.meals && l.meals.breakfast && !l.meals.breakfast.ate).length,
+      vegLow:cnt('veg', 'ほぼなし') + cnt('veg', '少し'), proteinLow:cnt('protein', 'ほぼなし'), sweetsMany:cnt('sweets', '多め'), waterLow:cnt('water', '少なめ'), tags:tagC},
+    products:state.myProducts.filter(p => p.status === '使用中').slice(0, 12).map(p => p.category)
+  };
+}
+// 記録から決まったルールで出す改善ポイント（AIが使えないときも、すぐ表示できる）
+function adviceLocal(d) {
+  const out = [], sk = d.skin, sl = d.sleep, ex = d.exercise, ml = d.meal;
+  if (!sk.days && !sl.days && !ex.recordedDays && !ml.days) return [{title:'まずは記録から', text:'肌と、睡眠・運動・食事を数日記録すると、あなたに合った改善ポイントを表示します。'}];
+  const topArea = Object.entries(sk.acneByArea).sort((a, b) => b[1] - a[1])[0];
+  if (topArea && topArea[1] >= 2) out.push({title:`${topArea[0]}のニキビ`, text:`この1週間で${topArea[0]}に${topArea[1]}個。触らない・寝具や髪が当たらないようにし、その部位は油分の多い化粧品を控えめに。`});
+  if (sl.avgHours != null && sl.avgHours < 6.5) out.push({title:'睡眠をあと少し', text:`平均${sl.avgHours}時間でした。肌は眠っている間に整います。まずは30分早く布団に入ることから。`});
+  else if (sl.avgBedtime && /^(1|2|3|4):/.test(sl.avgBedtime)) out.push({title:'寝る時刻を早めに', text:`寝る時刻の平均が${sl.avgBedtime}ごろです。0時までに寝る日を増やしてみましょう。`});
+  if (sk.dryness != null && sk.dryness >= 3.5) out.push({title:'保湿をていねいに', text:`乾燥が平均${sk.dryness}と高めです。洗顔後すぐに化粧水→乳液・クリームでふたを。熱いお湯での洗顔は避けて。`});
+  if (sk.oil != null && sk.oil >= 3.8) out.push({title:'皮脂のケア', text:`皮脂が平均${sk.oil}と多めです。朝晩の洗顔はやさしく1回ずつ。保湿は軽めのものに。`});
+  if (sk.redness != null && sk.redness >= 3.5) out.push({title:'刺激を減らす', text:`赤みが平均${sk.redness}です。こすらない・新しい化粧品は1つずつ試す。続くときは皮膚科に相談を。`});
+  if (ml.vegLow >= 3) out.push({title:'野菜をもう一品', text:`野菜が少ない日が${ml.vegLow}日ありました。みそ汁の具やサラダを1品足すだけでも違います。`});
+  if (ml.sweetsMany >= 2) out.push({title:'甘いものを控えめに', text:`甘いもの・間食が多い日が${ml.sweetsMany}日。飲み物を無糖にするだけでも減らせます。`});
+  if (ml.waterLow >= 2) out.push({title:'水分をこまめに', text:`水分が少ない日が${ml.waterLow}日。コップ1杯の水を、朝・昼・夕方に。`});
+  if ((ml.tags['夜遅い食事'] || 0) >= 2) out.push({title:'夕食は早めに', text:`夜遅い食事が${ml.tags['夜遅い食事']}日。寝る2〜3時間前までに済ませると、眠りも肌も整いやすくなります。`});
+  if (ex.recordedDays >= 3 && ex.activeDays < 3) out.push({title:'体を少し動かす', text:`運動した日は${ex.activeDays}日でした。10分の散歩やストレッチでも血のめぐりが良くなります。`});
+  if (sk.cond != null && sk.condPrevWeek != null && sk.cond - sk.condPrevWeek >= 0.3) out.push({title:'調子が上向き', text:`肌の調子が先週より良くなっています（${sk.condPrevWeek}→${sk.cond}）。今のケアを続けましょう。`});
+  if (!sl.days || !ml.days) out.push({title:'生活の記録も', text:'睡眠や食事も記録すると、肌の変化との関係がわかりやすくなります。'});
+  return out.slice(0, 4);
+}
+const ADVICE_KEY = 'skinwise_advice';
+function adviceCache() { try { return JSON.parse(localStorage.getItem(ADVICE_KEY) || 'null'); } catch (e) { return null; } }
+function adviceSig(d) { const str = todayStr() + JSON.stringify(d); let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) | 0; return String(h); }
+let adviceBusy = false, adviceErr = '';
+function adviceHtml() {
+  const d = adviceInput(), c = adviceCache(), sig = adviceSig(d);
+  const ai = c && c.sig === sig && c.res && c.res.points && c.res.points.length ? c.res : null;
+  const pts = ai ? ai.points : adviceLocal(d);
+  const prem = isPremium();
+  const head = `<h3>改善ポイント${ai ? '<span class="ai-badge">AI分析</span>' : ''}</h3>${ai && ai.summary ? `<p class="small muted" style="margin:0">${esc(ai.summary)}</p>` : ''}`;
+  const list = `<ol>${pts.map((x, i) => `<li><i>${i + 1}</i><div><b>${esc(x.title)}</b><span>${esc(x.text)}</span></div></li>`).join('')}</ol>`;
+  let foot;
+  if (adviceBusy) foot = '<span class="small muted">AIが記録を分析しています…</span>';
+  else if (ai) foot = `<span class="small muted">直近7日の記録をAI（Google Gemini）が分析しました。目安としてご覧ください。</span><button class="btn btn-ghost btn-sm" data-action="advice-ai" data-id="again">もう一度分析</button>`;
+  else if (prem) foot = `<span class="small muted">${adviceErr ? esc(adviceErr) : '直近7日の記録から表示しています。'}</span><button class="btn btn-ghost btn-sm" data-action="advice-ai">AIで分析する</button>`;
+  else foot = `<span class="small muted">直近7日の記録から表示しています。プレミアムでは、AIがあなたの記録を詳しく分析します。</span><a class="link small" href="#/plan">プランを見る →</a>`;
+  return head + list + `<div class="adv-foot">${foot}</div>`;
+}
+function refreshAdvice() { const b = document.getElementById('advice-box'); if (b) b.innerHTML = adviceHtml(); if (isPremium()) runAdvice(false); }
+// プレミアムの人は、記録が変わったときだけ自動でAIに分析してもらう（同じ記録なら前の結果を使う）
+async function runAdvice(force) {
+  if (adviceBusy || !isPremium()) return;
+  const d = adviceInput(), sig = adviceSig(d), c = adviceCache();
+  if (!force && c && (c.sig === sig || (c.failSig === sig))) return;
+  if (!d.skin.days && !d.sleep.days && !d.meal.days && !d.exercise.recordedDays) return;
+  adviceBusy = true; adviceErr = '';
+  const box = () => { const b = document.getElementById('advice-box'); if (b) b.innerHTML = adviceHtml(); };
+  box();
+  try {
+    const r = await callVision('advice', null, d);
+    if (r && r.result && r.result.points && r.result.points.length) { try { localStorage.setItem(ADVICE_KEY, JSON.stringify({sig, at:Date.now(), res:r.result})); } catch (e) { /* 何もしない */ } }
+    else adviceErr = 'AIの分析結果が空でした。';
+  } catch (e) {
+    adviceErr = 'AIの分析ができませんでした（' + String(e.message || e).slice(0, 60) + '）';
+    try { localStorage.setItem(ADVICE_KEY, JSON.stringify(Object.assign(c || {}, {failSig:sig}))); } catch (er) { /* 何もしない */ }
+  }
+  adviceBusy = false; box();
+}
 function face3dApply(st, counts, max, mode) { st.counts = counts; face3dColors(st.geo, counts, max); face3dDots(st, counts, mode); st.dirty = true; }
 async function drawFace3d(opts) {
   opts = Object.assign({canvas:'face3d', load:'f3-load', tip:'f3-tip', ready:st => face3dShowWeek(ui.f3Week == null ? 7 : ui.f3Week)}, opts || {});
   const cv = document.getElementById(opts.canvas);
-  if (FACE3D.st) { FACE3D.st.stop = true; try { FACE3D.st.renderer.dispose(); } catch (e) { /* 何もしない */ } FACE3D.st = null; }
+  if (FACE3D.st) { FACE3D.st.stop = true; if (!FACE3D.st.lost) { FACE3D.st.lost = true; try { FACE3D.st.renderer.dispose(); FACE3D.st.renderer.forceContextLoss(); } catch (e) { /* 何もしない */ } } FACE3D.st = null; }
   if (!cv) return;
   try { await face3dLoad(); } catch (e) { const l = document.getElementById(opts.load); if (l) l.textContent = '3Dの顔を表示できませんでした。電波のよい場所で、ページを読み込み直してください。'; return; }
   if (!document.body.contains(cv)) return;
@@ -3500,7 +3610,7 @@ async function drawFace3d(opts) {
     const inner = new T.Mesh(earGeo, new T.MeshStandardMaterial({color:new T.Color(0.86, 0.66, 0.56).convertSRGBToLinear(), roughness:0.8})); inner.scale.set(0.45, 1.7, 1.0); inner.position.set(sd * 8.55, 0.6, -2.9); inner.rotation.copy(ear.rotation); group.add(inner); });
   group.position.y = 0.4; scene.add(group);
   const st = FACE3D.st = {renderer, scene, cam, geo, group, face, dots:[], dotGeo:new T.SphereGeometry(0.28, 12, 10), dotMat:new T.MeshStandardMaterial({color:0xC0392B, roughness:0.45}),
-    yaw:-1.2, pitch:0.05, dirty:true, stop:false, drag:null, idle:0, counts:{}, intro:70, tip:opts.tip, unit:opts.unit || null};
+    yaw:0, pitch:0.05, phase:0, auto:opts.auto !== false, dirty:true, stop:false, drag:null, idle:0, counts:{}, tip:opts.tip, unit:opts.unit || null};
   opts.ready(st);
   const l = document.getElementById(opts.load); if (l) l.hidden = true;
   // 回す操作（指・マウス）
@@ -3514,7 +3624,7 @@ async function drawFace3d(opts) {
   const pts = new Map(); let pinch = null;
   const minZ = opts.full ? 20 : 34, maxZ = opts.full ? 90 : 84;
   cv.addEventListener('pointerdown', e => {
-    pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); st.intro = 0; st.target = null;
+    pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); st.target = null; st.user = true; st.idle = 0;
     if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = {d:Math.hypot(a.x - b.x, a.y - b.y), z:st.zoomT || cam.position.z}; st.drag = null; return; }
     st.drag = {x:e.clientX, y:e.clientY, yaw:st.yaw, pitch:st.pitch, moved:false}; cv.setPointerCapture(e.pointerId);
   });
@@ -3531,18 +3641,22 @@ async function drawFace3d(opts) {
     st.yaw = st.drag.yaw + dx * 0.012; if (!st.yawOnly) st.pitch = clamp(st.drag.pitch + dy * 0.01, -1.35, 1.35); st.idle = 0; st.user = true; st.target = null; st.dirty = true;
   });
   const up = e => {
-    if (st.drag && !st.drag.moved) face3dPick(e);
     st.drag = null;
   };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', () => { st.drag = null; });
   const loop = () => {
-    if (st.stop || !document.body.contains(cv)) { st.stop = true; if (st.io) st.io.disconnect(); try { renderer.dispose(); } catch (e) { /* 何もしない */ } return; }
+    if (st.stop || !document.body.contains(cv)) { st.stop = true; if (st.io) st.io.disconnect(); if (!st.lost) { st.lost = true; try { renderer.dispose(); renderer.forceContextLoss(); } catch (e) { /* 何もしない */ } } return; }
     if (!st.visible || document.hidden) { requestAnimationFrame(loop); return; }
     st.idle++;
-    if (st.intro > 0 && !st.drag) { st.intro--; const k = 1 - st.intro / 70; st.yaw = -1.2 + (0.85 * (1 - Math.pow(1 - k, 3))); st.dirty = true; } // 最初に横から正面へ回って見せる
+    // 最初からゆっくり左右に回って、両方の頬が見えるようにする（触っている間は止まり、離して少しすると再開）
+    if (st.auto && !st.drag && !st.target && pts.size === 0 && st.idle > (st.user ? 150 : 0)) {
+      if (Math.abs(st.yaw) > Math.PI) st.yaw = ((st.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; // 何周も回したあとは、近い向きに戻す
+      st.phase += 0.0075; const want = Math.sin(st.phase) * 0.95;
+      st.yaw += (want - st.yaw) * (st.user ? 0.03 : 0.12); st.pitch += (0.05 - st.pitch) * 0.03;
+      if (st.idle % (DEV.touch ? 2 : 1) === 0) st.dirty = true; // スマホでは描く回数を半分にして軽くする
+    }
     if (st.target && !st.drag) { st.yaw += (st.target.yaw - st.yaw) * 0.14; st.pitch += (st.target.pitch - st.pitch) * 0.14; if (Math.abs(st.target.yaw - st.yaw) < 0.002 && Math.abs(st.target.pitch - st.pitch) < 0.002) st.target = null; st.dirty = true; } // ボタンで選んだ向きへ回る
     if (st.zoomT && Math.abs(st.zoomT - cam.position.z) > 0.05) { cam.position.z += (st.zoomT - cam.position.z) * 0.18; st.dirty = true; }
-    if (!st.drag && !st.user && !st.target && st.idle > 180 && st.idle % 2 === 0 && !DEV.touch) { st.yaw = Math.sin(st.idle / 160) * 0.45; st.dirty = true; } // パソコンでは、触る前にゆっくり左右に揺れる（スマホは動かさない）
     if (st.dirty) { group.rotation.y = st.yaw; group.rotation.x = st.pitch; renderer.render(scene, cam); st.dirty = false; }
     requestAnimationFrame(loop);
   };
@@ -3872,7 +3986,7 @@ function loadScript(src) {
   return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = true; el.onload = res; el.onerror = () => rej(new Error('load')); document.head.appendChild(el); });
 }
 function hasSavedLogin() { try { return !!localStorage.getItem(CLOUD.storageKey); } catch (e) { return false; } }
-function rerenderAcct() { const n = parseRoute().name; if (n === 'plan' || n === 'settings') render(); }
+function rerenderAcct() { const n = parseRoute().name; if (n === 'plan' || n === 'settings') render(); else if (n === 'home') refreshAdvice(); }
 async function initCloud() {
   if (acct.status === 'loading' || acct.status === 'ready') return;
   acct.status = 'loading'; rerenderAcct();
@@ -3904,10 +4018,10 @@ function isPremium() {
   return !!(acct.user && s && ['active','trialing'].includes(s.status) && (!s.current_period_end || new Date(s.current_period_end) > new Date()));
 }
 // 写真読み取り（プレミアム）：写真をサーバーの関数「vision」に送り、AIの推定結果を受け取る
-async function callVision(mode, image) {
+async function callVision(mode, image, payload) {
   if (!acct.client) await initCloud();
   if (!acct.client || !acct.user) throw new Error('ログインしてからお使いください。');
-  const {data, error} = await acct.client.functions.invoke('vision', {body:{mode, image}});
+  const {data, error} = await acct.client.functions.invoke('vision', {body:mode === 'advice' ? {mode, data:payload} : {mode, image}});
   if (error) {
     let msg = 'サーバーに接続できませんでした。時間をおいてお試しください。';
     try { const j = await error.context.json(); if (j && j.error) msg = j.error; } catch (e) { /* 何もしない */ }
@@ -4448,8 +4562,9 @@ const actions = {
     const st = FACE3D.st; if (!st) return;
     const P = Math.PI, base = Math.round(st.yaw / (2 * P)) * 2 * P; // 今の向きから近い回り方で回る
     const t = {front:[0, 0], right:[P / 2, 0], left:[-P / 2, 0], back:[P, 0], top:[0, 1.25], bottom:[0, -1.0]}[v]; if (!t) return;
-    st.user = true; st.intro = 0; st.target = {yaw:base + t[0], pitch:t[1]}; st.dirty = true;
+    st.user = true; st.auto = false; st.target = {yaw:base + t[0], pitch:t[1]}; st.dirty = true;
   },
+  'advice-ai': () => runAdvice(true),
   'f3-zoom': v => { const st = FACE3D.st; if (!st) return; st.zoomT = clamp((st.zoomT || st.cam.position.z) + (v === 'in' ? -8 : 8), st.minZ || 34, st.maxZ || 84); st.dirty = true; },
   'f3-full': v => openFace3dFull(v),
   'f3-full-close': () => closeFace3dFull(),
@@ -4786,6 +4901,12 @@ function renderNav(active) {
     `<button class="bn-item ${moreActive ? 'active' : ''}" data-action="open-menu">${icon('menu')}<span>メニュー</span></button>`;
 }
 let lastRoute = '';
+// スクロールの勢いが残ったまま別の画面に移ると、iPhoneでは画面が止まったように見えるため、勢いを止めてから一番上に戻す
+function stopMomentumTop() {
+  const de = document.documentElement;
+  de.style.overflow = 'hidden'; window.scrollTo(0, 0);
+  requestAnimationFrame(() => { de.style.overflow = ''; window.scrollTo(0, 0); });
+}
 function render() {
   const r = parseRoute();
   const views = {home:viewHome, search:viewSearch, product:() => viewProduct(r.id), prices:() => viewPrices(r.id), stores:viewStores,
@@ -4806,11 +4927,11 @@ function render() {
   $('#main').innerHTML = html;
   renderNav(navName);
   const key = r.name + '/' + r.id;
-  if (key !== lastRoute) { window.scrollTo(0, 0); lastRoute = key; }
+  if (key !== lastRoute) { stopMomentumTop(); lastRoute = key; }
   drawCharts();
   fillAds();
   if (r.name === 'charts') drawFace3d();
-  else if (r.name === 'home' && document.getElementById('face3d-home')) { const hd = homeFaceData(); drawFace3d({canvas:'face3d-home', load:'t3-load', tip:'t3-tip', camZ:55, yawOnly:true, unit:hd.mode === 'spots' ? '個' : 'flag', ready:st => face3dApply(st, hd.counts, hd.max, hd.mode)}); }
+  else if (r.name === 'home' && document.getElementById('face3d-home')) { const hd = homeFaceData(); drawFace3d({canvas:'face3d-home', load:'t3-load', tip:'t3-tip', camZ:55, yawOnly:true, unit:hd.mode === 'spots' ? '個' : 'flag', ready:st => face3dApply(st, hd.counts, hd.max, hd.mode)}); if (isPremium()) runAdvice(false); }
   else if (FACE3D.st) { FACE3D.st.stop = true; FACE3D.st = null; }
   if (r.name === 'stores') drawStoreMap(); else if (storeMap) { try { storeMap.remove(); } catch (e) {} storeMap = null; }
 }
