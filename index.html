@@ -370,6 +370,10 @@ details.fold[open] summary{margin-bottom:10px}
 .store-pin b{transform:rotate(45deg);color:#fff;font-size:11px;font-weight:700;font-family:var(--font)}
 .leaflet-popup-content{font-family:var(--font);font-size:13px;line-height:1.5;margin:10px 12px}
 .leaflet-popup-content a{color:var(--green-d)}
+.offer.shop-card{cursor:pointer;transition:background .2s,box-shadow .2s,border-color .2s}
+.offer.shop-card.selected{background:#FFF8E6;border-color:#E2B23A;box-shadow:0 0 0 3px rgba(226,178,58,.35)}
+.store-pin.sel{width:34px;height:34px;box-shadow:0 0 0 4px rgba(226,178,58,.6),0 2px 6px rgba(0,0,0,.4)}
+.store-pin.sel b{font-size:13px}
 .meal-block{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface)}
 .meal-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .meal-head label.btn{margin-left:auto}
@@ -2040,7 +2044,7 @@ async function storeSearchAt(center, chained) {
     others = otherOnly;
   }
   const items = others.concat(pharm).sort((a, b) => a.km - b.km);
-  ui.storeShow = 40;
+  ui.storeShow = 40; ui.storeSel = null;
   setStoreRes({status:'done', center, items, radius:R, source, pharm:pharmOk ? {n:pharm.length, date:pharmIdx && pharmIdx.date} : null, pharmFailed:wantPharm && !pharmOk});
 }
 // 地図データの営業時間の書き方（例：Mo-Su 10:00-22:00）を日本語に直す
@@ -2055,7 +2059,7 @@ function jaHours(h) {
 }
 function shopCard(s, i) {
   const tel = s.phone.replace(/[^\d+\-]/g, '');
-  return `<div class="offer" id="shop-${i}"><div class="offer-top"><div><div class="offer-name"><span class="chip" style="background:${PIN_COLORS[s.type] || PIN_COLORS['その他']};color:#fff;margin-right:6px">${i + 1}</span>${esc(s.name)}</div>
+  return `<div class="offer shop-card ${ui.storeSel === i ? 'selected' : ''}" id="shop-${i}" data-shop="${i}" title="押すと地図で場所を表示します"><div class="offer-top"><div><div class="offer-name"><span class="chip" style="background:${PIN_COLORS[s.type] || PIN_COLORS['その他']};color:#fff;margin-right:6px">${i + 1}</span>${esc(s.name)}</div>
       <div class="chips" style="margin-top:4px"><span class="chip">${esc(s.type)}</span>${s.brand ? `<span class="chip beige">${esc(s.brand)}</span>` : ''}${stockChip('未確認')}</div></div>
       <div class="offer-total" style="font-size:16px">${esc(fmtDist(s.km))}</div></div>
     <div class="offer-grid" style="grid-template-columns:1fr"><div><span>${s.src === 'mhlw' ? '営業時間（医療情報ネットへの届出内容）' : '営業時間（地図データの登録内容・未確認）'}</span>${esc(jaHours(s.hours) || '登録なし')}</div><div><span>住所</span>${esc(s.address || '登録なし')}${s.approx ? '<div class="small muted">※位置は住所から推定しています</div>' : ''}</div>${s.phone ? `<div><span>電話</span>${esc(s.phone)}</div>` : ''}</div>
@@ -2068,7 +2072,7 @@ const GSI_TILES = {
   std:  {url:'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', max:18}, // 淡色地図（印が見やすい）
   photo:{url:'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', max:18}
 };
-let leafletLoading = null, storeMap = null;
+let leafletLoading = null, storeMap = null, storeMarkers = [];
 function loadLeaflet() {
   if (window.L) return Promise.resolve();
   if (leafletLoading) return leafletLoading;
@@ -2079,6 +2083,25 @@ function loadLeaflet() {
     document.head.appendChild(js);
   });
   return leafletLoading;
+}
+function pinIcon(s, i, sel) {
+  const color = PIN_COLORS[s.type] || PIN_COLORS['その他'], n = sel ? 34 : 26;
+  return window.L.divIcon({className:'', html:`<div class="store-pin ${sel ? 'sel' : ''}" style="background:${color}"><b>${i + 1}</b></div>`, iconSize:[n, n], iconAnchor:[n / 2, n], popupAnchor:[0, -n + 2]});
+}
+// 店舗を選ぶ：一覧の欄を明るくし、地図の印を大きくしてその場所を表示する
+function selectShop(i, fromList) {
+  const R = ui.storeRes; if (!R || !R.items[i]) return;
+  const prev = ui.storeSel; ui.storeSel = i;
+  $$('.shop-card.selected').forEach(x => x.classList.remove('selected'));
+  const card = document.getElementById('shop-' + i); if (card) card.classList.add('selected');
+  if (storeMap && window.L) {
+    const s = R.items[i];
+    if (prev != null && prev !== i && storeMarkers[prev]) { storeMarkers[prev].setIcon(pinIcon(R.items[prev], prev, false)); storeMarkers[prev].setZIndexOffset(0); }
+    if (storeMarkers[i]) { storeMarkers[i].setIcon(pinIcon(s, i, true)); storeMarkers[i].setZIndexOffset(1000); }
+    if (fromList) { storeMap.setView([s.lat, s.lng], Math.max(storeMap.getZoom(), 17), {animate:true}); setTimeout(() => storeMarkers[i] && storeMarkers[i].openPopup(), 350); }
+  }
+  if (fromList) { const mp = document.getElementById('store-map'); if (mp) mp.scrollIntoView({behavior:'smooth', block:'center'}); }
+  else if (card) card.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 async function drawStoreMap() {
   const el = document.getElementById('store-map'), R = ui.storeRes;
@@ -2094,13 +2117,16 @@ async function drawStoreMap() {
   L.circle([c.lat, c.lng], {radius:R.radius, color:'#2B6CB0', weight:1, fillOpacity:0.04}).addTo(map);
   L.circleMarker([c.lat, c.lng], {radius:7, color:'#fff', weight:2, fillColor:'#2B6CB0', fillOpacity:1}).addTo(map).bindPopup(esc(c.label) + '（検索の中心）');
   const shown = R.items.slice(0, ui.storeShow);
+  storeMarkers = [];
   shown.forEach((s, i) => {
-    const color = PIN_COLORS[s.type] || PIN_COLORS['その他'];
-    const icon = L.divIcon({className:'', html:`<div class="store-pin" style="background:${color}"><b>${i + 1}</b></div>`, iconSize:[26, 26], iconAnchor:[13, 26], popupAnchor:[0, -24]});
-    L.marker([s.lat, s.lng], {icon, title:s.name}).addTo(map).bindPopup(`<b>${i + 1}. ${esc(s.name)}</b><br>${esc(s.type)}・${esc(fmtDist(s.km))}<br><a href="https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}" target="_blank" rel="noopener">Googleマップで開く</a>　<a href="#shop-${i}" data-jump="shop-${i}">一覧で見る</a>`);
+    const mk = L.marker([s.lat, s.lng], {icon:pinIcon(s, i, ui.storeSel === i), title:s.name, zIndexOffset:ui.storeSel === i ? 1000 : 0}).addTo(map);
+    storeMarkers[i] = mk;
+    mk.on('click', () => selectShop(i, false));
+    mk.bindPopup(`<b>${i + 1}. ${esc(s.name)}</b><br>${esc(s.type)}・${esc(fmtDist(s.km))}<br><a href="https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}" target="_blank" rel="noopener">Googleマップで開く</a>　<a href="#shop-${i}" data-jump="shop-${i}">一覧で見る</a>`);
   });
   const b = L.latLng(c.lat, c.lng).toBounds(R.radius * 2.1);
   map.fitBounds(b);
+  if (ui.storeSel != null && storeMarkers[ui.storeSel]) { const s = shown[ui.storeSel]; map.setView([s.lat, s.lng], Math.max(map.getZoom(), 16)); storeMarkers[ui.storeSel].openPopup(); }
   el.addEventListener('click', e => { const a = e.target.closest('[data-jump]'); if (a) { e.preventDefault(); const t = document.getElementById(a.dataset.jump); if (t) t.scrollIntoView({behavior:'smooth', block:'center'}); } });
 }
 function storeResultsHtml() {
@@ -2121,7 +2147,7 @@ function storeResultsHtml() {
     <div class="map-tabs"><button class="tab ${ui.mapLayer !== 'photo' ? 'active' : ''}" data-action="map-layer" data-id="std">地図</button><button class="tab ${ui.mapLayer === 'photo' ? 'active' : ''}" data-action="map-layer" data-id="photo">航空写真</button></div>
     <div id="store-map" class="store-map" role="region" aria-label="検索した場所の周辺地図"><noscript><iframe class="map-frame" title="周辺地図" src="${esc(src)}"></iframe></noscript></div>
     <div class="map-legend">${Object.entries(PIN_COLORS).filter(([t]) => R.items.some(x => (x.type || 'その他') === t)).map(([t, c]) => `<span><i style="background:${c}"></i>${esc(t)}</span>`).join('')}<span><i style="background:#2B6CB0"></i>検索の中心</span></div>
-    <p class="small muted" style="margin:4px 0 12px">印を押すと、店名と距離が出ます。番号は下の一覧の順番です（近い順）。地図：国土地理院。距離は検索の中心からの直線距離です。</p>
+    <p class="small muted" style="margin:4px 0 12px">印を押すと、店名と距離が出ます。番号は下の一覧の順番です（近い順）。一覧のお店を押すと、地図がそのお店の場所に移動します。地図：国土地理院。距離は検索の中心からの直線距離です。</p>
     ${R.items.length ? `<p class="small muted" style="margin-bottom:8px">${storeTypeCounts(R.items)}</p>` + R.items.slice(0, ui.storeShow).map((s, i) => shopCard(s, i)).join('') + (R.items.length > ui.storeShow ? `<button class="btn btn-ghost" style="width:100%;margin-top:10px" data-action="store-more">さらに表示（残り${R.items.length - ui.storeShow}件）</button>` : '') : '<p class="small muted">この範囲では、条件に合う店舗が地図データに見つかりませんでした。範囲を広げるか、下の「地図アプリで探す」をお試しください。</p>'}
     ${R.pharm ? `<p class="small muted" style="margin-top:12px">薬局のデータ：「医療情報ネット」オープンデータ（厚生労働省、${R.pharm.date ? esc(R.pharm.date.replace(/-/g, '/')) + '時点' : ''}）を加工して作成。届出の内容のため、実際と異なる場合があります。</p>` : ''}
     ${R.pharmFailed ? '<p class="small muted" style="margin-top:8px">国の薬局データを読み込めなかったため、薬局は地図データから探しています（一部の薬局が表示されない場合があります）。</p>' : ''}
@@ -4161,6 +4187,8 @@ const actions = {
   }
 };
 document.addEventListener('click', e => {
+  const card = e.target.closest('[data-shop]');
+  if (card && !e.target.closest('a,button,input,select,label')) { selectShop(Number(card.dataset.shop), true); return; }
   const el = e.target.closest('[data-action]');
   if (!el) return;
   const fn = actions[el.dataset.action];
