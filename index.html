@@ -2100,11 +2100,24 @@ function openStoreAddForm(i) {
 }
 function geoHelpHtml(kind) {
   const ios = /iPhone|iPad|iPod/.test(navigator.userAgent), mac = /Macintosh/.test(navigator.userAgent) && !ios;
-  if (kind === 'denied') return `<div class="notice warn" style="margin:10px 0 0"><b>位置情報の利用が許可されていません。</b>次の手順でオンにしてから、もう一度ボタンを押してください。<ol style="margin:8px 0 0;padding-left:20px">
-    ${ios ? '<li>iPhoneの「設定」→「プライバシーとセキュリティ」→「位置情報サービス」をオンにする</li><li>同じ画面の「Safari Webサイト」→「このAppの使用中」を選ぶ</li><li>Safariに戻り、アドレスバーの「ぁあ」（または「AA」）→「Webサイトの設定」→「位置情報」→「許可」にする</li>'
-      : mac ? '<li>Macの「システム設定」→「プライバシーとセキュリティ」→「位置情報サービス」で、使っているブラウザ（SafariやChrome）をオンにする</li><li>ブラウザのアドレスバー左側のマーク（またはサイトの設定）から、このサイトの「位置情報」を「許可」にする</li><li>ページを再読み込みする</li>'
-      : '<li>端末の設定で、位置情報をオンにする</li><li>ブラウザのアドレスバー左側のマーク（またはサイトの設定）から、このサイトの「位置情報」を「許可」にする</li><li>ページを再読み込みする</li>'}</ol>
-    <p class="small" style="margin-top:6px">位置情報を使いたくない場合は、下の欄に駅名・地名・住所を入力して探せます。</p></div>`;
+  const ua = navigator.userAgent, chrome = /Chrome|CriOS|Edg/.test(ua), safari = /Safari/.test(ua) && !chrome;
+  const retry = '<button class="btn btn-primary btn-sm" data-action="use-geo" style="margin-top:10px">設定を変えたので、もう一度試す</button>';
+  const alt = '<p class="small" style="margin-top:8px">位置情報を使いたくない場合は、下の欄に駅名・地名・住所を入力して探せます。</p>';
+  if (kind === 'blocked-site' || kind === 'denied') {
+    const steps = ios ? (chrome ? '<li>Chromeの右下「…」→「設定」→「プライバシーとセキュリティ」→「サイトの設定」→「位置情報」で、このサイトを「許可」にする</li><li>iPhoneの「設定」→「アプリ」→「Chrome」→「位置情報」を「このAppの使用中」にする</li>'
+        : '<li>Safariのアドレスバーの「ぁあ」（または「AA」）を押す</li><li>「Webサイトの設定」→「位置情報」を<b>「確認」か「許可」</b>にする</li><li>それでも出ない場合：iPhoneの「設定」→「プライバシーとセキュリティ」→「位置情報サービス」→「Safari Webサイト」を「このAppの使用中」にする</li>')
+      : safari ? '<li>画面の一番上のメニューの「Safari」→「設定…」を開く</li><li>「Webサイト」タブ →左の「位置情報」を選ぶ</li><li>右の一覧の <b>hadatomo.github.io</b> を<b>「確認」か「許可」</b>にする</li>'
+      : chrome ? '<li>アドレスバーの左にある<b>調整マーク（つまみのアイコン）</b>を押す</li><li>「位置情報」のスイッチを<b>オン</b>にする（見つからなければ「サイトの設定」→「位置情報」→「許可」）</li>'
+      : '<li>アドレスバーの左のマーク（またはサイトの設定）から、このサイトの「位置情報」を「許可」にする</li>';
+    return `<div class="notice warn" style="margin:10px 0 0"><b>このサイトの位置情報が「許可しない」になっています。</b><br>一度「許可しない」を選ぶと、ブラウザの決まりで、アプリからもう一度たずねることができません。次の手順で許可してください（1分ほどでできます）。<ol style="margin:8px 0 0;padding-left:20px">${steps}</ol>${retry}${alt}</div>`;
+  }
+  if (kind === 'blocked-os') {
+    const steps = ios ? '<li>iPhoneの「設定」→「プライバシーとセキュリティ」→「位置情報サービス」を<b>オン</b>にする</li><li>同じ画面で、使っているブラウザ（「Safari Webサイト」やChrome）を「このAppの使用中」にする</li>'
+      : mac ? `<li>画面左上のりんごマーク →「システム設定」を開く</li><li>「プライバシーとセキュリティ」→「位置情報サービス」を開く</li><li>一番上の「位置情報サービス」と、その下の一覧の<b>${safari ? 'Safari' : chrome ? 'Google Chrome' : '使っているブラウザ'}</b>を<b>オン</b>にする</li><li>ブラウザをいったん終了して開き直す</li>`
+      : '<li>端末の設定で、位置情報サービスをオンにし、使っているブラウザに位置情報を許可する</li>';
+    return `<div class="notice warn" style="margin:10px 0 0"><b>${mac ? 'Mac' : ios ? 'iPhone' : '端末'}の設定で、ブラウザの位置情報がオフになっています。</b><ol style="margin:8px 0 0;padding-left:20px">${steps}</ol>${retry}${alt}</div>`;
+  }
+  if (kind === 'blocked-os-maybe') return geoHelpHtml('blocked-os').replace('ブラウザの位置情報がオフになっています。', 'ブラウザの位置情報がオフになっている可能性があります（屋内や地下では、現在地を取れないこともあります）。');
   if (kind === 'unavailable') return '<div class="notice warn" style="margin:10px 0 0">現在地を特定できませんでした。屋内や地下では取得しにくいことがあります。少し場所を変えてもう一度試すか、下の欄に駅名・地名を入力してください。</div>';
   if (kind === 'timeout') return '<div class="notice warn" style="margin:10px 0 0">現在地の取得に時間がかかっています。もう一度ボタンを押すか、下の欄に駅名・地名を入力してください。</div>';
   if (kind === 'insecure') return '<div class="notice warn" style="margin:10px 0 0">ファイルを直接開いている場合は、位置情報を使えません。公開しているURL（https://hadatomo.github.io/hadatomo/）から開いてください。</div>';
@@ -3907,14 +3920,19 @@ const actions = {
     if (ui.storeBusy) return;
     if (!ui.geoConsent && !await confirmDialog('現在地の近くの店舗を探しますか？\n・現在地は、店舗を探すためだけに店舗検索サービス（Geoapify）に送られます\n・現在地はアプリに保存しません（この画面を離れると破棄します）\n・このあと、ブラウザから位置情報の利用の許可を求められます', {ok:'現在地を使う', danger:false, title:'位置情報の利用'})) return;
     ui.geoConsent = true; ui.osmConsent = true;
-    setStoreRes({status:'loading', note:'現在地を確認しています…'});
+    // ブラウザの許可の状態を確かめる（「許可しない」になっていると、ブラウザはもうたずねてくれない）
+    let perm = null;
+    try { perm = navigator.permissions ? await navigator.permissions.query({name:'geolocation'}) : null; } catch (e) { perm = null; }
+    if (perm && !ui.geoWatch) { ui.geoWatch = true; perm.onchange = () => { if (perm.state !== 'denied' && ui.geoHelp && parseRoute().name === 'stores') { ui.geoHelp = ''; actions['use-geo'](); } }; }
+    if (perm && perm.state === 'denied') { ui.geoHelp = 'blocked-site'; render(); return; }
+    setStoreRes({status:'loading', note:perm && perm.state === 'prompt' ? 'ブラウザに「位置情報の利用を許可しますか？」と表示されたら、「許可」を押してください…' : '現在地を確認しています…'});
     navigator.geolocation.getCurrentPosition(pos => {
       ui.geo = {lat:pos.coords.latitude.toFixed(4), lng:pos.coords.longitude.toFixed(4)};
       ui.storeCands = []; ui.storeLast = 0;
       storeSearchAt({lat:pos.coords.latitude, lng:pos.coords.longitude, label:'現在地'}, true);
     }, err => {
       ui.storeRes = null; ui.storeBusy = false;
-      ui.geoHelp = err && err.code === 1 ? 'denied' : err && err.code === 3 ? 'timeout' : 'unavailable';
+      ui.geoHelp = err && err.code === 1 ? (perm && perm.state === 'denied' ? 'blocked-site' : (perm && perm.state === 'granted' ? 'blocked-os' : 'blocked-site')) : err && err.code === 3 ? 'timeout' : (/Macintosh|iPhone|iPad/.test(navigator.userAgent) ? 'blocked-os-maybe' : 'unavailable');
       render();
     }, {enableHighAccuracy:false, timeout:15000, maximumAge:60000});
   },
