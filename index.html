@@ -509,7 +509,23 @@ label.btn{position:relative}
 .acc-toggle{width:100%;border:0;background:none;font-family:inherit;text-align:left;cursor:pointer}
 .acc-toggle i{transition:transform .25s ease}
 .acc-toggle[aria-expanded="true"] i{transform:rotate(90deg)}
+.acc-sec{padding:0;overflow:hidden;margin-bottom:12px}
+.acc-sec .acc-row{padding:16px 18px}
 .acc-panel{padding:0 16px 16px;border-top:1px solid var(--line)}
+/* 枠の中の小さなカードは、線で区切るだけにする */
+.acc-panel .card{box-shadow:none;border:0;border-bottom:1px solid var(--line);border-radius:0;padding:16px 2px;margin:0;background:transparent}
+.acc-panel .card:last-child{border-bottom:0}
+.acc-panel .notice{margin:14px 0 0}
+.set-sub{padding:12px 0;border-top:1px dashed var(--line)}
+.set-sub:first-of-type{border-top:0;padding-top:4px}
+.set-sub h3{font-size:13.5px;margin:0 0 8px;color:var(--ink2)}
+.set-sub details.fold{margin-top:8px!important}
+.acc-panel details.set-fold{border:0;padding:0;background:transparent}
+details.set-fold>summary{font-size:16px;font-weight:700;color:var(--ink);list-style:none;display:flex;justify-content:space-between;align-items:center}
+details.set-fold>summary::-webkit-details-marker{display:none}
+details.set-fold>summary::after{content:'›';font-size:18px;color:var(--muted);transition:transform .25s ease}
+details.set-fold[open]>summary::after{transform:rotate(90deg)}
+details.acc-cmp{margin-top:14px}
 .acc-panel .mb-card .card-h{margin-top:14px}
 .acc-panel.open{animation:itemIn .35s ease both}
 /* ===== 動き（モーション） ===== */
@@ -1490,6 +1506,7 @@ function confirmDialog(msg, {ok='削除する', danger=true, title='確認'} = {
   });
 }
 function pageHead(title, desc, actions='') {
+  if (EMBED) return actions ? `<div class="page-actions" style="margin:14px 0 4px">${actions}</div>` : '';
   return `<div class="page-head"><div><h1>${esc(title)}</h1>${desc ? `<p>${esc(desc)}</p>` : ''}</div>${actions ? `<div class="page-actions">${actions}</div>` : ''}</div>`;
 }
 function emptyBox(iconName, title, text, btnHtml='') {
@@ -4456,7 +4473,7 @@ function loadScript(src) {
   return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.async = true; el.onload = res; el.onerror = () => rej(new Error('load')); document.head.appendChild(el); });
 }
 function hasSavedLogin() { try { return !!localStorage.getItem(CLOUD.storageKey); } catch (e) { return false; } }
-function rerenderAcct() { const n = parseRoute().name; if (n === 'plan' || n === 'settings') render(); else if (n === 'home') refreshAdvice(); }
+function rerenderAcct() { const n = parseRoute().name; if (n === 'plan' || n === 'settings') render(); else if (n === 'account') { refreshAccPanel('plan'); refreshAccPanel('settings'); } else if (n === 'home') refreshAdvice(); }
 async function initCloud() {
   if (acct.status === 'loading' || acct.status === 'ready') return;
   acct.status = 'loading'; rerenderAcct();
@@ -4588,19 +4605,25 @@ function viewPlan(query) {
     if (query.checkout === 'cancel') toast('お申し込みを中止しました（請求は発生していません）');
   }
   let html = pageHead('プラン・アカウント', '有料プラン（プレミアム）の申し込み・管理と、アカウントの設定です。');
-  if (CLOUD.testMode) html += `<div class="notice warn"><b>現在はテスト中です。実際の請求は発生しません。</b><br>申し込みの確認には、テスト用のカード番号 <b>4242 4242 4242 4242</b>（有効期限は未来の日付、セキュリティコードは好きな3桁）を使ってください。</div>`;
-  html += `<div class="notice green">アカウントは、有料プランの申し込み・管理のためだけに使います。肌の記録・写真・食事などのデータは、これまでどおり<b>この端末の中だけ</b>に保存し、サーバーには送りません。カード情報はStripeの画面で入力し、肌トモには保存されません。</div>`;
-  html += `<div class="card"><div class="card-h"><h2>プランの比較</h2><span class="chip ${isPremium() ? 'beige' : 'green'}">現在：${isPremium() ? PREMIUM_NAME : '無料プラン'}</span></div>${planTable()}
+  let notes = ''; // アカウントの画面の中では、お知らせは下にまとめる
+  if (CLOUD.testMode) notes += `<div class="notice warn"><b>現在はテスト中です。実際の請求は発生しません。</b><br>申し込みの確認には、テスト用のカード番号 <b>4242 4242 4242 4242</b>（有効期限は未来の日付、セキュリティコードは好きな3桁）を使ってください。</div>`;
+  notes += `<div class="notice green">アカウントは、有料プランの申し込み・管理のためだけに使います。肌の記録・写真・食事などのデータは、これまでどおり<b>この端末の中だけ</b>に保存し、サーバーには送りません。カード情報はStripeの画面で入力し、肌トモには保存されません。</div>`;
+  const cmpCard = `<div class="card"><div class="card-h"><h2>プランの比較</h2><span class="chip ${isPremium() ? 'beige' : 'green'}">現在：${isPremium() ? PREMIUM_NAME : '無料プラン'}</span></div>${planTable()}
     <p class="small muted" style="margin-top:10px">無料プランだけでも、すべての記録・管理機能を使えます。${PREMIUM_NAME}の写真読み取りは、AI（Google Gemini）による推定です。結果は必ず確認・修正してからお使いください（1日30回まで）。</p></div>`;
+  // アカウントの画面の中では、プランの比較は一番下に、押すと開く形で出す
+  const cmpFold = `<details class="fold acc-cmp"><summary>プランの比較</summary>${planTable()}<p class="small muted" style="margin-top:10px">無料プランだけでも、すべての記録・管理機能を使えます。${PREMIUM_NAME}の写真読み取りは、AI（Google Gemini）による推定です（1日30回まで）。</p></details>`;
+  if (!EMBED) html += notes;
+  const done = h => EMBED ? h + notes + cmpFold : h;
+  if (!EMBED) html += cmpCard;
   if (acct.status !== 'ready') {
     html += `<div class="card">${acct.status === 'error'
       ? `<p class="small" style="color:var(--danger)">ログインの仕組みを読み込めませんでした。インターネットに接続しているか確認してください。</p><button class="btn btn-ghost btn-sm" style="margin-top:10px" data-action="acct-retry">もう一度読み込む</button>`
       : '<p class="small muted">読み込み中…</p>'}</div>`;
-    return html;
+    return done(html);
   }
   if (location.protocol === 'file:') html += '<div class="notice">ファイルを直接開いている場合、確認メールや決済のあとに、このページへ戻ってこられません。ログインや申し込みは、公開したURL（GitHub Pages）から開いて行ってください。</div>';
   if (acct.recovery) {
-    return html + `<div class="card"><div class="card-h"><h2>新しいパスワードを設定</h2></div><form id="pw-form" novalidate><div class="form-grid">
+    return done(html) + `<div class="card"><div class="card-h"><h2>新しいパスワードを設定</h2></div><form id="pw-form" novalidate><div class="form-grid">
       ${field('新しいパスワード', '<input type="password" class="input" id="f_pw1" name="pw1" autocomplete="new-password">', {name:'pw1', required:true, hint:'8文字以上で、英字と数字を組み合わせてください'})}
       ${field('新しいパスワード（確認）', '<input type="password" class="input" id="f_pw2" name="pw2" autocomplete="new-password">', {name:'pw2', required:true})}
       </div><button type="submit" class="btn btn-primary" style="margin-top:14px" ${acct.busy ? 'disabled' : ''}>パスワードを変更する</button></form></div>`;
@@ -4618,27 +4641,36 @@ function viewPlan(query) {
       </div>
       <button type="submit" class="btn btn-primary" style="margin-top:14px" ${acct.busy ? 'disabled' : ''}>${signup ? 'アカウントを作る' : 'ログイン'}</button>
       ${signup ? '<p class="hint">登録すると、確認のメールが届きます。メール内のリンクを押すと登録が完了します。</p>' : '<p style="margin-top:12px"><a href="#" class="small" data-action="acct-forgot">パスワードを忘れた場合</a></p>'}
-      </form></div>`;
+      </form></div>` + (EMBED ? notes + cmpFold : '');
   }
   // ログイン中
   const s = acct.sub;
-  html += `<div class="card"><div class="card-h"><h2>アカウント</h2></div><dl class="kv"><dt>メールアドレス</dt><dd>${esc(acct.user.email || '')}</dd><dt>プラン</dt><dd>${!acct.subLoaded ? '<span class="muted">読み込み中…</span>' : isPremium() ? `<span class="badge-premium">${PREMIUM_NAME}</span>` : '無料プラン'}</dd></dl>
+  if (EMBED) {
+    // プラン → メールアドレス → 状態 → 契約内容の確認 の順に、1つの枠にまとめる
+    const end = s && s.current_period_end ? fmtDate(ymd(new Date(s.current_period_end))) : '';
+    const stateTxt = !acct.subLoaded ? '<span class="muted">読み込み中…</span>' : isPremium() ? (s.cancel_at_period_end ? `<span style="color:var(--warn)">解約手続き済み（${esc(end)}で終了）</span>` : `有効${end ? `（次回の更新日：${esc(end)}）` : ''}`)
+      : s && ['past_due','unpaid','incomplete'].includes(s.status) ? '<span style="color:var(--danger)">お支払いを確認できていません</span>' : '未契約';
+    html += `<div class="card"><dl class="kv"><dt>プラン</dt><dd>${!acct.subLoaded ? '<span class="muted">読み込み中…</span>' : isPremium() ? `<span class="badge-premium">${PREMIUM_NAME}</span>` : '無料プラン'}</dd><dt>メールアドレス</dt><dd>${esc(acct.user.email || '')}</dd><dt>状態</dt><dd>${stateTxt}</dd></dl>
+      ${s ? `<button class="btn btn-ghost btn-sm" style="margin-top:12px" data-action="acct-portal" ${acct.busy ? 'disabled' : ''}>契約内容の確認・解約・カード変更</button><p class="hint">Stripe（決済サービス）の画面が開きます。</p>` : ''}
+      <div class="page-actions" style="margin-top:12px"><button class="btn btn-ghost btn-sm" data-action="acct-logout">ログアウト</button><button class="btn btn-danger-ghost btn-sm" data-action="acct-delete">アカウントを削除</button></div></div>`;
+  } else html += `<div class="card"><div class="card-h"><h2>アカウント</h2></div><dl class="kv"><dt>メールアドレス</dt><dd>${esc(acct.user.email || '')}</dd><dt>プラン</dt><dd>${!acct.subLoaded ? '<span class="muted">読み込み中…</span>' : isPremium() ? `<span class="badge-premium">${PREMIUM_NAME}</span>` : '無料プラン'}</dd></dl>
     <div class="page-actions" style="margin-top:14px"><button class="btn btn-ghost btn-sm" data-action="acct-logout">ログアウト</button><button class="btn btn-danger-ghost btn-sm" data-action="acct-delete">アカウントを削除</button></div></div>`;
   html += diagCardHtml();
-  if (!acct.subLoaded) return html;
+  if (!acct.subLoaded) return done(html);
+  if (isPremium() && EMBED) return done(html);
   if (isPremium()) {
     const end = s.current_period_end ? fmtDate(ymd(new Date(s.current_period_end))) : '確認中';
     html += `<div class="card"><div class="card-h"><h2>${PREMIUM_NAME}プランをご利用中</h2><span class="badge-premium">${PREMIUM_NAME}</span></div>
       <dl class="kv"><dt>状態</dt><dd>${s.cancel_at_period_end ? `<span style="color:var(--warn)">解約手続き済み：${esc(end)}で終了します（それまでは使えます）</span>` : `有効（次回の更新日：${esc(end)}）`}</dd></dl>
       <button class="btn btn-ghost" style="margin-top:14px" data-action="acct-portal" ${acct.busy ? 'disabled' : ''}>契約内容の確認・解約・カード変更</button>
       <p class="hint">Stripe（決済サービス）の画面が開きます。解約すると、次回の更新日以降は請求されません。</p></div>`;
-    return html;
+    return done(html);
   }
   if (s && ['past_due','unpaid','incomplete'].includes(s.status)) {
     html += `<div class="notice red">お支払いを確認できていません。カード情報を確認してください。</div><button class="btn btn-primary" data-action="acct-portal" ${acct.busy ? 'disabled' : ''}>契約内容の確認・カード変更</button>`;
-    return html;
+    return done(html);
   }
-  if (acct.polling) return html + '<div class="card"><p class="small">お申し込みの内容を確認しています…</p></div>';
+  if (acct.polling) return done(html + '<div class="card"><p class="small">お申し込みの内容を確認しています…</p></div>');
   html += `<div class="card"><div class="card-h"><h2>${PREMIUM_NAME}プランに申し込む</h2></div>
     <p class="small">食事の写真から料理と栄養の目安を、化粧品の写真から商品名・全成分の文字を、AIで読み取れるようになります。詳細な分析・成分相性マップも使え、広告が表示されなくなります。</p>
     ${!acct.confirm ? '<button class="btn btn-primary" style="margin-top:14px" data-action="acct-confirm">申し込み内容を確認する</button>'
@@ -4657,7 +4689,7 @@ function viewPlan(query) {
       <div class="page-actions" style="margin-top:14px"><button class="btn btn-primary" data-action="acct-checkout" ${acct.busy || !acct.price ? 'disabled' : ''}>同意して、決済画面へ進む</button><button class="btn btn-ghost" data-action="acct-confirm-cancel">やめる</button></div>
       <p class="hint">次の画面（Stripe）でカード情報を入力し、ボタンを押すと申し込みが確定します。</p>`}
     </div>`;
-  return html;
+  return done(html);
 }
 async function handleAuthSubmit(form) {
   const v = n => form.elements[n] ? String(form.elements[n].value).trim() : '';
@@ -4845,7 +4877,7 @@ ${r('動作環境', '最新版のSafari・Google Chrome・Microsoft Edge・Firef
    ========================================================= */
 /* ---------- ホーム画面に追加（アプリのように使う・オフラインでも開ける） ---------- */
 let installEvt = null;
-window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; if (parseRoute().name === 'settings') render(); });
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; if (['settings', 'account'].includes(parseRoute().name)) render(); });
 window.addEventListener('appinstalled', () => { installEvt = null; toast('ホーム画面に追加しました'); });
 const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
 if ('serviceWorker' in navigator && location.protocol === 'https:') window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', {updateViaCache:'none'}).then(r => { try { r.update(); } catch (e) { /* 何もしない */ } }).catch(() => {}); }); // 開くたびに、裏の仕組み（sw.js）の更新も確認する
@@ -4900,17 +4932,45 @@ function moneyCardHtml() {
     <a class="btn btn-soft btn-sm" style="margin-top:12px" href="#/spending">${icon('wallet')}支出をくわしく見る・購入を記録</a>`;
 }
 // ---------- アカウント（下のバー）：お金・プラン・設定をまとめた画面 ----------
-function viewAccount() {
-  ui.budgetEdit = false;
-  const t = todayStr(), mk = monthKey(t), mTotal = monthTotal(mk), budget = state.settings.monthlyBudget;
-  const items = [
-    {r:'plan', icon:'user', t:'プラン・アカウント', d:acct.user ? `${esc(acct.user.email || '')}・${isPremium() ? PREMIUM_NAME : '無料プラン'}` : 'ログイン・プレミアムの申し込み'},
-    {r:'settings', icon:'gear', t:'設定・プライバシー', d:'身長・体重、表示、リマインダー、データの管理'}
-  ];
-  return pageHead('アカウント', 'お金・プラン・設定をまとめています。') +
-    `<div class="card acc-list"><button class="acc-row acc-toggle" data-action="acc-spend" aria-expanded="${!!ui.accSpendOpen}" aria-controls="acc-money">${icon('wallet')}<span><b>支出</b><small>今月のスキンケア代 ${en(mTotal)}${budget ? `（予算 ${en(budget)}）` : ''}</small></span><i>›</i></button>
-      <div class="acc-panel" id="acc-panel" ${ui.accSpendOpen ? '' : 'hidden'}><div class="mb-card" id="acc-money">${moneyCardHtml()}</div></div>${items.map(x => `<a class="acc-row" href="#/${x.r}">${icon(x.icon)}<span><b>${esc(x.t)}</b><small>${x.d}</small></span><i>›</i></a>`).join('')}</div>`;
+// アカウント：支出・プラン・設定を、それぞれ押すと開く枠（アコーディオン）にする
+let EMBED = false; // true のときは、画面の大きな見出し（pageHead）を付けない
+function embedView(fn) { const prev = EMBED; EMBED = true; try { return fn(); } finally { EMBED = prev; } }
+const ACC_SECTIONS = {
+  spend: {icon:'wallet', t:'支出', d:() => { const mk = monthKey(todayStr()), b = state.settings.monthlyBudget; return `今月のスキンケア代 ${en(monthTotal(mk))}${b ? `（予算 ${en(b)}）` : ''}`; },
+    body:() => `<div class="mb-card" id="acc-money">${moneyCardHtml()}</div>`},
+  plan: {icon:'user', t:'プラン・アカウント', d:() => acct.user ? `${esc(acct.user.email || '')}・${isPremium() ? PREMIUM_NAME : '無料プラン'}` : 'ログイン・プレミアムの申し込み',
+    body:() => embedView(() => viewPlan({}))},
+  settings: {icon:'gear', t:'設定・プライバシー', d:() => '身長・体重、表示、リマインダー、データ、プライバシー', body:() => settingsEmbedHtml()}
+};
+function accSectionHtml(k) {
+  const x = ACC_SECTIONS[k], open = !!(ui.accOpen || {})[k];
+  return `<section class="card acc-sec" id="acc-sec-${k}"><button class="acc-row acc-toggle" data-action="acc-toggle" data-id="${k}" aria-expanded="${open}" aria-controls="acc-panel-${k}">${icon(x.icon)}<span><b>${esc(x.t)}</b><small>${x.d()}</small></span><i>›</i></button>
+    <div class="acc-panel" id="acc-panel-${k}" ${open ? '' : 'hidden'}>${open ? x.body() : ''}</div></section>`;
 }
+function viewAccount() {
+  ui.budgetEdit = false; ui.accOpen = ui.accOpen || {};
+  if (ui.accOpen.plan && acct.status === 'idle') setTimeout(initCloud, 0);
+  return pageHead('アカウント', 'お金・プラン・設定をまとめています。') + ['spend', 'plan', 'settings'].map(accSectionHtml).join('');
+}
+// 設定・プライバシー（アカウントの中）：並びを整え、データ関係を1つにまとめ、プライバシーは押すと開く形にする
+function settingsEmbedHtml() {
+  const t = document.createElement('template'); t.innerHTML = embedView(viewSettings);
+  const top = [...t.content.children].filter(c => c.classList.contains('card'));
+  const cards = {}; top.forEach(c => { const h = c.querySelector('.card-h h2'); if (h) cards[h.textContent.trim()] = c; });
+  const inner = c => { if (!c) return ''; const x = c.cloneNode(true); const h = x.querySelector('.card-h'); if (h) h.remove(); return x.innerHTML; };
+  const sub = (title, c) => c ? `<div class="set-sub"><h3>${esc(title)}</h3>${inner(c)}</div>` : '';
+  const out = [];
+  if (cards['身長・体重']) out.push(cards['身長・体重'].outerHTML);
+  if (cards['画面の表示']) out.push(cards['画面の表示'].outerHTML);
+  if (cards['記録のリマインダー']) out.push(cards['記録のリマインダー'].outerHTML);
+  out.push(`<div class="card"><div class="card-h"><h2>データ</h2></div>${sub('保存状況', cards['データの保存状況'])}${sub('バックアップ', cards['バックアップ'])}${sub('動作確認用データ', cards['動作確認用データ'])}${sub('すべてのデータを削除', cards['すべてのデータを削除'])}</div>`);
+  if (cards['プライバシー']) out.push(`<div class="card"><details class="fold set-fold"><summary>プライバシー</summary>${inner(cards['プライバシー']).replace(/<details class="fold"[^>]*><summary>詳しく見る<\/summary>/, '').replace(/<\/ul><\/details>/, '</ul>')}</details></div>`);
+  const install = top.find(c => /アプリとして使う/.test(c.textContent)); if (install) out.push(install.outerHTML);
+  const about = Object.keys(cards).find(k => /について$/.test(k)); if (about) out.push(cards[about].outerHTML);
+  return out.join('');
+}
+// 開いている枠だけ、中身を作り直す（ログイン状態が変わったときなど）
+function refreshAccPanel(k) { const pn = document.getElementById('acc-panel-' + k); if (pn && !pn.hidden) pn.innerHTML = ACC_SECTIONS[k].body(); const sec = document.getElementById('acc-sec-' + k); if (sec) { const sm = sec.querySelector('.acc-toggle small'); if (sm) sm.innerHTML = ACC_SECTIONS[k].d(); } }
 function viewSettings() {
   let size = 0;
   try { size = (localStorage.getItem(STORE_KEY) || '').length; } catch (e) {}
@@ -4919,10 +4979,10 @@ function viewSettings() {
   const mealPh = state.lifeLogs.reduce((a, l) => a + Object.keys(l.mealPhotos).length, 0);
   const hasDemo = state.myProducts.some(p => p.demo) || state.skinLogs.some(l => l.demo) || state.lifeLogs.some(l => l.demo);
   return pageHead('設定・プライバシー', 'データの管理、プライバシー、アプリについて') +
-    `<div class="card"><div class="card-h"><h2>プラン・アカウント</h2><span class="chip ${isPremium() ? 'beige' : 'green'}">現在：${isPremium() ? PREMIUM_NAME : '無料プラン'}</span></div>
+    `${EMBED ? '' : `<div class="card"><div class="card-h"><h2>プラン・アカウント</h2><span class="chip ${isPremium() ? 'beige' : 'green'}">現在：${isPremium() ? PREMIUM_NAME : '無料プラン'}</span></div>
       ${planTable()}
       <p class="small muted" style="margin-top:10px">${acct.user ? `ログイン中：${esc(acct.user.email || '')}` : 'ログインしていません（無料プランはログインなしで使えます）'}</p>
-      <a class="btn btn-soft btn-sm" style="margin-top:10px" href="#/plan">プラン・アカウントの画面へ</a></div>
+      <a class="btn btn-soft btn-sm" style="margin-top:10px" href="#/plan">プラン・アカウントの画面へ</a></div>`}
     ${installCardHtml()}
     <div class="card"><div class="card-h"><h2>身長・体重</h2></div>
       ${(() => { const st = state.settings, bmi = st.height && st.weight ? st.weight / Math.pow(st.height / 100, 2) : null;
@@ -5136,7 +5196,13 @@ const actions = {
   },
   'advice-ai': () => runAdvice(true),
   'fav': (id, el) => toggleFav(id, el),
-  'acc-spend': (id, el) => { ui.accSpendOpen = !ui.accSpendOpen; const pn = document.getElementById('acc-panel'); if (pn) { pn.hidden = !ui.accSpendOpen; if (ui.accSpendOpen) { pn.classList.remove('open'); void pn.offsetWidth; pn.classList.add('open'); } } if (el) el.setAttribute('aria-expanded', String(ui.accSpendOpen)); },
+  'acc-toggle': (k, el) => {
+    ui.accOpen = ui.accOpen || {}; ui.accOpen[k] = !ui.accOpen[k];
+    const pn = document.getElementById('acc-panel-' + k); if (!pn) return;
+    if (ui.accOpen[k]) { pn.innerHTML = ACC_SECTIONS[k].body(); pn.hidden = false; pn.classList.remove('open'); void pn.offsetWidth; pn.classList.add('open'); if (k === 'plan' && acct.status === 'idle') initCloud(); }
+    else { pn.hidden = true; pn.innerHTML = ''; }
+    if (el) el.setAttribute('aria-expanded', String(ui.accOpen[k]));
+  },
   'acc-budget-edit': () => { ui.budgetEdit = true; const c = document.getElementById('acc-money'); if (c) { c.innerHTML = moneyCardHtml(); const i = document.getElementById('acc-budget-in'); if (i) i.focus(); } },
   'acc-budget-cancel': () => { ui.budgetEdit = false; const c = document.getElementById('acc-money'); if (c) c.innerHTML = moneyCardHtml(); },
   'acc-month': v => { ui.accMonth = v; const c = document.getElementById('acc-money'); if (c) { c.innerHTML = moneyCardHtml(); const sm = document.getElementById('mb-sum'); if (sm) sm.classList.add('mb-flash'); } },
