@@ -209,7 +209,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(90,138,105,.16),transparent 70%)}
 .hero-brand{font-family:var(--serif);font-size:34px;letter-spacing:.26em;font-weight:500;line-height:1.1}
 .hero-copy{margin-top:10px;font-size:15px;color:var(--ink2);letter-spacing:.06em}
-.hero-date{margin:0;font-size:24px;font-size:8.95cqw;font-weight:700;color:var(--ink);line-height:1.2;white-space:nowrap;letter-spacing:.01em}
+.hero-date{margin:0;font-size:24px;font-size:7.4cqw;font-weight:700;color:var(--ink);line-height:1.2;white-space:nowrap;letter-spacing:.01em}
 .hero-top{display:flex;align-items:center;justify-content:center;gap:10px;max-width:420px;min-height:44px;text-align:center;container-type:inline-size}
 .streak{display:inline-flex;align-items:center;gap:4px;flex:none}
 .streak-star{position:relative;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;filter:drop-shadow(0 0 6px rgba(245,184,46,.55));animation:starGlow 2.6s ease-in-out infinite}
@@ -1126,7 +1126,8 @@ function normalize(d) {
   out.settings.concerns = strArr(d.settings && d.settings.concerns, CONCERNS);
   const ds = d.settings || {};
   out.settings.sleepNeed = clamp(Math.round(num(ds.sleepNeed) || 420), 240, 720); // 必要な睡眠時間（分）
-  out.settings.weight = clamp(Math.round(num(ds.weight) || 0), 0, 250); // 体重（kg）。0は未設定
+  out.settings.weight = clamp(Math.round((num(ds.weight) || 0) * 10) / 10, 0, 250); // 体重（kg）。0は未設定
+  out.settings.height = clamp(Math.round((num(ds.height) || 0) * 10) / 10, 0, 250); // 身長（cm）。0は未設定
   out.settings.proteinGoal = clamp(Math.round(num(ds.proteinGoal) || 0), 0, 300); // たんぱく質の目標（g）。0は自動
   out.customFoods = Array.isArray(d.customFoods) ? d.customFoods.filter(x => x && x.name).map(x => { const n = normFood(Object.assign({meal:'snack', qty:1}, x)); return {id:n.id, name:n.name, kcal:n.kcal, p:n.p, f:n.f, c:n.c, veg:n.veg}; }) : [];
   return out;
@@ -1532,8 +1533,9 @@ function lifeSumHtml(lf) {
 }
 function openLifeGoal() {
   const st = state.settings, opts = []; for (let m = 300; m <= 600; m += 30) opts.push(m);
-  openModal({title:'睡眠・運動・食事の目安', body:`<form id="goal-form" novalidate><div class="form-grid">
+  openModal({title:'身長・体重と目安', body:`<form id="goal-form" novalidate><div class="form-grid">
     ${field('必要な睡眠時間', `<select class="select" name="sleepNeed">${opts.map(m => `<option value="${m}" ${m === (st.sleepNeed || 420) ? 'selected' : ''}>${fmtDur(m)}</option>`).join('')}</select>`, {name:'sleepNeed', hint:'大人はおよそ7時間前後が目安です（厚生労働省「健康づくりのための睡眠ガイド2023」）'})}
+    ${field('身長（cm）', `<input class="input" name="height" inputmode="decimal" value="${st.height || ''}" placeholder="例：160">`, {name:'height', hint:'このブラウザ内にだけ保存されます'})}
     ${field('体重（kg）', `<input class="input" name="weight" inputmode="decimal" value="${st.weight || ''}" placeholder="例：55">`, {name:'weight', hint:'運動の消費カロリーの計算に使います。空欄なら55kgとして計算します。このブラウザ内にだけ保存されます'})}
     ${field('1日のたんぱく質の目標（g）', `<input class="input" name="proteinGoal" inputmode="numeric" value="${st.proteinGoal || ''}" placeholder="空欄なら体重×1g">`, {name:'proteinGoal', hint:'たんぱく質は肌をつくる材料です。空欄なら「体重×1g」を目安にします'})}
   </div></form>`, footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="submit" form="goal-form" class="btn btn-primary">保存する</button>`});
@@ -4536,6 +4538,11 @@ function viewSettings() {
       <p class="small muted" style="margin-top:10px">${acct.user ? `ログイン中：${esc(acct.user.email || '')}` : 'ログインしていません（無料プランはログインなしで使えます）'}</p>
       <a class="btn btn-soft btn-sm" style="margin-top:10px" href="#/plan">プラン・アカウントの画面へ</a></div>
     ${installCardHtml()}
+    <div class="card"><div class="card-h"><h2>身長・体重</h2></div>
+      ${(() => { const st = state.settings, bmi = st.height && st.weight ? st.weight / Math.pow(st.height / 100, 2) : null;
+        return `<p style="margin:0">身長 <b>${st.height ? esc(String(st.height)) + 'cm' : '未設定'}</b>　体重 <b>${st.weight ? esc(String(st.weight)) + 'kg' : '未設定'}</b>${bmi ? `　<span class="small muted">BMI ${bmi.toFixed(1)}</span>` : ''}</p>`; })()}
+      <p class="small muted" style="margin:6px 0 0">運動の消費カロリーや、たんぱく質の目安の計算に使います。このブラウザ内にだけ保存されます。</p>
+      <button class="btn btn-soft btn-sm" style="margin-top:10px" data-action="life-goal">身長・体重を設定する</button></div>
     <div class="card"><div class="card-h"><h2>画面の表示</h2></div>
       <p class="small muted" style="margin-bottom:10px">暗い場所でも見やすい「ダーク」表示に切り替えられます。「自動」は、スマホ・パソコンの設定（ダークモード）に合わせます。</p>
       <div class="chips">${[['auto','自動'],['light','ライト'],['dark','ダーク']].map(([k, l]) => `<button class="tab ${themePref() === k ? 'active' : ''}" data-action="theme" data-id="${k}">${l}</button>`).join('')}</div></div>
@@ -5050,8 +5057,10 @@ document.addEventListener('submit', e => {
     if (!(w === 0 || (w >= 20 && w <= 250))) er.weight = '20〜250の数字で入力してください（空欄でも大丈夫です）。';
     if (!(pg === 0 || (pg >= 10 && pg <= 300))) er.proteinGoal = '10〜300の数字で入力してください（空欄でも大丈夫です）。';
     if (Object.keys(er).length) { showErrors(f, er); return; }
-    state.settings.sleepNeed = Number(f.elements.sleepNeed.value) || 420; state.settings.weight = Math.round(w); state.settings.proteinGoal = Math.round(pg);
-    if (save()) { closeModal(); toast('目安を保存しました'); render(); }
+    const ht = f.elements.height.value.trim() === '' ? 0 : Number(toHalf(f.elements.height.value));
+    if (!(ht === 0 || (ht >= 80 && ht <= 250))) { showErrors(f, Object.assign(er, {height:'80〜250の数字で入力してください（空欄でも大丈夫です）。'})); return; }
+    state.settings.sleepNeed = Number(f.elements.sleepNeed.value) || 420; state.settings.weight = Math.round(w * 10) / 10; state.settings.height = Math.round(ht * 10) / 10; state.settings.proteinGoal = Math.round(pg);
+    if (save()) { closeModal(); toast('保存しました'); render(); }
     return;
   }
   if (e.target.id !== 'budget-form') return;
