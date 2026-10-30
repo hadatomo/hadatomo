@@ -4234,7 +4234,7 @@ function diagResultHtml(r) {
   row(d.quotaTable, '回数を数える表（vision_usage）', d.quotaError || '', '6_写真読み取り_SQL.txt を Supabase の「SQL Editor」に貼り付けて「Run」を押してください。');
   row(d.geminiKey, 'GeminiのAPIキーの登録', '', 'Supabase の Edge Functions → Secrets に「GEMINI_API_KEY」を追加してください。');
   if (d.geminiKey) row(d.geminiKeyOk, 'GeminiのAPIキーが有効', d.geminiError || (d.models.length ? `使えるモデル：${d.models.join('、')}` : ''), 'Google AI Studio でAPIキーを作り直し、Secrets の GEMINI_API_KEY を新しいキーに置きかえてください（前後に空白が入らないように）。');
-  if (d.textTest) row(d.textTest.ok, 'AIの応答テスト', `${d.textTest.model}・${(d.textTest.ms / 1000).toFixed(1)}秒${d.textTest.error ? '・' + d.textTest.error : ''}`, /quota|exhausted|429/i.test(d.textTest.error || '') ? 'Geminiの無料枠の上限に達しています。時間をおくか、Google AI Studio で利用枠を確認してください。' : 'しばらく時間をおいて、もう一度診断してください。続く場合は、表示された文を教えてください。');
+  if (d.textTest) row(d.textTest.ok, 'AIの応答テスト', `${d.textTest.model}・${(d.textTest.ms / 1000).toFixed(1)}秒${d.textTest.error ? '・' + d.textTest.error : ''}${d.textTries && d.textTries.includes('/') ? '（試した順：' + d.textTries + '）' : ''}`, /quota|exhausted|429/i.test(d.textTest.error || '') ? 'Geminiの無料枠の上限に達しています。時間をおくか、Google AI Studio で利用枠を確認してください。' : /no longer available|not found|not supported/i.test(d.textTest.error || '') ? 'Googleがこのモデルの提供をやめています。最新の 5_関数_vision.txt を vision に貼り付けて「Deploy updates」を押してください。' : 'しばらく時間をおいて、もう一度診断してください。続く場合は、表示された文を教えてください。');
   const allOk = d.version === VISION_VERSION && d.premium && d.quotaTable && d.geminiKeyOk && d.textTest && d.textTest.ok;
   return `<ul class="diag">${rows.join('')}</ul>${allOk ? '<div class="notice green" style="margin:10px 0 0">設定はすべて正常です。写真読み取り・AI分析を使えます。</div>' : ''}`;
 }
@@ -4249,7 +4249,7 @@ async function runVisionDiag() {
   }
   diagBusy = false; upd();
 }
-const VISION_VERSION = '2026-10-30-diag'; // サーバーの関数 vision の最新の版
+const VISION_VERSION = '2026-10-31-models'; // サーバーの関数 vision の最新の版
 const AI_NOTE = 'AI（Google Gemini）による推定です。必ず内容を確認・修正してから使ってください。';
 const AI_CAT = {'化粧水':'化粧水・トナー','乳液':'乳液','美容液':'美容液・アンプル','クリーム':'クリーム','日焼け止め':'日焼け止め','洗顔料':'洗顔','クレンジング':'クレンジング','パック':'シートマスク・パック'};
 async function callBilling(action) {
