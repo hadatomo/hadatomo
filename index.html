@@ -53,7 +53,6 @@
 :root[data-theme="dark"] .offer.shop-card.selected{background:#3A3120;border-color:#C99B2E}
 :root[data-theme="dark"] .ing-list a{border-color:#2F4535}
 :root[data-theme="dark"] .btn-danger-ghost{border-color:#5A3229}
-:root[data-theme="dark"] .btn-primary:hover{background:#4C8660}
 :root[data-theme="dark"] .modal-backdrop{background:rgba(0,0,0,.55)}
 :root[data-theme="dark"] .ad-box{filter:brightness(.85)}
 :root[data-theme="dark"] img.meal-thumb,:root[data-theme="dark"] .img-prev{filter:brightness(.92)}
@@ -84,7 +83,6 @@
 :root:not([data-theme="light"]) .offer.shop-card.selected{background:#3A3120;border-color:#C99B2E}
 :root:not([data-theme="light"]) .ing-list a{border-color:#2F4535}
 :root:not([data-theme="light"]) .btn-danger-ghost{border-color:#5A3229}
-:root:not([data-theme="light"]) .btn-primary:hover{background:#4C8660}
 :root:not([data-theme="light"]) .modal-backdrop{background:rgba(0,0,0,.55)}
 :root:not([data-theme="light"]) .ad-box{filter:brightness(.85)}
 :root:not([data-theme="light"]) img.meal-thumb,:root:not([data-theme="light"]) .img-prev{filter:brightness(.92)}
@@ -138,7 +136,6 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .sn-group{font-size:10.5px;letter-spacing:.14em;color:var(--gold);font-weight:700;padding:14px 12px 4px}
 .sn-item{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:12px;color:var(--ink2);text-decoration:none;font-size:14px;margin-bottom:1px;transition:background .15s}
 .sn-item svg{width:19px;height:19px;flex:none}
-.sn-item:hover{background:var(--surface2)}
 .sn-item.active{background:var(--green-s);color:var(--green-d);font-weight:600}
 .sn-foot{margin-top:auto;font-size:11px;color:var(--muted);padding:16px 12px 0;line-height:1.6}
 @media(min-width:960px){
@@ -168,9 +165,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:44px;padding:0 18px;border-radius:999px;border:1px solid transparent;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;transition:all .15s;white-space:nowrap}
 .btn svg{width:18px;height:18px}
 .btn-primary{background:var(--green-d);color:#fff}
-.btn-primary:hover{background:#355C42}
 .btn-ghost{background:var(--surface);border-color:var(--line2);color:var(--ink2)}
-.btn-ghost:hover{background:var(--surface2)}
 .btn-soft{background:var(--green-s);color:var(--green-d)}
 .btn-danger{background:var(--danger);color:#fff}
 .btn-danger-ghost{background:var(--surface);border-color:#E7C9C1;color:var(--danger)}
@@ -180,6 +175,10 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .icon-btn{width:40px;height:40px;border-radius:50%;border:0;background:var(--surface2);color:var(--ink2);font-size:20px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none}
 .icon-btn svg{width:20px;height:20px}
 .icon-btn.on{background:var(--green);color:#fff}
+.vh{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;opacity:0}
+label.btn{position:relative}
+/* 押した瞬間に反応が見えるように */
+.btn:active,.bn-item:active,.ls-main:active,.acc-row:active,.mb-col:active,.tab:active,.icon-btn:active,.ac-item:active{opacity:.82}
 /* ハンバーガー（三本線→×に変わる） */
 .hb{position:relative;width:20px;height:14px;display:block}
 .hb i{position:absolute;left:0;right:0;height:2px;border-radius:2px;background:currentColor;transition:transform .25s ease,opacity .2s ease,top .25s ease}
@@ -219,7 +218,6 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .notice:last-child{margin-bottom:0}
 .back{display:inline-block;font-size:13px;text-decoration:none;color:var(--muted);margin-bottom:12px}
 .back-btn{background:none;border:0;padding:4px 0;font-family:inherit;cursor:pointer}
-.back:hover{color:var(--ink)}
 .empty{text-align:center;padding:24px 12px}
 .empty .em-icon{width:56px;height:56px;border-radius:50%;background:var(--green-p);color:var(--green);display:inline-flex;align-items:center;justify-content:center;margin-bottom:10px}
 .empty .em-icon svg{width:26px;height:26px}
@@ -269,7 +267,6 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .shortcuts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
 @media(min-width:720px){.shortcuts{grid-template-columns:repeat(3,1fr)}}
 .shortcut{display:flex;flex-direction:column;gap:8px;padding:14px;border-radius:var(--radius-s);background:var(--surface);border:1px solid var(--line);text-decoration:none;color:var(--ink);font-size:13.5px;font-weight:600;transition:all .15s}
-.shortcut:hover{border-color:var(--green);background:var(--green-p)}
 .shortcut svg{width:22px;height:22px;color:var(--green)}
 .cond-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 12px;border-radius:999px;font-size:12.5px;font-weight:600;color:#fff;white-space:nowrap}
 .progress{height:8px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-top:8px}
@@ -286,7 +283,6 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .ac-item{display:grid;grid-template-columns:20px 1fr;gap:10px;align-items:center;padding:10px 14px;cursor:pointer;min-width:0}
 .ac-item+.ac-item{border-top:1px solid var(--line)}
 .ac-item svg{width:18px;height:18px;color:var(--green-d)}
-.ac-item.on,.ac-item:hover{background:var(--surface2)}
 .ac-l{display:block;font-size:14px;color:var(--ink);overflow-wrap:anywhere}
 .ac-l b{color:var(--green-d)}
 .ac-item small{display:block;font-size:11.5px;color:var(--muted)}
@@ -295,7 +291,6 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 @media(min-width:720px){.pgrid{grid-template-columns:repeat(3,1fr);gap:16px}}
 @media(min-width:1100px){.pgrid{grid-template-columns:repeat(4,1fr)}}
 .pcard{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;text-decoration:none;color:var(--ink);transition:all .15s;box-shadow:var(--shadow)}
-.pcard:hover{transform:translateY(-2px);border-color:var(--line2)}
 .pcard .body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:3px;flex:1}
 .pcard .brand{font-size:11.5px;color:var(--muted);letter-spacing:.04em}
 .pcard .name{font-size:14px;font-weight:600;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -318,7 +313,6 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .mlist{display:grid;gap:10px}
 @media(min-width:720px){.mlist{grid-template-columns:1fr 1fr}}
 .mitem{display:grid;grid-template-columns:64px 1fr;gap:14px;align-items:center;padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);text-decoration:none;color:var(--ink);box-shadow:var(--shadow)}
-.mitem:hover{border-color:var(--line2)}
 .mitem .thumb{border-radius:12px}
 .mitem .name{font-weight:600;font-size:14px;line-height:1.5}
 .mitem .brand{font-size:12px;color:var(--muted)}
@@ -426,7 +420,6 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .face{width:100%;max-width:220px;margin:0 auto;display:block;user-select:none;-webkit-user-select:none}
 .face-base{fill:#FBF6EF;stroke:#DCD1C1;stroke-width:1.5}
 .face [data-area]{fill:#F3ECE2;stroke:#DDD2C2;stroke-width:1.2;cursor:pointer;transition:fill .15s}
-.face [data-area]:hover{fill:#EAF1EA}
 .face [data-area].on{fill:#C9DFCE;stroke:var(--green)}
 .face text{font-size:11px;fill:#5E574C;pointer-events:none;font-family:var(--font)}
 .face .deco{fill:none;stroke:#B9AE9E;stroke-width:1.4;stroke-linecap:round;pointer-events:none}
@@ -496,6 +489,11 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .mb-list small{font-size:11.5px;color:var(--muted)}
 .mb-list em{font-style:normal;font-weight:700;white-space:nowrap}
 .mb-flash{animation:itemIn .35s ease both}
+.mb-edit{border:1px dashed var(--line2);background:var(--surface);color:var(--green-d);font-family:inherit;font-size:12px;font-weight:600;border-radius:999px;padding:2px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.mb-edit svg{width:13px;height:13px}
+.mb-bform{margin-top:10px;background:var(--surface);border-radius:12px;padding:10px 12px;animation:itemIn .3s ease both}
+.mb-brow{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}
+.mb-brow .input{flex:1 1 110px;min-width:0;min-height:40px;font-size:16px;padding:6px 10px}
 /* ===== 動き（モーション） ===== */
 @keyframes pgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 #main.pg-in{animation:pgIn .38s cubic-bezier(.2,.8,.2,1) both}
@@ -622,6 +620,8 @@ details.fold[open] summary{margin-bottom:10px}
 .menu-list a svg{width:21px;height:21px;color:var(--green)}
 @keyframes fade{from{opacity:0}}
 @keyframes up{from{transform:translateY(30px);opacity:.4}}
+.toast{transition:opacity .35s ease,transform .35s ease}
+.toast.out{opacity:0;transform:translateY(8px)}
 
 /* ---------- Toast ---------- */
 #toast-root{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;width:max-content;max-width:92vw}
@@ -719,6 +719,9 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 @media print{.sidebar,.topbar,.bottom-nav,#toast-root,.no-print,.back{display:none!important}body{background:#fff}main{padding:0;max-width:none}.card{box-shadow:none;break-inside:avoid;border-color:#ccc}textarea{border:1px solid #ccc}}
 .chip-x{border:0;background:none;cursor:pointer;color:var(--muted);font-size:15px;line-height:1;padding:0 0 0 6px}
 .meal-thumb{width:84px;height:84px;object-fit:cover;border-radius:10px;border:1px solid var(--line);display:block}
+
+/* マウスがある端末だけ、ホバーで色を変える（スマホで「2回押さないと反応しない」ことを防ぐ） */
+@media (hover:hover){:root[data-theme="dark"] .btn-primary:hover{background:#4C8660}:root:not([data-theme="light"]) .btn-primary:hover{background:#4C8660}.sn-item:hover{background:var(--surface2)}.btn-primary:hover{background:#355C42}.btn-ghost:hover{background:var(--surface2)}.back:hover{color:var(--ink)}.shortcut:hover{border-color:var(--green);background:var(--green-p)}.ac-item.on,.ac-item:hover{background:var(--surface2)}.pcard:hover{transform:translateY(-2px);border-color:var(--line2)}.mitem:hover{border-color:var(--line2)}.face [data-area]:hover{fill:#EAF1EA}}
 </style>
 </head>
 <body>
@@ -1397,7 +1400,10 @@ function toast(msg, type='') {
   el.className = 'toast ' + type;
   el.textContent = msg;
   $('#toast-root').appendChild(el);
-  setTimeout(() => el.remove(), 3400);
+  toastFade(el, type === 'error' ? 4000 : 2000); // 2秒たったら、ふわっと消える（エラーは読めるように4秒）
+}
+function toastFade(el, ms) {
+  return setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 380); }, ms);
 }
 function openModal({title, body, footer='', size='', dismissable=false}) {
   const root = $('#modal-root');
@@ -2074,13 +2080,14 @@ async function priceSearch(pid) {
   const st = ui.priceRes[pid] = {loading:true, items:[], errors:[], msg:''};
   render();
   try {
-    const res = await fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', headers:{'Content-Type':'application/json', apikey:CLOUD.key},
+    const ctrl = new AbortController(), tm = setTimeout(() => ctrl.abort(), 30000); // 30秒で打ち切る（「調べています」のまま止まらないように）
+    const res = await fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', signal:ctrl.signal, headers:{'Content-Type':'application/json', apikey:CLOUD.key},
       body:JSON.stringify({q:`${p.brand} ${p.name}`.replace(/【サンプル】/g, '').trim(), jan:p.jan || ''})});
-    const j = await res.json().catch(() => ({}));
+    const j = await res.json().catch(() => ({})); clearTimeout(tm);
     if (!res.ok || j.error) throw new Error(j.error || '価格を調べられませんでした。');
     st.items = Array.isArray(j.items) ? j.items : []; st.errors = Array.isArray(j.errors) ? j.errors : []; st.at = j.fetchedAt || '';
   } catch (e) {
-    st.msg = /fetch|network|Failed/i.test(String(e && e.message)) ? 'サーバーに接続できませんでした。インターネットの接続を確認して、もう一度お試しください。' : String((e && e.message) || e);
+    st.msg = e && e.name === 'AbortError' ? '時間がかかりすぎたため中止しました。もう一度お試しください。' : /fetch|network|Failed/i.test(String(e && e.message)) ? 'サーバーに接続できませんでした。インターネットの接続を確認して、もう一度お試しください。' : String((e && e.message) || e);
   }
   st.loading = false;
   if (location.hash.startsWith('#/prices/')) render();
@@ -2744,7 +2751,7 @@ function viewScan() {
   let html = pageHead('カメラで登録', 'パッケージの写真・バーコード・文字を手がかりに、商品を探して登録します。') +
     `<div class="notice">カメラは、下のボタンを押したときだけ起動します。撮影した写真は<b>この端末の中だけ</b>で使い、外部には送信しません（商品を登録しなければ保存もしません）。写真から商品そのものを自動で判別するAI機能はまだないため、バーコードの数字やパッケージの文字を手がかりに、登録済みの商品と照合します。</div>
     <div class="card"><div class="card-h"><h2>1. パッケージを撮影</h2><span class="opt">任意</span></div>
-      <div class="page-actions"><label class="btn btn-primary btn-sm">${icon('camera')}カメラで撮る<input type="file" accept="image/*" capture="environment" id="scan-photo" hidden></label><label class="btn btn-ghost btn-sm">${icon('image')}写真を選ぶ<input type="file" accept="image/*" id="scan-photo-lib" hidden></label></div>
+      <div class="page-actions"><label class="btn btn-primary btn-sm">${icon('camera')}カメラで撮る<input type="file" accept="image/*" capture="environment" id="scan-photo" class="vh"></label><label class="btn btn-ghost btn-sm">${icon('image')}写真を選ぶ<input type="file" accept="image/*" id="scan-photo-lib" class="vh"></label></div>
       ${sc.photo ? `<img class="img-prev" src="${sc.photo}" alt="撮影した写真" style="width:150px;height:150px"><div class="page-actions" style="margin-top:6px"><button class="btn btn-primary btn-sm" data-action="scan-ai" ${sc.aiBusy ? 'disabled' : ''}>${sc.aiBusy ? '読み取っています…' : '写真から文字を読み取る'} <span class="badge-premium">${PREMIUM_NAME}</span></button><button class="btn btn-ghost btn-sm" data-action="scan-clear-photo">写真を外す</button></div>
         ${sc.aiBusy ? skelHtml(4, {label:'写真を読み取り中', note:'商品名・成分を読み取っています（10秒ほどかかります）'}) : ''}${sc.aiMsg ? `<p class="small" style="margin-top:6px">${esc(sc.aiMsg)}</p>` : ''}
         <p class="hint">${PREMIUM_NAME}では、商品名・内容量・全成分の文字をAIで読み取って下の欄に入れます（成分表示は裏面を撮ると読み取れます。表と裏で2回読み取ると、成分は後ろに追加されます）。写真は読み取りのためだけにGoogleのAI（Gemini）に送り、保存しません。</p>` : ''}
@@ -3545,7 +3552,7 @@ function openLifeForm(id, part) {
   const pending = {}, aiRes = {};
   const mealBlock = m => `<div class="meal-block" data-meal="${m.k}">
     <div class="meal-head">${m.k === 'snack' ? `<b class="small">${m.l}</b>` : `<label class="check"><input type="checkbox" name="ate_${m.k}" ${d.meals[m.k].ate ? 'checked' : ''}><b>${m.l}</b></label><input type="time" class="input" style="width:130px;min-height:40px;font-size:16px;padding:6px 10px" name="time_${m.k}" value="${esc(d.meals[m.k].time)}" aria-label="${m.l}の時刻">`}
-      <label class="btn btn-ghost btn-sm">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="${m.k}" hidden></label><label class="btn btn-ghost btn-sm">${icon('image')}写真を選ぶ<input type="file" accept="image/*" data-mphoto="${m.k}" hidden></label></div>
+      <label class="btn btn-ghost btn-sm">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="${m.k}" class="vh"></label><label class="btn btn-ghost btn-sm">${icon('image')}写真を選ぶ<input type="file" accept="image/*" data-mphoto="${m.k}" class="vh"></label></div>
     <div data-mprev="${m.k}"></div>
     <div data-pinfo="${m.k}"></div>
     <div class="chips" data-mfoods="${m.k}" style="margin-top:8px"></div>
@@ -3943,6 +3950,13 @@ async function runAdvice(force) {
   adviceBusy = false; box();
 }
 function face3dApply(st, counts, max, mode) { st.counts = counts; face3dColors(st.geo, counts, max); face3dDots(st, counts, mode); st.dirty = true; }
+// iPhoneでは、これがないと押した瞬間の見た目（:active）が出ない
+document.addEventListener('touchstart', () => {}, {passive:true});
+// 下のバーで、今いる画面をもう一度押したら一番上に戻る（「押しても反応しない」と感じないように）
+document.addEventListener('click', e => {
+  const a = e.target.closest('#bottom-nav a.bn-item, .sidebar a.sn-item'); if (!a) return;
+  if (a.getAttribute('href') === (location.hash || '#/home')) { e.preventDefault(); window.scrollTo({top:0, behavior:'smooth'}); }
+});
 let lastScrollAt = 0;
 window.addEventListener('scroll', () => { lastScrollAt = performance.now(); }, {passive:true});
 async function drawFace3d(opts) {
@@ -4394,7 +4408,9 @@ function isPremium() {
 async function callVision(mode, image, payload) {
   if (!acct.client) await initCloud();
   if (!acct.client || !acct.user) throw new Error('ログインしてからお使いください。');
-  const {data, error} = await acct.client.functions.invoke('vision', {body:mode === 'advice' ? {mode, data:payload} : mode === 'diag' ? {mode} : {mode, image}});
+  // 返事が来ないまま「読み取り中」で止まらないように、90秒で打ち切る
+  const call = acct.client.functions.invoke('vision', {body:mode === 'advice' ? {mode, data:payload} : mode === 'diag' ? {mode} : {mode, image}});
+  const {data, error} = await Promise.race([call, new Promise((_, rej) => setTimeout(() => rej(new Error('時間がかかりすぎたため中止しました。電波のよい場所で、もう一度お試しください。')), 90000))]);
   if (error) {
     let msg = 'サーバーに接続できませんでした。時間をおいてお試しください。';
     try {
@@ -4783,12 +4799,17 @@ function moneyCardHtml() {
   const items = allPurchases().filter(x => monthKey(x.date) === sel);
   const byCat = {}; items.forEach(x => byCat[x.category || 'その他'] = (byCat[x.category || 'その他'] || 0) + x.price);
   const cats = Object.entries(byCat).sort((a, b) => b[1] - a[1]);
-  const budgetLine = budget > 0 ? (() => { const g = total - budget; return `<span class="mb-chip ${g <= 0 ? 'good' : 'bad'}">${g <= 0 ? '予算内' : '予算オーバー'} ${signEn(g)}</span>`; })() : `<a class="link small" href="#/spending">予算を設定する</a>`;
+  const budgetLine = budget > 0 ? (() => { const g = total - budget; return `<span class="mb-chip ${g <= 0 ? 'good' : 'bad'}">${g <= 0 ? '予算内' : '予算オーバー'} ${signEn(g)}</span><button class="mb-edit" data-action="acc-budget-edit">予算 ${en(budget)}・変更</button>`; })() : `<button class="mb-edit" data-action="acc-budget-edit">${icon('plus')}予算を設定</button>`;
+  // 予算は、この場で入力して保存できる（別の画面に移らない）
+  const budgetForm = ui.budgetEdit ? `<form id="acc-budget-form" class="mb-bform" novalidate><label class="small" for="acc-budget-in">1か月のスキンケア予算</label>
+      <div class="mb-brow"><input class="input" id="acc-budget-in" name="budget" inputmode="numeric" value="${budget || ''}" placeholder="例：10000" aria-describedby="acc-budget-err"><span>円</span>
+      <button type="submit" class="btn btn-primary btn-sm">保存</button><button type="button" class="btn btn-ghost btn-sm" data-action="acc-budget-cancel">やめる</button></div>
+      <p class="field-error" id="acc-budget-err"></p><p class="hint" style="margin:2px 0 0">0か空欄で保存すると、予算を使わない設定になります。</p></form>` : '';
   return `<div class="card-h"><h2>${icon('calendar')}月々のスキンケア代</h2></div>
     <div class="mb-chart">${bl}<div class="mb-cols">${bars}</div></div>
     <div class="mb-sum" id="mb-sum">
       <div class="mb-total"><span>${ml(sel)}の合計</span><b>${en(total)}</b></div>
-      <div class="mb-sub"><span class="mb-chip ${d > 0 ? 'bad' : d < 0 ? 'good' : ''}">先月比 ${signEn(d)}</span>${budgetLine}</div>
+      <div class="mb-sub"><span class="mb-chip ${d > 0 ? 'bad' : d < 0 ? 'good' : ''}">先月比 ${signEn(d)}</span>${budgetLine}</div>${budgetForm}
       ${cats.length ? `<div class="mb-cats">${cats.map(([c, v]) => `<div class="mb-cat"><span>${esc(c)}</span><span class="mb-catbar"><i style="width:${(v / total * 100).toFixed(1)}%"></i></span><b>${en(v)}</b></div>`).join('')}</div>` : ''}
       ${items.length ? `<ul class="mb-list">${items.map(x => `<li><span><b>${esc(truncate(x.name, 30))}</b><small>${esc(fmtMD(x.date))}${x.brand ? '・' + esc(x.brand) : ''}</small></span><em>${en(x.price)}</em></li>`).join('')}</ul>`
         : `<p class="small muted" style="margin:10px 0 0">この月の購入の記録はありません。マイ化粧品に購入価格を入れると、ここに表示されます。</p>`}
@@ -4797,6 +4818,7 @@ function moneyCardHtml() {
 }
 // ---------- アカウント（下のバー）：お金・プラン・設定をまとめた画面 ----------
 function viewAccount() {
+  ui.budgetEdit = false;
   const t = todayStr(), mk = monthKey(t), mTotal = monthTotal(mk), budget = state.settings.monthlyBudget;
   const items = [
     {r:'spending', icon:'wallet', t:'支出・買う前チェック', d:`今月のスキンケア代 ${yen(mTotal)}${budget ? `（予算 ${yen(budget)}）` : ''}`},
@@ -5031,6 +5053,8 @@ const actions = {
     st.user = true; st.auto = false; st.target = {yaw:base + t[0], pitch:t[1]}; st.dirty = true;
   },
   'advice-ai': () => runAdvice(true),
+  'acc-budget-edit': () => { ui.budgetEdit = true; const c = document.getElementById('acc-money'); if (c) { c.innerHTML = moneyCardHtml(); const i = document.getElementById('acc-budget-in'); if (i) i.focus(); } },
+  'acc-budget-cancel': () => { ui.budgetEdit = false; const c = document.getElementById('acc-money'); if (c) c.innerHTML = moneyCardHtml(); },
   'acc-month': v => { ui.accMonth = v; const c = document.getElementById('acc-money'); if (c) { c.innerHTML = moneyCardHtml(); const sm = document.getElementById('mb-sum'); if (sm) sm.classList.add('mb-flash'); } },
   'vision-diag': () => runVisionDiag(),
   'life-goal': () => openLifeGoal(),
@@ -5272,7 +5296,7 @@ async function runWithUndo(work) {
   el.className = 'toast undo';
   el.innerHTML = `<span>${esc(msg)}</span><button type="button" class="toast-btn">元に戻す</button>`;
   root.appendChild(el);
-  const timer = setTimeout(() => el.remove(), 7000);
+  const timer = toastFade(el, 6000);
   el.querySelector('button').onclick = () => {
     clearTimeout(timer); el.remove();
     try { state = normalize(JSON.parse(before)); } catch (err) { toast('元に戻せませんでした', 'error'); return; }
@@ -5422,6 +5446,13 @@ document.addEventListener('submit', e => {
     if (!(ht === 0 || (ht >= 80 && ht <= 250))) { showErrors(f, Object.assign(er, {height:'80〜250の数字で入力してください（空欄でも大丈夫です）。'})); return; }
     state.settings.sleepNeed = Number(f.elements.sleepNeed.value) || 420; state.settings.weight = Math.round(w * 10) / 10; state.settings.height = Math.round(ht * 10) / 10; state.settings.proteinGoal = Math.round(pg);
     if (save()) { closeModal(); toast('保存しました'); render(); }
+    return;
+  }
+  if (e.target.id === 'acc-budget-form') {
+    e.preventDefault(); const v = parseYen(e.target.elements.budget.value);
+    if (isNaN(v)) { const er = document.getElementById('acc-budget-err'); if (er) er.textContent = '0以上の整数（半角・全角の数字）で入力してください。'; return; }
+    state.settings.monthlyBudget = v === '' ? 0 : v; ui.budgetEdit = false;
+    if (save()) { const c = document.getElementById('acc-money'); if (c) c.innerHTML = moneyCardHtml(); toast(v ? '予算を保存しました' : '予算を使わない設定にしました'); }
     return;
   }
   if (e.target.id !== 'budget-form') return;
