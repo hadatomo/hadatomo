@@ -368,11 +368,13 @@ details.fold[open] summary{margin-bottom:10px}
 .map-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
 .store-pin{width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center}
 .store-pin b{transform:rotate(45deg);color:#fff;font-size:11px;font-weight:700;font-family:var(--font)}
-.leaflet-popup-content{font-family:var(--font);font-size:13px;line-height:1.5;margin:10px 12px}
-.leaflet-popup-content a{color:var(--green-d)}
+.maplibregl-popup-content{font-family:var(--font);font-size:13px;line-height:1.5;padding:10px 12px;border-radius:10px}
+.maplibregl-popup-content a{color:var(--green-d)}
+.pin-wrap{width:34px;height:36px;display:flex;align-items:flex-end;justify-content:center;cursor:pointer}
+.center-dot{width:14px;height:14px;border-radius:50%;background:#2B6CB0;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25),0 0 0 8px rgba(43,108,176,.18)}
 .offer.shop-card{cursor:pointer;transition:background .2s,box-shadow .2s,border-color .2s}
 .offer.shop-card.selected{background:#FFF8E6;border-color:#E2B23A;box-shadow:0 0 0 3px rgba(226,178,58,.35)}
-.store-pin.sel{width:34px;height:34px;box-shadow:0 0 0 4px rgba(226,178,58,.6),0 2px 6px rgba(0,0,0,.4)}
+.store-pin.sel{width:34px;height:34px;margin-bottom:-2px;box-shadow:0 0 0 4px rgba(226,178,58,.6),0 2px 6px rgba(0,0,0,.4)}
 .store-pin.sel b{font-size:13px}
 .meal-block{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface)}
 .meal-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
@@ -2066,27 +2068,39 @@ function shopCard(s, i) {
     <div class="offer-actions">${extLink(`https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}`, '地図')}${extLink(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}`, '経路')}${extLink(`https://maps.apple.com/?q=${encodeURIComponent(s.name)}&ll=${s.lat},${s.lng}`, 'Appleマップ')}
       ${tel ? `<a class="btn btn-ghost btn-sm" href="tel:${esc(tel)}">電話で在庫を確認</a>` : ''}${extLink(s.url, '公式サイト')}<button class="btn btn-soft btn-sm" data-action="store-add" data-id="${i}">価格比較に追加</button></div></div>`;
 }
-// ---------- 店舗の地図（国土地理院の地図・航空写真を Leaflet で表示） ----------
+// ---------- 店舗の地図（国土地理院のベクトル地図・航空写真を MapLibre で表示。拡大しても文字や線がくっきり） ----------
 const PIN_COLORS = {'薬局':'#2F855A', 'ドラッグストア':'#C05621', '化粧品店':'#B83280', 'バラエティショップ':'#6B46C1', '百貨店':'#6B46C1', 'その他':'#4A5568'};
-const GSI_TILES = {
-  std:  {url:'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', max:18}, // 淡色地図（印が見やすい）
-  photo:{url:'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', max:18}
+const MAP_LIBS = {
+  css:'https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.css',
+  js:'https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.js',
+  pmtiles:'https://unpkg.com/pmtiles@3.2.1/dist/pmtiles.js'
 };
-let leafletLoading = null, storeMap = null, storeMarkers = [];
-function loadLeaflet() {
-  if (window.L) return Promise.resolve();
-  if (leafletLoading) return leafletLoading;
-  leafletLoading = new Promise((resolve, reject) => {
-    const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'; document.head.appendChild(css);
-    const js = document.createElement('script'); js.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
-    js.onload = () => resolve(); js.onerror = () => { leafletLoading = null; reject(new Error('地図の部品を読み込めませんでした')); };
-    document.head.appendChild(js);
-  });
-  return leafletLoading;
+const GSI_ATTR = '<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">国土地理院</a>';
+const MAP_STYLES = {
+  std:'https://gsi-cyberjapan.github.io/optimal_bvmap/style/std.json', // 地理院地図Vector（標準地図）
+  photo:{version:8, sources:{p:{type:'raster', tiles:['https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg'], tileSize:256, maxzoom:18, attribution:GSI_ATTR}}, layers:[{id:'p', type:'raster', source:'p'}]}
+};
+let mapLibLoading = null, storeMap = null, storeMarkers = [];
+function loadScript(src) { return new Promise((res, rej) => { const e = document.createElement('script'); e.src = src; e.onload = res; e.onerror = () => rej(new Error('地図の部品を読み込めませんでした')); document.head.appendChild(e); }); }
+function loadMapLib() {
+  if (window.maplibregl && window.__pmtilesReady) return Promise.resolve();
+  if (mapLibLoading) return mapLibLoading;
+  const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = MAP_LIBS.css; document.head.appendChild(css);
+  mapLibLoading = Promise.all([loadScript(MAP_LIBS.js), loadScript(MAP_LIBS.pmtiles)]).then(() => {
+    const p = new window.pmtiles.Protocol(); window.maplibregl.addProtocol('pmtiles', p.tile); window.__pmtilesReady = true;
+  }).catch(e => { mapLibLoading = null; throw e; });
+  return mapLibLoading;
 }
-function pinIcon(s, i, sel) {
-  const color = PIN_COLORS[s.type] || PIN_COLORS['その他'], n = sel ? 34 : 26;
-  return window.L.divIcon({className:'', html:`<div class="store-pin ${sel ? 'sel' : ''}" style="background:${color}"><b>${i + 1}</b></div>`, iconSize:[n, n], iconAnchor:[n / 2, n], popupAnchor:[0, -n + 2]});
+function pinEl(s, i, sel) {
+  const d = document.createElement('div');
+  d.className = 'store-pin' + (sel ? ' sel' : ''); d.style.background = PIN_COLORS[s.type] || PIN_COLORS['その他']; d.style.zIndex = sel ? 10 : 1;
+  d.innerHTML = `<b>${i + 1}</b>`; d.setAttribute('role', 'button'); d.setAttribute('aria-label', `${i + 1}. ${s.name}`);
+  return d;
+}
+function circlePolygon(lat, lng, m) {
+  const pts = [], dLat = m / 111320, dLng = m / (111320 * Math.cos(lat * Math.PI / 180));
+  for (let k = 0; k <= 64; k++) { const a = k / 64 * 2 * Math.PI; pts.push([lng + dLng * Math.cos(a), lat + dLat * Math.sin(a)]); }
+  return {type:'Feature', geometry:{type:'Polygon', coordinates:[pts]}};
 }
 // 店舗を選ぶ：一覧の欄を明るくし、地図の印を大きくしてその場所を表示する
 function selectShop(i, fromList) {
@@ -2094,11 +2108,13 @@ function selectShop(i, fromList) {
   const prev = ui.storeSel; ui.storeSel = i;
   $$('.shop-card.selected').forEach(x => x.classList.remove('selected'));
   const card = document.getElementById('shop-' + i); if (card) card.classList.add('selected');
-  if (storeMap && window.L) {
+  if (storeMap) {
     const s = R.items[i];
-    if (prev != null && prev !== i && storeMarkers[prev]) { storeMarkers[prev].setIcon(pinIcon(R.items[prev], prev, false)); storeMarkers[prev].setZIndexOffset(0); }
-    if (storeMarkers[i]) { storeMarkers[i].setIcon(pinIcon(s, i, true)); storeMarkers[i].setZIndexOffset(1000); }
-    if (fromList) { storeMap.setView([s.lat, s.lng], Math.max(storeMap.getZoom(), 17), {animate:true}); setTimeout(() => storeMarkers[i] && storeMarkers[i].openPopup(), 350); }
+    storeMarkers.forEach((m, k) => { if (!m) return; const el = m.getElement().firstElementChild || m.getElement(); el.classList.toggle('sel', k === i); m.getElement().style.zIndex = k === i ? 10 : 1; if (k !== i && m.getPopup() && m.getPopup().isOpen()) m.togglePopup(); });
+    if (fromList) {
+      storeMap.easeTo({center:[s.lng, s.lat], zoom:Math.max(storeMap.getZoom(), 16.5), duration:500});
+      setTimeout(() => { const m = storeMarkers[i]; if (m && !m.getPopup().isOpen()) m.togglePopup(); }, 520);
+    }
   }
   if (fromList) { const mp = document.getElementById('store-map'); if (mp) mp.scrollIntoView({behavior:'smooth', block:'center'}); }
   else if (card) card.scrollIntoView({behavior:'smooth', block:'nearest'});
@@ -2106,27 +2122,38 @@ function selectShop(i, fromList) {
 async function drawStoreMap() {
   const el = document.getElementById('store-map'), R = ui.storeRes;
   if (storeMap) { try { storeMap.remove(); } catch (e) { /* 何もしない */ } storeMap = null; }
-  if (!el || !R || R.status !== 'done') return;
-  try { await loadLeaflet(); } catch (e) { el.innerHTML = '<p class="small muted" style="padding:12px">地図を表示できませんでした。各店舗の「地図」ボタンから場所を確認できます。</p>'; return; }
-  if (!document.body.contains(el)) return;
-  const L = window.L, c = R.center, layer = GSI_TILES[ui.mapLayer] || GSI_TILES.std;
-  const map = L.map(el, {zoomControl:true, attributionControl:true, scrollWheelZoom:false, tap:true});
-  storeMap = map;
-  L.tileLayer(layer.url, {maxZoom:layer.max, maxNativeZoom:layer.max, detectRetina:false,
-    attribution:'<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">国土地理院</a>'}).addTo(map);
-  L.circle([c.lat, c.lng], {radius:R.radius, color:'#2B6CB0', weight:1, fillOpacity:0.04}).addTo(map);
-  L.circleMarker([c.lat, c.lng], {radius:7, color:'#fff', weight:2, fillColor:'#2B6CB0', fillOpacity:1}).addTo(map).bindPopup(esc(c.label) + '（検索の中心）');
-  const shown = R.items.slice(0, ui.storeShow);
   storeMarkers = [];
-  shown.forEach((s, i) => {
-    const mk = L.marker([s.lat, s.lng], {icon:pinIcon(s, i, ui.storeSel === i), title:s.name, zIndexOffset:ui.storeSel === i ? 1000 : 0}).addTo(map);
-    storeMarkers[i] = mk;
-    mk.on('click', () => selectShop(i, false));
-    mk.bindPopup(`<b>${i + 1}. ${esc(s.name)}</b><br>${esc(s.type)}・${esc(fmtDist(s.km))}<br><a href="https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}" target="_blank" rel="noopener">Googleマップで開く</a>　<a href="#shop-${i}" data-jump="shop-${i}">一覧で見る</a>`);
+  if (!el || !R || R.status !== 'done') return;
+  const fail = () => { el.innerHTML = '<p class="small muted" style="padding:12px">地図を表示できませんでした。各店舗の「地図」ボタンから場所を確認できます。</p>'; };
+  try { await loadMapLib(); } catch (e) { fail(); return; }
+  if (!document.body.contains(el)) return;
+  const gl = window.maplibregl, c = R.center;
+  const dLat = R.radius * 1.05 / 111320, dLng = R.radius * 1.05 / (111320 * Math.cos(c.lat * Math.PI / 180));
+  let map;
+  try {
+    map = new gl.Map({container:el, style:MAP_STYLES[ui.mapLayer] || MAP_STYLES.std, bounds:[[c.lng - dLng, c.lat - dLat], [c.lng + dLng, c.lat + dLat]], fitBoundsOptions:{padding:10},
+      maxZoom:18, attributionControl:{compact:true}, cooperativeGestures:true, dragRotate:false, pitchWithRotate:false, touchPitch:false,
+      locale:{'CooperativeGesturesHandler.WindowsHelpText':'Ctrlキーを押しながらスクロールで拡大・縮小', 'CooperativeGesturesHandler.MacHelpText':'⌘キーを押しながらスクロールで拡大・縮小', 'CooperativeGesturesHandler.MobileHelpText':'2本の指で地図を動かせます'}});
+  } catch (e) { fail(); return; }
+  storeMap = map;
+  map.touchZoomRotate.disableRotation();
+  map.addControl(new gl.NavigationControl({showCompass:false}), 'top-right');
+  map.on('load', () => {
+    if (storeMap !== map) return;
+    map.addSource('radius', {type:'geojson', data:circlePolygon(c.lat, c.lng, R.radius)});
+    map.addLayer({id:'radius-fill', type:'fill', source:'radius', paint:{'fill-color':'#2B6CB0', 'fill-opacity':0.05}});
+    map.addLayer({id:'radius-line', type:'line', source:'radius', paint:{'line-color':'#2B6CB0', 'line-width':1.5, 'line-dasharray':[2, 2]}});
   });
-  const b = L.latLng(c.lat, c.lng).toBounds(R.radius * 2.1);
-  map.fitBounds(b);
-  if (ui.storeSel != null && storeMarkers[ui.storeSel]) { const s = shown[ui.storeSel]; map.setView([s.lat, s.lng], Math.max(map.getZoom(), 16)); storeMarkers[ui.storeSel].openPopup(); }
+  const ce = document.createElement('div'); ce.className = 'center-dot';
+  new gl.Marker({element:ce}).setLngLat([c.lng, c.lat]).setPopup(new gl.Popup({offset:10}).setText(`${c.label}（検索の中心）`)).addTo(map);
+  R.items.slice(0, ui.storeShow).forEach((s, i) => {
+    const wrap = document.createElement('div'); wrap.className = 'pin-wrap'; wrap.appendChild(pinEl(s, i, ui.storeSel === i)); wrap.style.zIndex = ui.storeSel === i ? 10 : 1;
+    const pop = new gl.Popup({offset:[0, -30], maxWidth:'240px'}).setHTML(`<b>${i + 1}. ${esc(s.name)}</b><br>${esc(s.type)}・${esc(fmtDist(s.km))}<br><a href="https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}" target="_blank" rel="noopener">Googleマップで開く</a>　<a href="#shop-${i}" data-jump="shop-${i}">一覧で見る</a>`);
+    const m = new gl.Marker({element:wrap, anchor:'bottom'}).setLngLat([s.lng, s.lat]).setPopup(pop).addTo(map);
+    wrap.addEventListener('click', () => selectShop(i, false));
+    storeMarkers[i] = m;
+  });
+  if (ui.storeSel != null && R.items[ui.storeSel]) { const s = R.items[ui.storeSel]; map.jumpTo({center:[s.lng, s.lat], zoom:16.5}); setTimeout(() => { const m = storeMarkers[ui.storeSel]; if (m && !m.getPopup().isOpen()) m.togglePopup(); }, 300); }
   el.addEventListener('click', e => { const a = e.target.closest('[data-jump]'); if (a) { e.preventDefault(); const t = document.getElementById(a.dataset.jump); if (t) t.scrollIntoView({behavior:'smooth', block:'center'}); } });
 }
 function storeResultsHtml() {
@@ -2147,7 +2174,7 @@ function storeResultsHtml() {
     <div class="map-tabs"><button class="tab ${ui.mapLayer !== 'photo' ? 'active' : ''}" data-action="map-layer" data-id="std">地図</button><button class="tab ${ui.mapLayer === 'photo' ? 'active' : ''}" data-action="map-layer" data-id="photo">航空写真</button></div>
     <div id="store-map" class="store-map" role="region" aria-label="検索した場所の周辺地図"><noscript><iframe class="map-frame" title="周辺地図" src="${esc(src)}"></iframe></noscript></div>
     <div class="map-legend">${Object.entries(PIN_COLORS).filter(([t]) => R.items.some(x => (x.type || 'その他') === t)).map(([t, c]) => `<span><i style="background:${c}"></i>${esc(t)}</span>`).join('')}<span><i style="background:#2B6CB0"></i>検索の中心</span></div>
-    <p class="small muted" style="margin:4px 0 12px">印を押すと、店名と距離が出ます。番号は下の一覧の順番です（近い順）。一覧のお店を押すと、地図がそのお店の場所に移動します。地図：国土地理院。距離は検索の中心からの直線距離です。</p>
+    <p class="small muted" style="margin:4px 0 12px">印を押すと、店名と距離が出ます。番号は下の一覧の順番です（近い順）。一覧のお店を押すと、地図がそのお店の場所に移動します。地図：国土地理院（地図を動かすときは、スマホは2本の指、パソコンは⌘またはCtrlキー＋スクロール）。距離は検索の中心からの直線距離です。</p>
     ${R.items.length ? `<p class="small muted" style="margin-bottom:8px">${storeTypeCounts(R.items)}</p>` + R.items.slice(0, ui.storeShow).map((s, i) => shopCard(s, i)).join('') + (R.items.length > ui.storeShow ? `<button class="btn btn-ghost" style="width:100%;margin-top:10px" data-action="store-more">さらに表示（残り${R.items.length - ui.storeShow}件）</button>` : '') : '<p class="small muted">この範囲では、条件に合う店舗が地図データに見つかりませんでした。範囲を広げるか、下の「地図アプリで探す」をお試しください。</p>'}
     ${R.pharm ? `<p class="small muted" style="margin-top:12px">薬局のデータ：「医療情報ネット」オープンデータ（厚生労働省、${R.pharm.date ? esc(R.pharm.date.replace(/-/g, '/')) + '時点' : ''}）を加工して作成。届出の内容のため、実際と異なる場合があります。</p>` : ''}
     ${R.pharmFailed ? '<p class="small muted" style="margin-top:8px">国の薬局データを読み込めなかったため、薬局は地図データから探しています（一部の薬局が表示されない場合があります）。</p>' : ''}
@@ -2852,7 +2879,7 @@ function openLogForm(id) {
   const usable = state.myProducts.filter(p => p.status === '使用中' || p.status === '一時停止' || d.usedProducts.includes(p.id));
   openModal({title: ex ? '肌の記録を編集' : '肌の記録', body: `<form id="log-form" novalidate><div class="form-grid">
     ${field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint: !ex && map[t] ? '今日の記録はすでにあります。別の日付を選ぶか、一覧から今日の記録を編集してください。' : ''})}
-    ${field('肌の調子', seg('condition', [1,2,3,4,5].map(v => ({v, label:COND_LABELS[v]})), d.condition), {name:'condition', required:true})}
+    ${field('肌の調子', seg('condition', [5,4,3,2,1].map(v => ({v, label:COND_LABELS[v]})), d.condition), {name:'condition', required:true})}
     <div class="field" data-field="acneCount"><span class="lbl">ニキビ<span class="opt">数と状態</span></span>
       <div class="counter"><button type="button" class="icon-btn" data-step="-1" aria-label="1つ減らす">−</button><input class="input" id="f_acneCount" name="acneCount" inputmode="numeric" value="${d.acneCount}" aria-label="ニキビの数"><button type="button" class="icon-btn" data-step="1" aria-label="1つ増やす">＋</button><span class="small muted">個</span></div>
       <div class="field-error" data-err="acneCount"></div>
@@ -3767,7 +3794,7 @@ ${row('jsDelivr（Prospect One）', 'IPアドレス、ブラウザの情報', '�
 ${row('Geoapify（Geoapify GmbH）', '入力した地名・駅名、検索する場所の座標', '近くの店舗の検索。店舗検索で「検索」を押したときだけ')}
 ${row('国土地理院（地名検索）', '入力した地名・駅名・住所', '場所の特定。店舗検索で「検索」を押したときだけ')}
 ${row('国土地理院（地図・航空写真）', '表示する地図の範囲、IPアドレス', '店舗検索の結果の地図の表示')}
-${row('cdnjs（Cloudflare）', 'IPアドレス、ブラウザの情報', '地図の部品（Leaflet）の読み込み。店舗検索の結果を表示したとき')}
+${row('cdnjs（Cloudflare）・unpkg', 'IPアドレス、ブラウザの情報', '地図の部品（MapLibre・PMTiles）の読み込み。店舗検索の結果を表示したとき')}
 ${row('OpenStreetMap', '検索する場所の座標、IPアドレス', 'Geoapifyが使えないときの予備の店舗検索')}
 ${row('楽天グループ（楽天ウェブサービス）・LINEヤフー（Yahoo!デベロッパーネットワーク）', '商品名・JANコード（運営者のサーバーを通して送信。利用者のIPアドレスなどは送りません）', '価格比較。「価格を調べる」を押したときだけ')}
 ${row('Google（Gemini API）', '「写真から読み取る」を押した写真（食事・化粧品のパッケージ）', '写真読み取り（プレミアム）。押したときだけ。運営者は写真を保存しません。Googleの無料枠を使う場合、送った内容がGoogleのサービス改善に使われることがあります')}
@@ -3835,7 +3862,7 @@ function viewSettings() {
         <li><b>位置情報</b>：「現在地の近くを探す」を押し、確認画面とブラウザの許可の両方で同意した場合だけ使います。保存はしません。地図のリンクを開くと、地図サービスに位置が送られます。</li>
         <li><b>アカウント</b>：有料プランの申し込み・管理のため、ログインした場合だけ、メールアドレスと契約状況をサーバー（Supabase・東京リージョン）に保存します。決済はStripeの画面で行い、カード情報は肌トモに保存されません。ログイン機能の部品は、プラン・アカウントの画面を開いたときに jsDelivr から読み込みます。</li>
         <li><b>薬局のデータ</b>：「医療情報ネット」オープンデータ（厚生労働省）を加工して、アプリと一緒に置いています。検索のときに外部に送る情報はありません。</li>
-        <li><b>店舗検索</b>：「検索」ボタンを押したときだけ、入力した駅名・地名・住所と、検索する場所（または許可した現在地）を、店舗検索サービスGeoapifyと国土地理院の地名検索に送ります（Geoapifyが使えないときは、予備としてOpenStreetMapのサーバーに送ります）。検索結果の地図には、国土地理院の地図・航空写真を読み込みます（地図の部品は cdnjs から読み込みます）。</li>
+        <li><b>店舗検索</b>：「検索」ボタンを押したときだけ、入力した駅名・地名・住所と、検索する場所（または許可した現在地）を、店舗検索サービスGeoapifyと国土地理院の地名検索に送ります（Geoapifyが使えないときは、予備としてOpenStreetMapのサーバーに送ります）。検索結果の地図には、国土地理院の地図・航空写真を読み込みます（地図の部品は cdnjs・unpkg から読み込みます）。</li>
         <li><b>食事の写真</b>：撮影した写真は端末内だけで使い、「保存する」にチェックしたものだけをこのブラウザ内に保存します。</li>
         <li><b>写真読み取り（${PREMIUM_NAME}）</b>：「写真から読み取る」を押したときだけ、その写真を${esc(SERVICE)}のサーバーを通してGoogleのAI（Gemini API）に送り、料理や文字を読み取ります。写真と結果はサーバーに保存しません。使った回数（1日あたり）だけを記録します。</li>
         <li><b>価格比較</b>：「価格を調べる」を押したときだけ、商品名（とJANコード）を${esc(SERVICE)}のサーバーを通して楽天市場・Yahoo!ショッピングの公式APIに送ります。あなたの情報（IPアドレスなど）は送りません。</li>
