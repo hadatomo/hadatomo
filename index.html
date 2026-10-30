@@ -209,7 +209,18 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(90,138,105,.16),transparent 70%)}
 .hero-brand{font-family:var(--serif);font-size:34px;letter-spacing:.26em;font-weight:500;line-height:1.1}
 .hero-copy{margin-top:10px;font-size:15px;color:var(--ink2);letter-spacing:.06em}
-.hero-date{margin-top:16px;font-size:13px;color:var(--muted)}
+.hero-date{margin:0;font-size:16px;font-weight:600;color:var(--ink)}
+.hero-top{display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:420px}
+.streak{display:inline-flex;align-items:center;gap:4px;flex:none}
+.streak-star{position:relative;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;filter:drop-shadow(0 0 6px rgba(245,184,46,.55));animation:starGlow 2.6s ease-in-out infinite}
+.streak-star svg{position:absolute;inset:0;width:100%;height:100%}
+.streak-star b{position:relative;font-size:14px;font-weight:800;color:#7A4A00;margin-top:3px;line-height:1}
+.streak-star .glint{position:absolute;right:2px;top:1px;width:9px;height:9px;background:radial-gradient(circle,#fff 0 30%,rgba(255,255,255,0) 70%);border-radius:50%;animation:starGlint 2.6s ease-in-out infinite}
+.streak-l{font-size:12.5px;font-weight:600;color:#9A6A10;display:flex;flex-direction:column;line-height:1.25}
+.streak-l small{font-size:10.5px;font-weight:500;color:var(--muted)}
+@keyframes starGlow{0%,100%{filter:drop-shadow(0 0 4px rgba(245,184,46,.45))}50%{filter:drop-shadow(0 0 10px rgba(245,184,46,.85))}}
+@keyframes starGlint{0%,70%,100%{opacity:0;transform:scale(.4)}80%{opacity:1;transform:scale(1.2)}}
+@media (prefers-reduced-motion:reduce){.streak-star,.streak-star .glint{animation:none}}
 .hero-actions{margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;position:relative;z-index:1}
 @media(min-width:720px){.hero{padding:40px}.hero-brand{font-size:44px}}
 .big-stat{font-size:30px;font-weight:600;letter-spacing:.01em;line-height:1.2}
@@ -1486,8 +1497,11 @@ function recordStreak(map, t) {
 }
 function streakHtml(map, t) {
   const st = recordStreak(map, t);
-  if (st.n < 2) return '';
-  return ` <span class="chip green" style="margin-left:6px">連続記録 ${st.n}日${st.today ? '' : '（今日の記録で更新）'}</span>`;
+  if (st.n < 1) return '';
+  // 光る星の中に、連続して記録した日数を入れる
+  return `<span class="streak" title="${st.today ? '' : '今日記録すると更新されます'}" aria-label="連続記録 ${st.n}日${st.today ? '' : '（今日の記録で更新）'}">
+    <span class="streak-star"><svg viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="stg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFE27A"/><stop offset=".55" stop-color="#F5B82E"/><stop offset="1" stop-color="#E39410"/></linearGradient></defs><path d="M24 3.5l6.1 12.9 14.1 1.8-10.3 9.8 2.6 14L24 35.2 11.5 42l2.6-14L3.8 18.2l14.1-1.8z" fill="url(#stg)" stroke="#D98A0B" stroke-width="1.2" stroke-linejoin="round"/></svg><b>${st.n}</b><i class="glint"></i></span>
+    <span class="streak-l">日連続${st.today ? '' : '<small>今日で更新</small>'}</span></span>`;
 }
 // ---------- 今日の睡眠・運動・食事のまとめ（ホーム） ----------
 // 運動の強さ（METs：国立健康・栄養研究所「改訂版 身体活動のメッツ表」を参考にした目安）
@@ -1535,7 +1549,7 @@ function viewHome() {
 
   let html = loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '';
   html += `<section class="hero">
-    <p class="hero-date" style="margin-top:0;font-size:16px;font-weight:600;color:var(--ink)">${fmtDate(t)}${streakHtml(map, t)}</p>
+    <div class="hero-top"><p class="hero-date">${fmtDate(t)}</p>${streakHtml(map, t)}</div>
     <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${icon('plus')}今日の肌を記録</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('chart')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('note')}食事</button></div></section>`;
 
   const lifeLine = lifeSumHtml(todayLife);
@@ -5086,7 +5100,7 @@ function render() {
   try { html = (views[r.name] || viewHome)(); }
   catch (err) { console.error(err); html = `<div class="card">${emptyBox('note', '画面の表示中にエラーが発生しました', 'ページを再読み込みしてください。解決しない場合は、設定からバックアップを書き出したうえで「すべて削除」をお試しください。', '<a class="btn btn-primary btn-sm" href="#/settings">設定を開く</a>')}</div>`; }
   // ホーム以外の画面には、上に「戻る」を付ける（その画面に専用の戻るリンクがある場合は付けない）
-  if (r.name !== 'home' && !/^\s*(<div class="notice[^>]*>.*?<\/div>\s*)?<a class="back"/s.test(html)) html = `<button type="button" class="back back-btn" data-action="go-back">← 戻る</button>` + html;
+  if (r.name !== 'home' && !(['log', 'my', 'search'].includes(r.name) && !r.id) && !/^\s*(<div class="notice[^>]*>.*?<\/div>\s*)?<a class="back"/s.test(html)) html = `<button type="button" class="back back-btn" data-action="go-back">← 戻る</button>` + html;
   $('#main').innerHTML = html;
   renderNav(navName);
   const key = r.name + '/' + r.id;
