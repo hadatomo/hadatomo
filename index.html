@@ -1647,8 +1647,7 @@ function motionIn(route) {
   const tab = TAB_PAGES.includes(route);
   // 下のバーの画面の一番上の見出しは、開くたびにふわっと出る（ホームの日付は動かさない）
   if (tab) { const h = main.querySelector('.page-head h1'); if (h) { h.classList.remove('fade-once'); void h.offsetWidth; h.classList.add('fade-once'); } }
-  if (tab && motionSeen.has(route)) { main.classList.remove('pg-in'); return; } // 2回目からは、ほかはそのまま表示
-  motionSeen.add(route);
+  // それ以外（カード・数字・グラフなど）は、どの画面でも開くたびに動く
   // 画面全体：下からふわっと
   main.classList.remove('pg-in'); void main.offsetWidth; main.classList.add('pg-in');
   if (!tab) {
