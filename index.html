@@ -210,7 +210,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .hero-brand{font-family:var(--serif);font-size:34px;letter-spacing:.26em;font-weight:500;line-height:1.1}
 .hero-copy{margin-top:10px;font-size:15px;color:var(--ink2);letter-spacing:.06em}
 .hero-date{margin:0;font-size:15px;font-weight:700;color:var(--ink);line-height:1.2}
-.hero-top{display:flex;align-items:center;justify-content:center;gap:10px;max-width:420px;min-height:44px;border-radius:999px;background:var(--surface);border:1px solid var(--line2);text-align:center}
+.hero-top{display:flex;align-items:center;justify-content:center;gap:10px;max-width:420px;min-height:44px;text-align:center}
 .streak{display:inline-flex;align-items:center;gap:4px;flex:none}
 .streak-star{position:relative;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;filter:drop-shadow(0 0 6px rgba(245,184,46,.55));animation:starGlow 2.6s ease-in-out infinite}
 .streak-star svg{position:absolute;inset:0;width:100%;height:100%}
@@ -4504,7 +4504,7 @@ let installEvt = null;
 window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; if (parseRoute().name === 'settings') render(); });
 window.addEventListener('appinstalled', () => { installEvt = null; toast('ホーム画面に追加しました'); });
 const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
-if ('serviceWorker' in navigator && location.protocol === 'https:') window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+if ('serviceWorker' in navigator && location.protocol === 'https:') window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', {updateViaCache:'none'}).then(r => { try { r.update(); } catch (e) { /* 何もしない */ } }).catch(() => {}); }); // 開くたびに、裏の仕組み（sw.js）の更新も確認する
 function installCardHtml() {
   if (isStandalone()) return `<div class="card"><div class="card-h"><h2>アプリとして使う</h2><span class="chip green">追加済み</span></div><p class="small muted">ホーム画面から開いています。電波が弱い場所でも、記録の画面を開けます。</p></div>`;
   const d = geoDevice();
