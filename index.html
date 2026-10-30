@@ -3577,6 +3577,8 @@ async function runAdvice(force) {
   adviceBusy = false; box();
 }
 function face3dApply(st, counts, max, mode) { st.counts = counts; face3dColors(st.geo, counts, max); face3dDots(st, counts, mode); st.dirty = true; }
+let lastScrollAt = 0;
+window.addEventListener('scroll', () => { lastScrollAt = performance.now(); }, {passive:true});
 async function drawFace3d(opts) {
   opts = Object.assign({canvas:'face3d', load:'f3-load', tip:'f3-tip', ready:st => face3dShowWeek(ui.f3Week == null ? 7 : ui.f3Week)}, opts || {});
   const cv = document.getElementById(opts.canvas);
@@ -3625,7 +3627,7 @@ async function drawFace3d(opts) {
   const pts = new Map(); let pinch = null;
   const minZ = opts.full ? 20 : 34, maxZ = opts.full ? 90 : 84;
   cv.addEventListener('pointerdown', e => {
-    pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); st.target = null; st.user = true; st.idle = 0;
+    pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); st.target = null; st.user = true; st.idle = 0; if (DEV.touch) st.auto = false;
     if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = {d:Math.hypot(a.x - b.x, a.y - b.y), z:st.zoomT || cam.position.z}; st.drag = null; return; }
     st.drag = {x:e.clientX, y:e.clientY, yaw:st.yaw, pitch:st.pitch, moved:false}; cv.setPointerCapture(e.pointerId);
   });
@@ -3649,16 +3651,20 @@ async function drawFace3d(opts) {
     if (st.stop || !document.body.contains(cv)) { st.stop = true; if (st.io) st.io.disconnect(); if (!st.lost) { st.lost = true; try { renderer.dispose(); renderer.forceContextLoss(); } catch (e) { /* 何もしない */ } } return; }
     if (!st.visible || document.hidden) { requestAnimationFrame(loop); return; }
     st.idle++;
-    // 最初からゆっくり左右に回って、両方の頬が見えるようにする（触っている間は止まり、離して少しすると再開）
-    if (st.auto && !st.drag && !st.target && pts.size === 0 && st.idle > (st.user ? 150 : 0)) {
+    // 最初からゆっくり左右に回って、両方の頬が見えるようにする
+    // ・パソコン：触っている間は止まり、離して少しすると再開
+    // ・スマホ：画面の揺れを防ぐため、最初に左右へ1往復だけ回って正面で止まる。スクロール中は回さない
+    const scrolling = DEV.touch && performance.now() - lastScrollAt < 200;
+    if (st.auto && !scrolling && !st.drag && !st.target && pts.size === 0 && st.idle > (st.user ? 150 : 0)) {
       if (Math.abs(st.yaw) > Math.PI) st.yaw = ((st.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; // 何周も回したあとは、近い向きに戻す
-      st.phase += 0.0075; const want = Math.sin(st.phase) * 0.95;
+      st.phase += DEV.touch ? 0.011 : 0.0075; const want = Math.sin(st.phase) * 0.95;
       st.yaw += (want - st.yaw) * (st.user ? 0.03 : 0.12); st.pitch += (0.05 - st.pitch) * 0.03;
-      if (st.idle % (DEV.touch ? 2 : 1) === 0) st.dirty = true; // スマホでは描く回数を半分にして軽くする
+      if (DEV.touch && st.phase >= 2 * Math.PI) { st.auto = false; st.target = {yaw:0, pitch:0.05}; }
+      st.dirty = true;
     }
     if (st.target && !st.drag) { st.yaw += (st.target.yaw - st.yaw) * 0.14; st.pitch += (st.target.pitch - st.pitch) * 0.14; if (Math.abs(st.target.yaw - st.yaw) < 0.002 && Math.abs(st.target.pitch - st.pitch) < 0.002) st.target = null; st.dirty = true; } // ボタンで選んだ向きへ回る
     if (st.zoomT && Math.abs(st.zoomT - cam.position.z) > 0.05) { cam.position.z += (st.zoomT - cam.position.z) * 0.18; st.dirty = true; }
-    if (st.dirty) { group.rotation.y = st.yaw; group.rotation.x = st.pitch; renderer.render(scene, cam); st.dirty = false; }
+    if (st.dirty && !(DEV.touch && performance.now() - lastScrollAt < 200 && !st.drag)) { group.rotation.y = st.yaw; group.rotation.x = st.pitch; renderer.render(scene, cam); st.dirty = false; }
     requestAnimationFrame(loop);
   };
   loop();
