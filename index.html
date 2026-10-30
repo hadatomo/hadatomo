@@ -13,7 +13,7 @@
 <meta name="theme-color" content="#FAF9F6" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121614" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem("skinwise_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
-<title>肌トモ｜最小限の時間と費用で、最大限の効果を</title>
+<title>肌トモ｜最小限で最大限を</title>
 <style>
 :root{
   --bg:#FAF9F6;--surface:#FFFFFF;--surface2:#F6F3EE;
@@ -351,11 +351,11 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .spot-row{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface2);margin-top:10px;position:relative}
 @media(min-width:640px){.spot-row{grid-template-columns:repeat(3,1fr)}}
 .mini{display:block;font-size:11.5px;color:var(--muted)}
-.mini .input,.mini .select{margin-top:3px;min-height:40px;font-size:15px;padding:6px 10px}
+.mini .input,.mini .select{margin-top:3px;min-height:40px;font-size:16px;padding:6px 10px}
 .mini .select{padding-right:30px;background-position:right 10px center}
 .spot-del{grid-column:1/-1;justify-self:end}
 .meal-row{display:grid;grid-template-columns:96px 1fr;gap:10px;align-items:center;margin-bottom:8px}
-.meal-row .input{min-height:40px;font-size:15px;padding:6px 10px}
+.meal-row .input{min-height:40px;font-size:16px;padding:6px 10px}
 .used-list{display:grid;gap:6px}
 .used-list .check{padding:8px 12px;border:1px solid var(--line2);border-radius:12px;background:var(--surface);justify-content:flex-start}
 .face-wrap{display:grid;gap:12px;align-items:center}
@@ -373,7 +373,10 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .f3-views{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
 .f3-load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted);padding:20px;text-align:center}
 .f3-tip{position:absolute;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:12.5px;padding:4px 10px;border-radius:8px;pointer-events:none;white-space:nowrap}
-.life-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.life-btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:18px;max-width:420px}
+.life-btns .btn{justify-content:center;padding-left:6px;padding-right:6px;white-space:nowrap}
+.life-btns .life-main{grid-column:1 / span 2;grid-row:1}
+.life-btns>:not(.life-main){grid-row:2}
 .life-links{display:inline-flex;gap:10px;margin-left:6px}
 .t3-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:12px;align-items:center}
 .t3-stage{max-width:none;margin:0}
@@ -403,7 +406,8 @@ details.fold[open] summary{margin-bottom:10px}
 .modal{background:var(--surface);width:100%;max-height:92vh;border-radius:22px 22px 0 0;display:flex;flex-direction:column;animation:up .2s ease-out;box-shadow:0 -10px 40px rgba(0,0,0,.12)}
 .modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
 .modal-head h2{font-size:17px}
-.modal-body{padding:20px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.modal-body{padding:20px;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}
+.modal-body .field,.modal-body .form-grid>*{min-width:0}
 .modal-foot{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--surface)}
 .modal-foot .btn{flex:1}
 @media(min-width:640px){.modal-backdrop{align-items:center;padding:24px}.modal{max-width:660px;border-radius:22px;max-height:88vh}.modal.small{max-width:440px}.modal-foot .btn{flex:none}.modal-foot{padding-bottom:14px}}
@@ -418,7 +422,7 @@ details.fold[open] summary{margin-bottom:10px}
 /* ---------- Toast ---------- */
 #toast-root{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;width:max-content;max-width:92vw}
 @media(min-width:960px){#toast-root{bottom:28px}}
-input[type="date"].input,input[type="time"].input{-webkit-appearance:none;appearance:none;min-width:0;max-width:100%;display:block;text-align:left}
+input[type="date"].input,input[type="time"].input{-webkit-appearance:none;appearance:none;min-width:0;max-width:100%;width:100%;display:block;text-align:left;font-size:16px}
 input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::-webkit-date-and-time-value{text-align:left}
 .remind-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px}
 .time-pick{display:inline-flex;align-items:center;gap:6px;flex:none}
@@ -485,8 +489,8 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 .meal-block{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface)}
 .meal-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .meal-head label.btn{margin-left:auto}
-.food-pick{display:grid;grid-template-columns:1fr 104px auto;gap:6px;margin-top:8px;align-items:center}
-.food-pick .select,.food-pick .input{min-height:40px;font-size:15px;padding:6px 10px}
+.food-pick{display:grid;grid-template-columns:minmax(0,1fr) 104px auto;gap:6px;margin-top:8px;align-items:center}
+.food-pick .select,.food-pick .input{min-height:40px;font-size:16px;padding:6px 10px;min-width:0}
 .food-pick .select{padding-right:30px;background-position:right 10px center}
 @media(max-width:420px){.food-pick{grid-template-columns:1fr 1fr}.food-pick > :first-child{grid-column:1/-1}}
 .badge-premium{display:inline-block;padding:1px 8px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.04em;background:linear-gradient(135deg,#F3E7CF,#E9D6B0);color:#7A5A22;border:1px solid #E2CDA2;white-space:nowrap}
@@ -507,14 +511,14 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
   <aside class="sidebar" aria-label="メインメニュー">
     <div class="sn-brand">
       <a class="wordmark" href="#/home">肌トモ</a>
-      <div class="sn-copy">最小限の時間と費用で、<br>最大限の効果を</div>
+      <div class="sn-copy">最小限で最大限を</div>
     </div>
     <nav id="side-nav"></nav>
     <div class="sn-foot">データはこのブラウザ内にのみ保存されます。外部への自動送信は行いません。</div>
   </aside>
   <div>
     <header class="topbar">
-      <a class="wordmark" href="#/home">肌トモ<small>最小限の時間と費用で、最大限の効果を</small></a>
+      <a class="wordmark" href="#/home">肌トモ<small>最小限で最大限を</small></a>
       <button class="icon-btn" id="top-add" data-action="new-log" aria-label="肌を記録する" title="肌を記録する"></button>
     </header>
     <main id="main" tabindex="-1"></main>
@@ -1414,12 +1418,9 @@ function viewHome() {
   html += `<section class="hero">
     <div class="eyebrow">Skin care manager</div>
     <div class="hero-brand" style="margin-top:8px">${esc(SERVICE)}</div>
-    <p class="hero-copy">最小限の時間と費用で、最大限の効果を</p>
+    <p class="hero-copy">最小限で最大限を</p>
     <p class="hero-date">${fmtDate(t)}${streakHtml(map, t)}</p>
-    <div class="hero-actions">
-      <button class="btn btn-primary" data-action="new-log">${icon('plus')}今日の肌を記録</button>
-    </div>
-    <div class="life-btns"><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('chart')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('note')}食事</button></div></section>`;
+    <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${icon('plus')}今日の肌を記録</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('chart')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('note')}食事</button></div></section>`;
 
   const lifeLine = todayLife ? `<p class="sub-line" style="margin-top:12px"><b>食事・運動・睡眠</b>睡眠 ${esc(fmtHM(sleepMin(todayLife)))}／食事 ${MEALS.filter(m => todayLife.meals[m.k].ate).length}回／運動 ${todayLife.exRecorded ? esc(fmtMin(exTotal(todayLife))) : '記録なし'} <span class="life-links"><a href="#" data-action="life-part" data-id="sleep">睡眠</a><a href="#" data-action="life-part" data-id="exercise">運動</a><a href="#" data-action="life-part" data-id="meal">食事</a></span></p>`
     : `<p class="sub-line" style="margin-top:12px"><b>食事・運動・睡眠</b>未記録 <span class="life-links"><a href="#" data-action="life-part" data-id="sleep">睡眠</a><a href="#" data-action="life-part" data-id="exercise">運動</a><a href="#" data-action="life-part" data-id="meal">食事</a></span></p>`;
@@ -3139,7 +3140,7 @@ function openLifeForm(id, part) {
   const saved = Object.assign({}, d.mealPhotos);
   const pending = {}, aiRes = {};
   const mealBlock = m => `<div class="meal-block" data-meal="${m.k}">
-    <div class="meal-head">${m.k === 'snack' ? `<b class="small">${m.l}</b>` : `<label class="check"><input type="checkbox" name="ate_${m.k}" ${d.meals[m.k].ate ? 'checked' : ''}><b>${m.l}</b></label><input type="time" class="input" style="width:130px;min-height:40px;font-size:15px;padding:6px 10px" name="time_${m.k}" value="${esc(d.meals[m.k].time)}" aria-label="${m.l}の時刻">`}
+    <div class="meal-head">${m.k === 'snack' ? `<b class="small">${m.l}</b>` : `<label class="check"><input type="checkbox" name="ate_${m.k}" ${d.meals[m.k].ate ? 'checked' : ''}><b>${m.l}</b></label><input type="time" class="input" style="width:130px;min-height:40px;font-size:16px;padding:6px 10px" name="time_${m.k}" value="${esc(d.meals[m.k].time)}" aria-label="${m.l}の時刻">`}
       <label class="btn btn-ghost btn-sm">${icon('camera')}写真<input type="file" accept="image/*" capture="environment" data-mphoto="${m.k}" hidden></label></div>
     <div data-mprev="${m.k}"></div>
     <div data-pinfo="${m.k}"></div>
@@ -4769,7 +4770,7 @@ let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(drawCharts, 150); });
 $('#top-add').innerHTML = icon('plus');
 if (hasSavedLogin()) setTimeout(initCloud, 0); // 以前ログインしていた場合だけ、ログイン状態を確認する
-document.title = `${SERVICE}｜最小限の時間と費用で、最大限の効果を`;
+document.title = `${SERVICE}｜最小限で最大限を`;
 render();
 </script>
 </body>
