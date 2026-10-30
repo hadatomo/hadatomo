@@ -394,6 +394,10 @@ details.fold[open] summary{margin-bottom:10px}
 /* ---------- Toast ---------- */
 #toast-root{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;width:max-content;max-width:92vw}
 @media(min-width:960px){#toast-root{bottom:28px}}
+input[type="date"].input,input[type="time"].input{-webkit-appearance:none;appearance:none;min-width:0;max-width:100%;display:block;text-align:left}
+input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::-webkit-date-and-time-value{text-align:left}
+.remind-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.remind-row .input{width:140px;flex:none}
 .toast.undo{display:flex;align-items:center;gap:14px;pointer-events:auto}
 .toast-btn{background:none;border:0;color:#9FD3AE;font-weight:700;font-size:13.5px;cursor:pointer;padding:4px 2px;font-family:inherit}
 .toast{background:var(--ink);color:#fff;padding:11px 18px;border-radius:12px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.18);animation:up .2s}
@@ -3970,8 +3974,8 @@ function viewSettings() {
       <div class="chips">${[['auto','自動'],['light','ライト'],['dark','ダーク']].map(([k, l]) => `<button class="tab ${themePref() === k ? 'active' : ''}" data-action="theme" data-id="${k}">${l}</button>`).join('')}</div></div>
     <div class="card"><div class="card-h"><h2>記録のリマインダー</h2></div>
       <p class="small muted" style="margin-bottom:10px">毎日決まった時間に「肌を記録しよう」と通知が来るように、スマホ・パソコンのカレンダーに予定を追加できます。止めたいときは、カレンダーからその予定を削除してください。</p>
-      <div class="form-grid two" style="align-items:end"><div class="field"><label class="lbl" for="f_remind">通知する時刻</label><input type="time" class="input" id="f_remind" value="21:30"></div>
-      <div><button class="btn btn-soft btn-sm" data-action="reminder-ics">カレンダーに追加する</button></div></div>
+      <label class="lbl" for="f_remind">通知する時刻</label>
+      <div class="remind-row"><input type="time" class="input" id="f_remind" value="21:30"><button class="btn btn-soft btn-sm" data-action="reminder-ics">カレンダーに追加する</button></div>
       <p class="hint">ファイル（.ics）が保存されます。iPhoneは開くと「カレンダーに追加」、パソコンはダブルクリックで追加できます。</p></div>
     <div class="card"><div class="card-h"><h2>月の予算</h2></div>
       <form id="budget-form" novalidate><div class="form-grid">${field('1か月のスキンケア予算（円）', `<input class="input" id="f_budget" name="budget" inputmode="numeric" value="${state.settings.monthlyBudget || ''}" placeholder="例：5000">`, {name:'budget', hint:'0または空欄で、予算を使わない設定になります'})}</div>
@@ -4156,7 +4160,7 @@ const actions = {
     if (save()) { toast('削除しました'); render(); }
   },
   'install-app': async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (e) { /* 何もしない */ } installEvt = null; render(); },
-  'theme': v => { applyTheme(v); render(); toast(v === 'dark' ? 'ダーク表示にしました' : v === 'light' ? 'ライト表示にしました' : '端末の設定に合わせます'); },
+  'theme': v => { applyTheme(v); const y = scrollY; render(); scrollTo(0, y); },
   'map-layer': v => { ui.mapLayer = v; const y = scrollY; render(); scrollTo(0, y); },
   'store-more': () => { ui.storeShow += 40; const y = scrollY; render(); scrollTo(0, y); },
   'use-geo': async () => {
