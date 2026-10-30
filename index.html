@@ -209,8 +209,8 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(90,138,105,.16),transparent 70%)}
 .hero-brand{font-family:var(--serif);font-size:34px;letter-spacing:.26em;font-weight:500;line-height:1.1}
 .hero-copy{margin-top:10px;font-size:15px;color:var(--ink2);letter-spacing:.06em}
-.hero-date{margin:0;font-size:15px;font-weight:700;color:var(--ink);line-height:1.2}
-.hero-top{display:flex;align-items:center;justify-content:center;gap:10px;max-width:420px;min-height:44px;text-align:center}
+.hero-date{margin:0;font-size:24px;font-size:8.95cqw;font-weight:700;color:var(--ink);line-height:1.2;white-space:nowrap;letter-spacing:.01em}
+.hero-top{display:flex;align-items:center;justify-content:center;gap:10px;max-width:420px;min-height:44px;text-align:center;container-type:inline-size}
 .streak{display:inline-flex;align-items:center;gap:4px;flex:none}
 .streak-star{position:relative;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;filter:drop-shadow(0 0 6px rgba(245,184,46,.55));animation:starGlow 2.6s ease-in-out infinite}
 .streak-star svg{position:absolute;inset:0;width:100%;height:100%}
@@ -1635,9 +1635,11 @@ function meter(label, v) {
 /* =========================================================
    画面：商品検索 / 商品詳細
    ========================================================= */
+// 商品検索の画面の上のタブ（商品を探す／取扱店舗を探す）
+function searchTabs(cur) { return `<div class="tabs"><a class="tab ${cur === 'search' ? 'active' : ''}" href="#/search">商品を探す</a><a class="tab ${cur === 'stores' ? 'active' : ''}" href="#/stores">取扱店舗を探す</a></div>`; }
 function viewSearch() {
   const brands = Array.from(new Set(state.catalog.map(p => p.brand).filter(Boolean))).sort((a,b) => a.localeCompare(b, 'ja'));
-  return pageHead('商品検索', '日本の化粧品と、日本国内で購入できる韓国コスメを登録・検索できます。', `<button class="btn btn-primary" data-action="new-cat">${icon('plus')}商品を追加</button><a class="btn btn-ghost" href="#/scan">${icon('camera')}カメラで登録</a>`) +
+  return pageHead('商品検索', '化粧品と、それを買えるお店を探せます。', `<button class="btn btn-primary" data-action="new-cat">${icon('plus')}商品を追加</button><a class="btn btn-ghost" href="#/scan">${icon('camera')}カメラで登録</a>`)+ searchTabs('search') +
     `<div class="notice">「サンプル（架空）」と表示された商品は動作確認用で、実在しません。実在の商品は、パッケージや公式サイトで確認したうえで登録してください。確認していない情報は「情報未確認」と表示されます。</div>
     <div class="card filters" style="margin-bottom:16px">
       <div class="row">
@@ -2503,7 +2505,7 @@ function viewStores() {
   state.catalog.forEach(p => p.offers.filter(o => o.kind === 'store' && !o.isSample).forEach(o => myStores.push({o, p}))); // サンプル（架空）の店舗は出さない
   myStores.sort((a, b) => (a.o.distance == null ? 999 : a.o.distance) - (b.o.distance == null ? 999 : b.o.distance));
   const links = storeLinks(), busy = ui.storeBusy;
-  return pageHead('取扱店舗を探す', 'ドラッグストアなど、日本国内でスキンケア商品を買える店舗を、アプリの中で探せます。') +
+  return pageHead('商品検索', '化粧品と、それを買えるお店を探せます。') + searchTabs('stores') +
     `<div class="notice">店舗の情報は、誰でも編集できる地図データ「OpenStreetMap」から、店舗検索サービスGeoapifyを通して取得します。場所の検索には、Geoapifyと国土地理院の地名検索を使います。場所・営業時間は実際と異なることがあり、<b>在庫は取得できません（在庫未確認）</b>。来店前に、店舗の公式サイトや電話で確認してください。</div>
     <div class="card"><div class="card-h"><h2>近くの店舗を検索</h2></div>
       <button class="btn btn-primary btn-block" style="width:100%" data-action="use-geo" ${busy ? 'disabled' : ''}>${icon('pin')}現在地の近くの店舗を探す</button>
@@ -2717,7 +2719,7 @@ function viewMy() {
   const filters = ['使用中','一時停止',STOCK,'使用終了','すべて'];
   const label = f => f === '使用終了' ? '過去の商品' : f === STOCK ? 'ストック' : f;
   const list = state.myProducts.filter(p => ui.myFilter === 'すべて' || p.status === ui.myFilter).sort((a,b) => b.startDate.localeCompare(a.startDate));
-  let html = pageHead('マイ化粧品', '使っている化粧品・過去に使った化粧品・ストックを管理します。', `<button class="btn btn-primary" data-action="new-my">${icon('plus')}化粧品を登録</button><a class="btn btn-ghost" href="#/scan">${icon('camera')}カメラで登録</a>`);
+  let html = pageHead('マイ化粧品', '使っている化粧品とストックをまとめて管理します。', `<button class="btn btn-primary" data-action="new-my">${icon('plus')}化粧品を登録</button><a class="btn btn-ghost" href="#/scan">${icon('camera')}カメラで登録</a>`);
   html += `<div class="tabs" role="tablist">${filters.map(f => `<button class="tab ${ui.myFilter === f ? 'active' : ''}" data-action="my-filter" data-id="${esc(f)}">${esc(label(f))}（${f === 'すべて' ? state.myProducts.length : counts[f]}）</button>`).join('')}</div>`;
   if (state.myProducts.length) html += `<div class="page-actions" style="margin-bottom:14px"><a class="btn btn-ghost btn-sm" href="#/compare">${icon('compare')}商品と肌状態の比較</a><a class="btn btn-ghost btn-sm" href="#/combo">${icon('flask')}成分の組み合わせ</a></div>`;
   if (!state.myProducts.length) {
@@ -3029,7 +3031,7 @@ function comboMap(r) {
    ========================================================= */
 function viewLog() {
   const tabs = [['list','記録一覧'],['photos','肌写真'],['life','食事・運動・睡眠']];
-  let html = pageHead('肌の記録', '');
+  let html = pageHead('肌の記録', '3Dの顔で、日々の肌の変化を振り返ります。');
   html += `<div class="tabs">${tabs.map(([k, l]) => `<button class="tab ${ui.logTab === k ? 'active' : ''}" data-action="log-tab" data-id="${k}">${l}</button>`).join('')}</div>`;
   if (ui.logTab === 'photos') return html + viewPhotos();
   if (ui.logTab === 'life') return html + viewLife();
@@ -4873,7 +4875,7 @@ const actions = {
   'spend-next': () => { if (ui.spendMonth < monthKey(todayStr())) { ui.spendMonth = shiftMonth(ui.spendMonth, 1); render(); } },
   'open-menu': () => {
     let g = null, body = '<div class="menu-list">';
-    NAV.filter(n => !BOTTOM_NAV.includes(n.r)).forEach(n => { if (n.g !== g) { g = n.g; if (g) body += `<div class="grp">${esc(g)}</div>`; } body += `<a href="#/${n.r}">${icon(n.icon)}${esc(n.label)}</a>`; });
+    NAV.filter(n => !BOTTOM_NAV.includes(n.r) && n.r !== 'stores').forEach(n => { /* 取扱店舗は「商品検索」の中のタブ */ if (n.g !== g) { g = n.g; if (g) body += `<div class="grp">${esc(g)}</div>`; } body += `<a href="#/${n.r}">${icon(n.icon)}${esc(n.label)}</a>`; });
     openModal({title:'メニュー', size:'small', dismissable:true, body:body + '</div>'});
   },
   'export-csv': () => {
@@ -5093,7 +5095,7 @@ function render() {
   const views = {home:viewHome, search:viewSearch, product:() => viewProduct(r.id), prices:() => viewPrices(r.id), stores:viewStores,
     ingredients:() => viewIngredients(r.id), scan:viewScan, my:() => r.id ? viewMyDetail(r.id) : viewMy(), compare:viewCompare, combo:viewCombo,
     log:viewLog, charts:viewCharts, report:viewReport, spending:viewSpending, check:() => viewCheck(r.id), settings:viewSettings, terms:viewTerms, privacy:viewPrivacy, law:viewLaw, plan:() => viewPlan(r.query), suggest:viewSuggest, visit:viewVisit};
-  const alias = {product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'};
+  const alias = {product:'search', prices:'search', stores:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'};
   const navName = alias[r.name] || (views[r.name] ? r.name : 'home');
   if (r.name !== 'check') ui._checkFrom = '';
   if (r.name === 'plan' && acct.status === 'idle') setTimeout(initCloud, 0);
@@ -5104,7 +5106,7 @@ function render() {
   try { html = (views[r.name] || viewHome)(); }
   catch (err) { console.error(err); html = `<div class="card">${emptyBox('note', '画面の表示中にエラーが発生しました', 'ページを再読み込みしてください。解決しない場合は、設定からバックアップを書き出したうえで「すべて削除」をお試しください。', '<a class="btn btn-primary btn-sm" href="#/settings">設定を開く</a>')}</div>`; }
   // ホーム以外の画面には、上に「戻る」を付ける（その画面に専用の戻るリンクがある場合は付けない）
-  if (r.name !== 'home' && !(['log', 'my', 'search'].includes(r.name) && !r.id) && !/^\s*(<div class="notice[^>]*>.*?<\/div>\s*)?<a class="back"/s.test(html)) html = `<button type="button" class="back back-btn" data-action="go-back">← 戻る</button>` + html;
+  if (r.name !== 'home' && !(['log', 'my', 'search', 'stores'].includes(r.name) && !r.id) && !/^\s*(<div class="notice[^>]*>.*?<\/div>\s*)?<a class="back"/s.test(html)) html = `<button type="button" class="back back-btn" data-action="go-back">← 戻る</button>` + html;
   // 「← ○○」リンク：来た画面がリンク先と違うときは「← 戻る」と表示して、来た画面に戻る
   const prevNav = navStack.length > 1 ? navStack[navStack.length - 2] : '';
   html = html.replace(/<a class="back" href="([^"]*)">([^<]*)<\/a>/g, (m, href, label) => `<a class="back" href="${href}" data-back="1">${prevNav && prevNav !== href ? '← 戻る' : label}</a>`);
