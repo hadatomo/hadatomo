@@ -373,6 +373,8 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .f3-views{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
 .f3-load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted);padding:20px;text-align:center}
 .f3-tip{position:absolute;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:12.5px;padding:4px 10px;border-radius:8px;pointer-events:none;white-space:nowrap}
+.life-btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.life-links{display:inline-flex;gap:10px;margin-left:6px}
 .t3-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:12px;align-items:center}
 .t3-stage{max-width:none;margin:0}
 .t3-side{display:flex;flex-direction:column;gap:6px;min-width:0}
@@ -1416,11 +1418,11 @@ function viewHome() {
     <p class="hero-date">${fmtDate(t)}${streakHtml(map, t)}</p>
     <div class="hero-actions">
       <button class="btn btn-primary" data-action="new-log">${icon('plus')}今日の肌を記録</button>
-      <button class="btn btn-ghost" data-action="new-life">${icon('moon')}食事・運動・睡眠</button>
-    </div></section>`;
+    </div>
+    <div class="life-btns"><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('chart')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('note')}食事</button></div></section>`;
 
-  const lifeLine = todayLife ? `<p class="sub-line" style="margin-top:12px"><b>食事・運動・睡眠</b>睡眠 ${esc(fmtHM(sleepMin(todayLife)))}／食事 ${MEALS.filter(m => todayLife.meals[m.k].ate).length}回／運動 ${todayLife.exRecorded ? esc(fmtMin(exTotal(todayLife))) : '記録なし'} <a href="#" data-action="edit-life" data-id="${esc(todayLife.id)}">編集</a></p>`
-    : `<p class="sub-line" style="margin-top:12px"><b>食事・運動・睡眠</b>未記録 <a href="#" data-action="new-life">記録する</a></p>`;
+  const lifeLine = todayLife ? `<p class="sub-line" style="margin-top:12px"><b>食事・運動・睡眠</b>睡眠 ${esc(fmtHM(sleepMin(todayLife)))}／食事 ${MEALS.filter(m => todayLife.meals[m.k].ate).length}回／運動 ${todayLife.exRecorded ? esc(fmtMin(exTotal(todayLife))) : '記録なし'} <span class="life-links"><a href="#" data-action="life-part" data-id="sleep">睡眠</a><a href="#" data-action="life-part" data-id="exercise">運動</a><a href="#" data-action="life-part" data-id="meal">食事</a></span></p>`
+    : `<p class="sub-line" style="margin-top:12px"><b>食事・運動・睡眠</b>未記録 <span class="life-links"><a href="#" data-action="life-part" data-id="sleep">睡眠</a><a href="#" data-action="life-part" data-id="exercise">運動</a><a href="#" data-action="life-part" data-id="meal">食事</a></span></p>`;
   // 今日の肌記録：3Dの顔を大きく、記録の数値を横に小さく
   const L = todayLog;
   const side = L ? `<div class="t3-side">${condPill(L.condition)}<p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
@@ -3124,7 +3126,10 @@ function openLogForm(id) {
 }
 
 /* 食事・運動・睡眠フォーム */
-function openLifeForm(id) {
+const LIFE_PARTS = {sleep:{t:'睡眠', icon:'moon'}, exercise:{t:'運動', icon:'chart'}, meal:{t:'食事', icon:'note'}};
+function openLifeForm(id, part) {
+  part = LIFE_PARTS[part] ? part : '';
+  const show = k => !part || part === k ? '' : 'hidden';
   const ex = id ? state.lifeLogs.find(l => l.id === id) : null;
   const t = todayStr();
   const blankMeals = Object.fromEntries(MEALS.map(m => [m.k, {ate:false, time:''}]));
@@ -3152,23 +3157,23 @@ function openLifeForm(id) {
       <button type="button" class="btn btn-primary btn-sm" data-cadd="${m.k}" style="grid-column:1/-1;justify-self:start">この内容で追加</button>
     </div>
     <div class="field-error" data-err="food_${m.k}"></div></div>`;
-  openModal({title: ex ? '食事・運動・睡眠を編集' : '食事・運動・睡眠の記録', body:`<form id="life-form" novalidate><div class="form-grid">
+  openModal({title: part ? `${LIFE_PARTS[part].t}の記録` : (ex ? '食事・運動・睡眠を編集' : '食事・運動・睡眠の記録'), body:`<form id="life-form" novalidate><div class="form-grid">
     <p class="small muted">分かる項目だけで大丈夫です。未入力の項目は「記録なし」として扱います。</p>
     ${field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint:'睡眠は「この日の朝に起きた睡眠」を記録します'})}
-    <div class="section-title">SLEEP 睡眠</div>
+    <div class="form-grid" data-part="sleep" ${show('sleep')}><div class="section-title">SLEEP 睡眠</div>
     <div class="form-grid two" style="gap:12px">
       ${field('就寝時刻', `<input type="time" class="input" id="f_bed" name="bed" value="${esc(d.bed)}">`, {name:'bed'})}
       ${field('起床時刻', `<input type="time" class="input" id="f_wake" name="wake" value="${esc(d.wake)}">`, {name:'wake'})}
     </div>
-    <p class="small" id="sleep-calc" style="margin-top:-6px"></p>
-    <div class="section-title">EXERCISE 運動</div>
+    <p class="small" id="sleep-calc" style="margin-top:-6px"></p></div>
+    <div class="form-grid" data-part="exercise" ${show('exercise')}><div class="section-title">EXERCISE 運動</div>
     <div class="field" data-field="exercise"><span class="lbl">運動の種類と時間<span class="opt">任意</span></span>
       <div id="ex-list"></div>
       <div class="food-pick" style="margin-top:6px"><select class="select" id="ex-type" aria-label="運動の種類">${EX_TYPES.map(x => `<option>${esc(x)}</option>`).join('')}</select><input class="input" id="ex-min" inputmode="numeric" placeholder="分" aria-label="運動の時間（分）"><button type="button" class="btn btn-soft btn-sm" id="ex-add">追加</button></div>
       <label class="check" style="margin-top:10px"><input type="checkbox" name="noEx" ${d.exRecorded && !d.exercise.length ? 'checked' : ''}> この日は運動しなかった</label>
       <div class="field-error" data-err="exercise"></div></div>
-    ${field('歩数', `<input class="input" id="f_steps" name="steps" inputmode="numeric" value="${d.steps == null ? '' : esc(d.steps)}" placeholder="例：6500">`, {name:'steps', hint:'iPhoneの「ヘルスケア」アプリなどで確認した歩数を入力できます'})}
-    <div class="section-title">MEAL 食事</div>
+    ${field('歩数', `<input class="input" id="f_steps" name="steps" inputmode="numeric" value="${d.steps == null ? '' : esc(d.steps)}" placeholder="例：6500">`, {name:'steps', hint:'iPhoneの「ヘルスケア」アプリなどで確認した歩数を入力できます'})}</div>
+    <div class="form-grid" data-part="meal" ${show('meal')}><div class="section-title">MEAL 食事</div>
     <p class="hint" style="margin-top:-6px">無料プランでは、食べたものをリストから選ぶか自分で入力します（写真を撮っておくと、あとで見返せます）。${PREMIUM_NAME}プランでは、写真の下の「写真から読み取る」で料理と栄養の目安をAIが推定します（そのときだけ、写真をGoogleのAI（Gemini）に送ります。保存はしません）。それ以外では、写真は外部に送信しません。</p>
     ${FOOD_MEALS.map(mealBlock).join('')}
     <div class="notice green" id="nut-total" style="margin:0"></div>
@@ -3177,7 +3182,7 @@ function openLifeForm(id) {
     ${field('タンパク質（肉・魚・卵・大豆など）', segS('protein', AMOUNT3, d.protein, true), {name:'protein'})}
     ${field('甘いもの・間食', segS('sweets', SWEETS, d.sweets, true), {name:'sweets'})}
     ${field('水分', segS('water', WATER, d.water, true), {name:'water'})}
-    ${field('食事の内容（当てはまるもの）', checksHtml('tags', FOOD_TAGS, d.tags || []), {name:'tags', optLabel:'任意・複数選択可'})}
+    ${field('食事の内容（当てはまるもの）', checksHtml('tags', FOOD_TAGS, d.tags || []), {name:'tags', optLabel:'任意・複数選択可'})}</div>
     ${field('メモ', `<textarea class="textarea" id="f_memo" name="memo" maxlength="300" placeholder="例：夜遅くにラーメン、飲み会、寝つきが悪かった">${esc(d.memo)}</textarea>`, {name:'memo'})}
   </div></form>`, footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="submit" form="life-form" class="btn btn-primary">保存する</button>`});
   const form = $('#life-form');
@@ -3304,7 +3309,7 @@ function openLifeForm(id) {
       foods:foods.map(normFood), mealPhotos, exercise:exercise.slice(), exRecorded:exercise.length > 0 || fe.noEx.checked, steps, memo:fe.memo.value.trim()};
     let backup = null;
     if (ex) { backup = Object.assign({}, ex); Object.assign(ex, data); } else state.lifeLogs.push(Object.assign({id:uid(), demo:false}, data));
-    if (save()) { closeModal(); toast('食事・運動・睡眠を記録しました'); render(); }
+    if (save()) { closeModal(); toast(part ? `${LIFE_PARTS[part].t}を記録しました` : '食事・運動・睡眠を記録しました'); render(); }
     else { if (ex) Object.assign(ex, backup); else state.lifeLogs.pop(); }
   };
 }
@@ -3533,7 +3538,7 @@ function viewCharts() {
   const sleepVals = dates.map(d => { const m = sleepMin(lm[d]); return m == null ? null : Math.round(m / 6) / 10; });
   const sleepN = sleepVals.filter(v => v != null).length;
   html += `<div class="card"><div class="card-h"><h2>睡眠時間と肌の調子</h2></div>`;
-  if (sleepN < 2) html += `<p class="small muted">睡眠の記録が増えると表示されます（この期間：${sleepN}日）。</p><button class="btn btn-soft btn-sm" style="margin-top:8px" data-action="new-life">食事・睡眠を記録</button>`;
+  if (sleepN < 2) html += `<p class="small muted">睡眠の記録が増えると表示されます（この期間：${sleepN}日）。</p><button class="btn btn-soft btn-sm" style="margin-top:8px" data-action="life-part" data-id="sleep">睡眠を記録</button>`;
   else {
     html += chartSlot('sleep', w => lineChart(w, {dates, height:170, yMin:0, yMax:12, yTicks:[0,6,12], yFmt:v => v + 'h', label:'睡眠時間の推移', series:[{name:'睡眠', color:'#7F8FB8', values:sleepVals, fmt:v => v + '時間'}]}));
     const both = dates.filter(d => map[d] && sleepMin(lm[d]) != null);
@@ -3550,7 +3555,7 @@ function viewCharts() {
   const exVals = dates.map(d => lm[d] && lm[d].exRecorded ? exTotal(lm[d]) : null);
   const exN = exVals.filter(v => v != null).length;
   html += `<div class="card"><div class="card-h"><h2>運動と肌の調子</h2></div>`;
-  if (exN < 2) html += `<p class="small muted">運動の記録が増えると表示されます（この期間：${exN}日）。</p><button class="btn btn-soft btn-sm" style="margin-top:8px" data-action="new-life">運動を記録</button>`;
+  if (exN < 2) html += `<p class="small muted">運動の記録が増えると表示されます（この期間：${exN}日）。</p><button class="btn btn-soft btn-sm" style="margin-top:8px" data-action="life-part" data-id="exercise">運動を記録</button>`;
   else {
     const exTop = Math.max(60, Math.ceil(Math.max(...exVals.filter(v => v != null)) / 30) * 30);
     html += chartSlot('exercise', w => lineChart(w, {dates, height:170, yMin:0, yMax:exTop, yTicks:[0, exTop / 2, exTop], yFmt:v => v + '分', label:'運動時間の推移', series:[{name:'運動', color:'#6FA38A', values:exVals, fmt:v => v + '分'}]}));
@@ -4311,6 +4316,7 @@ const actions = {
   },
   'new-life': v => { const t = v === 'free' ? null : getLife(todayStr()); if (t) { toast('今日の記録はすでにあるので、編集画面を開きました'); openLifeForm(t.id); } else openLifeForm(); },
   'edit-life': id => openLifeForm(id),
+  'life-part': v => { const t = getLife(todayStr()); openLifeForm(t ? t.id : null, v); },
   'delete-life': async id => {
     const l = state.lifeLogs.find(x => x.id === id); if (!l) return;
     if (!await confirmDialog(`${fmtDate(l.date)}の食事・睡眠の記録を削除しますか？`)) return;
