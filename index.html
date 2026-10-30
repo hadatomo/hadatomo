@@ -93,7 +93,9 @@
 html{-webkit-text-size-adjust:100%}
 /* スマホでのガクガク対策：横に揺れない・ダブルタップで拡大しない・重いぼかし処理を使わない */
 /* 横揺れ対策は、ページ全体ではなく中身の枠だけにかける（ページ全体にかけるとiPhoneでスクロールがガクガクするため） */
-.app{overflow-x:clip;max-width:100%}
+.app{overflow-x:hidden;overflow-x:clip;max-width:100%}
+/* スマホ：画面は縦にだけ動かす（横に動かない）。2本指の拡大はできる */
+body{touch-action:pan-y;touch-action:pan-y pinch-zoom}
 a,button,input,select,textarea,label,[data-action]{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 @media(max-width:959px){
   .topbar{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:var(--bg)!important}
@@ -428,7 +430,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .f3-tags .t-cond{color:#fff;border-color:transparent}
 .t3-side{display:flex;flex-direction:column;gap:6px;min-width:0}
 .t3-tags{display:flex;flex-wrap:wrap;gap:3px}
-.t3-tags span{font-size:12px;line-height:1.5;padding:1px 5px;letter-spacing:-.04em;border-radius:999px;background:var(--surface2);color:var(--ink);white-space:nowrap}
+.t3-tags span{font-size:12.5px;line-height:1.5;padding:1px 8px;border-radius:999px;background:var(--surface2);color:var(--ink);white-space:nowrap}
 .t3-tags .t-cond{color:#fff}
 .t3-acne{margin:2px 0 4px;font-size:12.5px;color:var(--muted)}
 .t3-acne b{font-size:18px;color:var(--ink);margin:0 2px}
@@ -1515,7 +1517,7 @@ function viewHome() {
   const lifeLine = lifeSumHtml(todayLife);
   // 今日の肌記録：3Dの顔を大きく、記録の数値を横に小さく
   const L = todayLog;
-  const side = L ? `<div class="t3-side"><div class="t3-tags"><span class="t-cond" style="background:${COND_COLORS[L.condition] || '#999'}">（${esc(COND_LABELS[L.condition] || '—')}）</span>${L.areas.map(a => `<span>（${esc(areaName(a))}）</span>`).join('')}</div><p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
+  const side = L ? `<div class="t3-side"><div class="t3-tags"><span class="t-cond" style="background:${COND_COLORS[L.condition] || '#999'}">${esc(COND_LABELS[L.condition] || '—')}</span>${L.areas.map(a => `<span>${esc(areaName(a))}</span>`).join('')}</div><p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
       ${['赤み','乾燥','皮脂'].map((lab, i) => { const v = [L.redness, L.dryness, L.oil][i]; return `<div class="t3-m"><span>${lab}</span><span class="bar"><i style="width:${v / 5 * 100}%"></i></span><b>${v}</b></div>`; }).join('')}</div>`
     : `<div class="t3-side"><p class="small muted" style="margin:0 0 8px">まだ今日の記録がありません。1分ほどで記録できます。</p><button class="btn btn-primary btn-sm" data-action="new-log">${icon('plus')}記録する</button></div>`;
   const todayCard = `<div class="card"><div class="card-h"><h2>今日の肌記録</h2>${L ? `<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(L.id)}">編集</button>` : ''}</div>
@@ -3604,7 +3606,7 @@ function refreshAdvice() { const b = document.getElementById('advice-box'); if (
 async function runAdvice(force) {
   if (adviceBusy || !isPremium()) return;
   const d = adviceInput(), sig = adviceSig(d), c = adviceCache();
-  if (!force && c && (c.sig === sig || (c.failSig === sig))) return;
+  if (!force && c && (c.sig === sig || (c.failSig === sig && Date.now() - (c.failAt || 0) < 10 * 60 * 1000))) return; // 失敗したときは10分たったら自動でもう一度
   if (!d.skin.days && !d.sleep.days && !d.meal.days && !d.exercise.recordedDays) return;
   adviceBusy = true; adviceErr = '';
   const box = () => { const b = document.getElementById('advice-box'); if (b) b.innerHTML = adviceHtml(); };
@@ -3614,8 +3616,10 @@ async function runAdvice(force) {
     if (r && r.result && r.result.points && r.result.points.length) { try { localStorage.setItem(ADVICE_KEY, JSON.stringify({sig, at:Date.now(), res:r.result})); } catch (e) { /* 何もしない */ } }
     else adviceErr = 'AIの分析結果が空でした。';
   } catch (e) {
-    adviceErr = 'AIの分析ができませんでした（' + String(e.message || e).slice(0, 60) + '）';
-    try { localStorage.setItem(ADVICE_KEY, JSON.stringify(Object.assign(c || {}, {failSig:sig}))); } catch (er) { /* 何もしない */ }
+    const m = String(e.message || e);
+    adviceErr = /種類が正しくありません/.test(m) ? 'AIの分析ができませんでした。サーバーの関数「vision」が古いままです（5_関数_vision.txt を貼り付けて Deploy してください）。'
+      : 'AIの分析ができませんでした（' + m.slice(0, 80) + '）';
+    try { localStorage.setItem(ADVICE_KEY, JSON.stringify(Object.assign(c || {}, {failSig:sig, failAt:Date.now()}))); } catch (er) { /* 何もしない */ }
   }
   adviceBusy = false; box();
 }
