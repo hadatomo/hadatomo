@@ -494,6 +494,24 @@ label.btn{position:relative}
 .mb-bform{margin-top:10px;background:var(--surface);border-radius:12px;padding:10px 12px;animation:itemIn .3s ease both}
 .mb-brow{display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap}
 .mb-brow .input{flex:1 1 110px;min-width:0;min-height:40px;font-size:16px;padding:6px 10px}
+/* お気に入り */
+.pcard{position:relative}
+.fav-heart{position:absolute;top:8px;right:8px;z-index:2;width:36px;height:36px;border-radius:50%;border:0;background:rgba(255,255,255,.92);box-shadow:0 2px 8px rgba(0,0,0,.12);display:flex;align-items:center;justify-content:center;cursor:pointer;color:#9A9590}
+.fav-heart svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:2}
+.fav-heart.on{color:#E0566B}
+.fav-heart.on svg,.fav-btn.on svg{fill:#E0566B;stroke:#E0566B}
+.fav-btn.on{color:#C8405A;border-color:#F2C4CC}
+.fav-heart.pop svg,.fav-btn.pop svg{animation:heartPop .45s cubic-bezier(.2,.9,.3,1.6)}
+@keyframes heartPop{0%{transform:scale(.6)}55%{transform:scale(1.35)}100%{transform:none}}
+.pcard.fav-out{opacity:0;transform:scale(.96);transition:opacity .25s ease,transform .25s ease}
+.tabs .tab svg{width:14px;height:14px;vertical-align:-2px;margin-right:3px}
+/* アカウント：支出を押すと開く */
+.acc-toggle{width:100%;border:0;background:none;font-family:inherit;text-align:left;cursor:pointer}
+.acc-toggle i{transition:transform .25s ease}
+.acc-toggle[aria-expanded="true"] i{transform:rotate(90deg)}
+.acc-panel{padding:0 16px 16px;border-top:1px solid var(--line)}
+.acc-panel .mb-card .card-h{margin-top:14px}
+.acc-panel.open{animation:itemIn .35s ease both}
 /* ===== 動き（モーション） ===== */
 @keyframes pgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 #main.pg-in{animation:pgIn .38s cubic-bezier(.2,.8,.2,1) both}
@@ -878,7 +896,7 @@ const PLAN_ROWS = [
   ['化粧品・成分の管理、成分の注意点', '○', '○'],
   ['食事・運動・睡眠の記録', '○', '○'],
   ['基本の週次レポート', '○', '○'],
-  ['ケアの提案・買う前チェック・支出管理', '○', '○'],
+  ['ケアの提案・支出管理・お気に入り', '○', '○'],
   ['店舗検索・価格比較', '○', '○'],
   ['受診用まとめ（医師に見せる記録の整理）', '○', '○'],
   ['詳細な分析（商品と肌の比較・90日グラフ・生活習慣との比較など）', '—', '○'],
@@ -1035,6 +1053,7 @@ const ICONS = {
   book:'<path d="M4 4h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z"/><path d="M20 4h-6a3 3 0 0 0-1 .2"/><path d="M20 4v14h-7"/>',
   pin:'<path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>',
   tag:'<path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="8" cy="8" r="1.5"/>',
+  heart:'<path d="M12 20s-7.5-4.6-9.2-9.2C1.6 7.4 3.9 4.5 7 4.5c2 0 3.4 1.1 5 3 1.6-1.9 3-3 5-3 3.1 0 5.4 2.9 4.2 6.3C19.5 15.4 12 20 12 20z"/>',
   image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-10 9"/>',
   moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
   leaf:'<path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14z"/><path d="M5 19 13 11"/>',
@@ -1058,7 +1077,7 @@ const NAV = [
   {r:'scan', label:'カメラで登録', icon:'camera', g:'提案・商品'},
   {r:'ingredients', label:'成分辞典', icon:'book', g:'提案・商品'},
   {r:'stores', label:'取扱店舗を探す', icon:'pin', g:'提案・商品'},
-  {r:'spending', label:'支出・買う前チェック', icon:'wallet', g:'お金'},
+  {r:'spending', label:'支出', icon:'wallet', g:'お金'},
   {r:'plan', label:'プラン・アカウント', icon:'user', g:'アカウント'},
   {r:'settings', label:'設定・プライバシー', icon:'gear', g:'アカウント'}
 ];
@@ -1266,6 +1285,7 @@ function normalize(d) {
   out.settings.weight = clamp(Math.round((num(ds.weight) || 0) * 10) / 10, 0, 250); // 体重（kg）。0は未設定
   out.settings.height = clamp(Math.round((num(ds.height) || 0) * 10) / 10, 0, 250); // 身長（cm）。0は未設定
   out.settings.proteinGoal = clamp(Math.round(num(ds.proteinGoal) || 0), 0, 300); // たんぱく質の目標（g）。0は自動
+  out.favorites = Array.isArray(d.favorites) ? Array.from(new Set(d.favorites.map(String))).filter(id => out.catalog.some(p => p.id === id)) : [];
   out.customFoods = Array.isArray(d.customFoods) ? d.customFoods.filter(x => x && x.name).map(x => { const n = normFood(Object.assign({meal:'snack', qty:1}, x)); return {id:n.id, name:n.name, kcal:n.kcal, p:n.p, f:n.f, c:n.c, veg:n.veg}; }) : [];
   return out;
 }
@@ -1619,20 +1639,19 @@ function revealEl(el) {
   el.querySelectorAll('.chart').forEach(c => { c.classList.add('play'); setTimeout(() => c.classList.remove('play'), 2200); });
 }
 // 下のバーの画面（ホーム・肌の記録・マイ化粧品・商品検索・アカウント）は、最初に開いたときだけ動かし、2回目からは動かさない
-const TAB_PAGES = ['home', 'log', 'my', 'search', 'stores', 'account'];
+const TAB_PAGES = ['home', 'log', 'my', 'search', 'stores', 'favorites', 'account'];
 const motionSeen = new Set();
 function motionIn(route) {
   const main = document.getElementById('main'); if (!main) return;
   if (!MOTION_OK()) return;
   const tab = TAB_PAGES.includes(route);
-  if (tab && motionSeen.has(route)) { main.classList.remove('pg-in'); return; } // 2回目からは、そのまま表示
+  // 下のバーの画面の一番上の見出しは、開くたびにふわっと出る（ホームの日付は動かさない）
+  if (tab) { const h = main.querySelector('.page-head h1'); if (h) { h.classList.remove('fade-once'); void h.offsetWidth; h.classList.add('fade-once'); } }
+  if (tab && motionSeen.has(route)) { main.classList.remove('pg-in'); return; } // 2回目からは、ほかはそのまま表示
   motionSeen.add(route);
   // 画面全体：下からふわっと
   main.classList.remove('pg-in'); void main.offsetWidth; main.classList.add('pg-in');
-  if (tab) {
-    // 下のバーの画面の見出し・日付は、ふわっと出るだけ（1回目だけ）
-    [main.querySelector('.page-head h1'), main.querySelector('.hero-date')].forEach(el => { if (el) el.classList.add('fade-once'); });
-  } else {
+  if (!tab) {
     // ほかの画面の見出しは、文字が1文字ずつ浮かび上がる（キネティック・タイポグラフィ）
     splitChars(main.querySelector('.page-head h1'));
   }
@@ -1863,7 +1882,7 @@ function viewHome() {
     <a class="shortcut" href="#/charts">${icon('chart')}肌の変化・比較</a>
     <a class="shortcut" href="#/suggest">${icon('leaf')}ケアの提案</a>
     <a class="shortcut" href="#/visit">${icon('note')}受診用まとめ</a>
-    <a class="shortcut" href="#/check">${icon('check')}買う前チェック</a>
+    <a class="shortcut" href="#/favorites">${icon('heart')}お気に入り</a>
   </div></div>`;
 
   const onboard = !state.settings.concerns.length ? `<div class="notice green" style="margin-bottom:16px"><b>はじめに：あなたの肌悩みを教えてください。</b>手持ちの化粧品と予算をふまえて、ケアの考え方と候補を整理します。<br><a class="btn btn-primary btn-sm" style="margin-top:10px" href="#/suggest">肌悩みを設定する</a></div>` : '';
@@ -1880,7 +1899,32 @@ function meter(label, v) {
    画面：商品検索 / 商品詳細
    ========================================================= */
 // 商品検索の画面の上のタブ（商品を探す／取扱店舗を探す）
-function searchTabs(cur) { return `<div class="tabs"><a class="tab ${cur === 'search' ? 'active' : ''}" href="#/search">商品を探す</a><a class="tab ${cur === 'stores' ? 'active' : ''}" href="#/stores">取扱店舗を探す</a></div>`; }
+function searchTabs(cur) { const n = (state.favorites || []).length; return `<div class="tabs"><a class="tab ${cur === 'search' ? 'active' : ''}" href="#/search">商品を探す</a><a class="tab ${cur === 'favorites' ? 'active' : ''}" href="#/favorites">${icon('heart')}お気に入り${n ? `（${n}）` : ''}</a><a class="tab ${cur === 'stores' ? 'active' : ''}" href="#/stores">取扱店舗を探す</a></div>`; }
+// ---------- お気に入り ----------
+const isFav = id => (state.favorites || []).includes(id);
+function favHeart(p) { return `<button type="button" class="fav-heart ${isFav(p.id) ? 'on' : ''}" data-action="fav" data-id="${esc(p.id)}" aria-pressed="${isFav(p.id)}" aria-label="${isFav(p.id) ? 'お気に入りから外す' : 'お気に入りに追加'}">${icon('heart')}</button>`; }
+function toggleFav(id, el) {
+  if (!getCat(id)) return;
+  const on = !isFav(id);
+  state.favorites = on ? (state.favorites || []).concat(id) : state.favorites.filter(x => x !== id);
+  if (!save()) return;
+  // 画面を作り直さずに、ハートの見た目だけ変える（スクロール位置が動かないように）
+  document.querySelectorAll(`[data-action="fav"][data-id="${CSS.escape(id)}"]`).forEach(b => {
+    b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on));
+    if (b.classList.contains('fav-heart')) b.setAttribute('aria-label', on ? 'お気に入りから外す' : 'お気に入りに追加');
+    const t = b.querySelector('span'); if (t) t.textContent = on ? 'お気に入り済み' : 'お気に入りに追加';
+    b.classList.remove('pop'); void b.offsetWidth; if (on) b.classList.add('pop');
+  });
+  const tab = document.querySelector('.tabs a[href="#/favorites"]'); if (tab) tab.innerHTML = `${icon('heart')}お気に入り${state.favorites.length ? `（${state.favorites.length}）` : ''}`;
+  if (parseRoute().name === 'favorites' && !on) { const c = el && el.closest('.pcard'); if (c) { c.classList.add('fav-out'); setTimeout(render, 260); } }
+  toast(on ? 'お気に入りに追加しました' : 'お気に入りから外しました');
+}
+function viewFavorites() {
+  const list = (state.favorites || []).map(getCat).filter(Boolean).reverse();
+  return pageHead('商品検索', '化粧品と、それを買えるお店を探せます。') + searchTabs('favorites') +
+    (list.length ? `<p class="small muted" style="margin-bottom:10px">${list.length}件（新しく追加した順）</p><div class="pgrid">${list.map(pcardHtml).join('')}</div>`
+      : `<div class="card">${emptyBox('heart', 'お気に入りはまだありません', '商品検索で気になる商品のハート（♡）を押すと、ここにまとめて表示されます。', '<a class="btn btn-primary btn-sm" href="#/search">商品を探す</a>')}</div>`);
+}
 function viewSearch() {
   const brands = Array.from(new Set(state.catalog.map(p => p.brand).filter(Boolean))).sort((a,b) => a.localeCompare(b, 'ja'));
   return pageHead('商品検索', '化粧品と、それを買えるお店を探せます。', `<button class="btn btn-primary" data-action="new-cat">${icon('plus')}商品を追加</button><a class="btn btn-ghost" href="#/scan">${icon('camera')}カメラで登録</a>`)+ searchTabs('search') +
@@ -1934,14 +1978,17 @@ function searchResultsCore() {
   if (!state.catalog.length) return `<div class="card">${emptyBox('search', '商品が登録されていません', '使っている商品や気になる商品を登録しましょう。', '<button class="btn btn-primary btn-sm" data-action="new-cat">商品を追加</button>')}</div>`;
   if (!list.length) return `<div class="card">${emptyBox('search', '条件に合う商品が見つかりません', '検索条件を変えるか、新しく商品を登録してください。', '<button class="btn btn-soft btn-sm" data-action="new-cat">商品を追加</button>')}</div>`;
   const maxNote = typeof max === 'number' && isNaN(max) ? '<p class="small" style="color:var(--danger);margin-bottom:8px">予算の上限は半角数字で入力してください（条件から外しています）。</p>' : '';
-  return `${maxNote}<p class="small muted" style="margin-bottom:10px">${list.length}件${ui.sort === 'unit' ? '（内容量を読み取れない商品は最後に表示）' : ''}</p><div class="pgrid">${list.map(p => `
-    <a class="pcard" href="#/product/${encodeURIComponent(p.id)}">${thumbHtml(p)}
+  return `${maxNote}<p class="small muted" style="margin-bottom:10px">${list.length}件${ui.sort === 'unit' ? '（内容量を読み取れない商品は最後に表示）' : ''}</p><div class="pgrid">${list.map(pcardHtml).join('')}</div>`;
+}
+function pcardHtml(p) {
+  return `
+    <a class="pcard" href="#/product/${encodeURIComponent(p.id)}">${favHeart(p)}${thumbHtml(p)}
       <div class="body"><span class="brand">${esc(p.brand)}</span><span class="name">${esc(p.name)}</span>
       <span class="small muted">${esc(p.category)}・${esc(p.origin)}</span>
       ${p.isSample ? '' : `<span>${verifyBadge(p)}</span>`}
       <span class="price">${p.price ? yen(p.price) : '<span class="na">価格未確認</span>'}<span class="small muted" style="font-weight:400">${p.volume ? ' / ' + esc(p.volume) : ''}</span></span>
       ${perUnitText(p.price, p.volume) ? `<span class="small muted">${esc(perUnitText(p.price, p.volume))}</span>` : ''}</div>
-    </a>`).join('')}</div>`;
+    </a>`;
 }
 function viewProduct(id) {
   const p = getCat(id);
@@ -1967,7 +2014,7 @@ function viewProduct(id) {
         <div class="page-actions" style="margin-top:16px">
           <button class="btn btn-primary" data-action="new-my-from" data-id="${esc(p.id)}">${icon('plus')}マイ化粧品に登録</button>
           <a class="btn btn-soft" href="#/prices/${encodeURIComponent(p.id)}">${icon('tag')}価格・店舗を比較</a>
-          <a class="btn btn-ghost" href="#/check/${encodeURIComponent(p.id)}">${icon('check')}買う前チェック</a>
+          <button class="btn btn-ghost fav-btn ${isFav(p.id) ? 'on' : ''}" data-action="fav" data-id="${esc(p.id)}" aria-pressed="${isFav(p.id)}">${icon('heart')}<span>${isFav(p.id) ? 'お気に入り済み' : 'お気に入りに追加'}</span></button>
         </div>
         <div class="page-actions" style="margin-top:8px">
           <button class="btn btn-ghost btn-sm" data-action="edit-cat" data-id="${esc(p.id)}">商品情報を編集</button>
@@ -2879,7 +2926,7 @@ function viewSuggest() {
     <li>同じ目的の商品を重ねて使っている場合は、手間と費用が増えていないか見直す材料にしてください。</li>
     <li>初めての商品は、目立たない場所で試してから使うと安心です。</li>
     <li>症状が強い・長引く場合は、商品を増やすより、皮膚科の受診を検討してください。</li></ul>
-    <div class="page-actions" style="margin-top:12px"><a class="btn btn-ghost btn-sm" href="#/check">買う前チェック</a><a class="btn btn-ghost btn-sm" href="#/combo">成分の組み合わせ</a></div></div>`;
+    <div class="page-actions" style="margin-top:12px"><a class="btn btn-ghost btn-sm" href="#/combo">成分の組み合わせ</a></div></div>`;
   return html;
 }
 
@@ -4308,7 +4355,7 @@ function viewSpending() {
   list.forEach(x => byCat[x.category] = (byCat[x.category] || 0) + x.price);
   const catRows = Object.entries(byCat).sort((a,b) => b[1] - a[1]);
   const catMax = Math.max(1, ...catRows.map(r => r[1]));
-  let html = pageHead('支出・買う前チェック', 'スキンケアにかかったお金を管理し、無駄な購入を減らします。', `<a class="btn btn-soft" href="#/check">${icon('check')}買う前チェック</a><button class="btn btn-primary" data-action="new-my">${icon('plus')}購入を登録</button>`);
+  let html = pageHead('支出', 'スキンケアにかかったお金を管理し、無駄な購入を減らします。', `<button class="btn btn-primary" data-action="new-my">${icon('plus')}購入を登録</button>`);
   html += `<div class="card nav-bar" style="margin-bottom:16px">
     <button class="btn btn-ghost btn-sm" data-action="spend-prev">← 前月</button><strong>${fmtMonth(mk)}</strong>
     <button class="btn btn-ghost btn-sm" data-action="spend-next" ${mk >= cur ? 'disabled' : ''}>翌月 →</button></div>`;
@@ -4851,20 +4898,19 @@ function moneyCardHtml() {
       ${items.length ? `<ul class="mb-list">${items.map(x => `<li><span><b>${esc(truncate(x.name, 30))}</b><small>${esc(fmtMD(x.date))}${x.brand ? '・' + esc(x.brand) : ''}</small></span><em>${en(x.price)}</em></li>`).join('')}</ul>`
         : `<p class="small muted" style="margin:10px 0 0">この月の購入の記録はありません。マイ化粧品に購入価格を入れると、ここに表示されます。</p>`}
     </div>
-    <a class="btn btn-soft btn-sm" style="margin-top:12px" href="#/spending">${icon('wallet')}支出・買う前チェックへ</a>`;
+    <a class="btn btn-soft btn-sm" style="margin-top:12px" href="#/spending">${icon('wallet')}支出をくわしく見る・購入を記録</a>`;
 }
 // ---------- アカウント（下のバー）：お金・プラン・設定をまとめた画面 ----------
 function viewAccount() {
   ui.budgetEdit = false;
   const t = todayStr(), mk = monthKey(t), mTotal = monthTotal(mk), budget = state.settings.monthlyBudget;
   const items = [
-    {r:'spending', icon:'wallet', t:'支出・買う前チェック', d:`今月のスキンケア代 ${yen(mTotal)}${budget ? `（予算 ${yen(budget)}）` : ''}`},
     {r:'plan', icon:'user', t:'プラン・アカウント', d:acct.user ? `${esc(acct.user.email || '')}・${isPremium() ? PREMIUM_NAME : '無料プラン'}` : 'ログイン・プレミアムの申し込み'},
     {r:'settings', icon:'gear', t:'設定・プライバシー', d:'身長・体重、表示、リマインダー、データの管理'}
   ];
   return pageHead('アカウント', 'お金・プラン・設定をまとめています。') +
-    `<div class="card mb-card" id="acc-money">${moneyCardHtml()}</div>
-    <div class="card acc-list">${items.map(x => `<a class="acc-row" href="#/${x.r}">${icon(x.icon)}<span><b>${esc(x.t)}</b><small>${x.d}</small></span><i>›</i></a>`).join('')}</div>`;
+    `<div class="card acc-list"><button class="acc-row acc-toggle" data-action="acc-spend" aria-expanded="${!!ui.accSpendOpen}" aria-controls="acc-money">${icon('wallet')}<span><b>支出</b><small>今月のスキンケア代 ${en(mTotal)}${budget ? `（予算 ${en(budget)}）` : ''}</small></span><i>›</i></button>
+      <div class="acc-panel" id="acc-panel" ${ui.accSpendOpen ? '' : 'hidden'}><div class="mb-card" id="acc-money">${moneyCardHtml()}</div></div>${items.map(x => `<a class="acc-row" href="#/${x.r}">${icon(x.icon)}<span><b>${esc(x.t)}</b><small>${x.d}</small></span><i>›</i></a>`).join('')}</div>`;
 }
 function viewSettings() {
   let size = 0;
@@ -5090,6 +5136,8 @@ const actions = {
     st.user = true; st.auto = false; st.target = {yaw:base + t[0], pitch:t[1]}; st.dirty = true;
   },
   'advice-ai': () => runAdvice(true),
+  'fav': (id, el) => toggleFav(id, el),
+  'acc-spend': (id, el) => { ui.accSpendOpen = !ui.accSpendOpen; const pn = document.getElementById('acc-panel'); if (pn) { pn.hidden = !ui.accSpendOpen; if (ui.accSpendOpen) { pn.classList.remove('open'); void pn.offsetWidth; pn.classList.add('open'); } } if (el) el.setAttribute('aria-expanded', String(ui.accSpendOpen)); },
   'acc-budget-edit': () => { ui.budgetEdit = true; const c = document.getElementById('acc-money'); if (c) { c.innerHTML = moneyCardHtml(); const i = document.getElementById('acc-budget-in'); if (i) i.focus(); } },
   'acc-budget-cancel': () => { ui.budgetEdit = false; const c = document.getElementById('acc-money'); if (c) c.innerHTML = moneyCardHtml(); },
   'acc-month': v => { ui.accMonth = v; const c = document.getElementById('acc-money'); if (c) { c.innerHTML = moneyCardHtml(); const sm = document.getElementById('mb-sum'); if (sm) sm.classList.add('mb-flash'); } },
@@ -5532,8 +5580,8 @@ function render() {
   const r = parseRoute();
   const views = {home:viewHome, search:viewSearch, product:() => viewProduct(r.id), prices:() => viewPrices(r.id), stores:viewStores,
     ingredients:() => viewIngredients(r.id), scan:viewScan, my:() => r.id ? viewMyDetail(r.id) : viewMy(), compare:viewCompare, combo:viewCombo,
-    log:viewLog, charts:viewCharts, report:viewReport, spending:viewSpending, check:() => viewCheck(r.id), settings:viewSettings, account:viewAccount, terms:viewTerms, privacy:viewPrivacy, law:viewLaw, plan:() => viewPlan(r.query), suggest:viewSuggest, visit:viewVisit};
-  const alias = {account:'account', product:'search', prices:'search', stores:'search', spending:'account', plan:'account', settings:'account', compare:'charts', check:'account', terms:'account', privacy:'account', law:'account'};
+    log:viewLog, charts:viewCharts, report:viewReport, spending:viewSpending, check:() => viewCheck(r.id), settings:viewSettings, account:viewAccount, favorites:viewFavorites, terms:viewTerms, privacy:viewPrivacy, law:viewLaw, plan:() => viewPlan(r.query), suggest:viewSuggest, visit:viewVisit};
+  const alias = {account:'account', product:'search', prices:'search', stores:'search', favorites:'search', spending:'account', plan:'account', settings:'account', compare:'charts', check:'account', terms:'account', privacy:'account', law:'account'};
   const navName = alias[r.name] || (views[r.name] ? r.name : 'home');
   if (r.name !== 'check') ui._checkFrom = '';
   if (r.name === 'plan' && acct.status === 'idle') setTimeout(initCloud, 0);
@@ -5544,7 +5592,7 @@ function render() {
   try { html = (views[r.name] || viewHome)(); }
   catch (err) { console.error(err); html = `<div class="card">${emptyBox('note', '画面の表示中にエラーが発生しました', 'ページを再読み込みしてください。解決しない場合は、設定からバックアップを書き出したうえで「すべて削除」をお試しください。', '<a class="btn btn-primary btn-sm" href="#/settings">設定を開く</a>')}</div>`; }
   // ホーム以外の画面には、上に「戻る」を付ける（その画面に専用の戻るリンクがある場合は付けない）
-  if (r.name !== 'home' && !(['log', 'my', 'search', 'stores', 'account'].includes(r.name) && !r.id) && !/^\s*(<div class="notice[^>]*>.*?<\/div>\s*)?<a class="back"/s.test(html)) html = `<button type="button" class="back back-btn" data-action="go-back">← 戻る</button>` + html;
+  if (r.name !== 'home' && !(['log', 'my', 'search', 'stores', 'favorites', 'account'].includes(r.name) && !r.id) && !/^\s*(<div class="notice[^>]*>.*?<\/div>\s*)?<a class="back"/s.test(html)) html = `<button type="button" class="back back-btn" data-action="go-back">← 戻る</button>` + html;
   // 「← ○○」リンク：来た画面がリンク先と違うときは「← 戻る」と表示して、来た画面に戻る
   const prevNav = navStack.length > 1 ? navStack[navStack.length - 2] : '';
   html = html.replace(/<a class="back" href="([^"]*)">([^<]*)<\/a>/g, (m, href, label) => `<a class="back" href="${href}" data-back="1">${prevNav && prevNav !== href ? '← 戻る' : label}</a>`);
