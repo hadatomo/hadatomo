@@ -1,0 +1,17 @@
+{
+  "name": "肌トモ｜最小限の時間と費用で、最大限の効果を",
+  "short_name": "肌トモ",
+  "description": "肌の状態・化粧品・生活習慣・支出をまとめて記録し、スキンケアの時間と無駄な出費を減らすアプリ",
+  "lang": "ja",
+  "start_url": "./#/home",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FAF9F6",
+  "theme_color": "#3F6B4E",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

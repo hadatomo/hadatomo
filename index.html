@@ -3,7 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#FAF9F6">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="肌トモ">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#FAF9F6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#121614" media="(prefers-color-scheme: dark)">
+<script>try{var t=localStorage.getItem("skinwise_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
 <title>肌トモ｜最小限の時間と費用で、最大限の効果を</title>
 <style>
 :root{
@@ -17,9 +26,74 @@
   --font:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic UI","Yu Gothic",Meiryo,sans-serif;
   --serif:"Hiragino Mincho ProN","Yu Mincho","YuMincho","Noto Serif JP","Didot","Times New Roman",serif;
 }
+/* ---------- ダークモード（端末の設定に合わせる／設定画面で切り替え） ---------- */
+:root[data-theme="dark"]{--bg:#121614;--surface:#1B201D;--surface2:#232925;
+  --ink:#E6ECE7;--ink2:#BCC6BF;--muted:#8F9891;--line:#2C332E;--line2:#3B443D;
+  --green:#7FB08E;--green-d:#5E9E72;--green-s:#26372B;--green-p:#1D2B21;
+  --beige:#4A4232;--beige-s:#29251D;--gold:#C9A877;
+  --danger:#E3907C;--danger-s:#3A2420;--warn:#D9A955;--warn-s:#33291A;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.25);color-scheme:dark}
+:root[data-theme="dark"] .topbar{background:rgba(18,22,20,.92)!important}
+:root[data-theme="dark"] .bottom-nav{background:rgba(27,32,29,.96)!important;border-color:var(--line)!important}
+:root[data-theme="dark"] .input,:root[data-theme="dark"] .select,:root[data-theme="dark"] .textarea,:root[data-theme="dark"] .checks .check,:root[data-theme="dark"] .used-list .check{background:var(--surface2);color:var(--ink)}
+:root[data-theme="dark"] .field.has-error .input,:root[data-theme="dark"] .field.has-error .select,:root[data-theme="dark"] .field.has-error .textarea{background:#2A1D1A}
+:root[data-theme="dark"] .notice{border-color:#3D3528;color:#E2D3B8}
+:root[data-theme="dark"] .notice.green{border-color:#2F4535;color:#A9D3B4}
+:root[data-theme="dark"] .notice.warn{border-color:#4D3D20;color:#EBCB8E}
+:root[data-theme="dark"] .notice.red{border-color:#5A3229;color:#F0B4A5}
+:root[data-theme="dark"] .chip.beige{color:#D9C29C}
+:root[data-theme="dark"] .chip.gray{background:#2A302C;color:#AEB6B0}
+:root[data-theme="dark"] .badge-sample{background:#3A3018;color:#EBCB8E;border-color:#5A4A22}
+:root[data-theme="dark"] .badge-unverified{background:#2A2E2B;color:#B9B3A8;border-color:#3B403C}
+:root[data-theme="dark"] .tab.active{color:var(--bg)}
+:root[data-theme="dark"] .toast{color:var(--bg)}
+:root[data-theme="dark"] .toast-btn{color:var(--green-d)}
+:root[data-theme="dark"] .hero{background:linear-gradient(135deg,#1C2620 0%,#262219 100%)}
+:root[data-theme="dark"] .lock-card{background:linear-gradient(135deg,#221F18,#1E1C16)}
+:root[data-theme="dark"] .offer.shop-card.selected{background:#3A3120;border-color:#C99B2E}
+:root[data-theme="dark"] .ing-list a{border-color:#2F4535}
+:root[data-theme="dark"] .btn-danger-ghost{border-color:#5A3229}
+:root[data-theme="dark"] .btn-primary:hover{background:#4C8660}
+:root[data-theme="dark"] .modal-backdrop{background:rgba(0,0,0,.55)}
+:root[data-theme="dark"] .ad-box{filter:brightness(.85)}
+:root[data-theme="dark"] img.meal-thumb,:root[data-theme="dark"] .img-prev{filter:brightness(.92)}
+@media (prefers-color-scheme: dark){
+:root:not([data-theme="light"]){--bg:#121614;--surface:#1B201D;--surface2:#232925;
+  --ink:#E6ECE7;--ink2:#BCC6BF;--muted:#8F9891;--line:#2C332E;--line2:#3B443D;
+  --green:#7FB08E;--green-d:#5E9E72;--green-s:#26372B;--green-p:#1D2B21;
+  --beige:#4A4232;--beige-s:#29251D;--gold:#C9A877;
+  --danger:#E3907C;--danger-s:#3A2420;--warn:#D9A955;--warn-s:#33291A;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.25);color-scheme:dark}
+:root:not([data-theme="light"]) .topbar{background:rgba(18,22,20,.92)!important}
+:root:not([data-theme="light"]) .bottom-nav{background:rgba(27,32,29,.96)!important;border-color:var(--line)!important}
+:root:not([data-theme="light"]) .input,:root:not([data-theme="light"]) .select,:root:not([data-theme="light"]) .textarea,:root:not([data-theme="light"]) .checks .check,:root:not([data-theme="light"]) .used-list .check{background:var(--surface2);color:var(--ink)}
+:root:not([data-theme="light"]) .field.has-error .input,:root:not([data-theme="light"]) .field.has-error .select,:root:not([data-theme="light"]) .field.has-error .textarea{background:#2A1D1A}
+:root:not([data-theme="light"]) .notice{border-color:#3D3528;color:#E2D3B8}
+:root:not([data-theme="light"]) .notice.green{border-color:#2F4535;color:#A9D3B4}
+:root:not([data-theme="light"]) .notice.warn{border-color:#4D3D20;color:#EBCB8E}
+:root:not([data-theme="light"]) .notice.red{border-color:#5A3229;color:#F0B4A5}
+:root:not([data-theme="light"]) .chip.beige{color:#D9C29C}
+:root:not([data-theme="light"]) .chip.gray{background:#2A302C;color:#AEB6B0}
+:root:not([data-theme="light"]) .badge-sample{background:#3A3018;color:#EBCB8E;border-color:#5A4A22}
+:root:not([data-theme="light"]) .badge-unverified{background:#2A2E2B;color:#B9B3A8;border-color:#3B403C}
+:root:not([data-theme="light"]) .tab.active{color:var(--bg)}
+:root:not([data-theme="light"]) .toast{color:var(--bg)}
+:root:not([data-theme="light"]) .toast-btn{color:var(--green-d)}
+:root:not([data-theme="light"]) .hero{background:linear-gradient(135deg,#1C2620 0%,#262219 100%)}
+:root:not([data-theme="light"]) .lock-card{background:linear-gradient(135deg,#221F18,#1E1C16)}
+:root:not([data-theme="light"]) .offer.shop-card.selected{background:#3A3120;border-color:#C99B2E}
+:root:not([data-theme="light"]) .ing-list a{border-color:#2F4535}
+:root:not([data-theme="light"]) .btn-danger-ghost{border-color:#5A3229}
+:root:not([data-theme="light"]) .btn-primary:hover{background:#4C8660}
+:root:not([data-theme="light"]) .modal-backdrop{background:rgba(0,0,0,.55)}
+:root:not([data-theme="light"]) .ad-box{filter:brightness(.85)}
+:root:not([data-theme="light"]) img.meal-thumb,:root:not([data-theme="light"]) .img-prev{filter:brightness(.92)}
+}
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;letter-spacing:.01em}
+#main{overflow-wrap:anywhere;word-break:normal}
+#main .card,#main .offer,#main .offer-top>div{min-width:0}
 body.no-scroll{overflow:hidden}
 a{color:var(--green-d)}
 h1,h2,h3{margin:0;font-weight:600;letter-spacing:.02em}
@@ -252,7 +326,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .section-title{font-size:12px;letter-spacing:.12em;color:var(--gold);font-weight:700;margin:6px 0 -4px}
 .req{color:var(--danger);font-size:11px;margin-left:4px;font-weight:600}
 .opt{color:var(--muted);font-size:11px;margin-left:4px;font-weight:500}
-.input,.select,.textarea{width:100%;min-height:46px;padding:10px 14px;border:1px solid var(--line2);border-radius:12px;background:#fff;font-size:16px;font-family:inherit;color:var(--ink);transition:border .15s}
+.input,.select,.textarea{width:100%;min-height:46px;padding:10px 14px;border:1px solid var(--line2);border-radius:12px;background:var(--surface);font-size:16px;font-family:inherit;color:var(--ink);transition:border .15s}
 .textarea{min-height:96px;resize:vertical;line-height:1.6}
 .select{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23838B86' stroke-width='1.6' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
 .input:focus,.select:focus,.textarea:focus{outline:none;border-color:var(--green)}
@@ -263,13 +337,13 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .seg{display:flex;flex-wrap:wrap;gap:6px}
 .seg-opt{flex:1;min-width:44px}
 .seg-opt input{position:absolute;opacity:0;pointer-events:none}
-.seg-opt span{display:flex;align-items:center;justify-content:center;min-height:42px;padding:4px 8px;border:1px solid var(--line2);border-radius:12px;font-size:13px;cursor:pointer;background:#fff;text-align:center;line-height:1.3;transition:all .12s}
+.seg-opt span{display:flex;align-items:center;justify-content:center;min-height:42px;padding:4px 8px;border:1px solid var(--line2);border-radius:12px;font-size:13px;cursor:pointer;background:var(--surface);text-align:center;line-height:1.3;transition:all .12s}
 .seg-opt input:checked + span{background:var(--green-d);border-color:var(--green-d);color:#fff;font-weight:600}
 .scale-cap{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:4px}
 .check{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;cursor:pointer}
 .check input{width:18px;height:18px;accent-color:var(--green-d);flex:none}
 .checks{display:flex;flex-wrap:wrap;gap:8px}
-.checks .check{padding:6px 12px;border:1px solid var(--line2);border-radius:999px;background:#fff}
+.checks .check{padding:6px 12px;border:1px solid var(--line2);border-radius:999px;background:var(--surface)}
 .counter{display:flex;align-items:center;gap:8px}
 .counter .input{width:90px;text-align:center}
 .spot-row{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface2);margin-top:10px;position:relative}
@@ -281,7 +355,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .meal-row{display:grid;grid-template-columns:96px 1fr;gap:10px;align-items:center;margin-bottom:8px}
 .meal-row .input{min-height:40px;font-size:15px;padding:6px 10px}
 .used-list{display:grid;gap:6px}
-.used-list .check{padding:8px 12px;border:1px solid var(--line2);border-radius:12px;background:#fff;justify-content:flex-start}
+.used-list .check{padding:8px 12px;border:1px solid var(--line2);border-radius:12px;background:var(--surface);justify-content:flex-start}
 .face-wrap{display:grid;gap:12px;align-items:center}
 @media(min-width:640px){.face-wrap{grid-template-columns:220px 1fr}}
 .face{width:100%;max-width:220px;margin:0 auto;display:block;user-select:none;-webkit-user-select:none}
@@ -320,6 +394,8 @@ details.fold[open] summary{margin-bottom:10px}
 /* ---------- Toast ---------- */
 #toast-root{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;width:max-content;max-width:92vw}
 @media(min-width:960px){#toast-root{bottom:28px}}
+.toast.undo{display:flex;align-items:center;gap:14px;pointer-events:auto}
+.toast-btn{background:none;border:0;color:#9FD3AE;font-weight:700;font-size:13.5px;cursor:pointer;padding:4px 2px;font-family:inherit}
 .toast{background:var(--ink);color:#fff;padding:11px 18px;border-radius:12px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.18);animation:up .2s}
 .toast.error{background:var(--danger)}
 
@@ -1283,6 +1359,17 @@ const ui = {priceRes:{}, priceSet:true, priceVol:true, geoHelp:'', geoConsent:fa
 /* =========================================================
    画面：ホーム
    ========================================================= */
+// 連続記録日数（今日か昨日まで、肌の記録が続いている日数）
+function recordStreak(map, t) {
+  let d = map[t] ? t : addDays(t, -1), n = 0;
+  while (map[d] && n < 3650) { n++; d = addDays(d, -1); }
+  return {n, today:!!map[t]};
+}
+function streakHtml(map, t) {
+  const st = recordStreak(map, t);
+  if (st.n < 2) return '';
+  return ` <span class="chip green" style="margin-left:6px">連続記録 ${st.n}日${st.today ? '' : '（今日の記録で更新）'}</span>`;
+}
 function viewHome() {
   const t = todayStr(), map = logMap();
   const todayLog = map[t], todayLife = getLife(t);
@@ -1296,9 +1383,9 @@ function viewHome() {
   let html = loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '';
   html += `<section class="hero">
     <div class="eyebrow">Skin care manager</div>
-    <div class="hero-brand" style="margin-top:8px">肌トモ</div>
+    <div class="hero-brand" style="margin-top:8px">${esc(SERVICE)}</div>
     <p class="hero-copy">最小限の時間と費用で、最大限の効果を</p>
-    <p class="hero-date">${fmtDate(t)}</p>
+    <p class="hero-date">${fmtDate(t)}${streakHtml(map, t)}</p>
     <div class="hero-actions">
       <button class="btn btn-primary" data-action="new-log">${icon('plus')}今日の肌を記録</button>
       <button class="btn btn-ghost" data-action="new-life">${icon('moon')}食事・運動・睡眠</button>
@@ -2222,7 +2309,7 @@ function geoStepsHtml(kind) {
   const d = geoDevice();
   const siteKey = d.ios ? 'iphone_site' : d.android ? 'android_site' : (d.mac && d.safari) ? 'safari_site' : 'chrome_site';
   const osKey = d.ios ? 'iphone_os' : d.android ? 'android_os' : d.mac ? 'mac_os' : d.win ? 'win_os' : '';
-  const first = kind === 'site' ? [siteKey] : [osKey || siteKey];
+  const first = kind === 'site' ? [siteKey] : kind === 'both' ? [siteKey].concat(osKey ? [osKey] : []) : [osKey || siteKey];
   const block = k => `<p class="small" style="margin:8px 0 2px"><b>${esc(GEO_STEPS[k][0])}</b></p><ol style="margin:0;padding-left:20px">${GEO_STEPS[k][1].map(x => `<li>${esc(x)}</li>`).join('')}</ol>`;
   const others = Object.keys(GEO_STEPS).filter(k => !first.includes(k));
   return `<p class="small" style="margin-top:6px">お使いの端末の手順：</p>${first.map(block).join('')}
@@ -2233,6 +2320,9 @@ function geoHelpHtml(kind) {
   const alt = '<p class="small" style="margin-top:8px">位置情報を使いたくない場合は、下の欄に駅名・地名・住所を入力して探せます。</p>';
   if (kind === 'blocked-site' || kind === 'denied') {
     return `<div class="notice warn" style="margin:10px 0 0"><b>このサイトの位置情報が「許可しない」になっています。</b><br>一度「許可しない」を選ぶと、ブラウザの決まりで、アプリからもう一度たずねることができません。次の手順で許可してください（1分ほどでできます）。${geoStepsHtml('site')}${retry}${alt}</div>`;
+  }
+  if (kind === 'blocked-either') {
+    return `<div class="notice warn" style="margin:10px 0 0"><b>位置情報を使えませんでした。</b><br>ブラウザか端末の設定で、位置情報がオフになっています。次の2か所を確認してください。${geoStepsHtml('both')}${retry}${alt}</div>`;
   }
   if (kind === 'blocked-os') {
     return `<div class="notice warn" style="margin:10px 0 0"><b>端末の設定で、ブラウザの位置情報がオフになっています。</b>次の手順でオンにしてください。${geoStepsHtml('os')}${retry}${alt}</div>`;
@@ -3840,6 +3930,28 @@ ${r('動作環境', '最新版のSafari・Google Chrome・Microsoft Edge・Firef
 /* =========================================================
    画面：設定・プライバシー
    ========================================================= */
+/* ---------- ホーム画面に追加（アプリのように使う・オフラインでも開ける） ---------- */
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; if (parseRoute().name === 'settings') render(); });
+window.addEventListener('appinstalled', () => { installEvt = null; toast('ホーム画面に追加しました'); });
+const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+if ('serviceWorker' in navigator && location.protocol === 'https:') window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+function installCardHtml() {
+  if (isStandalone()) return `<div class="card"><div class="card-h"><h2>アプリとして使う</h2><span class="chip green">追加済み</span></div><p class="small muted">ホーム画面から開いています。電波が弱い場所でも、記録の画面を開けます。</p></div>`;
+  const d = geoDevice();
+  const how = installEvt ? `<button class="btn btn-primary btn-sm" data-action="install-app">ホーム画面に追加する</button>`
+    : d.ios ? '<ol class="small" style="margin:0;padding-left:20px"><li>Safariの画面下（または上）の<b>共有ボタン</b>（四角から矢印が出ているマーク）を押す</li><li><b>「ホーム画面に追加」</b>を選び、「追加」を押す</li></ol>'
+    : d.android ? '<ol class="small" style="margin:0;padding-left:20px"><li>Chromeの右上の<b>「⋮」</b>を押す</li><li><b>「ホーム画面に追加」</b>（または「アプリをインストール」）を選ぶ</li></ol>'
+    : (d.mac && d.safari) ? '<ol class="small" style="margin:0;padding-left:20px"><li>画面上のメニュー<b>「ファイル」→「Dockに追加」</b>を選ぶ</li></ol>'
+    : '<ol class="small" style="margin:0;padding-left:20px"><li>アドレスバーの右にある<b>インストールのマーク</b>（パソコンに矢印のアイコン）を押す</li><li>見つからない場合は、右上の「⋮」→「キャスト、保存、共有」→「インストール」</li></ol>';
+  return `<div class="card"><div class="card-h"><h2>アプリとして使う</h2></div>
+    <p class="small muted" style="margin-bottom:10px">ホーム画面（パソコンはDockやアプリ一覧）に追加すると、アプリのように1回のタップで開けます。電波が弱い場所でも記録の画面を開けます。アプリストアからのダウンロードは不要です。</p>${how}</div>`;
+}
+function themePref() { try { const t = localStorage.getItem('skinwise_theme'); return t === 'light' || t === 'dark' ? t : 'auto'; } catch (e) { return 'auto'; } }
+function applyTheme(t) {
+  if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); else document.documentElement.removeAttribute('data-theme');
+  try { if (t === 'auto') localStorage.removeItem('skinwise_theme'); else localStorage.setItem('skinwise_theme', t); } catch (e) { /* 何もしない */ }
+}
 function viewSettings() {
   let size = 0;
   try { size = (localStorage.getItem(STORE_KEY) || '').length; } catch (e) {}
@@ -3852,6 +3964,15 @@ function viewSettings() {
       ${planTable()}
       <p class="small muted" style="margin-top:10px">${acct.user ? `ログイン中：${esc(acct.user.email || '')}` : 'ログインしていません（無料プランはログインなしで使えます）'}</p>
       <a class="btn btn-soft btn-sm" style="margin-top:10px" href="#/plan">プラン・アカウントの画面へ</a></div>
+    ${installCardHtml()}
+    <div class="card"><div class="card-h"><h2>画面の表示</h2></div>
+      <p class="small muted" style="margin-bottom:10px">暗い場所でも見やすい「ダーク」表示に切り替えられます。「自動」は、スマホ・パソコンの設定（ダークモード）に合わせます。</p>
+      <div class="chips">${[['auto','自動'],['light','ライト'],['dark','ダーク']].map(([k, l]) => `<button class="tab ${themePref() === k ? 'active' : ''}" data-action="theme" data-id="${k}">${l}</button>`).join('')}</div></div>
+    <div class="card"><div class="card-h"><h2>記録のリマインダー</h2></div>
+      <p class="small muted" style="margin-bottom:10px">毎日決まった時間に「肌を記録しよう」と通知が来るように、スマホ・パソコンのカレンダーに予定を追加できます。止めたいときは、カレンダーからその予定を削除してください。</p>
+      <div class="form-grid two" style="align-items:end"><div class="field"><label class="lbl" for="f_remind">通知する時刻</label><input type="time" class="input" id="f_remind" value="21:30"></div>
+      <div><button class="btn btn-soft btn-sm" data-action="reminder-ics">カレンダーに追加する</button></div></div>
+      <p class="hint">ファイル（.ics）が保存されます。iPhoneは開くと「カレンダーに追加」、パソコンはダブルクリックで追加できます。</p></div>
     <div class="card"><div class="card-h"><h2>月の予算</h2></div>
       <form id="budget-form" novalidate><div class="form-grid">${field('1か月のスキンケア予算（円）', `<input class="input" id="f_budget" name="budget" inputmode="numeric" value="${state.settings.monthlyBudget || ''}" placeholder="例：5000">`, {name:'budget', hint:'0または空欄で、予算を使わない設定になります'})}</div>
       <button type="submit" class="btn btn-primary btn-sm" style="margin-top:12px">保存する</button></form></div>
@@ -3866,6 +3987,7 @@ function viewSettings() {
         <li><b>食事の写真</b>：撮影した写真は端末内だけで使い、「保存する」にチェックしたものだけをこのブラウザ内に保存します。</li>
         <li><b>写真読み取り（${PREMIUM_NAME}）</b>：「写真から読み取る」を押したときだけ、その写真を${esc(SERVICE)}のサーバーを通してGoogleのAI（Gemini API）に送り、料理や文字を読み取ります。写真と結果はサーバーに保存しません。使った回数（1日あたり）だけを記録します。</li>
         <li><b>価格比較</b>：「価格を調べる」を押したときだけ、商品名（とJANコード）を${esc(SERVICE)}のサーバーを通して楽天市場・Yahoo!ショッピングの公式APIに送ります。あなたの情報（IPアドレスなど）は送りません。</li>
+        <li><b>オフライン用の保存</b>：電波が弱い場所でも開けるように、アプリ本体・アイコン・薬局データをこの端末のブラウザに保存します（記録の内容は含みません）。画面の表示（ダーク・ライト）の設定も、この端末にだけ保存します。</li>
         <li><b>外部リンク</b>：通販サイト・地図のリンクを開くと、そのサイトの利用規約・プライバシーポリシーが適用されます。</li>
         <li><b>広告</b>：無料プランでは、ホーム・商品検索・成分辞典・店舗検索の画面に広告を表示する予定です（現在は準備中で、広告は配信していません）。肌の記録・グラフ・レポート・食事などの画面には表示しません。広告は肌トモのおすすめや価格比較の結果とは関係がなく、広告であることを明示します。広告を配信するときは、広告サービスに送られる情報（Cookieなど）について、この画面でお知らせします。プレミアムプランでは広告を表示しません。</li>
       </ul>
@@ -3875,14 +3997,14 @@ function viewSettings() {
       ${storageOK ? '' : '<div class="notice warn" style="margin-top:12px">現在このブラウザでは保存ができない状態です。</div>'}</div>
     <div class="card"><div class="card-h"><h2>バックアップ</h2></div>
       <p class="small muted" style="margin-bottom:12px">ブラウザの履歴やWebサイトデータを削除すると、記録も消えます。定期的にバックアップファイルを保存しておくと安心です。</p>
-      <div class="page-actions"><button class="btn btn-ghost btn-sm" data-action="export">バックアップを書き出す（.json）</button><button class="btn btn-ghost btn-sm" data-action="import">バックアップから復元</button></div>
+      <div class="page-actions"><button class="btn btn-ghost btn-sm" data-action="export">バックアップを書き出す（.json）</button><button class="btn btn-ghost btn-sm" data-action="export-csv">記録を表計算用に書き出す（.csv）</button><button class="btn btn-ghost btn-sm" data-action="import">バックアップから復元</button></div>
       <input type="file" id="import-file" accept="application/json,.json" hidden></div>
     <div class="card"><div class="card-h"><h2>動作確認用データ</h2></div>
       <p class="small muted" style="margin-bottom:12px">グラフやレポートの見え方を試すために、架空の「デモ」記録（約4週間分）・食事睡眠・マイ化粧品を追加できます。デモデータには「デモ」と表示され、まとめて削除できます。</p>
       <div class="page-actions">${hasDemo ? '<button class="btn btn-danger-ghost btn-sm" data-action="demo-remove">デモデータを削除</button>' : '<button class="btn btn-soft btn-sm" data-action="demo-add">デモデータを追加</button>'}
       <button class="btn btn-ghost btn-sm" data-action="reset-samples">サンプル商品を初期状態に戻す</button></div></div>
     <div class="card"><div class="card-h"><h2>すべてのデータを削除</h2></div>
-      <p class="small muted" style="margin-bottom:12px">肌の記録・食事睡眠・マイ化粧品・支出・登録した商品をすべて削除します。元に戻せません。</p>
+      <p class="small muted" style="margin-bottom:12px">肌の記録・食事睡眠・マイ化粧品・支出・登録した商品をすべて削除します。削除した直後（数秒間）だけ「元に戻す」で取り消せます。心配な場合は、先にバックアップを書き出してください。</p>
       <button class="btn btn-danger btn-sm" data-action="delete-all">すべて削除する</button></div>
     <div class="card"><div class="card-h"><h2>肌トモについて</h2></div>
       <dl class="kv" style="margin-bottom:12px"><dt>サービス名</dt><dd>${esc(SERVICE)}</dd><dt>バージョン</dt><dd>第2版（試作）</dd></dl><p class="small">肌の状態・化粧品・成分・生活習慣・購入金額をまとめて管理し、スキンケアにかける時間と無駄な出費を減らすことを目指すアプリです。</p>
@@ -3958,7 +4080,7 @@ const actions = {
   'edit-log': id => openLogForm(id),
   'delete-log': async id => {
     const l = getLog(id); if (!l) return;
-    if (!await confirmDialog(`${fmtDate(l.date)}の肌の記録を削除しますか？\n写真を保存している場合は、写真も削除されます。元に戻せません。`)) return;
+    if (!await confirmDialog(`${fmtDate(l.date)}の肌の記録を削除しますか？\n写真を保存している場合は、写真も削除されます。\n（削除した直後なら、画面下の「元に戻す」で取り消せます）`)) return;
     state.skinLogs = state.skinLogs.filter(x => x.id !== id);
     if (save()) { toast('記録を削除しました'); render(); }
   },
@@ -3982,7 +4104,7 @@ const actions = {
   },
   'delete-my': async id => {
     const p = getMy(id); if (!p) return;
-    if (!await confirmDialog(`「${p.name}」をマイ化粧品から削除しますか？\nこの商品の購入記録（支出）も削除されます。元に戻せません。\n（使い終わった場合は「使用終了にする」で記録を残せます）`)) return;
+    if (!await confirmDialog(`「${p.name}」をマイ化粧品から削除しますか？\nこの商品の購入記録（支出）も削除されます。削除した直後なら「元に戻す」で取り消せます。\n（使い終わった場合は「使用終了にする」で記録を残せます）`)) return;
     state.myProducts = state.myProducts.filter(x => x.id !== id);
     state.skinLogs.forEach(l => { l.usedProducts = l.usedProducts.filter(x => x !== id); });
     if (save()) { toast('削除しました'); location.hash = '#/my'; }
@@ -4033,6 +4155,8 @@ const actions = {
     p.offers = p.offers.filter(x => x.id !== oid);
     if (save()) { toast('削除しました'); render(); }
   },
+  'install-app': async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (e) { /* 何もしない */ } installEvt = null; render(); },
+  'theme': v => { applyTheme(v); render(); toast(v === 'dark' ? 'ダーク表示にしました' : v === 'light' ? 'ライト表示にしました' : '端末の設定に合わせます'); },
   'map-layer': v => { ui.mapLayer = v; const y = scrollY; render(); scrollTo(0, y); },
   'store-more': () => { ui.storeShow += 40; const y = scrollY; render(); scrollTo(0, y); },
   'use-geo': async () => {
@@ -4047,7 +4171,7 @@ const actions = {
     let perm = null;
     try { perm = navigator.permissions ? await navigator.permissions.query({name:'geolocation'}) : null; } catch (e) { perm = null; }
     if (perm && !ui.geoWatch) { ui.geoWatch = true; perm.onchange = () => { if (perm.state !== 'denied' && ui.geoHelp && parseRoute().name === 'stores') { ui.geoHelp = ''; actions['use-geo'](); } }; }
-    if (perm && perm.state === 'denied') { ui.geoHelp = 'blocked-site'; render(); return; }
+    // ※ ブラウザによっては状態を正しく返さないことがあるため、ここでは止めずに必ず現在地を取りに行く
     setStoreRes({status:'loading', note:perm && perm.state === 'prompt' ? 'ブラウザに「位置情報の利用を許可しますか？」と表示されたら、「許可」を押してください…' : '現在地を確認しています…'});
     navigator.geolocation.getCurrentPosition(pos => {
       ui.geo = {lat:pos.coords.latitude.toFixed(4), lng:pos.coords.longitude.toFixed(4)};
@@ -4055,7 +4179,7 @@ const actions = {
       storeSearchAt({lat:pos.coords.latitude, lng:pos.coords.longitude, label:'現在地'}, true);
     }, err => {
       ui.storeRes = null; ui.storeBusy = false;
-      ui.geoHelp = err && err.code === 1 ? (perm && perm.state === 'denied' ? 'blocked-site' : (perm && perm.state === 'granted' ? 'blocked-os' : 'blocked-site')) : err && err.code === 3 ? 'timeout' : 'blocked-os-maybe';
+      ui.geoHelp = err && err.code === 1 ? (perm && perm.state === 'denied' ? 'blocked-site' : (perm && perm.state === 'granted' ? 'blocked-os' : 'blocked-either')) : err && err.code === 3 ? 'timeout' : 'blocked-os-maybe';
       render();
     }, {enableHighAccuracy:false, timeout:15000, maximumAge:60000});
   },
@@ -4162,6 +4286,35 @@ const actions = {
     NAV.filter(n => !BOTTOM_NAV.includes(n.r)).forEach(n => { if (n.g !== g) { g = n.g; if (g) body += `<div class="grp">${esc(g)}</div>`; } body += `<a href="#/${n.r}">${icon(n.icon)}${esc(n.label)}</a>`; });
     openModal({title:'メニュー', size:'small', dismissable:true, body:body + '</div>'});
   },
+  'export-csv': () => {
+    const q = v => { const x = String(v == null ? '' : v); return /[",\n\r]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; };
+    const row = a => a.map(q).join(',');
+    const skin = [row(['日付','肌の調子(1-5)','肌の調子','ニキビの数','ニキビの種類','赤み(0-5)','乾燥(0-5)','皮脂(0-5)','使った化粧品','メモ'])].concat(logsAsc().map(l => row([l.date, l.condition, COND_LABELS[l.condition], l.acneCount, l.acneTypes.join('・'), l.redness, l.dryness, l.oil,
+      l.usedProducts.map(id => (getMy(id) || {}).name || '').filter(Boolean).join('・'), l.memo])));
+    const life = [row(['日付','就寝','起床','睡眠(分)','運動(分)','運動の内容','歩数','エネルギー(kcal)','たんぱく質(g)','脂質(g)','炭水化物(g)','野菜(g)','メモ'])].concat(state.lifeLogs.slice().sort((a, b) => a.date.localeCompare(b.date)).map(l => {
+      const n = nutTotals(l.foods || []), sm = sleepMin(l);
+      return row([l.date, l.bed, l.wake, sm == null ? '' : sm, l.exercise.reduce((a, e) => a + e.minutes, 0), l.exercise.map(e => `${e.type}${e.minutes}分`).join('・'), l.steps == null ? '' : l.steps,
+        Math.round(n.kcal || 0), Math.round(n.p || 0), Math.round(n.f || 0), Math.round(n.c || 0), Math.round(n.veg || 0), l.memo]);
+    }));
+    const dl = (name, lines) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], {type:'text/csv'})); a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
+    dl(`skin-records-${todayStr()}.csv`, skin);
+    setTimeout(() => dl(`life-records-${todayStr()}.csv`, life), 400);
+    toast('肌の記録と、食事・運動・睡眠の記録を書き出しました（ExcelやNumbersで開けます）');
+  },
+  'reminder-ics': () => {
+    const tm = ($('#f_remind') || {}).value || '21:30';
+    if (!/^\d{2}:\d{2}$/.test(tm)) { toast('時刻を選んでください', 'error'); return; }
+    const d = todayStr().replace(/-/g, ''), hm = tm.replace(':', '') + '00';
+    const end = (() => { const [h, m] = tm.split(':').map(Number); const t = h * 60 + m + 5; return String(Math.floor(t / 60) % 24).padStart(2, '0') + String(t % 60).padStart(2, '0') + '00'; })();
+    const url = location.origin + location.pathname + '#/home';
+    const ics = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//skinwise//reminder//JA','CALSCALE:GREGORIAN','BEGIN:VTIMEZONE','TZID:Asia/Tokyo','BEGIN:STANDARD','DTSTART:19700101T000000','TZOFFSETFROM:+0900','TZOFFSETTO:+0900','TZNAME:JST','END:STANDARD','END:VTIMEZONE',
+      'BEGIN:VEVENT', `UID:skinwise-reminder-${Date.now()}@hadatomo.github.io`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z')}`,
+      `DTSTART;TZID=Asia/Tokyo:${d}T${hm}`, `DTEND;TZID=Asia/Tokyo:${d}T${end}`, 'RRULE:FREQ=DAILY', `SUMMARY:${SERVICE}：今日の肌を記録しよう`,
+      `DESCRIPTION:1分で記録できます。 ${url}`, `URL:${url}`, 'BEGIN:VALARM','ACTION:DISPLAY',`DESCRIPTION:${SERVICE}：今日の肌を記録しよう`,'TRIGGER:PT0M','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([ics], {type:'text/calendar'})); a.download = 'skin-reminder.ics'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    toast(`毎日${tm}のリマインダーを書き出しました。開いてカレンダーに追加してください`);
+  },
   'export': () => {
     const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
     const a = document.createElement('a');
@@ -4208,7 +4361,7 @@ const actions = {
     if (save()) { toast('サンプル商品を初期状態に戻しました'); render(); }
   },
   'delete-all': async () => {
-    if (!await confirmDialog('すべてのデータを削除しますか？\n肌の記録・写真・食事睡眠・マイ化粧品・支出・登録した商品が消え、元に戻せません。', {ok:'すべて削除する'})) return;
+    if (!await confirmDialog('すべてのデータを削除しますか？\n肌の記録・写真・食事睡眠・マイ化粧品・支出・登録した商品が消えます。\n（削除した直後の数秒間だけ「元に戻す」で取り消せます）', {ok:'すべて削除する'})) return;
     state = freshState();
     if (save()) { toast('すべてのデータを削除しました'); location.hash = '#/home'; render(); }
   }
@@ -4221,8 +4374,27 @@ document.addEventListener('click', e => {
   const fn = actions[el.dataset.action];
   if (!fn) return;
   if (el.tagName === 'A' || el.tagName === 'BUTTON') e.preventDefault();
+  if (/^delete-/.test(el.dataset.action)) { runWithUndo(() => fn(el.dataset.id, el, e)); return; }
   fn(el.dataset.id, el, e);
 });
+// 削除したあと、しばらくの間「元に戻す」を押せるようにする（大手アプリと同じ操作）
+async function runWithUndo(work) {
+  const before = JSON.stringify(state);
+  await work();
+  if (JSON.stringify(state) === before) return; // キャンセルされた
+  const root = $('#toast-root'), last = root.lastElementChild, msg = last ? last.textContent : '削除しました';
+  if (last) last.remove();
+  const el = document.createElement('div');
+  el.className = 'toast undo';
+  el.innerHTML = `<span>${esc(msg)}</span><button type="button" class="toast-btn">元に戻す</button>`;
+  root.appendChild(el);
+  const timer = setTimeout(() => el.remove(), 7000);
+  el.querySelector('button').onclick = () => {
+    clearTimeout(timer); el.remove();
+    try { state = normalize(JSON.parse(before)); } catch (err) { toast('元に戻せませんでした', 'error'); return; }
+    if (save()) { toast('元に戻しました'); render(); }
+  };
+}
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target && e.target.id === 'st-area' && !e.isComposing) { e.preventDefault(); storeSearchByName(); return; }
   if (e.key === 'Escape' && $('#modal-root').innerHTML && !$('#confirm-root').innerHTML) closeModal();
@@ -4331,6 +4503,13 @@ function render() {
   fillAds();
   if (r.name === 'stores') drawStoreMap(); else if (storeMap) { try { storeMap.remove(); } catch (e) {} storeMap = null; }
 }
+// ほかのタブ・ウィンドウで記録を変えたとき、この画面にも反映する（古い内容で上書きしないため）
+window.addEventListener('storage', e => {
+  if (e.key !== STORE_KEY || !e.newValue) return;
+  try { state = normalize(JSON.parse(e.newValue)); } catch (err) { return; }
+  if (!$('#modal-root').innerHTML) render();
+  toast('別のタブでの変更を反映しました');
+});
 window.addEventListener('hashchange', () => { if ($('#modal-root').innerHTML) closeModal(); render(); });
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(drawCharts, 150); });

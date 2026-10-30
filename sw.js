@@ -1,0 +1,39 @@
+// 肌トモ：オフラインでも開けるようにする仕組み（サービスワーカー）
+// ・アプリ本体（index.html）は、ネットにつながるときは毎回新しいものを取り、つながらないときは保存しておいたものを使う
+// ・アイコンや薬局データは、一度読み込んだものを保存して使い回す
+// ・ログイン・決済・検索などの外部サービスへの通信には関わらない（保存しない）
+const CACHE = 'skinwise-v1';
+const SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
+
+self.addEventListener('install', (e) => {
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+});
+
+self.addEventListener('activate', (e) => {
+  e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+});
+
+self.addEventListener('fetch', (e) => {
+  const req = e.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return; // 外部サービスは通常どおり
+  const isPage = req.mode === 'navigate' || url.pathname.endsWith('/') || url.pathname.endsWith('/index.html');
+  if (isPage) {
+    // ページ本体：ネット優先（最新を表示）。つながらないときだけ保存したものを使う
+    e.respondWith(
+      fetch(req).then((res) => {
+        if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put('./index.html', copy)); }
+        return res;
+      }).catch(() => caches.match('./index.html'))
+    );
+    return;
+  }
+  // そのほか（アイコン・薬局データなど）：保存したものを先に使い、裏で新しくする
+  e.respondWith(
+    caches.open(CACHE).then((c) => c.match(req).then((hit) => {
+      const net = fetch(req).then((res) => { if (res.ok) c.put(req, res.clone()); return res; }).catch(() => hit);
+      return hit || net;
+    }))
+  );
+});
