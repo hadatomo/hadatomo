@@ -440,6 +440,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ld-stage{background:transparent}}
 .ld-card{touch-action:pan-y}
 .ld-swipe{display:grid;grid-template-columns:40px 1fr 40px;align-items:center;gap:6px;margin-top:8px;user-select:none;-webkit-user-select:none}
+.ld-arrow[hidden]{display:block;visibility:hidden}
 .ld-arrow{width:40px;height:40px;border-radius:50%;border:1px solid var(--line2);background:var(--surface);color:var(--ink);font-size:24px;line-height:1;cursor:pointer;font-family:inherit}
 .ld-info{text-align:center;min-width:0}
 .ld-date{display:flex;flex-direction:column;align-items:center;line-height:1.4}
@@ -3077,9 +3078,9 @@ function logDayCardHtml(logs) {
   return `<div class="card ld-card" id="log-day-card"><div class="card-h"><h2>日々の肌の変化</h2><span class="small muted">日付を左右にスワイプ</span></div>
     <div class="f3-stage ld-stage"><canvas id="face3d-log" aria-label="選んだ日の肌の記録を3Dの顔で表示"></canvas><div class="f3-load" id="ld-load">3Dの顔を読み込んでいます…</div></div>
     <div class="ld-swipe" id="ld-swipe">
-      <button class="ld-arrow" data-action="log-day-step" data-id="-1" aria-label="前の記録">‹</button>
+      <button class="ld-arrow" id="ld-prev" data-action="log-day-step" data-id="-1" aria-label="前の記録" ${i <= 0 ? 'hidden' : ''}>‹</button>
       <div class="ld-info" id="ld-info">${logDayInfoHtml(list, i)}</div>
-      <button class="ld-arrow" data-action="log-day-step" data-id="1" aria-label="次の記録">›</button>
+      <button class="ld-arrow" id="ld-next" data-action="log-day-step" data-id="1" aria-label="次の記録" ${i >= list.length - 1 ? 'hidden' : ''}>›</button>
     </div>
     <div class="ld-detail" id="ld-detail">${logDayDetailHtml(list, i)}</div></div>`;
 }
@@ -3090,9 +3091,12 @@ function logDaySet(date) {
   const info = document.getElementById('ld-info'), det = document.getElementById('ld-detail');
   if (info) { info.innerHTML = logDayInfoHtml(list, i); info.classList.remove('ld-flash'); void info.offsetWidth; info.classList.add('ld-flash'); }
   if (det) det.innerHTML = logDayDetailHtml(list, i);
+  // 一番古い記録では「‹」、最新の記録では「›」を出さない
+  const pv = document.getElementById('ld-prev'), nx = document.getElementById('ld-next');
+  if (pv) pv.hidden = i <= 0; if (nx) nx.hidden = i >= list.length - 1;
   const st = FACE3D.st; if (st && st.canvasId === 'face3d-log') { const d = logFaceData(l); face3dApply(st, d.counts, d.max, d.mode); }
 }
-function logDayStep(n) { const list = logDayList(); const i = logDayIdx(list) + n; if (i >= 0 && i < list.length) logDaySet(list[i].date); else toast(n < 0 ? 'これより前の記録はありません' : 'これが最新の記録です'); }
+function logDayStep(n) { const list = logDayList(); const i = logDayIdx(list) + n; if (i >= 0 && i < list.length) logDaySet(list[i].date); }
 // 左右のスワイプ（3Dの顔の上以外）：左へ払う＝次の日、右へ払う＝前の日
 function bindLogDaySwipe() {
   const card = document.getElementById('log-day-card'); if (!card) return;
