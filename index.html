@@ -210,7 +210,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .hero-brand{font-family:var(--serif);font-size:34px;letter-spacing:.26em;font-weight:500;line-height:1.1}
 .hero-copy{margin-top:10px;font-size:15px;color:var(--ink2);letter-spacing:.06em}
 .hero-date{margin:0;font-size:16px;font-weight:600;color:var(--ink)}
-.hero-top{display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:420px}
+.hero-top{display:flex;align-items:center;justify-content:center;gap:10px;max-width:420px;text-align:center}
 .streak{display:inline-flex;align-items:center;gap:4px;flex:none}
 .streak-star{position:relative;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;filter:drop-shadow(0 0 6px rgba(245,184,46,.55));animation:starGlow 2.6s ease-in-out infinite}
 .streak-star svg{position:absolute;inset:0;width:100%;height:100%}
@@ -4727,7 +4727,7 @@ const actions = {
     if (save()) { toast('削除しました'); render(); }
   },
   'install-app': async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (e) { /* 何もしない */ } installEvt = null; render(); },
-  'go-back': () => { if (appNavCount > 0 && history.length > 1) { appNavCount = Math.max(0, appNavCount - 2); history.back(); } else location.hash = '#/home'; },
+  'go-back': () => goBack('#/home'),
   'f3-view': v => {
     const st = FACE3D.st; if (!st) return;
     const P = Math.PI, base = Math.round(st.yaw / (2 * P)) * 2 * P; // 今の向きから近い回り方で回る
@@ -5105,6 +5105,9 @@ function render() {
   catch (err) { console.error(err); html = `<div class="card">${emptyBox('note', '画面の表示中にエラーが発生しました', 'ページを再読み込みしてください。解決しない場合は、設定からバックアップを書き出したうえで「すべて削除」をお試しください。', '<a class="btn btn-primary btn-sm" href="#/settings">設定を開く</a>')}</div>`; }
   // ホーム以外の画面には、上に「戻る」を付ける（その画面に専用の戻るリンクがある場合は付けない）
   if (r.name !== 'home' && !(['log', 'my', 'search'].includes(r.name) && !r.id) && !/^\s*(<div class="notice[^>]*>.*?<\/div>\s*)?<a class="back"/s.test(html)) html = `<button type="button" class="back back-btn" data-action="go-back">← 戻る</button>` + html;
+  // 「← ○○」リンク：来た画面がリンク先と違うときは「← 戻る」と表示して、来た画面に戻る
+  const prevNav = navStack.length > 1 ? navStack[navStack.length - 2] : '';
+  html = html.replace(/<a class="back" href="([^"]*)">([^<]*)<\/a>/g, (m, href, label) => `<a class="back" href="${href}" data-back="1">${prevNav && prevNav !== href ? '← 戻る' : label}</a>`);
   $('#main').innerHTML = html;
   renderNav(navName);
   const key = r.name + '/' + r.id;
@@ -5124,8 +5127,24 @@ window.addEventListener('storage', e => {
   if (!$('#modal-root').innerHTML) render();
   toast('別のタブでの変更を反映しました');
 });
-let appNavCount = 0; // このアプリの中で画面を移った回数（「戻る」でアプリの外に出ないため）
-window.addEventListener('hashchange', () => { appNavCount++; });
+// 画面を移った順番を覚えておく（「戻る」で、来た画面に正しく戻る。行ったり来たりのループを防ぐ）
+// 一度通った画面にもう一度来たときは、そこまで巻き戻す
+const navKey = () => { const h = location.hash || '#/home'; return h === '#' || h === '#/' ? '#/home' : h; };
+const navStack = [navKey()];
+window.addEventListener('hashchange', () => {
+  const k = navKey(), i = navStack.lastIndexOf(k);
+  if (i >= 0) navStack.length = i + 1; else navStack.push(k);
+  if (navStack.length > 50) navStack.splice(0, navStack.length - 50);
+});
+function goBack(fallback) {
+  if (navStack.length > 1) { const to = navStack[navStack.length - 2]; location.hash = to; }
+  else location.hash = fallback || '#/home';
+}
+// 画面にある「← ○○」の戻るリンクも、来た画面に戻る（来た画面がなければ、リンク先へ）
+document.addEventListener('click', e => {
+  const a = e.target.closest('a.back[data-back]'); if (!a) return;
+  e.preventDefault(); goBack(a.getAttribute('href'));
+});
 window.addEventListener('hashchange', () => { if ($('#modal-root').innerHTML) closeModal(); render(); });
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(drawCharts, 150); });
