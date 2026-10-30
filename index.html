@@ -3162,8 +3162,8 @@ function openLifeForm(id, part) {
     ${field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint:'睡眠は「この日の朝に起きた睡眠」を記録します'})}
     <div class="form-grid" data-part="sleep" ${show('sleep')}><div class="section-title">SLEEP 睡眠</div>
     <div class="form-grid two" style="gap:12px">
-      ${field('就寝時刻', `<input type="time" class="input" id="f_bed" name="bed" value="${esc(d.bed)}">`, {name:'bed'})}
       ${field('起床時刻', `<input type="time" class="input" id="f_wake" name="wake" value="${esc(d.wake)}">`, {name:'wake'})}
+      ${field('就寝時刻', `<input type="time" class="input" id="f_bed" name="bed" value="${esc(d.bed)}">`, {name:'bed'})}
     </div>
     <p class="small" id="sleep-calc" style="margin-top:-6px"></p></div>
     <div class="form-grid" data-part="exercise" ${show('exercise')}><div class="section-title">EXERCISE 運動</div>
