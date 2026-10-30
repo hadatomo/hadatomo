@@ -393,7 +393,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .life-mini button span{font-size:11.5px;color:var(--muted);grid-row:1}
 .life-mini button b{grid-column:1 / span 2;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .life-mini button.none b{color:var(--muted);font-weight:500}
-.advice{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.advice{margin-top:12px}
 .advice h3{margin:0 0 4px;font-size:14.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .advice .ai-badge{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--green);color:#fff}
 .advice ol{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
@@ -407,14 +407,16 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .f3-full-head{display:flex;align-items:center;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) 14px 6px}
 .f3-full-stage{position:relative;flex:1;min-height:0;background:radial-gradient(circle at 50% 40%,var(--surface2),var(--bg))}
 .f3-full-stage canvas{width:100%;height:100%;display:block;touch-action:none}
-.t3-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:12px;align-items:center}
-.t3-stage{max-width:none;margin:0;background:transparent}
+.t3-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1.25fr);gap:10px;align-items:center}
+.t3-stage{max-width:none;margin:0;background:#fff}
+:root[data-theme="dark"] .t3-stage{background:transparent}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .t3-stage{background:transparent}}
 .f3-tags{position:absolute;left:8px;top:8px;right:52px;z-index:2;display:flex;flex-wrap:wrap;gap:4px;pointer-events:none}
 .f3-tags span{font-size:12px;line-height:1.4;padding:2px 8px;border-radius:999px;background:var(--surface);color:var(--ink);border:1px solid var(--line2);box-shadow:var(--shadow);white-space:nowrap}
 .f3-tags .t-cond{color:#fff;border-color:transparent}
 .t3-side{display:flex;flex-direction:column;gap:6px;min-width:0}
-.t3-tags{display:flex;flex-wrap:wrap;gap:4px}
-.t3-tags span{font-size:12.5px;line-height:1.5;padding:1px 8px;border-radius:999px;background:var(--surface2);color:var(--ink);white-space:nowrap}
+.t3-tags{display:flex;flex-wrap:wrap;gap:3px}
+.t3-tags span{font-size:12px;line-height:1.5;padding:1px 5px;letter-spacing:-.04em;border-radius:999px;background:var(--surface2);color:var(--ink);white-space:nowrap}
 .t3-tags .t-cond{color:#fff}
 .t3-acne{margin:2px 0 4px;font-size:12.5px;color:var(--muted)}
 .t3-acne b{font-size:18px;color:var(--ink);margin:0 2px}
@@ -1475,9 +1477,8 @@ function viewHome() {
     : `<div class="t3-side"><p class="small muted" style="margin:0 0 8px">まだ今日の記録がありません。1分ほどで記録できます。</p><button class="btn btn-primary btn-sm" data-action="new-log">${icon('plus')}記録する</button></div>`;
   const todayCard = `<div class="card"><div class="card-h"><h2>今日の肌記録</h2>${L ? `<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(L.id)}">編集</button>` : ''}</div>
       <div class="t3-grid">${side}<div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load">3Dの顔を読み込んでいます…</div></div></div>
-      ${L && (L.acneSpots.length || L.areas.length) ? '<p class="small muted" style="margin-top:6px">赤い部分が、今日記録した部位です。</p>' : ''}
-      ${lifeLine}
-      <div class="advice" id="advice-box">${adviceHtml()}</div></div>`;
+      <div class="advice" id="advice-box">${adviceHtml()}</div>
+      ${lifeLine}</div>`;
 
   let activeCard;
   if (active.length) {
@@ -3546,7 +3547,7 @@ function adviceHtml() {
   const ai = c && c.sig === sig && c.res && c.res.points && c.res.points.length ? c.res : null;
   const pts = ai ? ai.points : adviceLocal(d);
   const prem = isPremium();
-  const head = `<h3>改善ポイント${ai ? '<span class="ai-badge">AI分析</span>' : ''}</h3>${ai && ai.summary ? `<p class="small muted" style="margin:0">${esc(ai.summary)}</p>` : ''}`;
+  const head = `<h3>おすすめケアポイント${ai ? '<span class="ai-badge">AI分析</span>' : ''}</h3>${ai && ai.summary ? `<p class="small muted" style="margin:0">${esc(ai.summary)}</p>` : ''}`;
   const list = `<ol>${pts.map((x, i) => `<li><i>${i + 1}</i><div><b>${esc(x.title)}</b><span>${esc(x.text)}</span></div></li>`).join('')}</ol>`;
   let foot;
   if (adviceBusy) foot = '<span class="small muted">AIが記録を分析しています…</span>';
