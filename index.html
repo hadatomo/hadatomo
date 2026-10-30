@@ -387,12 +387,24 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .life-btns .life-main{grid-column:1 / span 2;grid-row:1}
 .life-btns>:not(.life-main){grid-row:2}
 .life-links{display:inline-flex;gap:10px;margin-left:6px}
-.life-mini{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:12px}
-.life-mini button{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;column-gap:5px;align-items:center;text-align:left;border:1px solid var(--line);background:var(--surface2);color:var(--ink);border-radius:12px;padding:7px 9px;font-family:inherit;cursor:pointer;min-width:0}
-.life-mini button svg{width:15px;height:15px;grid-row:1;color:var(--green-d)}
-.life-mini button span{font-size:11.5px;color:var(--muted);grid-row:1}
-.life-mini button b{grid-column:1 / span 2;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.life-mini button.none b{color:var(--muted);font-weight:500}
+.life-sum{margin-top:14px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
+.ls-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;background:var(--surface2);font-size:13px}
+.ls-head .link{background:none;border:0;padding:0;font-family:inherit;cursor:pointer;color:var(--green-d);text-decoration:underline}
+.ls-row+.ls-row{border-top:1px solid var(--line)}
+.ls-main{width:100%;display:grid;grid-template-columns:18px auto 1fr 10px;align-items:baseline;column-gap:8px;row-gap:2px;padding:10px 12px;border:0;background:none;color:var(--ink);font-family:inherit;text-align:left;cursor:pointer}
+.ls-main svg{width:16px;height:16px;color:var(--green-d)}
+.ls-l{font-size:12.5px;color:var(--muted)}
+.ls-main b{font-size:15px;font-weight:700;white-space:nowrap}
+.ls-main b.none{color:var(--muted);font-weight:500;font-size:13.5px}
+.ls-main b{grid-column:3}
+.ls-main em{grid-column:2 / span 2;grid-row:2;font-style:normal;font-size:13px;font-weight:600;color:var(--muted);min-width:0;line-height:1.45}
+.ls-go{grid-column:4;grid-row:1 / span 2;align-self:center}
+.ls-main svg{align-self:center}
+.ls-head b{white-space:nowrap}.ls-head .link{white-space:nowrap}
+.ls-main em small{font-weight:400;font-size:11.5px;color:var(--muted);margin-left:2px}
+.ls-main em.bad{color:#C0563B}
+.ls-main em.good{color:var(--green-d)}
+.ls-go{color:var(--muted);font-size:18px;line-height:1}
 .advice{margin-top:12px}
 .advice h3{margin:0 0 4px;font-size:14.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .advice .ai-badge{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--green);color:#fff}
@@ -1071,6 +1083,10 @@ function normalize(d) {
   })) : [];
   out.settings.monthlyBudget = Math.max(0, num(d.settings && d.settings.monthlyBudget));
   out.settings.concerns = strArr(d.settings && d.settings.concerns, CONCERNS);
+  const ds = d.settings || {};
+  out.settings.sleepNeed = clamp(Math.round(num(ds.sleepNeed) || 420), 240, 720); // 必要な睡眠時間（分）
+  out.settings.weight = clamp(Math.round(num(ds.weight) || 0), 0, 250); // 体重（kg）。0は未設定
+  out.settings.proteinGoal = clamp(Math.round(num(ds.proteinGoal) || 0), 0, 300); // たんぱく質の目標（g）。0は自動
   out.customFoods = Array.isArray(d.customFoods) ? d.customFoods.filter(x => x && x.name).map(x => { const n = normFood(Object.assign({meal:'snack', qty:1}, x)); return {id:n.id, name:n.name, kcal:n.kcal, p:n.p, f:n.f, c:n.c, veg:n.veg}; }) : [];
   return out;
 }
@@ -1444,6 +1460,40 @@ function streakHtml(map, t) {
   if (st.n < 2) return '';
   return ` <span class="chip green" style="margin-left:6px">連続記録 ${st.n}日${st.today ? '' : '（今日の記録で更新）'}</span>`;
 }
+// ---------- 今日の睡眠・運動・食事のまとめ（ホーム） ----------
+// 運動の強さ（METs：国立健康・栄養研究所「改訂版 身体活動のメッツ表」を参考にした目安）
+const EX_METS = {'ウォーキング':3.5, 'ランニング':8, '筋トレ':5, 'ヨガ・ストレッチ':2.5, '自転車':6, '水泳':7, '球技・スポーツ':6, 'ダンス':5, 'その他':4};
+const lifeGoals = () => { const st = state.settings, w = st.weight || 55; return {sleep:st.sleepNeed || 420, weight:w, weightSet:!!st.weight, protein:st.proteinGoal || Math.round(w * 1.0)}; };
+const exKcal = (l, w) => Math.round(l.exercise.reduce((a, e) => a + (EX_METS[e.type] || 4) * w * e.minutes / 60 * 1.05, 0));
+const fmtDur = m => { m = Math.round(m); const h = Math.floor(m / 60), r = m % 60; return h ? `${h}時間${r === 30 ? '半' : r ? r + '分' : ''}` : `${r}分`; };
+function lifeSumHtml(lf) {
+  const g = lifeGoals();
+  const row = (id, ic, label, main, sub, cls) => `<div class="ls-row"><button class="ls-main" data-action="life-part" data-id="${id}" aria-label="${label}を編集">${icon(ic)}<span class="ls-l">${label}</span><b class="${main === '未記録' ? 'none' : ''}">${esc(main)}</b><em class="${cls || ''}">${sub}</em><span class="ls-go">›</span></button></div>`;
+  // 睡眠
+  const sm = lf ? sleepMin(lf) : null;
+  let sMain = '未記録', sSub = `必要 ${esc(fmtDur(g.sleep))}`, sCls = '';
+  if (sm != null) { sMain = fmtDur(sm); const d = sm - g.sleep; if (d < -10) { sSub = `−${esc(fmtDur(-d))}<small>（必要 ${esc(fmtDur(g.sleep))}）</small>`; sCls = 'bad'; } else { sSub = `十分<small>（必要 ${esc(fmtDur(g.sleep))}）</small>`; sCls = 'good'; } }
+  // 運動
+  let eMain = '未記録', eSub = '', eCls = '';
+  if (lf && lf.exRecorded) { const k = exKcal(lf, g.weight), m = exTotal(lf); eMain = m ? `${k.toLocaleString()}kcal` : '0kcal'; eSub = m ? `${esc(fmtMin(m))}<small>（体重${g.weight}kg${g.weightSet ? '' : '・仮'}で計算）</small>` : '運動なし'; eCls = m ? 'good' : ''; }
+  // 食事（カロリーと、肌に必要なたんぱく質）
+  let fMain = '未記録', fSub = `たんぱく質の目標 ${g.protein}g`, fCls = '';
+  if (lf && lf.foods && lf.foods.length) {
+    const t = nutTotals(lf.foods), p = Math.round(t.p), lack = g.protein - p;
+    fMain = `${Math.round(t.kcal).toLocaleString()}kcal`;
+    fSub = lack > 0 ? `＋${lack}g<small>（たんぱく質があと${lack}g・目標${g.protein}g）</small>` : `たんぱく質 ${p}g<small>（目標${g.protein}g クリア）</small>`; fCls = lack > 0 ? 'bad' : 'good';
+  } else if (lf && MEALS.some(m => lf.meals[m.k] && lf.meals[m.k].ate)) { fMain = `${MEALS.filter(m => lf.meals[m.k].ate).length}回`; fSub = '食べた物を追加するとkcalを表示'; }
+  return `<div class="life-sum"><div class="ls-head"><b>今日の睡眠・運動・食事</b><button class="link small" data-action="life-goal">目安を変更</button></div>
+    ${row('sleep', 'moon', '睡眠', sMain, sSub, sCls)}${row('exercise', 'chart', '運動', eMain, eSub, eCls)}${row('meal', 'note', '食事', fMain, fSub, fCls)}</div>`;
+}
+function openLifeGoal() {
+  const st = state.settings, opts = []; for (let m = 300; m <= 600; m += 30) opts.push(m);
+  openModal({title:'睡眠・運動・食事の目安', body:`<form id="goal-form" novalidate><div class="form-grid">
+    ${field('必要な睡眠時間', `<select class="select" name="sleepNeed">${opts.map(m => `<option value="${m}" ${m === (st.sleepNeed || 420) ? 'selected' : ''}>${fmtDur(m)}</option>`).join('')}</select>`, {name:'sleepNeed', hint:'大人はおよそ7時間前後が目安です（厚生労働省「健康づくりのための睡眠ガイド2023」）'})}
+    ${field('体重（kg）', `<input class="input" name="weight" inputmode="decimal" value="${st.weight || ''}" placeholder="例：55">`, {name:'weight', hint:'運動の消費カロリーの計算に使います。空欄なら55kgとして計算します。このブラウザ内にだけ保存されます'})}
+    ${field('1日のたんぱく質の目標（g）', `<input class="input" name="proteinGoal" inputmode="numeric" value="${st.proteinGoal || ''}" placeholder="空欄なら体重×1g">`, {name:'proteinGoal', hint:'たんぱく質は肌をつくる材料です。空欄なら「体重×1g」を目安にします'})}
+  </div></form>`, footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="submit" form="goal-form" class="btn btn-primary">保存する</button>`});
+}
 function viewHome() {
   const t = todayStr(), map = logMap();
   const todayLog = map[t], todayLife = getLife(t);
@@ -1462,14 +1512,7 @@ function viewHome() {
     <p class="hero-date">${fmtDate(t)}${streakHtml(map, t)}</p>
     <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${icon('plus')}今日の肌を記録</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('chart')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('note')}食事</button></div></section>`;
 
-  // 睡眠・運動・食事：3つを小さな枠に並べてコンパクトに（押すとそれぞれの記録画面）
-  const lf = todayLife;
-  const lifeTiles = [
-    {id:'sleep', ic:'moon', l:'睡眠', v:lf && sleepMin(lf) != null ? fmtHM(sleepMin(lf)).replace('時間0分', '時間') : '未記録'},
-    {id:'exercise', ic:'chart', l:'運動', v:lf && lf.exRecorded ? (exTotal(lf) ? fmtMin(exTotal(lf)) : 'なし') : '未記録'},
-    {id:'meal', ic:'note', l:'食事', v:lf && MEALS.some(m => lf.meals[m.k] && lf.meals[m.k].ate) ? `${MEALS.filter(m => lf.meals[m.k] && lf.meals[m.k].ate).length}回` : '未記録'}
-  ];
-  const lifeLine = `<div class="life-mini" aria-label="今日の睡眠・運動・食事">${lifeTiles.map(x => `<button class="${x.v === '未記録' ? 'none' : ''}" data-action="life-part" data-id="${x.id}">${icon(x.ic)}<span>${x.l}</span><b>${esc(x.v)}</b></button>`).join('')}</div>`;
+  const lifeLine = lifeSumHtml(todayLife);
   // 今日の肌記録：3Dの顔を大きく、記録の数値を横に小さく
   const L = todayLog;
   const side = L ? `<div class="t3-side"><div class="t3-tags"><span class="t-cond" style="background:${COND_COLORS[L.condition] || '#999'}">（${esc(COND_LABELS[L.condition] || '—')}）</span>${L.areas.map(a => `<span>（${esc(areaName(a))}）</span>`).join('')}</div><p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
@@ -4572,6 +4615,7 @@ const actions = {
     st.user = true; st.auto = false; st.target = {yaw:base + t[0], pitch:t[1]}; st.dirty = true;
   },
   'advice-ai': () => runAdvice(true),
+  'life-goal': () => openLifeGoal(),
   'f3-zoom': v => { const st = FACE3D.st; if (!st) return; st.zoomT = clamp((st.zoomT || st.cam.position.z) + (v === 'in' ? -8 : 8), st.minZ || 34, st.maxZ || 84); st.dirty = true; },
   'f3-full': v => openFace3dFull(v),
   'f3-full-close': () => closeFace3dFull(),
@@ -4878,6 +4922,16 @@ async function onScanPhoto(input) {
 document.addEventListener('submit', e => {
   if (e.target.id === 'acct-form') { e.preventDefault(); handleAuthSubmit(e.target); return; }
   if (e.target.id === 'pw-form') { e.preventDefault(); handlePwSubmit(e.target); return; }
+  if (e.target.id === 'goal-form') {
+    e.preventDefault(); const f = e.target, er = {};
+    const w = f.elements.weight.value.trim() === '' ? 0 : Number(toHalf(f.elements.weight.value)), pg = f.elements.proteinGoal.value.trim() === '' ? 0 : Number(toHalf(f.elements.proteinGoal.value));
+    if (!(w === 0 || (w >= 20 && w <= 250))) er.weight = '20〜250の数字で入力してください（空欄でも大丈夫です）。';
+    if (!(pg === 0 || (pg >= 10 && pg <= 300))) er.proteinGoal = '10〜300の数字で入力してください（空欄でも大丈夫です）。';
+    if (Object.keys(er).length) { showErrors(f, er); return; }
+    state.settings.sleepNeed = Number(f.elements.sleepNeed.value) || 420; state.settings.weight = Math.round(w); state.settings.proteinGoal = Math.round(pg);
+    if (save()) { closeModal(); toast('目安を保存しました'); render(); }
+    return;
+  }
   if (e.target.id !== 'budget-form') return;
   e.preventDefault();
   const form = e.target, v = parseYen(form.elements.budget.value);
