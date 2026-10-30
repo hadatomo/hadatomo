@@ -368,8 +368,9 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .face text{font-size:11px;fill:#5E574C;pointer-events:none;font-family:var(--font)}
 .face .deco{fill:none;stroke:#B9AE9E;stroke-width:1.4;stroke-linecap:round;pointer-events:none}
 .f3-stage{position:relative;width:100%;max-width:420px;margin:0 auto;aspect-ratio:1/1;border-radius:16px;background:radial-gradient(circle at 50% 40%,var(--surface2),var(--surface));overflow:hidden}
-.f3-stage canvas{width:100%;height:100%;display:block;cursor:grab}
+.f3-stage canvas{width:100%;height:100%;display:block;cursor:grab;touch-action:none}
 .f3-stage canvas:active{cursor:grabbing}
+.f3-views{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
 .f3-load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted);padding:20px;text-align:center}
 .f3-tip{position:absolute;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:12.5px;padding:4px 10px;border-radius:8px;pointer-events:none;white-space:nowrap}
 .f3-ctrl{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
@@ -2277,7 +2278,7 @@ function storeResultsHtml() {
     <div class="map-tabs"><button class="tab ${ui.mapLayer !== 'photo' ? 'active' : ''}" data-action="map-layer" data-id="std">地図</button><button class="tab ${ui.mapLayer === 'photo' ? 'active' : ''}" data-action="map-layer" data-id="photo">航空写真</button></div>
     <div id="store-map" class="store-map" role="region" aria-label="検索した場所の周辺地図"><noscript><iframe class="map-frame" title="周辺地図" src="${esc(src)}"></iframe></noscript></div>
     <div class="map-legend">${Object.entries(PIN_COLORS).filter(([t]) => R.items.some(x => (x.type || 'その他') === t)).map(([t, c]) => `<span><i style="background:${c}"></i>${esc(t)}</span>`).join('')}<span><i style="background:#2B6CB0"></i>検索の中心</span></div>
-    <p class="small muted" style="margin:4px 0 12px">印を押すと、店名と距離が出ます。番号は下の一覧の順番です（近い順）。一覧のお店を押すと、地図がそのお店の場所に移動します。地図：国土地理院（地図を動かすときは、スマホは2本の指、パソコンは⌘またはCtrlキー＋スクロール）。距離は検索の中心からの直線距離です。</p>
+    <p class="small muted" style="margin:4px 0 12px">印を押すと、店名と距離が出ます。番号は下の一覧の順番です（近い順）。一覧のお店を押すと、地図がそのお店の場所に移動します。地図：国土地理院（${DEV.touch ? '地図は2本の指で動かせます' : `地図はドラッグで動かせます。拡大・縮小は${DEV.mod}を押しながらスクロール`}）。距離は検索の中心からの直線距離です。</p>
     ${R.items.length ? `<p class="small muted" style="margin-bottom:8px">${storeTypeCounts(R.items)}</p>` + R.items.slice(0, ui.storeShow).map((s, i) => shopCard(s, i)).join('') + (R.items.length > ui.storeShow ? `<button class="btn btn-ghost" style="width:100%;margin-top:10px" data-action="store-more">さらに表示（残り${R.items.length - ui.storeShow}件）</button>` : '') : '<p class="small muted">この範囲では、条件に合う店舗が地図データに見つかりませんでした。範囲を広げるか、下の「地図アプリで探す」をお試しください。</p>'}
     ${R.pharm ? `<p class="small muted" style="margin-top:12px">薬局のデータ：「医療情報ネット」オープンデータ（厚生労働省、${R.pharm.date ? esc(R.pharm.date.replace(/-/g, '/')) + '時点' : ''}）を加工して作成。届出の内容のため、実際と異なる場合があります。</p>` : ''}
     ${R.pharmFailed ? '<p class="small muted" style="margin-top:8px">国の薬局データを読み込めなかったため、薬局は地図データから探しています（一部の薬局が表示されない場合があります）。</p>' : ''}
@@ -2316,6 +2317,13 @@ const GEO_STEPS = {
   mac_os:       ['パソコン（Mac の設定）', ['りんごマーク →「システム設定」→「プライバシーとセキュリティ」→「位置情報サービス」を開く', '「位置情報サービス」と、使っているブラウザをオンにして、ブラウザを開き直す']],
   win_os:       ['パソコン（Windows の設定）', ['「設定」→「プライバシーとセキュリティ」→「位置情報」を開く', '「位置情報サービス」と「デスクトップアプリに位置情報へのアクセスを許可する」をオンにして、ブラウザを開き直す']]
 };
+// 使っている端末に合わせて、説明の言葉を変える（スマホ＝タップ・指、パソコン＝クリック・マウス）
+const DEV = (() => {
+  const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const touch = (window.matchMedia && matchMedia('(pointer: coarse)').matches) || ios || /Android/.test(ua);
+  return {touch, ios, android:/Android/.test(ua), mac:/Macintosh/.test(ua) && !ios, win:/Windows/.test(ua),
+    tap: touch ? 'タップ' : 'クリック', mod: /Macintosh/.test(ua) && !ios ? '⌘（command）キー' : 'Ctrlキー'};
+})();
 function geoDevice() {
   const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
   const android = /Android/.test(ua), chrome = /Chrome|CriOS|Edg/.test(ua), mac = /Macintosh/.test(ua) && !ios, win = /Windows/.test(ua);
@@ -3002,7 +3010,7 @@ function openLogForm(id) {
     ${field('その他の気になる状態', checksHtml('otherConcerns', OTHER_CONCERNS, d.otherConcerns), {name:'otherConcerns', optLabel:'任意・複数選択可'})}
     <div class="field"><span class="lbl">気になる部位<span class="opt">任意・複数選択可</span></span>
       <div class="face-wrap">${faceSvg()}<div><div class="checks">${AREAS.map(a => `<label class="check"><input type="checkbox" name="areas" value="${a.id}" ${d.areas.includes(a.id) ? 'checked' : ''}>${esc(a.name)}</label>`).join('')}</div>
-      <p class="hint">イラストをタップしても選べます。イラストは正面から見た顔です（向かって左があなたの右頬）。</p></div></div>
+      <p class="hint">イラストを${DEV.tap}しても選べます。イラストは正面から見た顔です（向かって左があなたの右頬）。</p></div></div>
     </div>
     <div class="field"><span class="lbl">今日使った化粧品<span class="opt">任意</span></span>
       ${usable.length ? `<div class="used-list">${usable.map(p => `<label class="check"><input type="checkbox" name="usedProducts" value="${esc(p.id)}" ${d.usedProducts.includes(p.id) ? 'checked' : ''}>${esc(truncate(p.name, 30))} <span class="chip">${esc(p.timing)}</span></label>`).join('')}</div>
@@ -3311,13 +3319,14 @@ function face3dCardHtml() {
   const d = face3dWeeks(8), w = d.weeks[ui.f3Week] || d.weeks[7];
   const first = d.weeks.find(x => x.logs.length), diff = first && first !== w ? AREAS.map(a => ({n:a.name, v:(w.c[a.id] || 0) - (first.c[a.id] || 0)})).filter(x => x.v) : [];
   return `<div class="card"><div class="card-h"><h2>3Dで見る肌の変化</h2><span class="chip">8週間</span></div>
-    <p class="small muted" style="margin-bottom:8px">${d.mode === 'spots' ? '色の濃さと赤い印は、その週に記録したニキビの数（部位ごと）です。' : '色の濃さは、その週に「気になる部位」に選んだ日数です。'}顔は指（マウス）で回せます。部位を押すと数が出ます。</p>
+    <p class="small muted" style="margin-bottom:8px">${d.mode === 'spots' ? '色の濃さと赤い印は、その週に記録したニキビの数（部位ごと）です。' : '色の濃さは、その週に「気になる部位」に選んだ日数です。'}${DEV.touch ? '顔を指でなぞると、どの向きにも回せます。部位をタップすると数が出ます。' : '顔をドラッグすると、どの向きにも回せます。部位をクリックすると数が出ます。'}下のボタンで、横・後ろ・上・下からも見られます。</p>
     <div class="f3-stage"><canvas id="face3d" aria-label="3Dの顔で表示した、部位ごとの記録"></canvas><div class="f3-tip" id="f3-tip" hidden></div><div class="f3-load" id="f3-load">3Dの顔を読み込んでいます…</div></div>
     <div class="f3-ctrl">
       <button class="btn btn-ghost btn-sm" data-action="f3-step" data-id="-1" aria-label="前の週">◀</button>
       <div class="f3-week"><b id="f3-label">${f3md(w.s)}〜${f3md(w.e)}の週</b><span class="small muted" id="f3-sub">記録 ${w.logs.length}日</span></div>
       <button class="btn btn-ghost btn-sm" data-action="f3-step" data-id="1" aria-label="次の週">▶</button>
     </div>
+    <div class="f3-views">${[['front','正面'],['right','右から'],['left','左から'],['back','後ろ'],['top','上から'],['bottom','下から']].map(([k, l]) => `<button class="tab" data-action="f3-view" data-id="${k}">${l}</button>`).join('')}<button class="tab" data-action="f3-zoom" data-id="in" aria-label="大きくする">＋</button><button class="tab" data-action="f3-zoom" data-id="out" aria-label="小さくする">－</button></div>
     <input type="range" class="f3-range" id="f3-range" min="0" max="7" step="1" value="${ui.f3Week}" aria-label="表示する週">
     <div class="page-actions" style="justify-content:center;margin-top:8px"><button class="btn btn-soft btn-sm" data-action="f3-play">${icon('chart')}8週間の変化を再生</button></div>
     <div class="map-legend" style="justify-content:center"><span><i style="background:#EBC9AE"></i>記録なし</span><span><i style="background:#EDA38A"></i>やや多い</span><span><i style="background:#D15C47"></i>多い</span>${d.mode === 'spots' ? '<span><i style="background:#C0392B"></i>ニキビの印</span>' : ''}</div>
@@ -3411,7 +3420,7 @@ async function drawFace3d() {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); renderer.setSize(W, H, false);
   renderer.outputEncoding = T.sRGBEncoding;
   const scene = new T.Scene(), cam = new T.PerspectiveCamera(28, W / H, 1, 200);
-  cam.position.set(0, 0.3, 46);
+  cam.position.set(0, 0.6, 60);
   scene.add(new T.HemisphereLight(0xfff6ee, 0x6b5a50, 0.75));
   const key = new T.DirectionalLight(0xffffff, 0.75); key.position.set(-12, 14, 22); scene.add(key);
   const fill = new T.DirectionalLight(0xffe8d8, 0.35); fill.position.set(16, -4, 14); scene.add(fill);
@@ -3421,19 +3430,23 @@ async function drawFace3d() {
   geo.setIndex(m.f); geo.computeVertexNormals();
   const mat = new T.MeshStandardMaterial({vertexColors:true, roughness:0.68, metalness:0, side:T.DoubleSide});
   const face = new T.Mesh(geo, mat), group = new T.Group();
-  group.add(face); group.position.y = 0.6; scene.add(group);
+  group.add(face);
+  // 首（頭の後ろは顔の形のデータに含めてある。マネキンのような胸像にして、立体だとわかりやすくする）
+  const headMat = new T.MeshStandardMaterial({color:new T.Color(0.94, 0.81, 0.71).convertSRGBToLinear(), roughness:0.75, metalness:0});
+  const neck = new T.Mesh(new T.CylinderGeometry(3.6, 4.4, 9, 40), headMat); neck.position.set(0, -11.0, -4.2); group.add(neck);
+  group.position.y = 0.4; scene.add(group);
   const st = FACE3D.st = {renderer, scene, cam, geo, group, face, dots:[], dotGeo:new T.SphereGeometry(0.28, 12, 10), dotMat:new T.MeshStandardMaterial({color:0xC0392B, roughness:0.45}),
-    yaw:-0.35, pitch:0.05, dirty:true, stop:false, drag:null, idle:0, counts:{}};
+    yaw:-1.2, pitch:0.05, dirty:true, stop:false, drag:null, idle:0, counts:{}, intro:70};
   face3dShowWeek(ui.f3Week == null ? 7 : ui.f3Week);
   const l = $('#f3-load'); if (l) l.hidden = true;
   // 回す操作（指・マウス）
-  cv.style.touchAction = 'pan-y';
-  cv.addEventListener('pointerdown', e => { st.drag = {x:e.clientX, y:e.clientY, yaw:st.yaw, pitch:st.pitch, moved:false}; cv.setPointerCapture(e.pointerId); });
+  cv.style.touchAction = 'none'; // 顔の上では、指の上下の動きも回転に使う
+  cv.addEventListener('pointerdown', e => { st.intro = 0; st.target = null; st.drag = {x:e.clientX, y:e.clientY, yaw:st.yaw, pitch:st.pitch, moved:false}; cv.setPointerCapture(e.pointerId); });
   cv.addEventListener('pointermove', e => {
     if (!st.drag) return;
     const dx = e.clientX - st.drag.x, dy = e.clientY - st.drag.y;
     if (Math.abs(dx) + Math.abs(dy) > 4) st.drag.moved = true;
-    st.yaw = clamp(st.drag.yaw + dx * 0.012, -1.0, 1.0); st.pitch = clamp(st.drag.pitch + dy * 0.008, -0.4, 0.4); st.idle = 0; st.dirty = true;
+    st.yaw = st.drag.yaw + dx * 0.012; st.pitch = clamp(st.drag.pitch + dy * 0.01, -1.35, 1.35); st.idle = 0; st.user = true; st.target = null; st.dirty = true;
   });
   const up = e => {
     if (st.drag && !st.drag.moved) face3dPick(e);
@@ -3443,7 +3456,10 @@ async function drawFace3d() {
   const loop = () => {
     if (st.stop || !document.body.contains(cv)) { st.stop = true; try { renderer.dispose(); } catch (e) { /* 何もしない */ } return; }
     st.idle++;
-    if (!st.drag && st.idle > 180) { st.yaw = Math.sin(st.idle / 160) * 0.45; st.dirty = true; } // しばらく触らないと、ゆっくり左右に回る
+    if (st.intro > 0 && !st.drag) { st.intro--; const k = 1 - st.intro / 70; st.yaw = -1.2 + (0.85 * (1 - Math.pow(1 - k, 3))); st.dirty = true; } // 最初に横から正面へ回って見せる
+    if (st.target && !st.drag) { st.yaw += (st.target.yaw - st.yaw) * 0.14; st.pitch += (st.target.pitch - st.pitch) * 0.14; if (Math.abs(st.target.yaw - st.yaw) < 0.002 && Math.abs(st.target.pitch - st.pitch) < 0.002) st.target = null; st.dirty = true; } // ボタンで選んだ向きへ回る
+    if (st.zoomT && Math.abs(st.zoomT - cam.position.z) > 0.05) { cam.position.z += (st.zoomT - cam.position.z) * 0.18; st.dirty = true; }
+    if (!st.drag && !st.user && !st.target && st.idle > 180) { st.yaw = Math.sin(st.idle / 160) * 0.45; st.dirty = true; } // 触る前は、ゆっくり左右に揺れる
     if (st.dirty) { group.rotation.y = st.yaw; group.rotation.x = st.pitch; renderer.render(scene, cam); st.dirty = false; }
     requestAnimationFrame(loop);
   };
@@ -3489,7 +3505,7 @@ function viewCharts() {
       <p class="small muted" style="margin-bottom:8px">上：肌の調子（1〜5）／下：各商品の使用期間（濃い点＝「使った」と記録した日）</p>
       ${chartSlot('timeline', w => timelineChart(w, {dates, values:vals('condition'), used:usedDays, products:productsDuring(start, end).sort((a,b) => a.startDate.localeCompare(b.startDate))}))}
       <div class="notice green" style="margin:12px 0 0">同じ時期に肌の変化があっても、その商品が原因とは限りません。季節・睡眠・体調・生理周期・ほかの商品なども影響します。</div></div>`;
-  html += face3dCardHtml(); // 3Dの顔（無料プランでも見られる）
+  html += face3dCardHtml(); // 顔で見る肌の変化（無料プランでも見られる）
   if (locked()) return html + lockCard('詳細な分析', '睡眠・運動・食事の内容と肌の調子の比較、部位ごとの過去と現在の比較、前の期間との比較、90日間のグラフが使えます。');
   // 睡眠
   const sleepVals = dates.map(d => { const m = sleepMin(lm[d]); return m == null ? null : Math.round(m / 6) / 10; });
@@ -4132,7 +4148,7 @@ function installCardHtml() {
     : (d.mac && d.safari) ? '<ol class="small" style="margin:0;padding-left:20px"><li>画面上のメニュー<b>「ファイル」→「Dockに追加」</b>を選ぶ</li></ol>'
     : '<ol class="small" style="margin:0;padding-left:20px"><li>アドレスバーの右にある<b>インストールのマーク</b>（パソコンに矢印のアイコン）を押す</li><li>見つからない場合は、右上の「⋮」→「キャスト、保存、共有」→「インストール」</li></ol>';
   return `<div class="card"><div class="card-h"><h2>アプリとして使う</h2></div>
-    <p class="small muted" style="margin-bottom:10px">ホーム画面（パソコンはDockやアプリ一覧）に追加すると、アプリのように1回のタップで開けます。電波が弱い場所でも記録の画面を開けます。アプリストアからのダウンロードは不要です。</p>${how}</div>`;
+    <p class="small muted" style="margin-bottom:10px">${DEV.touch ? 'ホーム画面に追加すると、アプリのように1回のタップで開けます。' : `${DEV.mac ? 'Dock' : 'スタートメニューやタスクバー'}に追加すると、アプリのように1回のクリックで開けます。`}電波が弱い場所でも記録の画面を開けます。アプリストアからのダウンロードは不要です。</p>${how}</div>`;
 }
 function themePref() { try { const t = localStorage.getItem('skinwise_theme'); return t === 'light' || t === 'dark' ? t : 'auto'; } catch (e) { return 'auto'; } }
 function applyTheme(t) {
@@ -4159,7 +4175,7 @@ function viewSettings() {
       <p class="small muted" style="margin-bottom:10px">毎日決まった時間に「肌を記録しよう」と通知が来るように、スマホ・パソコンのカレンダーに予定を追加できます。止めたいときは、カレンダーからその予定を削除してください。</p>
       <label class="lbl" for="f_remind_h">通知する時刻</label>
       <div class="remind-row"><span class="time-pick"><select class="select" id="f_remind_h" aria-label="時">${Array.from({length:24}, (_, h) => `<option value="${String(h).padStart(2, '0')}" ${h === 21 ? 'selected' : ''}>${h}</option>`).join('')}</select><b>時</b><select class="select" id="f_remind_m" aria-label="分">${[0,5,10,15,20,25,30,35,40,45,50,55].map(m => `<option value="${String(m).padStart(2, '0')}" ${m === 30 ? 'selected' : ''}>${String(m).padStart(2, '0')}</option>`).join('')}</select><b>分</b></span><button class="btn btn-soft btn-sm" data-action="reminder-ics">カレンダーに追加する</button></div>
-      <p class="hint">ファイル（.ics）が保存されます。iPhoneは開くと「カレンダーに追加」、パソコンはダブルクリックで追加できます。</p></div>
+      <p class="hint">${DEV.ios ? 'ボタンを押すとカレンダーのファイルが開くので、「すべてを追加」（または「カレンダーに追加」）を押してください。' : DEV.android ? 'ファイル（.ics）が保存されます。通知から開くと、カレンダーに追加できます。' : DEV.mac ? 'ファイル（.ics）が保存されます。ダウンロードしたファイルをダブルクリックすると、カレンダーに追加できます。' : 'ファイル（.ics）が保存されます。ダウンロードしたファイルを開くと、Outlookなどのカレンダーに追加できます。'}</p></div>
     <div class="card"><div class="card-h"><h2>月の予算</h2></div>
       <form id="budget-form" novalidate><div class="form-grid">${field('1か月のスキンケア予算（円）', `<input class="input" id="f_budget" name="budget" inputmode="numeric" value="${state.settings.monthlyBudget || ''}" placeholder="例：5000">`, {name:'budget', hint:'0または空欄で、予算を使わない設定になります'})}</div>
       <button type="submit" class="btn btn-primary btn-sm" style="margin-top:12px">保存する</button></form></div>
@@ -4344,6 +4360,13 @@ const actions = {
   },
   'install-app': async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (e) { /* 何もしない */ } installEvt = null; render(); },
   'go-back': () => { if (appNavCount > 0 && history.length > 1) { appNavCount = Math.max(0, appNavCount - 2); history.back(); } else location.hash = '#/home'; },
+  'f3-view': v => {
+    const st = FACE3D.st; if (!st) return;
+    const P = Math.PI, base = Math.round(st.yaw / (2 * P)) * 2 * P; // 今の向きから近い回り方で回る
+    const t = {front:[0, 0], right:[P / 2, 0], left:[-P / 2, 0], back:[P, 0], top:[0, 1.25], bottom:[0, -1.0]}[v]; if (!t) return;
+    st.user = true; st.intro = 0; st.target = {yaw:base + t[0], pitch:t[1]}; st.dirty = true;
+  },
+  'f3-zoom': v => { const st = FACE3D.st; if (!st) return; st.zoomT = clamp((st.zoomT || st.cam.position.z) + (v === 'in' ? -8 : 8), 34, 84); st.dirty = true; },
   'f3-step': v => { ui.f3Play = false; face3dShowWeek((ui.f3Week == null ? 7 : ui.f3Week) + Number(v)); },
   'f3-play': () => {
     if (ui.f3Play) { ui.f3Play = false; return; }
