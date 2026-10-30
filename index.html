@@ -367,6 +367,14 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .face [data-area].on{fill:#C9DFCE;stroke:var(--green)}
 .face text{font-size:11px;fill:#5E574C;pointer-events:none;font-family:var(--font)}
 .face .deco{fill:none;stroke:#B9AE9E;stroke-width:1.4;stroke-linecap:round;pointer-events:none}
+.f3-stage{position:relative;width:100%;max-width:420px;margin:0 auto;aspect-ratio:1/1;border-radius:16px;background:radial-gradient(circle at 50% 40%,var(--surface2),var(--surface));overflow:hidden}
+.f3-stage canvas{width:100%;height:100%;display:block;cursor:grab}
+.f3-stage canvas:active{cursor:grabbing}
+.f3-load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted);padding:20px;text-align:center}
+.f3-tip{position:absolute;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:12.5px;padding:4px 10px;border-radius:8px;pointer-events:none;white-space:nowrap}
+.f3-ctrl{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
+.f3-week{display:flex;flex-direction:column;align-items:center;line-height:1.4}
+.f3-range{width:100%;margin-top:8px;accent-color:var(--green-d)}
 .face-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:center}
 .face-pair h4{margin:0 0 6px;font-size:12.5px;color:var(--muted);font-weight:600}
 .photo-prev{display:flex;gap:12px;align-items:center;margin-top:10px}
@@ -3286,6 +3294,176 @@ function openLifeForm(id) {
 /* =========================================================
    画面：肌の変化・比較（グラフ）
    ========================================================= */
+/* ---------- 3Dの顔で見る肌の変化（週ごとに、部位ごとの記録を顔の色とニキビの印で表示） ---------- */
+const FACE3D_REGIONS = ['', 'forehead', 'nose', 'rcheek', 'lcheek', 'mouth', 'chin'];
+const f3md = s => { const d = parseYmd(s); return `${d.getMonth() + 1}/${d.getDate()}`; };
+const FACE3D = {three:null, mesh:null, loading:null, st:null};
+function face3dWeeks(n) {
+  const end = todayStr(), ws = weekStart(end), weeks = [];
+  for (let i = n - 1; i >= 0; i--) { const s = addDays(ws, -7 * i), e = addDays(s, 6); weeks.push({s, e, logs:logsInRange(s, e > end ? end : e)}); }
+  const all = weeks.flatMap(w => w.logs), mode = all.some(l => l.acneSpots.length) ? 'spots' : 'areas';
+  weeks.forEach(w => { w.c = areaCounts(w.logs, mode); });
+  const max = Math.max(1, ...weeks.flatMap(w => Object.values(w.c)));
+  return {weeks, mode, max};
+}
+function face3dCardHtml() {
+  if (ui.f3Week == null) ui.f3Week = 7;
+  const d = face3dWeeks(8), w = d.weeks[ui.f3Week] || d.weeks[7];
+  const first = d.weeks.find(x => x.logs.length), diff = first && first !== w ? AREAS.map(a => ({n:a.name, v:(w.c[a.id] || 0) - (first.c[a.id] || 0)})).filter(x => x.v) : [];
+  return `<div class="card"><div class="card-h"><h2>3Dで見る肌の変化</h2><span class="chip">8週間</span></div>
+    <p class="small muted" style="margin-bottom:8px">${d.mode === 'spots' ? '色の濃さと赤い印は、その週に記録したニキビの数（部位ごと）です。' : '色の濃さは、その週に「気になる部位」に選んだ日数です。'}顔は指（マウス）で回せます。部位を押すと数が出ます。</p>
+    <div class="f3-stage"><canvas id="face3d" aria-label="3Dの顔で表示した、部位ごとの記録"></canvas><div class="f3-tip" id="f3-tip" hidden></div><div class="f3-load" id="f3-load">3Dの顔を読み込んでいます…</div></div>
+    <div class="f3-ctrl">
+      <button class="btn btn-ghost btn-sm" data-action="f3-step" data-id="-1" aria-label="前の週">◀</button>
+      <div class="f3-week"><b id="f3-label">${f3md(w.s)}〜${f3md(w.e)}の週</b><span class="small muted" id="f3-sub">記録 ${w.logs.length}日</span></div>
+      <button class="btn btn-ghost btn-sm" data-action="f3-step" data-id="1" aria-label="次の週">▶</button>
+    </div>
+    <input type="range" class="f3-range" id="f3-range" min="0" max="7" step="1" value="${ui.f3Week}" aria-label="表示する週">
+    <div class="page-actions" style="justify-content:center;margin-top:8px"><button class="btn btn-soft btn-sm" data-action="f3-play">${icon('chart')}8週間の変化を再生</button></div>
+    <div class="map-legend" style="justify-content:center"><span><i style="background:#EBC9AE"></i>記録なし</span><span><i style="background:#EDA38A"></i>やや多い</span><span><i style="background:#D15C47"></i>多い</span>${d.mode === 'spots' ? '<span><i style="background:#C0392B"></i>ニキビの印</span>' : ''}</div>
+    <p class="small" id="f3-diff" style="margin-top:8px;text-align:center">${diff.length ? `最初の記録の週と比べて：${diff.map(x => `${esc(x.n)} ${x.v > 0 ? '+' : ''}${x.v}`).join('／')}` : ''}</p>
+    <p class="small muted" style="margin-top:4px">記録の集計で、肌の状態の診断ではありません。顔の形：MediaPipe（Google、Apache License 2.0）。</p></div>`;
+}
+function face3dLoad() {
+  if (FACE3D.three && FACE3D.mesh) return Promise.resolve();
+  if (FACE3D.loading) return FACE3D.loading;
+  FACE3D.loading = Promise.all([
+    window.THREE ? Promise.resolve() : loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'),
+    fetch('face3d.json').then(r => { if (!r.ok) throw new Error('face'); return r.json(); })
+  ]).then(([, m]) => { FACE3D.three = window.THREE; FACE3D.mesh = m; }).catch(e => { FACE3D.loading = null; throw e; });
+  return FACE3D.loading;
+}
+// 顔の地の色（肌・眉・目・唇）と、色をなめらかにつなぐための近くの点の一覧を、最初に一度だけ作る
+function face3dPrep() {
+  const m = FACE3D.mesh; if (m._prep) return m._prep;
+  const v = m.v, n = m.r.length, lin = c => Math.pow(c, 2.2);
+  const skin = [0.94, 0.81, 0.71], eye = [0.74, 0.60, 0.53], lip = [0.85, 0.56, 0.53];
+  const base = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) {
+    const x = v[i * 3], y = v[i * 3 + 1], z = v[i * 3 + 2], ax = Math.abs(x);
+    let c = skin;
+    const ex = (ax - 4.2) / 2.0, ey = (y - 2.7) / 0.75;
+    if (z > 1.5 && ex * ex + ey * ey < 1) c = eye.map((e, k) => skin[k] + (e - skin[k]) * (1 - (ex * ex + ey * ey))); // 目のまわりを少しだけ陰にする
+    else if (z > 3.5 && ax < 2.6 - Math.abs(y + 4.25) * 1.2 && y > -5.0 && y < -3.5) c = lip;
+    base[i * 3] = lin(c[0]); base[i * 3 + 1] = lin(c[1]); base[i * 3 + 2] = lin(c[2]);
+  }
+  const nb = []; const R2 = 1.6 * 1.6;
+  for (let i = 0; i < n; i++) {
+    const list = [];
+    for (let j = 0; j < n; j++) { const dx = v[i * 3] - v[j * 3], dy = v[i * 3 + 1] - v[j * 3 + 1], dz = v[i * 3 + 2] - v[j * 3 + 2]; if (dx * dx + dy * dy + dz * dz < R2) list.push(j); }
+    nb.push(list);
+  }
+  return (m._prep = {base, nb});
+}
+function face3dColors(geo, counts, max) {
+  const {base, nb} = face3dPrep(), r = FACE3D.mesh.r, col = geo.attributes.color.array, lin = c => Math.pow(c, 2.2);
+  const mid = [0.93, 0.64, 0.54].map(lin), hi = [0.82, 0.36, 0.28].map(lin);
+  const lv = new Float32Array(r.length);
+  for (let i = 0; i < r.length; i++) { const id = FACE3D_REGIONS[r[i]]; lv[i] = id ? Math.min(1, (counts[id] || 0) / max) : 0; }
+  for (let i = 0; i < r.length; i++) {
+    let s = 0; for (const j of nb[i]) s += lv[j]; const t = nb[i].length ? s / nb[i].length : lv[i]; // 部位の境目をなめらかにする
+    const b = [base[i * 3], base[i * 3 + 1], base[i * 3 + 2]];
+    const c = t <= 0 ? b : t < 0.5 ? b.map((x, k) => x + (mid[k] - x) * t * 2) : mid.map((x, k) => x + (hi[k] - x) * (t - 0.5) * 2);
+    col[i * 3] = c[0]; col[i * 3 + 1] = c[1]; col[i * 3 + 2] = c[2];
+  }
+  geo.attributes.color.needsUpdate = true;
+}
+function face3dDots(st, counts, mode) {
+  const T = FACE3D.three, m = FACE3D.mesh;
+  st.dots.forEach(d => st.group.remove(d)); st.dots = [];
+  if (mode !== 'spots') return;
+  const pos = m.v, nrm = st.geo.attributes.normal.array;
+  FACE3D_REGIONS.forEach((id, ri) => {
+    if (!id) return;
+    const n = Math.min(12, counts[id] || 0); if (!n) return;
+    const cand = []; for (let i = 0; i < m.r.length; i++) if (m.r[i] === ri && nrm[i * 3 + 2] > 0.35) cand.push(i);
+    if (!cand.length) return;
+    for (let k = 0; k < n; k++) {
+      const vi = cand[Math.floor(((k * 9301 + ri * 49297) % 233280) / 233280 * cand.length)];
+      const dot = new T.Mesh(st.dotGeo, st.dotMat);
+      dot.position.set(pos[vi * 3] + nrm[vi * 3] * 0.12, pos[vi * 3 + 1] + nrm[vi * 3 + 1] * 0.12, pos[vi * 3 + 2] + nrm[vi * 3 + 2] * 0.12);
+      st.group.add(dot); st.dots.push(dot);
+    }
+  });
+}
+function face3dShowWeek(i) {
+  const st = FACE3D.st, d = face3dWeeks(8); i = clamp(i, 0, 7); ui.f3Week = i;
+  const w = d.weeks[i];
+  const lab = $('#f3-label'), sub = $('#f3-sub'), rg = $('#f3-range'), df = $('#f3-diff');
+  if (lab) lab.textContent = `${f3md(w.s)}〜${f3md(w.e)}の週`;
+  if (sub) sub.textContent = `記録 ${w.logs.length}日`;
+  if (rg) rg.value = i;
+  const first = d.weeks.find(x => x.logs.length), diff = first && first !== w ? AREAS.map(a => ({n:a.name, v:(w.c[a.id] || 0) - (first.c[a.id] || 0)})).filter(x => x.v) : [];
+  if (df) df.textContent = diff.length ? `最初の記録の週と比べて：${diff.map(x => `${x.n} ${x.v > 0 ? '+' : ''}${x.v}`).join('／')}` : '';
+  if (!st) return;
+  st.counts = w.c; face3dColors(st.geo, w.c, d.max); face3dDots(st, w.c, d.mode); st.dirty = true;
+}
+async function drawFace3d() {
+  const cv = document.getElementById('face3d');
+  if (FACE3D.st) { FACE3D.st.stop = true; try { FACE3D.st.renderer.dispose(); } catch (e) { /* 何もしない */ } FACE3D.st = null; }
+  if (!cv) return;
+  try { await face3dLoad(); } catch (e) { const l = $('#f3-load'); if (l) l.textContent = '3Dの顔を表示できませんでした（下の図で部位ごとの記録を確認できます）。'; return; }
+  if (!document.body.contains(cv)) return;
+  const T = FACE3D.three, m = FACE3D.mesh;
+  let renderer;
+  try { renderer = new T.WebGLRenderer({canvas:cv, antialias:true, alpha:true}); } catch (e) { const l = $('#f3-load'); if (l) l.textContent = 'この端末では3D表示を使えません。'; return; }
+  const W = cv.clientWidth || 300, H = cv.clientHeight || 300;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); renderer.setSize(W, H, false);
+  renderer.outputEncoding = T.sRGBEncoding;
+  const scene = new T.Scene(), cam = new T.PerspectiveCamera(28, W / H, 1, 200);
+  cam.position.set(0, 0.3, 46);
+  scene.add(new T.HemisphereLight(0xfff6ee, 0x6b5a50, 0.75));
+  const key = new T.DirectionalLight(0xffffff, 0.75); key.position.set(-12, 14, 22); scene.add(key);
+  const fill = new T.DirectionalLight(0xffe8d8, 0.35); fill.position.set(16, -4, 14); scene.add(fill);
+  const geo = new T.BufferGeometry();
+  geo.setAttribute('position', new T.Float32BufferAttribute(m.v, 3));
+  geo.setAttribute('color', new T.Float32BufferAttribute(new Float32Array(m.r.length * 3), 3));
+  geo.setIndex(m.f); geo.computeVertexNormals();
+  const mat = new T.MeshStandardMaterial({vertexColors:true, roughness:0.68, metalness:0, side:T.DoubleSide});
+  const face = new T.Mesh(geo, mat), group = new T.Group();
+  group.add(face); group.position.y = 0.6; scene.add(group);
+  const st = FACE3D.st = {renderer, scene, cam, geo, group, face, dots:[], dotGeo:new T.SphereGeometry(0.28, 12, 10), dotMat:new T.MeshStandardMaterial({color:0xC0392B, roughness:0.45}),
+    yaw:-0.35, pitch:0.05, dirty:true, stop:false, drag:null, idle:0, counts:{}};
+  face3dShowWeek(ui.f3Week == null ? 7 : ui.f3Week);
+  const l = $('#f3-load'); if (l) l.hidden = true;
+  // 回す操作（指・マウス）
+  cv.style.touchAction = 'pan-y';
+  cv.addEventListener('pointerdown', e => { st.drag = {x:e.clientX, y:e.clientY, yaw:st.yaw, pitch:st.pitch, moved:false}; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove', e => {
+    if (!st.drag) return;
+    const dx = e.clientX - st.drag.x, dy = e.clientY - st.drag.y;
+    if (Math.abs(dx) + Math.abs(dy) > 4) st.drag.moved = true;
+    st.yaw = clamp(st.drag.yaw + dx * 0.012, -1.0, 1.0); st.pitch = clamp(st.drag.pitch + dy * 0.008, -0.4, 0.4); st.idle = 0; st.dirty = true;
+  });
+  const up = e => {
+    if (st.drag && !st.drag.moved) face3dPick(e);
+    st.drag = null;
+  };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', () => { st.drag = null; });
+  const loop = () => {
+    if (st.stop || !document.body.contains(cv)) { st.stop = true; try { renderer.dispose(); } catch (e) { /* 何もしない */ } return; }
+    st.idle++;
+    if (!st.drag && st.idle > 180) { st.yaw = Math.sin(st.idle / 160) * 0.45; st.dirty = true; } // しばらく触らないと、ゆっくり左右に回る
+    if (st.dirty) { group.rotation.y = st.yaw; group.rotation.x = st.pitch; renderer.render(scene, cam); st.dirty = false; }
+    requestAnimationFrame(loop);
+  };
+  loop();
+}
+function face3dPick(e) {
+  const st = FACE3D.st, T = FACE3D.three; if (!st) return;
+  const cv = st.renderer.domElement, rc = cv.getBoundingClientRect();
+  const p = new T.Vector2(((e.clientX - rc.left) / rc.width) * 2 - 1, -((e.clientY - rc.top) / rc.height) * 2 + 1);
+  const ray = new T.Raycaster(); ray.setFromCamera(p, st.cam);
+  const hit = ray.intersectObject(st.face)[0], tip = $('#f3-tip');
+  if (!tip) return;
+  if (!hit) { tip.hidden = true; return; }
+  const ri = FACE3D.mesh.r[hit.face.a], id = FACE3D_REGIONS[ri];
+  if (!id) { tip.hidden = true; return; }
+  const d = face3dWeeks(8);
+  tip.textContent = `${areaName(id)}：${st.counts[id] || 0}${d.mode === 'spots' ? '個' : '日'}`;
+  tip.style.left = (e.clientX - rc.left) + 'px'; tip.style.top = (e.clientY - rc.top - 34) + 'px'; tip.hidden = false;
+  clearTimeout(tip._t); tip._t = setTimeout(() => { tip.hidden = true; }, 2200);
+}
 function viewCharts() {
   if (ui.chartRange === 90 && locked()) ui.chartRange = 30;
   const end = todayStr(), start = addDays(end, -(ui.chartRange - 1));
@@ -3311,6 +3489,7 @@ function viewCharts() {
       <p class="small muted" style="margin-bottom:8px">上：肌の調子（1〜5）／下：各商品の使用期間（濃い点＝「使った」と記録した日）</p>
       ${chartSlot('timeline', w => timelineChart(w, {dates, values:vals('condition'), used:usedDays, products:productsDuring(start, end).sort((a,b) => a.startDate.localeCompare(b.startDate))}))}
       <div class="notice green" style="margin:12px 0 0">同じ時期に肌の変化があっても、その商品が原因とは限りません。季節・睡眠・体調・生理周期・ほかの商品なども影響します。</div></div>`;
+  html += face3dCardHtml(); // 3Dの顔（無料プランでも見られる）
   if (locked()) return html + lockCard('詳細な分析', '睡眠・運動・食事の内容と肌の調子の比較、部位ごとの過去と現在の比較、前の期間との比較、90日間のグラフが使えます。');
   // 睡眠
   const sleepVals = dates.map(d => { const m = sleepMin(lm[d]); return m == null ? null : Math.round(m / 6) / 10; });
@@ -3892,7 +4071,7 @@ ${row('jsDelivr（Prospect One）', 'IPアドレス、ブラウザの情報', '�
 ${row('Geoapify（Geoapify GmbH）', '入力した地名・駅名、検索する場所の座標', '近くの店舗の検索。店舗検索で「検索」を押したときだけ')}
 ${row('国土地理院（地名検索）', '入力した地名・駅名・住所', '場所の特定。店舗検索で「検索」を押したときだけ')}
 ${row('国土地理院（地図・航空写真）', '表示する地図の範囲、IPアドレス', '店舗検索の結果の地図の表示')}
-${row('cdnjs（Cloudflare）・unpkg', 'IPアドレス、ブラウザの情報', '地図の部品（MapLibre・PMTiles）の読み込み。店舗検索の結果を表示したとき')}
+${row('cdnjs（Cloudflare）・unpkg', 'IPアドレス、ブラウザの情報', '地図の部品（MapLibre・PMTiles）と3D表示の部品（three.js）の読み込み。店舗検索の結果・肌の変化の画面を表示したとき')}
 ${row('OpenStreetMap', '検索する場所の座標、IPアドレス', 'Geoapifyが使えないときの予備の店舗検索')}
 ${row('楽天グループ（楽天ウェブサービス）・LINEヤフー（Yahoo!デベロッパーネットワーク）', '商品名・JANコード（運営者のサーバーを通して送信。利用者のIPアドレスなどは送りません）', '価格比較。「価格を調べる」を押したときだけ')}
 ${row('Google（Gemini API）', '「写真から読み取る」を押した写真（食事・化粧品のパッケージ）', '写真読み取り（プレミアム）。押したときだけ。運営者は写真を保存しません。Googleの無料枠を使う場合、送った内容がGoogleのサービス改善に使われることがあります')}
@@ -4165,6 +4344,13 @@ const actions = {
   },
   'install-app': async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (e) { /* 何もしない */ } installEvt = null; render(); },
   'go-back': () => { if (appNavCount > 0 && history.length > 1) { appNavCount = Math.max(0, appNavCount - 2); history.back(); } else location.hash = '#/home'; },
+  'f3-step': v => { ui.f3Play = false; face3dShowWeek((ui.f3Week == null ? 7 : ui.f3Week) + Number(v)); },
+  'f3-play': () => {
+    if (ui.f3Play) { ui.f3Play = false; return; }
+    ui.f3Play = true; let i = 0; face3dShowWeek(0);
+    const tick = () => { if (!ui.f3Play || !document.getElementById('face3d')) { ui.f3Play = false; return; } i++; if (i > 7) { ui.f3Play = false; return; } face3dShowWeek(i); setTimeout(tick, 900); };
+    setTimeout(tick, 900);
+  },
   'theme': v => { applyTheme(v); const y = scrollY; render(); scrollTo(0, y); },
   'map-layer': v => { ui.mapLayer = v; const y = scrollY; render(); scrollTo(0, y); },
   'store-more': () => { ui.storeShow += 40; const y = scrollY; render(); scrollTo(0, y); },
@@ -4430,6 +4616,7 @@ document.addEventListener('input', e => {
     const box = $('#st-links'); if (box) { const links = storeLinks(); box.innerHTML = links.length ? links.map(l => extLink(l.url, l.label, 'btn btn-primary btn-sm')).join('') : '<span class="small muted">地域名・駅名を入力すると、地図のリンクが表示されます。</span>'; }
   }
 });
+document.addEventListener('input', e => { if (e.target.id === 'f3-range') { ui.f3Play = false; face3dShowWeek(Number(e.target.value)); } });
 document.addEventListener('change', e => {
   if (e.target.id === 'scan-photo') { onScanPhoto(e.target); return; }
   if (e.target.dataset && e.target.dataset.change === 'price-set') { ui.priceSet = e.target.checked; const y = scrollY; render(); scrollTo(0, y); return; }
@@ -4512,6 +4699,7 @@ function render() {
   if (key !== lastRoute) { window.scrollTo(0, 0); lastRoute = key; }
   drawCharts();
   fillAds();
+  if (r.name === 'charts') drawFace3d(); else if (FACE3D.st) { FACE3D.st.stop = true; FACE3D.st = null; }
   if (r.name === 'stores') drawStoreMap(); else if (storeMap) { try { storeMap.remove(); } catch (e) {} storeMap = null; }
 }
 // ほかのタブ・ウィンドウで記録を変えたとき、この画面にも反映する（古い内容で上書きしないため）
