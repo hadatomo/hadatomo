@@ -91,6 +91,14 @@
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
+/* スマホでのガクガク対策：横に揺れない・ダブルタップで拡大しない・重いぼかし処理を使わない */
+html,body{overflow-x:hidden;overflow-x:clip;max-width:100%}
+a,button,input,select,textarea,label,[data-action]{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+@media(max-width:959px){
+  .topbar{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:var(--bg)!important}
+  .bottom-nav{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:var(--surface)!important}
+  .hero::after{display:none}
+}
 body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;letter-spacing:.01em}
 #main{overflow-wrap:anywhere;word-break:normal}
 #main .card,#main .offer,#main .offer-top>div{min-width:0}
@@ -3468,13 +3476,18 @@ async function drawFace3d(opts) {
   opts.ready(st);
   const l = document.getElementById(opts.load); if (l) l.hidden = true;
   // 回す操作（指・マウス）
-  cv.style.touchAction = 'none'; // 顔の上では、指の上下の動きも回転に使う
+  // ホームでは、顔の上でも上下のスクロールができるようにする（左右の動きで回す）。肌の変化の画面では、上下左右すべて回転に使う
+  st.yawOnly = !!opts.yawOnly && DEV.touch;
+  cv.style.touchAction = st.yawOnly ? 'pan-y' : 'none';
+  // 画面に見えていないときは描くのを止めて、スクロールを軽くする
+  st.visible = true;
+  if ('IntersectionObserver' in window) { const io = new IntersectionObserver(es => { st.visible = es[0].isIntersecting; if (st.visible) st.dirty = true; }); io.observe(cv); st.io = io; }
   cv.addEventListener('pointerdown', e => { st.intro = 0; st.target = null; st.drag = {x:e.clientX, y:e.clientY, yaw:st.yaw, pitch:st.pitch, moved:false}; cv.setPointerCapture(e.pointerId); });
   cv.addEventListener('pointermove', e => {
     if (!st.drag) return;
     const dx = e.clientX - st.drag.x, dy = e.clientY - st.drag.y;
     if (Math.abs(dx) + Math.abs(dy) > 4) st.drag.moved = true;
-    st.yaw = st.drag.yaw + dx * 0.012; st.pitch = clamp(st.drag.pitch + dy * 0.01, -1.35, 1.35); st.idle = 0; st.user = true; st.target = null; st.dirty = true;
+    st.yaw = st.drag.yaw + dx * 0.012; if (!st.yawOnly) st.pitch = clamp(st.drag.pitch + dy * 0.01, -1.35, 1.35); st.idle = 0; st.user = true; st.target = null; st.dirty = true;
   });
   const up = e => {
     if (st.drag && !st.drag.moved) face3dPick(e);
@@ -3482,12 +3495,13 @@ async function drawFace3d(opts) {
   };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', () => { st.drag = null; });
   const loop = () => {
-    if (st.stop || !document.body.contains(cv)) { st.stop = true; try { renderer.dispose(); } catch (e) { /* 何もしない */ } return; }
+    if (st.stop || !document.body.contains(cv)) { st.stop = true; if (st.io) st.io.disconnect(); try { renderer.dispose(); } catch (e) { /* 何もしない */ } return; }
+    if (!st.visible || document.hidden) { requestAnimationFrame(loop); return; }
     st.idle++;
     if (st.intro > 0 && !st.drag) { st.intro--; const k = 1 - st.intro / 70; st.yaw = -1.2 + (0.85 * (1 - Math.pow(1 - k, 3))); st.dirty = true; } // 最初に横から正面へ回って見せる
     if (st.target && !st.drag) { st.yaw += (st.target.yaw - st.yaw) * 0.14; st.pitch += (st.target.pitch - st.pitch) * 0.14; if (Math.abs(st.target.yaw - st.yaw) < 0.002 && Math.abs(st.target.pitch - st.pitch) < 0.002) st.target = null; st.dirty = true; } // ボタンで選んだ向きへ回る
     if (st.zoomT && Math.abs(st.zoomT - cam.position.z) > 0.05) { cam.position.z += (st.zoomT - cam.position.z) * 0.18; st.dirty = true; }
-    if (!st.drag && !st.user && !st.target && st.idle > 180) { st.yaw = Math.sin(st.idle / 160) * 0.45; st.dirty = true; } // 触る前は、ゆっくり左右に揺れる
+    if (!st.drag && !st.user && !st.target && st.idle > 180 && st.idle % 2 === 0 && !DEV.touch) { st.yaw = Math.sin(st.idle / 160) * 0.45; st.dirty = true; } // パソコンでは、触る前にゆっくり左右に揺れる（スマホは動かさない）
     if (st.dirty) { group.rotation.y = st.yaw; group.rotation.x = st.pitch; renderer.render(scene, cam); st.dirty = false; }
     requestAnimationFrame(loop);
   };
@@ -4752,7 +4766,7 @@ function render() {
   drawCharts();
   fillAds();
   if (r.name === 'charts') drawFace3d();
-  else if (r.name === 'home' && document.getElementById('face3d-home')) { const hd = homeFaceData(); drawFace3d({canvas:'face3d-home', load:'t3-load', tip:'t3-tip', camZ:55, unit:hd.mode === 'spots' ? '個' : 'flag', ready:st => face3dApply(st, hd.counts, hd.max, hd.mode)}); }
+  else if (r.name === 'home' && document.getElementById('face3d-home')) { const hd = homeFaceData(); drawFace3d({canvas:'face3d-home', load:'t3-load', tip:'t3-tip', camZ:55, yawOnly:true, unit:hd.mode === 'spots' ? '個' : 'flag', ready:st => face3dApply(st, hd.counts, hd.max, hd.mode)}); }
   else if (FACE3D.st) { FACE3D.st.stop = true; FACE3D.st = null; }
   if (r.name === 'stores') drawStoreMap(); else if (storeMap) { try { storeMap.remove(); } catch (e) {} storeMap = null; }
 }
