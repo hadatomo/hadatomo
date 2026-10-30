@@ -397,8 +397,9 @@ details.fold[open] summary{margin-bottom:10px}
 input[type="date"].input,input[type="time"].input{-webkit-appearance:none;appearance:none;min-width:0;max-width:100%;display:block;text-align:left}
 input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::-webkit-date-and-time-value{text-align:left}
 .remind-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px}
-.remind-row .time-box{width:130px;max-width:100%;flex:none;overflow:hidden;border-radius:12px}
-.remind-row .time-box .input{width:100%!important;min-width:0!important;max-width:100%!important;padding:10px 12px;-webkit-appearance:none;appearance:none}
+.time-pick{display:inline-flex;align-items:center;gap:6px;flex:none}
+.time-pick .select{width:76px;min-width:0;padding:8px 10px;text-align:center}
+.time-pick b{font-weight:600;font-size:14px}
 .toast.undo{display:flex;align-items:center;gap:14px;pointer-events:auto}
 .toast-btn{background:none;border:0;color:#9FD3AE;font-weight:700;font-size:13.5px;cursor:pointer;padding:4px 2px;font-family:inherit}
 .toast{background:var(--ink);color:#fff;padding:11px 18px;border-radius:12px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.18);animation:up .2s}
@@ -3975,8 +3976,8 @@ function viewSettings() {
       <div class="chips">${[['auto','自動'],['light','ライト'],['dark','ダーク']].map(([k, l]) => `<button class="tab ${themePref() === k ? 'active' : ''}" data-action="theme" data-id="${k}">${l}</button>`).join('')}</div></div>
     <div class="card"><div class="card-h"><h2>記録のリマインダー</h2></div>
       <p class="small muted" style="margin-bottom:10px">毎日決まった時間に「肌を記録しよう」と通知が来るように、スマホ・パソコンのカレンダーに予定を追加できます。止めたいときは、カレンダーからその予定を削除してください。</p>
-      <label class="lbl" for="f_remind">通知する時刻</label>
-      <div class="remind-row"><div class="time-box"><input type="time" class="input" id="f_remind" value="21:30"></div><button class="btn btn-soft btn-sm" data-action="reminder-ics">カレンダーに追加する</button></div>
+      <label class="lbl" for="f_remind_h">通知する時刻</label>
+      <div class="remind-row"><span class="time-pick"><select class="select" id="f_remind_h" aria-label="時">${Array.from({length:24}, (_, h) => `<option value="${String(h).padStart(2, '0')}" ${h === 21 ? 'selected' : ''}>${h}</option>`).join('')}</select><b>時</b><select class="select" id="f_remind_m" aria-label="分">${[0,5,10,15,20,25,30,35,40,45,50,55].map(m => `<option value="${String(m).padStart(2, '0')}" ${m === 30 ? 'selected' : ''}>${String(m).padStart(2, '0')}</option>`).join('')}</select><b>分</b></span><button class="btn btn-soft btn-sm" data-action="reminder-ics">カレンダーに追加する</button></div>
       <p class="hint">ファイル（.ics）が保存されます。iPhoneは開くと「カレンダーに追加」、パソコンはダブルクリックで追加できます。</p></div>
     <div class="card"><div class="card-h"><h2>月の予算</h2></div>
       <form id="budget-form" novalidate><div class="form-grid">${field('1か月のスキンケア予算（円）', `<input class="input" id="f_budget" name="budget" inputmode="numeric" value="${state.settings.monthlyBudget || ''}" placeholder="例：5000">`, {name:'budget', hint:'0または空欄で、予算を使わない設定になります'})}</div>
@@ -4307,7 +4308,7 @@ const actions = {
     toast('肌の記録と、食事・運動・睡眠の記録を書き出しました（ExcelやNumbersで開けます）');
   },
   'reminder-ics': () => {
-    const tm = ($('#f_remind') || {}).value || '21:30';
+    const tm = `${($('#f_remind_h') || {}).value || '21'}:${($('#f_remind_m') || {}).value || '30'}`;
     if (!/^\d{2}:\d{2}$/.test(tm)) { toast('時刻を選んでください', 'error'); return; }
     const d = todayStr().replace(/-/g, ''), hm = tm.replace(':', '') + '00';
     const end = (() => { const [h, m] = tm.split(':').map(Number); const t = h * 60 + m + 5; return String(Math.floor(t / 60) % 24).padStart(2, '0') + String(t % 60).padStart(2, '0') + '00'; })();
