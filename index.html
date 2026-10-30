@@ -1549,7 +1549,7 @@ function viewHome() {
 
   let html = loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '';
   html += `<section class="hero">
-    <div class="hero-top"><p class="hero-date">${fmtDate(t)}</p>${streakHtml(map, t)}</div>
+    <div class="hero-top"><p class="hero-date">${fmtDate(t)}</p></div>
     <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${icon('plus')}今日の肌を記録</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('chart')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('note')}食事</button></div></section>`;
 
   const lifeLine = lifeSumHtml(todayLife);
@@ -3028,7 +3028,7 @@ function comboMap(r) {
    ========================================================= */
 function viewLog() {
   const tabs = [['list','記録一覧'],['photos','肌写真'],['life','食事・運動・睡眠']];
-  let html = pageHead('肌の記録', '毎日の肌の状態を、3Dの顔と記録で振り返ります。');
+  let html = pageHead('肌の記録', '');
   html += `<div class="tabs">${tabs.map(([k, l]) => `<button class="tab ${ui.logTab === k ? 'active' : ''}" data-action="log-tab" data-id="${k}">${l}</button>`).join('')}</div>`;
   if (ui.logTab === 'photos') return html + viewPhotos();
   if (ui.logTab === 'life') return html + viewLife();
