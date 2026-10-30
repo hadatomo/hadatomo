@@ -522,9 +522,9 @@ function fillAds() {
   }
   slots.forEach(() => { try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) { /* 何もしない */ } });
 }
-/* プラン：無料＝手動入力、プレミアム（有料・準備中）＝写真から読み取り */
+/* プラン：無料＝手動入力、プレミアム（有料）＝写真から読み取り（AI） */
 const PREMIUM_NAME = 'プレミアム';
-const PREMIUM_READY = false; // 課金とAIの仕組みができたら true にします
+const PREMIUM_READY = true; // 写真読み取り（AI）は関数「vision」で提供
 const PLAN_ROWS = [
   ['肌の記録・基本のグラフ（30日まで）', '○', '○'],
   ['化粧品・成分の管理、成分の注意点', '○', '○'],
@@ -535,7 +535,7 @@ const PLAN_ROWS = [
   ['受診用まとめ（医師に見せる記録の整理）', '○', '○'],
   ['詳細な分析（商品と肌の比較・90日グラフ・生活習慣との比較など）', '—', '○'],
   ['成分相性マップ（より詳しい成分の重なりの表示）', '—', '○'],
-  ['食事の写真から読み取り（入力の手間を減らす）', '—', '準備中'],
+  ['写真から読み取り（食事の料理と栄養の目安・化粧品の成分表示）', '—', '○'],
   ['専門家（皮膚科専門医など）へのチャット相談', '—', '検討中'],
   ['広告の表示', 'あり', 'なし']
 ];
@@ -1262,9 +1262,9 @@ function timelineChart(w, o) {
 }
 
 /* ---------- UI状態（画面の絞り込みなど） ---------- */
-const scanInit = () => ({photo:null, jan:'', name:'', brand:'', ings:'', searched:false, msg:'', janErr:''});
+const scanInit = () => ({photo:null, photoHi:null, jan:'', name:'', brand:'', ings:'', volume:'', category:'', searched:false, msg:'', janErr:'', aiBusy:false, aiMsg:''});
 const ui = {priceRes:{}, priceSet:true, priceVol:true, geoHelp:'', geoConsent:false, visitRange:30, visitPhotos:false, visitNote:'', q:'', brand:'', cat:'', origin:'', ing:false, purpose:'', maxPrice:'', sort:'std', myFilter:'使用中', chartRange:30, reportOffset:0,
-  spendMonth:monthKey(todayStr()), logTab:'list', cmpA:'', cmpB:'', checkCat:'', checkPurpose:'', storeArea:'', storeProduct:'', geo:null, ingQ:'', photoA:'', photoB:'', scan:scanInit(), storeTypes:['chemist','cosmetics','pharmacy'], storeRadius:1000, storeShow:40, storeRes:null, storeCands:[], storeBusy:false, storeLast:0, osmConsent:false};
+  spendMonth:monthKey(todayStr()), logTab:'list', cmpA:'', cmpB:'', checkCat:'', checkPurpose:'', storeArea:'', storeProduct:'', geo:null, ingQ:'', photoA:'', photoB:'', scan:scanInit(), storeTypes:['chemist','cosmetics','variety','pharmacy'], storeRadius:1000, storeShow:40, storeRes:null, storeCands:[], storeBusy:false, storeLast:0, osmConsent:false};
 
 /* =========================================================
    画面：ホーム
@@ -2153,7 +2153,9 @@ function viewScan() {
     `<div class="notice">カメラは、下のボタンを押したときだけ起動します。撮影した写真は<b>この端末の中だけ</b>で使い、外部には送信しません（商品を登録しなければ保存もしません）。写真から商品そのものを自動で判別するAI機能はまだないため、バーコードの数字やパッケージの文字を手がかりに、登録済みの商品と照合します。</div>
     <div class="card"><div class="card-h"><h2>1. パッケージを撮影</h2><span class="opt">任意</span></div>
       <input type="file" accept="image/*" capture="environment" id="scan-photo" class="input" style="padding:9px" aria-label="パッケージを撮影">
-      ${sc.photo ? `<img class="img-prev" src="${sc.photo}" alt="撮影した写真" style="width:150px;height:150px"><button class="btn btn-ghost btn-sm" data-action="scan-clear-photo" style="margin-top:6px">写真を外す</button>` : ''}
+      ${sc.photo ? `<img class="img-prev" src="${sc.photo}" alt="撮影した写真" style="width:150px;height:150px"><div class="page-actions" style="margin-top:6px"><button class="btn btn-primary btn-sm" data-action="scan-ai" ${sc.aiBusy ? 'disabled' : ''}>${sc.aiBusy ? '読み取っています…' : '写真から文字を読み取る'} <span class="badge-premium">${PREMIUM_NAME}</span></button><button class="btn btn-ghost btn-sm" data-action="scan-clear-photo">写真を外す</button></div>
+        ${sc.aiMsg ? `<p class="small" style="margin-top:6px">${esc(sc.aiMsg)}</p>` : ''}
+        <p class="hint">${PREMIUM_NAME}では、商品名・内容量・全成分の文字をAIで読み取って下の欄に入れます（成分表示は裏面を撮ると読み取れます。表と裏で2回読み取ると、成分は後ろに追加されます）。写真は読み取りのためだけにGoogleのAI（Gemini）に送り、保存しません。</p>` : ''}
       <p class="hint">${hasBD ? 'バーコードが写っていれば、数字を自動で読み取ります。' : 'このブラウザは、バーコードの自動読み取りに対応していません（iPhoneのSafariなど）。下の欄に、バーコードの下の数字を入力してください。'}撮影した写真は、新しく登録するときに商品画像として使えます。</p>
       ${sc.msg ? `<p class="small" style="margin-top:6px;color:var(--green-d)">${esc(sc.msg)}</p>` : ''}
     </div>
@@ -2639,7 +2641,7 @@ function comboMap(r) {
    ========================================================= */
 function viewLog() {
   const tabs = [['list','記録一覧'],['photos','肌写真'],['life','食事・運動・睡眠']];
-  let html = pageHead('肌の記録', '毎日の肌の状態と、食事・睡眠を記録します。', `<button class="btn btn-primary" data-action="new-log">${icon('plus')}肌を記録</button><button class="btn btn-ghost" data-action="new-life">${icon('moon')}食事・運動・睡眠</button>`);
+  let html = pageHead('肌の記録', '毎日の肌の状態と、食事・睡眠を記録します。', `<button class="btn btn-primary" data-action="new-log" data-id="free">${icon('plus')}肌を記録</button><button class="btn btn-ghost" data-action="new-life" data-id="free">${icon('moon')}食事・運動・睡眠</button>`);
   html += `<div class="tabs">${tabs.map(([k, l]) => `<button class="tab ${ui.logTab === k ? 'active' : ''}" data-action="log-tab" data-id="${k}">${l}</button>`).join('')}</div>`;
   if (ui.logTab === 'photos') return html + viewPhotos();
   if (ui.logTab === 'life') return html + viewLife();
@@ -2873,7 +2875,7 @@ function openLifeForm(id) {
   let foods = d.foods.map(x => Object.assign({}, x));
   let exercise = d.exercise.map(x => Object.assign({}, x));
   const saved = Object.assign({}, d.mealPhotos);
-  const pending = {};
+  const pending = {}, aiRes = {};
   const mealBlock = m => `<div class="meal-block" data-meal="${m.k}">
     <div class="meal-head">${m.k === 'snack' ? `<b class="small">${m.l}</b>` : `<label class="check"><input type="checkbox" name="ate_${m.k}" ${d.meals[m.k].ate ? 'checked' : ''}><b>${m.l}</b></label><input type="time" class="input" style="width:130px;min-height:40px;font-size:15px;padding:6px 10px" name="time_${m.k}" value="${esc(d.meals[m.k].time)}" aria-label="${m.l}の時刻">`}
       <label class="btn btn-ghost btn-sm">${icon('camera')}写真<input type="file" accept="image/*" capture="environment" data-mphoto="${m.k}" hidden></label></div>
@@ -2910,7 +2912,7 @@ function openLifeForm(id) {
       <div class="field-error" data-err="exercise"></div></div>
     ${field('歩数', `<input class="input" id="f_steps" name="steps" inputmode="numeric" value="${d.steps == null ? '' : esc(d.steps)}" placeholder="例：6500">`, {name:'steps', hint:'iPhoneの「ヘルスケア」アプリなどで確認した歩数を入力できます'})}
     <div class="section-title">MEAL 食事</div>
-    <p class="hint" style="margin-top:-6px">無料プランでは、食べたものをリストから選ぶか自分で入力します（写真を撮っておくと、あとで見返せます）。写真から自動で読み取る機能は、有料の${PREMIUM_NAME}プランで提供予定です（準備中）。写真は外部に送信しません。</p>
+    <p class="hint" style="margin-top:-6px">無料プランでは、食べたものをリストから選ぶか自分で入力します（写真を撮っておくと、あとで見返せます）。${PREMIUM_NAME}プランでは、写真の下の「写真から読み取る」で料理と栄養の目安をAIが推定します（そのときだけ、写真をGoogleのAI（Gemini）に送ります。保存はしません）。それ以外では、写真は外部に送信しません。</p>
     ${FOOD_MEALS.map(mealBlock).join('')}
     <div class="notice green" id="nut-total" style="margin:0"></div>
     <p class="hint" style="margin-top:-8px">${esc(NUT_NOTE)}</p>
@@ -2943,7 +2945,7 @@ function openLifeForm(id) {
   };
   FOOD_MEALS.forEach(m => renderPhoto(m.k)); renderFoods(); renderExercise();
   const numIn = (v, max) => { const x = toHalf(v).trim(); if (x === '') return 0; const n = Number(x); return isFinite(n) && n >= 0 && n <= max ? Math.round(n * 10) / 10 : NaN; };
-  form.addEventListener('click', e => {
+  form.addEventListener('click', async e => {
     const b = e.target.closest('button'); if (!b) return;
     if (b.dataset.fadd) {
       const k = b.dataset.fadd, sel = $(`[data-fsel="${k}"]`, form), qty = Number($(`[data-fqty="${k}"]`, form).value) || 1;
@@ -2981,10 +2983,30 @@ function openLifeForm(id) {
       exercise.push({type:$('#ex-type', form).value, minutes:Number(mins)}); $('#ex-min', form).value = ''; renderExercise(); return;
     }
     if (b.dataset.premium) {
-      const k = b.dataset.premium;
-      $(`[data-pinfo="${k}"]`, form).innerHTML = isPremium()
-        ? `<div class="notice green" style="margin:8px 0 0">${PREMIUM_NAME}プランをご利用中です。写真読み取り機能は現在準備中で、使えるようになったら、このボタンから読み取れます。それまでは、下のリストから選んでください。</div>`
-        : `<div class="notice" style="margin:8px 0 0">写真から料理と栄養の目安を読み取る機能は、有料の<b>${PREMIUM_NAME}プラン</b>で提供予定です（現在準備中のため、まだ使えません）。読み取った結果は、保存する前に必ず確認・修正できる形にします。<br>無料プランでは、写真を見ながら下のリストから食べたものを選んでください。<br><a href="#/plan">プランの詳細を見る</a></div>`;
+      const k = b.dataset.premium, box = $(`[data-pinfo="${k}"]`, form);
+      if (!isPremium()) {
+        box.innerHTML = `<div class="notice" style="margin:8px 0 0">写真から料理と栄養の目安を読み取る機能は、有料の<b>${PREMIUM_NAME}プラン</b>の機能です。読み取った結果は、追加する前に確認・選択できます。<br>無料プランでは、写真を見ながら下のリストから食べたものを選んでください。<br><a href="#/plan">プランの詳細を見る</a></div>`;
+        return;
+      }
+      const img = pending[k] || saved[k]; if (!img) return;
+      b.disabled = true; box.innerHTML = '<p class="small" style="margin-top:8px">写真を読み取っています…（10秒ほどかかります）</p>';
+      try {
+        const r = (await callVision('meal', img)).result || {items:[]};
+        aiRes[k] = r.items || [];
+        if (!aiRes[k].length) { box.innerHTML = `<div class="notice" style="margin:8px 0 0">料理を読み取れませんでした。${esc(r.note || '料理全体が写るように撮り直すか、下のリストから選んでください。')}</div>`; }
+        else box.innerHTML = `<div class="notice green" style="margin:8px 0 0"><b>読み取った料理（目安）</b>
+          ${aiRes[k].map((x, i) => `<label class="check" style="margin-top:6px;align-items:flex-start"><input type="checkbox" data-aipick="${k}" value="${i}" checked><span>${esc(x.name)}${x.amount ? `（${esc(x.amount)}）` : ''}<br><span class="small muted">${Math.round(x.kcal)}kcal・たんぱく質${x.p}g・脂質${x.f}g・炭水化物${x.c}g${x.veg ? `・野菜${x.veg}g` : ''}</span></span></label>`).join('')}
+          <button type="button" class="btn btn-primary btn-sm" data-aiadd="${k}" style="margin-top:8px">チェックしたものを追加</button>
+          <p class="small muted" style="margin-top:6px">${esc(AI_NOTE)}量が違う場合は、追加したあとで消して、リストから選び直せます。</p></div>`;
+      } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; }
+      b.disabled = false;
+      return;
+    }
+    if (b.dataset.aiadd) {
+      const k = b.dataset.aiadd, picks = $$(`[data-aipick="${k}"]:checked`, form).map(x => aiRes[k][Number(x.value)]).filter(Boolean);
+      if (!picks.length) { toast('追加するものにチェックを入れてください', 'error'); return; }
+      picks.forEach(x => foods.push({id:uid(), meal:k, qty:1, name:(x.name + (x.amount ? `（${x.amount}）` : '')).slice(0, 40), kcal:x.kcal, p:x.p, f:x.f, c:x.c, veg:x.veg}));
+      markAte(k); renderFoods(); $(`[data-pinfo="${k}"]`, form).innerHTML = `<p class="small" style="margin-top:6px;color:var(--green-d)">${picks.length}品を追加しました（AIの推定）。</p>`;
       return;
     }
     if (b.dataset.mpcancel) { delete pending[b.dataset.mpcancel]; $(`[data-pinfo="${b.dataset.mpcancel}"]`, form).innerHTML = ''; renderPhoto(b.dataset.mpcancel); return; }
@@ -3372,6 +3394,21 @@ function isPremium() {
   const s = acct.sub;
   return !!(acct.user && s && ['active','trialing'].includes(s.status) && (!s.current_period_end || new Date(s.current_period_end) > new Date()));
 }
+// 写真読み取り（プレミアム）：写真をサーバーの関数「vision」に送り、AIの推定結果を受け取る
+async function callVision(mode, image) {
+  if (!acct.client) await initCloud();
+  if (!acct.client || !acct.user) throw new Error('ログインしてからお使いください。');
+  const {data, error} = await acct.client.functions.invoke('vision', {body:{mode, image}});
+  if (error) {
+    let msg = 'サーバーに接続できませんでした。時間をおいてお試しください。';
+    try { const j = await error.context.json(); if (j && j.error) msg = j.error; } catch (e) { /* 何もしない */ }
+    throw new Error(msg);
+  }
+  if (data && data.error) throw new Error(data.error);
+  return data;
+}
+const AI_NOTE = 'AI（Google Gemini）による推定です。必ず内容を確認・修正してから使ってください。';
+const AI_CAT = {'化粧水':'化粧水・トナー','乳液':'乳液','美容液':'美容液・アンプル','クリーム':'クリーム','日焼け止め':'日焼け止め','洗顔料':'洗顔','クレンジング':'クレンジング','パック':'シートマスク・パック'};
 async function callBilling(action) {
   const {data, error} = await acct.client.functions.invoke('billing', {body:{action}});
   if (error) {
@@ -3419,7 +3456,7 @@ function viewPlan(query) {
   if (CLOUD.testMode) html += `<div class="notice warn"><b>現在はテスト中です。実際の請求は発生しません。</b><br>申し込みの確認には、テスト用のカード番号 <b>4242 4242 4242 4242</b>（有効期限は未来の日付、セキュリティコードは好きな3桁）を使ってください。</div>`;
   html += `<div class="notice green">アカウントは、有料プランの申し込み・管理のためだけに使います。肌の記録・写真・食事などのデータは、これまでどおり<b>この端末の中だけ</b>に保存し、サーバーには送りません。カード情報はStripeの画面で入力し、肌トモには保存されません。</div>`;
   html += `<div class="card"><div class="card-h"><h2>プランの比較</h2><span class="chip ${isPremium() ? 'beige' : 'green'}">現在：${isPremium() ? PREMIUM_NAME : '無料プラン'}</span></div>${planTable()}
-    <p class="small muted" style="margin-top:10px">無料プランだけでも、すべての記録・管理機能を使えます。${PREMIUM_NAME}の写真読み取り機能は準備中で、本番での販売は機能が使えるようになってから開始します。</p></div>`;
+    <p class="small muted" style="margin-top:10px">無料プランだけでも、すべての記録・管理機能を使えます。${PREMIUM_NAME}の写真読み取りは、AI（Google Gemini）による推定です。結果は必ず確認・修正してからお使いください（1日30回まで）。</p></div>`;
   if (acct.status !== 'ready') {
     html += `<div class="card">${acct.status === 'error'
       ? `<p class="small" style="color:var(--danger)">ログインの仕組みを読み込めませんでした。インターネットに接続しているか確認してください。</p><button class="btn btn-ghost btn-sm" style="margin-top:10px" data-action="acct-retry">もう一度読み込む</button>`
@@ -3467,7 +3504,7 @@ function viewPlan(query) {
   }
   if (acct.polling) return html + '<div class="card"><p class="small">お申し込みの内容を確認しています…</p></div>';
   html += `<div class="card"><div class="card-h"><h2>${PREMIUM_NAME}プランに申し込む</h2></div>
-    <p class="small">食事の写真から、料理と栄養の目安を読み取れるようになります（準備中）。</p>
+    <p class="small">食事の写真から料理と栄養の目安を、化粧品の写真から商品名・全成分の文字を、AIで読み取れるようになります。詳細な分析・成分相性マップも使え、広告が表示されなくなります。</p>
     ${!acct.confirm ? '<button class="btn btn-primary" style="margin-top:14px" data-action="acct-confirm">申し込み内容を確認する</button>'
     : `<div class="divider"></div><h3 style="font-size:15px;margin-bottom:10px">お申し込み内容の最終確認</h3>
       <dl class="kv">
@@ -3605,6 +3642,7 @@ function viewPrivacy() {
 <ol><li><b>アカウント情報</b>：有料プランを申し込むためにアカウントを作成した場合、メールアドレス、パスワード（暗号化された形）、契約状況（プランの状態・次回更新日など）。</li>
 <li><b>決済情報</b>：支払いは決済代行会社Stripeの画面で行います。クレジットカード番号は運営者のサーバーに送られず、運営者は取得しません。運営者が受け取るのは、Stripe上の顧客番号・契約番号・支払いの状態です。</li>
 <li><b>検索に使う情報</b>：店舗検索・価格比較を使った場合に、入力した地名・駅名・商品名・JANコード、検索する場所（現在地の利用を許可した場合はその位置）。これらは検索のためだけに使い、運営者は保存しません。</li>
+<li><b>写真読み取りの情報</b>：プレミアムプランで「写真から読み取る」を使った場合、その写真（読み取りのためにAIへ送るだけで保存しません）と、1日あたりの利用回数。</li>
 <li><b>アクセス情報</b>：本サービスや外部サービスにアクセスする際、IPアドレス・ブラウザの種類などの情報が、各サーバーの通信記録として記録されることがあります。</li></ol>
 <h3>3. 利用目的</h3>
 <ol><li>本サービス（有料プランを含む）の提供・本人確認・ログイン</li>
@@ -3624,6 +3662,7 @@ ${row('Geoapify（Geoapify GmbH）', '入力した地名・駅名、検索する
 ${row('国土地理院（地名検索）', '入力した地名・駅名・住所', '場所の特定。店舗検索で「検索」を押したときだけ')}
 ${row('OpenStreetMap', '表示する地図の範囲、IPアドレス', '検索結果の地図の表示（Geoapifyが使えないときの予備の検索を含む）')}
 ${row('楽天グループ（楽天ウェブサービス）・LINEヤフー（Yahoo!デベロッパーネットワーク）', '商品名・JANコード（運営者のサーバーを通して送信。利用者のIPアドレスなどは送りません）', '価格比較。「価格を調べる」を押したときだけ')}
+${row('Google（Gemini API）', '「写真から読み取る」を押した写真（食事・化粧品のパッケージ）', '写真読み取り（プレミアム）。押したときだけ。運営者は写真を保存しません。Googleの無料枠を使う場合、送った内容がGoogleのサービス改善に使われることがあります')}
 ${row('GitHub（GitHub, Inc.）', 'IPアドレス、ブラウザの情報', '本サービスのページの配信')}
 </tbody></table></div>
 <p class="small muted">広告（無料プラン）を配信する場合は、広告配信事業者に送られる情報（Cookie等）と、その無効化の方法をこの表に追加し、事前にお知らせします。現在は広告を配信していません。</p>
@@ -3690,6 +3729,7 @@ function viewSettings() {
         <li><b>薬局のデータ</b>：「医療情報ネット」オープンデータ（厚生労働省）を加工して、アプリと一緒に置いています。検索のときに外部に送る情報はありません。</li>
         <li><b>店舗検索</b>：「検索」ボタンを押したときだけ、入力した駅名・地名・住所と、検索する場所（または許可した現在地）を、店舗検索サービスGeoapifyと国土地理院の地名検索に送ります（Geoapifyが使えないときは、予備としてOpenStreetMapのサーバーに送ります）。検索結果の地図には、OpenStreetMapの地図を読み込みます。</li>
         <li><b>食事の写真</b>：撮影した写真は端末内だけで使い、「保存する」にチェックしたものだけをこのブラウザ内に保存します。</li>
+        <li><b>写真読み取り（${PREMIUM_NAME}）</b>：「写真から読み取る」を押したときだけ、その写真を${esc(SERVICE)}のサーバーを通してGoogleのAI（Gemini API）に送り、料理や文字を読み取ります。写真と結果はサーバーに保存しません。使った回数（1日あたり）だけを記録します。</li>
         <li><b>価格比較</b>：「価格を調べる」を押したときだけ、商品名（とJANコード）を${esc(SERVICE)}のサーバーを通して楽天市場・Yahoo!ショッピングの公式APIに送ります。あなたの情報（IPアドレスなど）は送りません。</li>
         <li><b>外部リンク</b>：通販サイト・地図のリンクを開くと、そのサイトの利用規約・プライバシーポリシーが適用されます。</li>
         <li><b>広告</b>：無料プランでは、ホーム・商品検索・成分辞典・店舗検索の画面に広告を表示する予定です（現在は準備中で、広告は配信していません）。肌の記録・グラフ・レポート・食事などの画面には表示しません。広告は肌トモのおすすめや価格比較の結果とは関係がなく、広告であることを明示します。広告を配信するときは、広告サービスに送られる情報（Cookieなど）について、この画面でお知らせします。プレミアムプランでは広告を表示しません。</li>
@@ -3719,11 +3759,9 @@ function viewSettings() {
       </ul>
       <details class="fold" style="margin-top:12px"><summary>今後の予定（未実装）</summary><ul class="small muted" style="padding-left:18px;margin:0">
         <li>Amazonなど、楽天市場・Yahoo!ショッピング以外の通販サイトの価格の自動取得（各社の審査・利用規約の確認後）</li>
-        <li>地図サービスAPIによる店舗検索、在庫情報（取得できる範囲）</li>
-        <li>写真から商品そのものを判別する画像認識・成分表示の自動読み取り（OCR）。現在はバーコードの数字と、テキスト認識表示からの貼り付けで照合しています</li>
-        <li>${PREMIUM_NAME}プラン：食事の写真から料理を読み取り、栄養の目安を推定する機能（画像認識AI・課金の仕組み・サーバーが必要）</li>
+        <li>店舗の在庫情報（取得できる範囲）</li>
         <li>肌写真からの推定（ユーザーが確認・修正する前提。医療的な診断は行いません）</li>
-        <li>有料プラン・アフィリエイト・施術比較（法的な論点を確認してから検討）</li>
+        <li>専門家（皮膚科専門医など）へのチャット相談、施術の比較（法的な論点を確認してから検討）</li>
       </ul></details></div>`;
 }
 
@@ -3781,7 +3819,7 @@ const split2 = v => String(v).split('|');
 const actions = {
   'close-modal': () => closeModal(),
   'close-modal-bg': (id, el, e) => { if (e.target === el) closeModal(); },
-  'new-log': () => openLogForm(),
+  'new-log': v => { const t = v === 'free' ? null : state.skinLogs.find(l => l.date === todayStr()); if (t) { toast('今日の記録はすでにあるので、編集画面を開きました'); openLogForm(t.id); } else openLogForm(); },
   'edit-log': id => openLogForm(id),
   'delete-log': async id => {
     const l = getLog(id); if (!l) return;
@@ -3789,7 +3827,7 @@ const actions = {
     state.skinLogs = state.skinLogs.filter(x => x.id !== id);
     if (save()) { toast('記録を削除しました'); render(); }
   },
-  'new-life': () => openLifeForm(),
+  'new-life': v => { const t = v === 'free' ? null : getLife(todayStr()); if (t) { toast('今日の記録はすでにあるので、編集画面を開きました'); openLifeForm(t.id); } else openLifeForm(); },
   'edit-life': id => openLifeForm(id),
   'delete-life': async id => {
     const l = state.lifeLogs.find(x => x.id === id); if (!l) return;
@@ -3928,7 +3966,25 @@ const actions = {
   'visit-range': v => { ui.visitRange = Number(v) || 30; render(); },
   'visit-photos': (id, el) => { ui.visitPhotos = el.checked; render(); },
   'visit-print': () => window.print(),
-  'scan-clear-photo': () => { ui.scan.photo = null; ui.scan.msg = ''; render(); },
+  'scan-clear-photo': () => { ui.scan.photo = null; ui.scan.photoHi = null; ui.scan.msg = ''; ui.scan.aiMsg = ''; render(); },
+  'scan-ai': async () => {
+    const sc = ui.scan;
+    if (!isPremium()) { toast(`写真からの読み取りは${PREMIUM_NAME}プランの機能です`); location.hash = '#/plan'; return; }
+    if (!sc.photo || sc.aiBusy) return;
+    sc.aiBusy = true; sc.aiMsg = ''; render();
+    try {
+      const r = (await callVision('package', sc.photoHi || sc.photo)).result || {};
+      const got = [];
+      if (r.brand && !sc.brand.trim()) { sc.brand = r.brand; got.push('ブランド名'); }
+      if (r.name && !sc.name.trim()) { sc.name = r.name; got.push('商品名'); }
+      if (r.jan && !sc.jan.trim() && isValidJan(r.jan)) { sc.jan = r.jan; got.push('JANコード'); }
+      if (r.ingredients) { sc.ings = sc.ings.trim() ? sc.ings.trim() + '、' + r.ingredients : r.ingredients; got.push('全成分'); }
+      if (r.volume) { sc.volume = r.volume; got.push('内容量'); }
+      if (r.category && AI_CAT[r.category]) sc.category = AI_CAT[r.category];
+      sc.aiMsg = got.length ? `読み取りました：${got.join('・')}。${AI_NOTE}` : '文字を読み取れませんでした。文字が大きく、ピントが合うように撮り直してください。';
+    } catch (e) { sc.aiMsg = e.message; }
+    sc.aiBusy = false; render();
+  },
   'scan-match': () => {
     const jan = janOf(ui.scan.jan);
     ui.scan.janErr = ui.scan.jan.trim() && !isValidJan(jan) ? 'JANコードが正しくありません（13桁または8桁の数字。最後の1桁はチェック用の数字です）。' : '';
@@ -3951,7 +4007,7 @@ const actions = {
   },
   'scan-new': () => {
     const sc = ui.scan, jan = janOf(sc.jan);
-    openCatForm(null, {name:sc.name.trim(), brand:sc.brand.trim(), jan:isValidJan(jan) ? jan : '', ingredients:cleanIngText(sc.ings), image:sc.photo});
+    openCatForm(null, Object.assign({name:sc.name.trim(), brand:sc.brand.trim(), jan:isValidJan(jan) ? jan : '', ingredients:cleanIngText(sc.ings), image:sc.photo}, sc.volume ? {volume:sc.volume} : {}, sc.category ? {category:sc.category} : {}));
   },
   'clear-filter': () => { Object.assign(ui, {q:'', brand:'', cat:'', origin:'', ing:false, purpose:'', maxPrice:'', sort:'std'}); render(); },
   'my-filter': v => { ui.myFilter = v; render(); },
@@ -4062,7 +4118,7 @@ document.addEventListener('change', e => {
 });
 async function onScanPhoto(input) {
   const file = input.files && input.files[0]; if (!file) return;
-  try { ui.scan.photo = await readImage(file, 640, 0.8); }
+  try { ui.scan.photo = await readImage(file, 640, 0.8); ui.scan.photoHi = await readImage(file, 1280, 0.85).catch(() => ui.scan.photo); ui.scan.aiMsg = ''; }
   catch (err) { toast(err.message, 'error'); input.value = ''; return; }
   ui.scan.msg = '';
   if ('BarcodeDetector' in window) {
