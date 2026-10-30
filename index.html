@@ -123,7 +123,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .bn-item svg{width:23px;height:23px}
 .bn-item.active{color:var(--green-d);font-weight:700}
 .bn-item svg,.bn-item span{transition:transform .2s ease}
-.bn-item.active svg{transform:scale(1.18) translateY(-1px);filter:drop-shadow(0 0 5px rgba(79,131,96,.55))}
+.bn-item.active svg{transform:scale(1.18) translateY(-1px);filter:drop-shadow(0 0 4px rgba(255,200,40,.95)) drop-shadow(0 0 9px rgba(255,190,30,.6))}
 .bn-item.active span{transform:scale(1.08)}
 .acc-list{padding:4px 0}
 .acc-row{display:grid;grid-template-columns:22px 1fr 12px;align-items:center;gap:12px;padding:14px 18px;color:var(--ink);text-decoration:none}
@@ -180,6 +180,26 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .icon-btn{width:40px;height:40px;border-radius:50%;border:0;background:var(--surface2);color:var(--ink2);font-size:20px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none}
 .icon-btn svg{width:20px;height:20px}
 .icon-btn.on{background:var(--green);color:#fff}
+/* ハンバーガー（三本線→×に変わる） */
+.hb{position:relative;width:20px;height:14px;display:block}
+.hb i{position:absolute;left:0;right:0;height:2px;border-radius:2px;background:currentColor;transition:transform .25s ease,opacity .2s ease,top .25s ease}
+.hb i:nth-child(1){top:0}.hb i:nth-child(2){top:6px}.hb i:nth-child(3){top:12px}
+#top-menu.x .hb i:nth-child(1){top:6px;transform:rotate(45deg)}
+#top-menu.x .hb i:nth-child(2){opacity:0;transform:scaleX(.3)}
+#top-menu.x .hb i:nth-child(3){top:6px;transform:rotate(-45deg)}
+#top-menu.x{background:var(--surface)}
+#drawer-root{position:fixed;inset:0;z-index:310;pointer-events:none}
+#drawer-root.open{pointer-events:auto}
+.drawer-bg{position:absolute;inset:0;background:rgba(20,24,22,.38);opacity:0;transition:opacity .25s ease}
+#drawer-root.open .drawer-bg{opacity:1}
+.drawer{position:absolute;top:0;right:0;bottom:0;width:min(320px,84vw);background:var(--surface);box-shadow:-12px 0 32px rgba(0,0,0,.16);transform:translateX(102%);transition:transform .28s cubic-bezier(.2,.8,.2,1);overflow-y:auto;overscroll-behavior:contain;padding:calc(14px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))}
+#drawer-root.open .drawer{transform:none}
+.drawer-h{height:44px;display:flex;align-items:center;justify-content:space-between;font-size:17px}
+.hb-close .hb i{transition:transform .3s ease .05s,opacity .2s ease,top .3s ease .05s}
+#drawer-root.open .hb-close .hb i:nth-child(1){top:6px;transform:rotate(45deg)}
+#drawer-root.open .hb-close .hb i:nth-child(2){opacity:0;transform:scaleX(.3)}
+#drawer-root.open .hb-close .hb i:nth-child(3){top:6px;transform:rotate(-45deg)}
+@media (prefers-reduced-motion:reduce){.drawer,.drawer-bg,.hb i{transition:none}}
 .chip{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:999px;font-size:12px;background:var(--surface2);color:var(--ink2);border:1px solid var(--line);white-space:nowrap;text-decoration:none}
 .chip.green{background:var(--green-s);color:var(--green-d);border-color:transparent}
 .chip.beige{background:var(--beige-s);color:#7A6240;border-color:transparent}
@@ -260,6 +280,16 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 
 /* ---------- Products ---------- */
 .filters .row{display:grid;gap:10px}
+.ac-wrap{position:relative;min-width:0}
+.ac-wrap .input{width:100%}
+.ac-list{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;background:var(--surface);border:1px solid var(--line2);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.14);overflow:hidden;max-height:min(360px,60vh);overflow-y:auto}
+.ac-item{display:grid;grid-template-columns:20px 1fr;gap:10px;align-items:center;padding:10px 14px;cursor:pointer;min-width:0}
+.ac-item+.ac-item{border-top:1px solid var(--line)}
+.ac-item svg{width:18px;height:18px;color:var(--green-d)}
+.ac-item.on,.ac-item:hover{background:var(--surface2)}
+.ac-l{display:block;font-size:14px;color:var(--ink);overflow-wrap:anywhere}
+.ac-l b{color:var(--green-d)}
+.ac-item small{display:block;font-size:11.5px;color:var(--muted)}
 @media(min-width:720px){.filters .row{grid-template-columns:2fr 1fr 1fr 1fr}.filters .row.r2{grid-template-columns:1fr 1fr 1fr}}
 .pgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 @media(min-width:720px){.pgrid{grid-template-columns:repeat(3,1fr);gap:16px}}
@@ -430,6 +460,19 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .ls-main em.good{color:var(--green-d)}
 .ls-go{color:var(--muted);font-size:18px;line-height:1}
 .advice{margin-top:12px}
+/* 待っている間の仮の表示（スケルトン） */
+.skel{display:block;border-radius:8px;height:12px;background:linear-gradient(90deg,rgba(120,105,80,.10) 25%,rgba(120,105,80,.22) 45%,rgba(120,105,80,.10) 65%);background-size:300% 100%;animation:skel 1.3s ease-in-out infinite}
+.skel+.skel{margin-top:8px}
+.skel.h{height:16px;width:55%}
+.skel.w8{width:80%}.skel.w6{width:60%}.skel.w4{width:40%}
+.skel-row{display:grid;grid-template-columns:22px 1fr;gap:8px;align-items:start;margin-top:10px}
+.skel-row .skel.dot{width:22px;height:22px;border-radius:50%}
+.skel-wrap{margin-top:10px}
+.skel.skel-face{width:44%;height:auto;aspect-ratio:3/4;border-radius:46% 46% 42% 42%;margin:auto}
+@keyframes skel{0%{background-position:100% 0}100%{background-position:0 0}}
+:root[data-theme="dark"] .skel{background-image:linear-gradient(90deg,rgba(255,255,255,.06) 25%,rgba(255,255,255,.14) 45%,rgba(255,255,255,.06) 65%)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .skel{background-image:linear-gradient(90deg,rgba(255,255,255,.06) 25%,rgba(255,255,255,.14) 45%,rgba(255,255,255,.06) 65%)}}
+@media (prefers-reduced-motion:reduce){.skel{animation:none}}
 .diag{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
 .diag li{display:grid;grid-template-columns:22px 1fr;gap:8px;font-size:13.5px;line-height:1.5}
 .diag li>span{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
@@ -634,6 +677,7 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 <div id="modal-root"></div>
 <div id="confirm-root"></div>
 <div id="toast-root" aria-live="polite"></div>
+<div id="drawer-root"></div>
 
 <script>
 'use strict';
@@ -1365,6 +1409,12 @@ function showErrors(form, errors) {
   }
   return keys.length === 0;
 }
+// 待っている間の仮の表示（スケルトン）：rows＝行の数、dots＝左に丸を付ける
+function skelHtml(rows = 3, opts = {}) {
+  const w = ['', 'w8', 'w6', 'w8', 'w4'];
+  const line = i => opts.dots ? `<div class="skel-row"><span class="skel dot"></span><div><span class="skel h"></span><span class="skel ${w[(i % 4) + 1]}"></span></div></div>` : `<span class="skel ${w[i % 5]}"></span>`;
+  return `<div class="skel-wrap" aria-busy="true" aria-label="${esc(opts.label || '読み込み中')}">${Array.from({length:rows}, (_, i) => line(i)).join('')}${opts.note ? `<p class="small muted" style="margin:8px 0 0">${esc(opts.note)}</p>` : ''}</div>`;
+}
 function readImage(file, max=640, quality=0.75) {
   return new Promise((resolve, reject) => {
     if (!file || !/^image\//.test(file.type)) return reject(new Error('画像ファイルを選択してください。'));
@@ -1580,7 +1630,7 @@ function viewHome() {
       ${['赤み','乾燥','皮脂'].map((lab, i) => { const v = [L.redness, L.dryness, L.oil][i]; return `<div class="t3-m"><span>${lab}</span><span class="bar"><i style="width:${v / 5 * 100}%"></i></span><b>${v}</b></div>`; }).join('')}</div>`
     : `<div class="t3-side"><p class="small muted" style="margin:0 0 8px">まだ今日の記録がありません。1分ほどで記録できます。</p><button class="btn btn-primary btn-sm" data-action="new-log">${icon('plus')}記録する</button></div>`;
   const todayCard = `<div class="card"><div class="card-h"><h2>今日の肌記録</h2>${L ? `<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(L.id)}">編集</button>` : ''}</div>
-      <div class="t3-grid">${side}<div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load">3Dの顔を読み込んでいます…</div></div></div>
+      <div class="t3-grid">${side}<div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div></div>
       <div class="advice" id="advice-box">${adviceHtml()}</div>
       ${lifeLine}</div>`;
 
@@ -1663,7 +1713,7 @@ function viewSearch() {
     `<div class="notice">「サンプル（架空）」と表示された商品は動作確認用で、実在しません。実在の商品は、パッケージや公式サイトで確認したうえで登録してください。確認していない情報は「情報未確認」と表示されます。</div>
     <div class="card filters" style="margin-bottom:16px">
       <div class="row">
-        <input type="search" id="flt-q" class="input" placeholder="商品名・ブランド名・JANコードで検索" value="${esc(ui.q)}" aria-label="キーワード">
+        <div class="ac-wrap"><input type="search" id="flt-q" class="input" placeholder="商品名・ブランド名・JANコードで検索" value="${esc(ui.q)}" aria-label="キーワード" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="ac-list"><div class="ac-list" id="ac-list" role="listbox" hidden></div></div>
         ${filterSelect('flt-brand', brands, ui.brand, 'すべてのブランド')}
         ${filterSelect('flt-cat', CATEGORIES, ui.cat, 'すべてのカテゴリ')}
         ${filterSelect('flt-origin', ORIGINS, ui.origin, '日本・韓国すべて')}
@@ -1924,6 +1974,7 @@ function priceHitsHtml(p) {
   if (p.isSample) return h + '<p class="small muted">サンプル（架空）の商品のため、検索できません。</p></div>';
   h += `<p class="small muted">商品名${p.jan ? '（JANコードがあればJANコード）' : ''}で、楽天市場とYahoo!ショッピングの公式APIから検索します。<b>商品価格の安い順</b>に並べます（送料は含みません）。</p>
     <div class="page-actions" style="margin-top:8px"><button class="btn btn-primary btn-sm" data-action="price-search" data-id="${esc(p.id)}" ${st && st.loading ? 'disabled' : ''}>${st && st.loading ? '調べています…' : (st ? 'もう一度調べる' : '価格を調べる')}</button></div>`;
+  if (st && st.loading) h += skelHtml(4, {dots:true, label:'価格を検索中'});
   if (st && !st.loading) {
     if (st.msg) h += `<p class="small" style="color:var(--warn);margin-top:10px">${esc(st.msg)}</p>`;
     else {
@@ -2426,7 +2477,7 @@ async function drawStoreMap() {
 function storeResultsHtml() {
   const R = ui.storeRes;
   if (!R) return '';
-  if (R.status === 'loading') return `<div class="card mt" aria-live="polite"><p class="small">${esc(R.note || '検索しています…')}</p>${/予備/.test(R.note || '') ? '<p class="small muted" style="margin-top:4px">予備のサーバーは混み合っていると1分ほどかかることがあります。</p>' : ''}</div>`;
+  if (R.status === 'loading') return `<div class="card mt" aria-live="polite"><p class="small">${esc(R.note || '検索しています…')}</p>${skelHtml(4, {dots:true})}${/予備/.test(R.note || '') ? '<p class="small muted" style="margin-top:4px">予備のサーバーは混み合っていると1分ほどかかることがあります。</p>' : ''}</div>`;
   if (R.status === 'pick') return `<div class="card mt"><div class="card-h"><h2>場所を選んでください</h2></div>
     <div class="chips">${(ui.storeCands || []).map((x, i) => `<button class="tab" data-action="store-pick" data-id="${i}">${esc(x.label)}</button>`).join('')}</div>
     ${ui.stationPending ? '' : ''}
@@ -2564,7 +2615,7 @@ function viewScan() {
     <div class="card"><div class="card-h"><h2>1. パッケージを撮影</h2><span class="opt">任意</span></div>
       <input type="file" accept="image/*" capture="environment" id="scan-photo" class="input" style="padding:9px" aria-label="パッケージを撮影">
       ${sc.photo ? `<img class="img-prev" src="${sc.photo}" alt="撮影した写真" style="width:150px;height:150px"><div class="page-actions" style="margin-top:6px"><button class="btn btn-primary btn-sm" data-action="scan-ai" ${sc.aiBusy ? 'disabled' : ''}>${sc.aiBusy ? '読み取っています…' : '写真から文字を読み取る'} <span class="badge-premium">${PREMIUM_NAME}</span></button><button class="btn btn-ghost btn-sm" data-action="scan-clear-photo">写真を外す</button></div>
-        ${sc.aiMsg ? `<p class="small" style="margin-top:6px">${esc(sc.aiMsg)}</p>` : ''}
+        ${sc.aiBusy ? skelHtml(4, {label:'写真を読み取り中', note:'商品名・成分を読み取っています（10秒ほどかかります）'}) : ''}${sc.aiMsg ? `<p class="small" style="margin-top:6px">${esc(sc.aiMsg)}</p>` : ''}
         <p class="hint">${PREMIUM_NAME}では、商品名・内容量・全成分の文字をAIで読み取って下の欄に入れます（成分表示は裏面を撮ると読み取れます。表と裏で2回読み取ると、成分は後ろに追加されます）。写真は読み取りのためだけにGoogleのAI（Gemini）に送り、保存しません。</p>` : ''}
       <p class="hint">${hasBD ? 'バーコードが写っていれば、数字を自動で読み取ります。' : 'このブラウザは、バーコードの自動読み取りに対応していません（iPhoneのSafariなど）。下の欄に、バーコードの下の数字を入力してください。'}撮影した写真は、新しく登録するときに商品画像として使えます。</p>
       ${sc.msg ? `<p class="small" style="margin-top:6px;color:var(--green-d)">${esc(sc.msg)}</p>` : ''}
@@ -3098,7 +3149,7 @@ function logDayDetailHtml(list, i) {
 function logDayCardHtml(logs) {
   const list = logs.slice().reverse(), i = logDayIdx(list);
   return `<div class="card ld-card" id="log-day-card"><div class="card-h"><h2>日々の肌の変化</h2><span class="small muted">日付を左右にスワイプ</span></div>
-    <div class="f3-stage ld-stage"><canvas id="face3d-log" aria-label="選んだ日の肌の記録を3Dの顔で表示"></canvas><div class="f3-load" id="ld-load">3Dの顔を読み込んでいます…</div></div>
+    <div class="f3-stage ld-stage"><canvas id="face3d-log" aria-label="選んだ日の肌の記録を3Dの顔で表示"></canvas><div class="f3-load" id="ld-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>
     <div class="ld-swipe" id="ld-swipe">
       <button class="ld-arrow" id="ld-prev" data-action="log-day-step" data-id="-1" aria-label="前の記録" ${i <= 0 ? 'hidden' : ''}>‹</button>
       <div class="ld-info" id="ld-info">${logDayInfoHtml(list, i)}</div>
@@ -3474,7 +3525,7 @@ function openLifeForm(id, part) {
         return;
       }
       const img = pending[k] || saved[k]; if (!img) return;
-      b.disabled = true; box.innerHTML = '<p class="small" style="margin-top:8px">写真を読み取っています…（10秒ほどかかります）</p>';
+      b.disabled = true; box.innerHTML = skelHtml(3, {dots:true, label:'写真を読み取り中', note:'写真を読み取っています（10秒ほどかかります）'});
       try {
         const r = (await callVision('meal', img)).result || {items:[]};
         aiRes[k] = r.items || [];
@@ -3563,7 +3614,7 @@ function face3dCardHtml() {
   const first = d.weeks.find(x => x.logs.length), diff = first && first !== w ? AREAS.map(a => ({n:a.name, v:(w.c[a.id] || 0) - (first.c[a.id] || 0)})).filter(x => x.v) : [];
   return `<div class="card"><div class="card-h"><h2>3Dで見る肌の変化</h2><span class="chip">8週間</span></div>
     <p class="small muted" style="margin-bottom:8px">${d.mode === 'spots' ? '色の濃さと赤い印は、その週に記録したニキビの数（部位ごと）です。' : '色の濃さは、その週に「気になる部位」に選んだ日数です。'}下のボタンで、横・後ろ・上・下からも見られます。</p>
-    <div class="f3-stage"><canvas id="face3d" aria-label="3Dの顔で表示した、部位ごとの記録"></canvas><button class="f3-expand" data-action="f3-full" data-id="charts" aria-label="大きく見る">⤢ 大きく見る</button><div class="f3-tip" id="f3-tip" hidden></div><div class="f3-load" id="f3-load">3Dの顔を読み込んでいます…</div></div>
+    <div class="f3-stage"><canvas id="face3d" aria-label="3Dの顔で表示した、部位ごとの記録"></canvas><button class="f3-expand" data-action="f3-full" data-id="charts" aria-label="大きく見る">⤢ 大きく見る</button><div class="f3-tip" id="f3-tip" hidden></div><div class="f3-load" id="f3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>
     <div class="f3-ctrl">
       <button class="btn btn-ghost btn-sm" data-action="f3-step" data-id="-1" aria-label="前の週">◀</button>
       <div class="f3-week"><b id="f3-label">${f3md(w.s)}〜${f3md(w.e)}の週</b><span class="small muted" id="f3-sub">記録 ${w.logs.length}日</span></div>
@@ -3654,7 +3705,7 @@ function face3dShowWeek(i) {
 function openFace3dFull(src) {
   const box = document.createElement('div'); box.className = 'f3-full'; box.id = 'f3-full';
   box.innerHTML = `<div class="f3-full-head"><b>${src === 'home' ? '今日の肌記録' : '肌の変化（' + esc(($('#f3-label') || {}).textContent || '') + '）'}</b><button class="icon-btn" data-action="f3-full-close" aria-label="閉じる">×</button></div>
-    <div class="f3-full-stage"><canvas id="face3d-full" aria-label="3Dの顔（大きく表示）"></canvas><div class="f3-tip" id="f3full-tip" hidden></div><div class="f3-load" id="f3full-load">3Dの顔を読み込んでいます…</div></div>
+    <div class="f3-full-stage"><canvas id="face3d-full" aria-label="3Dの顔（大きく表示）"></canvas><div class="f3-tip" id="f3full-tip" hidden></div><div class="f3-load" id="f3full-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>
     <p class="small muted" style="text-align:center;margin:6px 12px 0">${DEV.touch ? '1本の指で回す／2本の指で広げると拡大' : 'ドラッグで回す／ホイールで拡大・縮小'}。</p>
     <div class="f3-views" style="padding:8px 12px calc(12px + env(safe-area-inset-bottom))">${[['front','正面'],['right','右から'],['left','左から'],['back','後ろ'],['top','上から'],['bottom','下から']].map(([k, l]) => `<button class="tab" data-action="f3-view" data-id="${k}">${l}</button>`).join('')}<button class="tab" data-action="f3-zoom" data-id="in" aria-label="大きくする">＋</button><button class="tab" data-action="f3-zoom" data-id="out" aria-label="小さくする">－</button></div>`;
   document.body.appendChild(box); lockScroll();
@@ -3730,7 +3781,7 @@ function adviceHtml() {
   const pts = ai ? ai.points : adviceLocal(d);
   const prem = isPremium();
   const head = `<h3>おすすめケアポイント${ai ? '<span class="ai-badge">AI分析</span>' : ''}</h3>${ai && ai.summary ? `<p class="small muted" style="margin:0">${esc(ai.summary)}</p>` : ''}`;
-  const list = `<ol>${pts.map((x, i) => `<li><i>${i + 1}</i><div><b>${esc(x.title)}</b><span>${esc(x.text)}</span></div></li>`).join('')}</ol>`;
+  const list = adviceBusy ? skelHtml(3, {dots:true, label:'AIが分析中'}) : `<ol>${pts.map((x, i) => `<li><i>${i + 1}</i><div><b>${esc(x.title)}</b><span>${esc(x.text)}</span></div></li>`).join('')}</ol>`;
   let foot;
   if (adviceBusy) foot = '<span class="small muted">AIが記録を分析しています…</span>';
   else if (ai) foot = `<span class="small muted">直近7日の記録をAI（Google Gemini）が分析しました。目安としてご覧ください。</span><button class="btn btn-ghost btn-sm" data-action="advice-ai" data-id="again">もう一度分析</button>`;
@@ -4230,7 +4281,7 @@ async function callVision(mode, image, payload) {
 let diagRes = null, diagBusy = false;
 function diagCardHtml() {
   let body = '<p class="small muted" style="margin:0">写真読み取りやAI分析がうまく動かないときに、サーバーの設定のどこに問題があるかを調べます（回数には数えません）。</p>';
-  if (diagBusy) body += '<p class="small" style="margin-top:10px">調べています…（20秒ほどかかることがあります）</p>';
+  if (diagBusy) body += skelHtml(6, {dots:true, label:'診断中', note:'調べています（20秒ほどかかることがあります）'});
   else if (diagRes) body += diagResultHtml(diagRes);
   return `<div class="card" id="diag-card"><div class="card-h"><h2>写真読み取り・AI分析の診断</h2></div>${body}
     <button class="btn btn-ghost btn-sm" style="margin-top:12px" data-action="vision-diag" ${diagBusy ? 'disabled' : ''}>${diagRes ? 'もう一度調べる' : '診断する'}</button></div>`;
@@ -4951,11 +5002,7 @@ const actions = {
   'report-next': () => { if (ui.reportOffset < 0) { ui.reportOffset++; render(); } },
   'spend-prev': () => { ui.spendMonth = shiftMonth(ui.spendMonth, -1); render(); },
   'spend-next': () => { if (ui.spendMonth < monthKey(todayStr())) { ui.spendMonth = shiftMonth(ui.spendMonth, 1); render(); } },
-  'open-menu': () => {
-    let g = null, body = '<div class="menu-list">';
-    NAV.filter(n => !BOTTOM_NAV.includes(n.r) && n.r !== 'stores' && !ACCOUNT_PAGES.includes(n.r)).forEach(n => { /* 取扱店舗は「商品検索」の中のタブ */ if (n.g !== g) { g = n.g; if (g) body += `<div class="grp">${esc(g)}</div>`; } body += `<a href="#/${n.r}">${icon(n.icon)}${esc(n.label)}</a>`; });
-    openModal({title:'メニュー', size:'small', dismissable:true, body:body + '</div>'});
-  },
+  'open-menu': () => toggleDrawer(),
   'export-csv': () => {
     const q = v => { const x = String(v == null ? '' : v); return /[",\n\r]/.test(x) ? '"' + x.replace(/"/g, '""') + '"' : x; };
     const row = a => a.map(q).join(',');
@@ -5070,6 +5117,81 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && $('#f3-full')) { closeFace3dFull(); return; }
   if (e.key === 'Escape' && $('#modal-root').innerHTML && !$('#confirm-root').innerHTML) closeModal();
 });
+// ---------- ハンバーガーメニュー（右から出てくるメニュー） ----------
+function drawerHtml() {
+  let g = null, body = '';
+  NAV.filter(n => !BOTTOM_NAV.includes(n.r) && n.r !== 'stores' && !ACCOUNT_PAGES.includes(n.r)).forEach(n => { // 取扱店舗は「商品検索」の中のタブ、お金・設定は「アカウント」
+    if (n.g !== g) { g = n.g; if (g) body += `<div class="grp">${esc(g)}</div>`; }
+    body += `<a href="#/${n.r}">${icon(n.icon)}${esc(n.label)}</a>`;
+  });
+  return `<div class="drawer-bg" data-drawer-close></div><nav class="drawer" aria-label="メニュー"><div class="drawer-h"><b>メニュー</b><button class="icon-btn hb-close" data-drawer-close aria-label="メニューを閉じる"><span class="hb" aria-hidden="true"><i></i><i></i><i></i></span></button></div><div class="menu-list">${body}</div></nav>`;
+}
+function toggleDrawer(force) {
+  const root = document.getElementById('drawer-root'), btn = document.getElementById('top-menu');
+  const open = force != null ? force : !root.classList.contains('open');
+  if (open) { root.innerHTML = drawerHtml(); lockScroll(); requestAnimationFrame(() => root.classList.add('open')); }
+  else { root.classList.remove('open'); unlockScroll(); setTimeout(() => { if (!root.classList.contains('open')) root.innerHTML = ''; }, 260); }
+  if (btn) { btn.classList.toggle('x', open); btn.setAttribute('aria-expanded', String(open)); btn.setAttribute('aria-label', open ? 'メニューを閉じる' : 'メニュー'); }
+}
+document.addEventListener('click', e => {
+  if (e.target.closest('[data-drawer-close]')) { toggleDrawer(false); return; }
+  if (e.target.closest('#drawer-root a')) toggleDrawer(false);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('drawer-root').classList.contains('open')) toggleDrawer(false); });
+// ---------- 商品検索の入力候補（オートコンプリート） ----------
+const kanaNorm = v => toHalf(String(v || '')).toLowerCase().replace(/[ぁ-ゖ]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60)).replace(/\s+/g, '');
+let acItems = [], acIdx = -1;
+function acSuggest(q) {
+  const k = kanaNorm(q); if (!k) return [];
+  const hit = v => kanaNorm(v).includes(k), starts = v => kanaNorm(v).startsWith(k);
+  const out = [];
+  const prods = state.catalog.filter(p => hit(p.name) || hit(p.brand) || (p.jan && String(p.jan).includes(k)) || hit(p.brand + p.name));
+  prods.sort((a, b) => (starts(b.name) || starts(b.brand)) - (starts(a.name) || starts(a.brand))).slice(0, 5)
+    .forEach(p => out.push({type:'product', id:p.id, label:p.name, sub:[p.brand, p.category].filter(Boolean).join('・')}));
+  Array.from(new Set(state.catalog.map(p => p.brand).filter(Boolean))).filter(b => hit(b)).slice(0, 3)
+    .forEach(b => out.push({type:'brand', id:b, label:b, sub:'このブランドの商品をしぼり込む'}));
+  ING_DB.filter(g => hit(g.name) || (g.aliases || []).some(hit)).slice(0, 3)
+    .forEach(g => { const al = (g.aliases || []).find(hit); out.push({type:'ing', id:al || g.name, label:al || g.name, sub:'この成分が入った商品を探す'}); });
+  return out;
+}
+function acMark(label, q) {
+  const k = kanaNorm(q), n = kanaNorm(label), i = n.indexOf(k);
+  if (i < 0 || n.length !== label.replace(/\s+/g, '').length) return esc(label);
+  // 空白を含まない位置で太字にする（ひらがな・カタカナ・全角半角のちがいは無視）
+  let cnt = 0, s = -1, e = -1;
+  for (let j = 0; j < label.length; j++) { if (/\s/.test(label[j])) continue; if (cnt === i) s = j; cnt++; if (cnt === i + k.length) { e = j + 1; break; } }
+  return s < 0 || e < 0 ? esc(label) : esc(label.slice(0, s)) + '<b>' + esc(label.slice(s, e)) + '</b>' + esc(label.slice(e));
+}
+const AC_ICON = {product:'bottle', brand:'tag', ing:'flask'};
+function acRender() {
+  const box = document.getElementById('ac-list'), inp = document.getElementById('flt-q'); if (!box || !inp) return;
+  const q = inp.value.trim();
+  acItems = q ? acSuggest(q) : []; if (acIdx >= acItems.length) acIdx = acItems.length - 1;
+  box.hidden = !acItems.length || document.activeElement !== inp; inp.setAttribute('aria-expanded', String(!box.hidden));
+  box.innerHTML = acItems.map((x, i) => `<div class="ac-item ${i === acIdx ? 'on' : ''}" role="option" id="ac-${i}" data-ac="${i}" aria-selected="${i === acIdx}">${icon(AC_ICON[x.type] || 'search')}<span><span class="ac-l">${acMark(x.label, q)}</span><small>${esc(x.sub)}</small></span></div>`).join('');
+  if (acIdx >= 0) inp.setAttribute('aria-activedescendant', 'ac-' + acIdx); else inp.removeAttribute('aria-activedescendant');
+}
+function acClose() { acIdx = -1; const box = document.getElementById('ac-list'); if (box) box.hidden = true; const inp = document.getElementById('flt-q'); if (inp) inp.setAttribute('aria-expanded', 'false'); }
+let acPicking = false, renderingNow = false;
+function acPick(i) {
+  const x = acItems[i]; if (!x) return; acClose();
+  acPicking = true; setTimeout(() => { acPicking = false; }, 0);
+  if (x.type === 'product') { location.hash = '#/product/' + encodeURIComponent(x.id); return; }
+  if (x.type === 'brand') { ui.brand = x.id; ui.q = ''; }
+  if (x.type === 'ing') { ui.q = x.id; ui.ing = true; }
+  render();
+}
+document.addEventListener('focusin', e => { if (e.target.id === 'flt-q') acRender(); });
+document.addEventListener('focusout', e => { if (e.target.id === 'flt-q') setTimeout(() => { if (document.activeElement && document.activeElement.id === 'flt-q') return; acClose(); }, 120); });
+document.addEventListener('pointerdown', e => { const it = e.target.closest('[data-ac]'); if (!it) return; e.preventDefault(); acPick(Number(it.dataset.ac)); });
+document.addEventListener('keydown', e => {
+  if (e.target.id !== 'flt-q' || e.isComposing) return;
+  const box = document.getElementById('ac-list'); if (!box || box.hidden) { if (e.key === 'ArrowDown') { acIdx = 0; acRender(); e.preventDefault(); } return; }
+  if (e.key === 'ArrowDown') { acIdx = (acIdx + 1) % acItems.length; acRender(); e.preventDefault(); }
+  else if (e.key === 'ArrowUp') { acIdx = acIdx <= 0 ? acItems.length - 1 : acIdx - 1; acRender(); e.preventDefault(); }
+  else if (e.key === 'Enter' && acIdx >= 0) { e.preventDefault(); acPick(acIdx); }
+  else if (e.key === 'Escape') { acClose(); }
+});
 // 入力欄（フォーカスを保つため、結果部分だけを更新）
 document.addEventListener('input', e => {
   const id = e.target.id;
@@ -5078,6 +5200,7 @@ document.addEventListener('input', e => {
     if (key) ui[key] = e.target.value;
     if (id === 'flt-ing') ui.ing = e.target.checked;
     const box = $('#search-results'); if (box) box.innerHTML = searchResults();
+    if (id === 'flt-q') { acIdx = -1; acRender(); }
   } else if (/^scan-(jan|name|brand|ings)$/.test(id)) {
     ui.scan[id.slice(5)] = e.target.value;
     if (id === 'scan-jan') ui.scan.janErr = '';
@@ -5099,7 +5222,7 @@ document.addEventListener('change', e => {
   if (e.target.dataset && e.target.dataset.change === 'price-vol') { ui.priceVol = e.target.checked; const y = scrollY; render(); scrollTo(0, y); return; }
   if (e.target.id === 'st-radius') { ui.storeRadius = Number(e.target.value) || 1000; return; }
   if (e.target.name === 'st-type') { ui.storeTypes = $$('input[name="st-type"]:checked').map(i => i.value); return; }
-  if (/^flt-/.test(e.target.id)) { e.target.dispatchEvent(new Event('input', {bubbles:true})); return; }
+  if (/^flt-/.test(e.target.id)) { if (acPicking || renderingNow || !e.target.isConnected) return; e.target.dispatchEvent(new Event('input', {bubbles:true})); return; } // 候補を選んで画面を作り直したときの古い入力欄は無視
   const k = e.target.dataset && e.target.dataset.ui;
   if (k) { ui[k] = e.target.value; render(); }
 });
@@ -5190,7 +5313,7 @@ function render() {
   // 「← ○○」リンク：来た画面がリンク先と違うときは「← 戻る」と表示して、来た画面に戻る
   const prevNav = navStack.length > 1 ? navStack[navStack.length - 2] : '';
   html = html.replace(/<a class="back" href="([^"]*)">([^<]*)<\/a>/g, (m, href, label) => `<a class="back" href="${href}" data-back="1">${prevNav && prevNav !== href ? '← 戻る' : label}</a>`);
-  $('#main').innerHTML = html;
+  renderingNow = true; try { $('#main').innerHTML = html; } finally { renderingNow = false; } // 作り直しの最中に古い入力欄から来る変更は無視する
   renderNav(navName, ({product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'})[r.name] || r.name);
   const key = r.name + '/' + r.id;
   if (key !== lastRoute) {
@@ -5221,7 +5344,7 @@ const navStack = [navKey()];
 // 画面ごとのスクロール位置（戻ったときに、元の位置に戻す）
 const navScroll = {};
 let navRestoreY = null;
-window.addEventListener('scroll', () => { navScroll[navStack[navStack.length - 1]] = window.scrollY; }, {passive:true});
+window.addEventListener('scroll', () => { if (lockedY != null) return; navScroll[navStack[navStack.length - 1]] = window.scrollY; }, {passive:true}); // メニューなどを開いて画面を固定している間は記録しない
 window.addEventListener('hashchange', () => {
   const k = navKey(), i = navStack.lastIndexOf(k);
   navRestoreY = i >= 0 && navScroll[k] != null ? navScroll[k] : null; // 来たことのある画面へ戻るときだけ、位置を戻す
@@ -5240,7 +5363,7 @@ document.addEventListener('click', e => {
 window.addEventListener('hashchange', () => { if ($('#modal-root').innerHTML) closeModal(); render(); });
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(drawCharts, 150); });
-$('#top-menu').innerHTML = icon('menu');
+$('#top-menu').innerHTML = '<span class="hb" aria-hidden="true"><i></i><i></i><i></i></span>'; $('#top-menu').setAttribute('aria-expanded', 'false');
 if (hasSavedLogin()) setTimeout(initCloud, 0); // 以前ログインしていた場合だけ、ログイン状態を確認する
 document.title = `${SERVICE}｜最小限で最大限を`;
 render();
