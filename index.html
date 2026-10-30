@@ -510,6 +510,14 @@ label.btn{position:relative}
 .acc-toggle i{transition:transform .25s ease}
 .acc-toggle[aria-expanded="true"] i{transform:rotate(90deg)}
 .acc-sec{padding:0;overflow:hidden;margin-bottom:12px}
+.sc-edit{display:inline-flex;align-items:center;gap:4px;background:none;border:0;color:var(--green-d);font-family:inherit;cursor:pointer;text-decoration:underline}
+.sc-edit svg{width:14px;height:14px}
+.sc-pick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.sc-opt{position:relative;display:flex;align-items:center;gap:8px;text-align:left;padding:11px 12px;border:1px solid var(--line2);border-radius:12px;background:var(--surface);color:var(--ink);font-family:inherit;font-size:13px;cursor:pointer;min-width:0}
+.sc-opt span{min-width:0;overflow-wrap:anywhere;line-height:1.35}
+.sc-opt svg{width:18px;height:18px;flex:none;color:var(--green-d)}
+.sc-opt.on{border-color:var(--green);background:var(--green-p,#EEF5EF);box-shadow:inset 0 0 0 1px var(--green)}
+.sc-opt b{position:absolute;top:-7px;right:-7px;width:22px;height:22px;border-radius:50%;background:var(--green);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center}
 .acc-sec .acc-row{padding:16px 18px}
 .acc-panel{padding:0 16px 16px;border-top:1px solid var(--line)}
 /* 枠の中の小さなカードは、線で区切るだけにする */
@@ -544,6 +552,7 @@ details.acc-cmp{margin-top:14px}
 .rv.in .ls-row:nth-child(3),.rv.in .advice li:nth-child(2),.rv.in .acc-row:nth-child(2){animation-delay:.2s}
 .rv.in .ls-row:nth-child(4),.rv.in .advice li:nth-child(3),.rv.in .acc-row:nth-child(3){animation-delay:.28s}
 .rv.in .advice li:nth-child(4){animation-delay:.36s}
+.rv.in .pgrid>*,.rv.in .mlist>*,.rv.in .shortcuts>*,.rv.in .stat-row>*{animation:itemIn .5s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--si,0) * 55ms + 80ms)}
 @keyframes itemIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .chart.play path.ln{stroke-dasharray:1;stroke-dashoffset:1;animation:lnDraw 1.2s cubic-bezier(.4,0,.2,1) .2s forwards}
 @keyframes lnDraw{to{stroke-dashoffset:0}}
@@ -1300,6 +1309,7 @@ function normalize(d) {
   out.settings.sleepNeed = clamp(Math.round(num(ds.sleepNeed) || 420), 240, 720); // 必要な睡眠時間（分）
   out.settings.weight = clamp(Math.round((num(ds.weight) || 0) * 10) / 10, 0, 250); // 体重（kg）。0は未設定
   out.settings.height = clamp(Math.round((num(ds.height) || 0) * 10) / 10, 0, 250); // 身長（cm）。0は未設定
+  out.settings.shortcuts = Array.isArray(ds.shortcuts) ? ds.shortcuts.filter(k => typeof k === 'string').slice(0, 6) : [];
   out.settings.proteinGoal = clamp(Math.round(num(ds.proteinGoal) || 0), 0, 300); // たんぱく質の目標（g）。0は自動
   out.favorites = Array.isArray(d.favorites) ? Array.from(new Set(d.favorites.map(String))).filter(id => out.catalog.some(p => p.id === id)) : [];
   out.customFoods = Array.isArray(d.customFoods) ? d.customFoods.filter(x => x && x.name).map(x => { const n = normFood(Object.assign({meal:'snack', qty:1}, x)); return {id:n.id, name:n.name, kcal:n.kcal, p:n.p, f:n.f, c:n.c, veg:n.veg}; }) : [];
@@ -1661,16 +1671,11 @@ const motionSeen = new Set();
 function motionIn(route) {
   const main = document.getElementById('main'); if (!main) return;
   if (!MOTION_OK()) return;
-  const tab = TAB_PAGES.includes(route);
-  // 下のバーの画面の一番上の見出しは、開くたびにふわっと出る（ホームの日付は動かさない）
-  if (tab) { const h = main.querySelector('.page-head h1'); if (h) { h.classList.remove('fade-once'); void h.offsetWidth; h.classList.add('fade-once'); } }
+  // どの画面も、一番上の見出しは開くたびにふわっとフェードイン（ホームの日付は動かさない）
+  { const h = main.querySelector('.page-head h1'); if (h) { h.classList.remove('fade-once'); void h.offsetWidth; h.classList.add('fade-once'); } }
   // それ以外（カード・数字・グラフなど）は、どの画面でも開くたびに動く
   // 画面全体：下からふわっと
   main.classList.remove('pg-in'); void main.offsetWidth; main.classList.add('pg-in');
-  if (!tab) {
-    // ほかの画面の見出しは、文字が1文字ずつ浮かび上がる（キネティック・タイポグラフィ）
-    splitChars(main.querySelector('.page-head h1'));
-  }
   // カードは、画面に入ったときに順番に出てくる
   if (motionIO) motionIO.disconnect();
   let batch = 0, batchT = 0;
@@ -1678,7 +1683,11 @@ function motionIn(route) {
     const now = performance.now(); if (now - batchT > 120) { batch = 0; batchT = now; }
     es.forEach(en => { if (!en.isIntersecting) return; const el = en.target; el.style.setProperty('--d', (batch++ * 70) + 'ms'); revealEl(el); motionIO.unobserve(el); });
   }, {rootMargin:'0px 0px -6% 0px', threshold:0.06});
-  main.querySelectorAll('.card, .hero, .tabs, .notice').forEach(el => { el.classList.add('rv'); motionIO.observe(el); });
+  // カード・商品の枠・リストの1件ずつ・絞り込み欄など、目に見える部品をすべて同じように出す（入れ子は外側だけ）
+  const RV_SEL = '.card, .hero, .tabs, .notice, .pcard, .mitem, .page-actions, .filters, .log-month, .pgrid > *, .mlist > *';
+  main.querySelectorAll(RV_SEL).forEach(el => { if (el.parentElement && el.parentElement.closest('.rv')) return; el.classList.add('rv'); motionIO.observe(el); });
+  // 外側の枠の中にある一覧は、1件ずつずらして出す
+  main.querySelectorAll('.rv .pgrid, .rv .mlist, .rv .shortcuts, .rv .stat-row, .pgrid, .mlist').forEach(g => [...g.children].forEach((c, i) => c.style.setProperty('--si', i)));
   // 念のため：2.5秒たっても出てこないもの（画面の外にあるもの以外）は出す
   setTimeout(() => main.querySelectorAll('.rv:not(.in)').forEach(el => { const r = el.getBoundingClientRect(); if (r.top < innerHeight && r.bottom > 0) revealEl(el); }), 2500);
 }
@@ -1817,6 +1826,37 @@ function openLifeGoal() {
     ${field('1日のたんぱく質の目標（g）', `<input class="input" name="proteinGoal" inputmode="numeric" value="${st.proteinGoal || ''}" placeholder="空欄なら体重×1g">`, {name:'proteinGoal', hint:'たんぱく質は肌をつくる材料です。空欄なら「体重×1g」を目安にします'})}
   </div></form>`, footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="submit" form="goal-form" class="btn btn-primary">保存する</button>`});
 }
+// ---------- ショートカット（ホーム）：好きな6つを選べる ----------
+const SHORTCUTS = [
+  {k:'log', h:'#/log', ic:'note', l:'肌の記録一覧'}, {k:'scan', h:'#/scan', ic:'camera', l:'カメラで化粧品を登録'},
+  {k:'charts', h:'#/charts', ic:'chart', l:'肌の変化・比較'}, {k:'report', h:'#/report', ic:'calendar', l:'週次レポート'},
+  {k:'combo', h:'#/combo', ic:'flask', l:'成分の組み合わせ'}, {k:'visit', h:'#/visit', ic:'note', l:'受診用まとめ'},
+  {k:'suggest', h:'#/suggest', ic:'leaf', l:'ケアの提案'}, {k:'favorites', h:'#/favorites', ic:'heart', l:'お気に入り'},
+  {k:'search', h:'#/search', ic:'search', l:'商品検索'}, {k:'stores', h:'#/stores', ic:'pin', l:'取扱店舗を探す'},
+  {k:'ingredients', h:'#/ingredients', ic:'book', l:'成分辞典'}, {k:'my', h:'#/my', ic:'bottle', l:'マイ化粧品'},
+  {k:'spending', h:'#/spending', ic:'wallet', l:'支出'}, {k:'plan', h:'#/plan', ic:'user', l:'プラン・アカウント'},
+  {k:'settings', h:'#/settings', ic:'gear', l:'設定'}
+];
+const SC_DEFAULT = ['log', 'scan', 'charts', 'suggest', 'visit', 'favorites'];
+function myShortcuts() {
+  const ks = Array.isArray(state.settings.shortcuts) && state.settings.shortcuts.length ? state.settings.shortcuts : SC_DEFAULT;
+  return ks.map(k => SHORTCUTS.find(x => x.k === k)).filter(Boolean).slice(0, 6);
+}
+function openShortcutEdit() {
+  let sel = myShortcuts().map(x => x.k);
+  const body = () => `<p class="small muted" style="margin:0 0 10px">ホームに出すショートカットを<b>6つ</b>まで選べます。押した順に並びます。</p>
+    <div class="sc-pick">${SHORTCUTS.map(x => { const i = sel.indexOf(x.k); return `<button type="button" class="sc-opt ${i >= 0 ? 'on' : ''}" data-sc="${x.k}" aria-pressed="${i >= 0}">${icon(x.ic)}<span>${esc(x.l)}</span>${i >= 0 ? `<b>${i + 1}</b>` : ''}</button>`; }).join('')}</div>
+    <p class="small" id="sc-count" style="margin:10px 0 0">${sel.length} / 6 を選択中</p>`;
+  const m = openModal({title:'ショートカットを変更', body:body(), footer:`<button type="button" class="btn btn-ghost" data-action="sc-reset">はじめの6つに戻す</button><button type="button" class="btn btn-primary" data-action="sc-save">保存する</button>`});
+  const refresh = () => { m.querySelector('.modal-body').innerHTML = body(); };
+  m.addEventListener('click', e => {
+    const b = e.target.closest('[data-sc]'); if (!b) return;
+    const k = b.dataset.sc, i = sel.indexOf(k);
+    if (i >= 0) sel.splice(i, 1); else if (sel.length >= 6) { toast('6つまで選べます。どれかを外してから選んでください'); return; } else sel.push(k);
+    $('#modal-root').dataset.dirty = '1'; refresh();
+  });
+  m._getSel = () => sel; m._setSel = v => { sel = v; refresh(); };
+}
 function viewHome() {
   const t = todayStr(), map = logMap();
   const todayLog = map[t], todayLife = getLife(t);
@@ -1892,14 +1932,7 @@ function viewHome() {
     ${hints.length ? `<ul class="hint-list">${hints.map(h => `<li>${esc(h)}</li>`).join('')}</ul>` : ''}
     <a class="btn btn-soft btn-sm" style="margin-top:12px" href="#/check">${icon('check')}買う前チェック</a></div>`;
 
-  const shortcuts = `<div class="card"><div class="card-h"><h2>ショートカット</h2></div><div class="shortcuts">
-    <a class="shortcut" href="#/log">${icon('note')}肌の記録一覧</a>
-    <a class="shortcut" href="#/scan">${icon('camera')}カメラで化粧品を登録</a>
-    <a class="shortcut" href="#/charts">${icon('chart')}肌の変化・比較</a>
-    <a class="shortcut" href="#/suggest">${icon('leaf')}ケアの提案</a>
-    <a class="shortcut" href="#/visit">${icon('note')}受診用まとめ</a>
-    <a class="shortcut" href="#/favorites">${icon('heart')}お気に入り</a>
-  </div></div>`;
+  const shortcuts = `<div class="card" id="sc-card"><div class="card-h"><h2>ショートカット</h2><button class="link small sc-edit" data-action="sc-edit">${icon('gear')}変更</button></div><div class="shortcuts">${myShortcuts().map(x => `<a class="shortcut" href="${x.h}">${icon(x.ic)}${esc(x.l)}</a>`).join('')}</div></div>`;
 
   const onboard = !state.settings.concerns.length ? `<div class="notice green" style="margin-bottom:16px"><b>はじめに：あなたの肌悩みを教えてください。</b>手持ちの化粧品と予算をふまえて、ケアの考え方と候補を整理します。<br><a class="btn btn-primary btn-sm" style="margin-top:10px" href="#/suggest">肌悩みを設定する</a></div>` : '';
   html += onboard + `<div class="grid g2">${todayCard}${activeCard}${recentCard}${shortcuts}</div>`;
@@ -5195,6 +5228,14 @@ const actions = {
     st.user = true; st.auto = false; st.target = {yaw:base + t[0], pitch:t[1]}; st.dirty = true;
   },
   'advice-ai': () => runAdvice(true),
+  'sc-edit': () => openShortcutEdit(),
+  'sc-reset': () => { const m = $('#modal-root .modal'); if (m && m._setSel) m._setSel(SC_DEFAULT.slice()); },
+  'sc-save': () => {
+    const m = $('#modal-root .modal'); if (!m || !m._getSel) return; const sel = m._getSel();
+    if (!sel.length) { toast('1つ以上選んでください'); return; }
+    state.settings.shortcuts = sel.slice(0, 6);
+    if (save()) { closeModal(); toast('ショートカットを保存しました'); const c = document.getElementById('sc-card'); if (c) c.querySelector('.shortcuts').innerHTML = myShortcuts().map(x => `<a class="shortcut" href="${x.h}">${icon(x.ic)}${esc(x.l)}</a>`).join(''); }
+  },
   'fav': (id, el) => toggleFav(id, el),
   'acc-toggle': (k, el) => {
     ui.accOpen = ui.accOpen || {}; ui.accOpen[k] = !ui.accOpen[k];
