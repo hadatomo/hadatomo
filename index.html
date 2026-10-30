@@ -118,7 +118,7 @@ button{font-family:inherit}
 .wordmark{font-family:var(--serif);font-size:20px;letter-spacing:.24em;color:var(--ink);text-decoration:none;font-weight:500}
 .wordmark small{display:block;font-family:var(--font);font-size:10px;letter-spacing:.08em;color:var(--muted);margin-top:2px}
 main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area-inset-bottom))}
-.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(3,1fr);background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(4,1fr);background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
 .bn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 0 7px;font-size:10.5px;color:var(--muted);text-decoration:none;background:none;border:0;cursor:pointer}
 .bn-item svg{width:23px;height:23px}
 .bn-item.active{color:var(--green-d);font-weight:600}
@@ -899,7 +899,7 @@ const NAV = [
   {r:'plan', label:'プラン・アカウント', icon:'user', g:''},
   {r:'settings', label:'設定・プライバシー', icon:'gear', g:''}
 ];
-const BOTTOM_NAV = ['home','my','search'];
+const BOTTOM_NAV = ['home','log','my','search'];
 
 /* ---------- ユーティリティ ---------- */
 const $ = (s, el=document) => el.querySelector(s);
