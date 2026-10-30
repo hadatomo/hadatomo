@@ -460,6 +460,34 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .ls-main em.good{color:var(--green-d)}
 .ls-go{color:var(--muted);font-size:18px;line-height:1}
 .advice{margin-top:12px}
+/* ===== 動き（モーション） ===== */
+@keyframes pgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+#main.pg-in{animation:pgIn .38s cubic-bezier(.2,.8,.2,1) both}
+.kt{display:inline-block;opacity:0;transform:translateY(.55em) scale(.96);filter:blur(3px);animation:ktIn .55s cubic-bezier(.2,.9,.25,1.15) forwards;animation-delay:calc(var(--k) * 28ms + 60ms)}
+@keyframes ktIn{to{opacity:1;transform:none;filter:none}}
+.rv{opacity:0;transform:translateY(16px)}
+.rv.in{opacity:1;transform:none;transition:opacity .55s ease var(--d,0ms),transform .6s cubic-bezier(.2,.8,.2,1) var(--d,0ms)}
+.rv.in .bar i,.rv.in .budget-bar i{transform-origin:left center;animation:barGrow .9s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--d,0ms) + .15s)}
+@keyframes barGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.rv.in .ls-row,.rv.in .advice li,.rv.in .acc-row,.rv.in .life-btns>*,.rv.in .ld-nums>span{animation:itemIn .5s cubic-bezier(.2,.8,.2,1) both}
+.rv.in .ls-row:nth-child(2),.rv.in .advice li:nth-child(1),.rv.in .acc-row:nth-child(1){animation-delay:.12s}
+.rv.in .ls-row:nth-child(3),.rv.in .advice li:nth-child(2),.rv.in .acc-row:nth-child(2){animation-delay:.2s}
+.rv.in .ls-row:nth-child(4),.rv.in .advice li:nth-child(3),.rv.in .acc-row:nth-child(3){animation-delay:.28s}
+.rv.in .advice li:nth-child(4){animation-delay:.36s}
+@keyframes itemIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.chart.play path.ln{stroke-dasharray:1;stroke-dashoffset:1;animation:lnDraw 1.2s cubic-bezier(.4,0,.2,1) .2s forwards}
+@keyframes lnDraw{to{stroke-dashoffset:0}}
+.chart.play circle.pt{opacity:0;transform-box:fill-box;transform-origin:center;animation:ptPop .4s cubic-bezier(.2,.9,.3,1.4) forwards;animation-delay:calc(var(--i) * 45ms + .35s)}
+@keyframes ptPop{from{opacity:0;transform:scale(.2)}to{opacity:1;transform:none}}
+.chart.play rect.br{transform-box:fill-box;transform-origin:center bottom;animation:brGrow .7s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i) * 60ms + .15s)}
+@keyframes brGrow{from{transform:scaleY(0)}to{transform:none}}
+.btn,.bn-item,.ls-main,.acc-row,.ac-item,.tab{transition:transform .15s ease,background-color .2s ease,color .2s ease}
+.btn:active,.ls-main:active,.acc-row:active,.tab:active{transform:scale(.97)}
+.bn-item:active svg{transform:scale(.88)}
+.bn-item.active svg{animation:navPop .45s cubic-bezier(.2,.9,.3,1.5)}
+@keyframes navPop{0%{transform:scale(.85)}60%{transform:scale(1.28) translateY(-2px)}100%{transform:scale(1.18) translateY(-1px)}}
+@media (prefers-reduced-motion:reduce){#main.pg-in,.kt,.rv,.rv.in,.rv.in *,.chart.play *,.bn-item.active svg{animation:none!important;transition:none!important;opacity:1!important;transform:none!important;filter:none!important}}
+@media print{.rv,.kt{opacity:1!important;transform:none!important;filter:none!important}}
 /* 待っている間の仮の表示（スケルトン） */
 .skel{display:block;border-radius:8px;height:12px;background:linear-gradient(90deg,rgba(120,105,80,.10) 25%,rgba(120,105,80,.22) 45%,rgba(120,105,80,.10) 65%);background-size:300% 100%;animation:skel 1.3s ease-in-out infinite}
 .skel+.skel{margin-top:8px}
@@ -1476,11 +1504,65 @@ function areaCounts(logs, mode) {
 
 /* ---------- グラフ（SVG） ---------- */
 let chartDefs = [];
+// ---------- 動き（モーション）：文字が動く見出し・カードが順に出てくる・数字が増える・グラフが描かれる ----------
+// ・画面を移ったときだけ動かす（入力中や保存のあとに何度も動かない）
+// ・縦方向と透明度だけを動かす（スマホで画面が横に揺れないように）
+// ・端末の設定で「視差効果を減らす」をオンにしている人には動かさない
+const MOTION_OK = () => !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) && 'IntersectionObserver' in window;
+let motionIO = null;
+function splitChars(el, base = 0) {
+  if (!el || el.dataset.kt) return 0;
+  const text = el.textContent; if (!text || el.children.length) return 0; // 中に別の要素がある見出しは分けない
+  el.dataset.kt = '1'; el.setAttribute('aria-label', text);
+  el.innerHTML = [...text].map((c, i) => c === ' ' || c === '　' ? c : `<span class="kt" aria-hidden="true" style="--k:${base + i}">${esc(c)}</span>`).join('');
+  return text.length;
+}
+function countUp(el) {
+  if (el.dataset.cu) return; el.dataset.cu = '1';
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), nodes = [];
+  while (walker.nextNode()) { const n = walker.currentNode; if (/\d/.test(n.nodeValue) && !n.parentElement.closest('svg,.kt,title')) nodes.push(n); }
+  nodes.slice(0, 3).forEach(n => {
+    const src = n.nodeValue, m = src.match(/^(\D*?)([\d,]*\d(?:\.\d+)?)(.*)$/s); if (!m) return;
+    const raw = m[2], target = Number(raw.replace(/,/g, '')); if (!isFinite(target) || target === 0) return;
+    const dec = (raw.split('.')[1] || '').length, comma = raw.includes(','), t0 = performance.now(), dur = Math.min(1100, 500 + target.toString().length * 90);
+    const fmt = v => { let t = v.toFixed(dec); if (comma) t = Number(t).toLocaleString('ja-JP', {minimumFractionDigits:dec, maximumFractionDigits:dec}); return m[1] + t + m[3]; };
+    const step = now => { const k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 3); n.nodeValue = fmt(target * e); if (k < 1 && n.isConnected) requestAnimationFrame(step); else n.nodeValue = src; };
+    n.nodeValue = fmt(0); requestAnimationFrame(step);
+  });
+}
+const COUNT_SEL = '.stat .val, .t3-acne b, .t3-m b, .ls-main b, .ls-main em, .ld-nums b, .log-grid .val';
+function revealEl(el) {
+  el.classList.add('in');
+  el.querySelectorAll(COUNT_SEL).forEach(countUp);
+  el.querySelectorAll('.chart').forEach(c => { c.classList.add('play'); setTimeout(() => c.classList.remove('play'), 2200); });
+}
+function motionIn() {
+  const main = document.getElementById('main'); if (!main) return;
+  if (!MOTION_OK()) return;
+  // 画面全体：下からふわっと
+  main.classList.remove('pg-in'); void main.offsetWidth; main.classList.add('pg-in');
+  // 見出しの文字が1文字ずつ浮かび上がる（キネティック・タイポグラフィ）
+  splitChars(main.querySelector('.page-head h1'));
+  splitChars(main.querySelector('.hero-date'));
+  // カードは、画面に入ったときに順番に出てくる
+  if (motionIO) motionIO.disconnect();
+  let batch = 0, batchT = 0;
+  motionIO = new IntersectionObserver(es => {
+    const now = performance.now(); if (now - batchT > 120) { batch = 0; batchT = now; }
+    es.forEach(en => { if (!en.isIntersecting) return; const el = en.target; el.style.setProperty('--d', (batch++ * 70) + 'ms'); revealEl(el); motionIO.unobserve(el); });
+  }, {rootMargin:'0px 0px -6% 0px', threshold:0.06});
+  main.querySelectorAll('.card, .hero, .tabs, .notice').forEach(el => { el.classList.add('rv'); motionIO.observe(el); });
+  // 念のため：2.5秒たっても出てこないもの（画面の外にあるもの以外）は出す
+  setTimeout(() => main.querySelectorAll('.rv:not(.in)').forEach(el => { const r = el.getBoundingClientRect(); if (r.top < innerHeight && r.bottom > 0) revealEl(el); }), 2500);
+}
 function chartSlot(id, fn) { chartDefs.push({id, fn}); return `<div class="chart" id="chart-${id}"></div>`; }
 function drawCharts() {
   chartDefs.forEach(c => {
     const el = document.getElementById('chart-' + c.id);
-    if (el) el.innerHTML = c.fn(Math.max(260, Math.floor(el.clientWidth || 320)));
+    if (!el) return;
+    const w = Math.max(260, Math.floor(el.clientWidth || 320));
+    if (el.dataset.w === String(w) && el.innerHTML) return; // 幅が同じなら描き直さない（スマホのアドレスバーの出入りで動かないように）
+    el.dataset.w = String(w); el.innerHTML = c.fn(w);
   });
 }
 function xLabels(dates, x, iw, h) {
@@ -1502,8 +1584,8 @@ function lineChart(w, o) {
   o.series.forEach(se => {
     let path = '';
     se.values.forEach((v, i) => { if (v == null || !isFinite(v)) return; path += (path ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(v).toFixed(1) + ' '; });
-    if (path) s += `<path d="${path}" fill="none" stroke="${se.color}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/>`;
-    se.values.forEach((v, i) => { if (v == null || !isFinite(v)) return; s += `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${r}" fill="#fff" stroke="${se.color}" stroke-width="2"><title>${fmtShort(o.dates[i])} ${esc(se.name || '')}：${esc(se.fmt ? se.fmt(v) : v)}</title></circle>`; });
+    if (path) s += `<path class="ln" pathLength="1" d="${path}" fill="none" stroke="${se.color}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round" opacity=".9"/>`;
+    se.values.forEach((v, i) => { if (v == null || !isFinite(v)) return; s += `<circle class="pt" style="--i:${i}" cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${r}" fill="#fff" stroke="${se.color}" stroke-width="2"><title>${fmtShort(o.dates[i])} ${esc(se.name || '')}：${esc(se.fmt ? se.fmt(v) : v)}</title></circle>`; });
   });
   return s + '</svg>';
 }
@@ -1517,7 +1599,7 @@ function barChart(w, o) {
   [0, top/2, top].forEach(t => { const yy = pt + ih - t / top * ih; s += `<line class="grid" x1="${pl}" x2="${w-pr}" y1="${yy.toFixed(1)}" y2="${yy.toFixed(1)}"/><text class="ax" x="${pl-8}" y="${(yy+4).toFixed(1)}" text-anchor="end">${esc(o.fmt ? o.fmt(t) : t)}</text>`; });
   o.values.forEach((v, i) => {
     const cx = pl + iw / n * (i + 0.5), bh = v / top * ih;
-    s += `<rect x="${(cx-bw/2).toFixed(1)}" y="${(pt+ih-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0,bh).toFixed(1)}" rx="6" fill="${o.highlight === i ? '#3F6B4E' : '#B9D1BF'}"><title>${esc(o.labels[i])}：${esc(o.fmt ? o.fmt(v) : v)}</title></rect>`;
+ s += `<rect class="br" style="--i:${i}" x="${(cx-bw/2).toFixed(1)}" y="${(pt+ih-bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${Math.max(0,bh).toFixed(1)}" rx="6" fill="${o.highlight === i ? '#3F6B4E' : '#B9D1BF'}"><title>${esc(o.labels[i])}：${esc(o.fmt ? o.fmt(v) : v)}</title></rect>`;
     s += `<text class="ax" x="${cx.toFixed(1)}" y="${h-8}" text-anchor="middle">${esc(o.labels[i])}</text>`;
     if (v > 0) s += `<text class="ax" x="${cx.toFixed(1)}" y="${(pt+ih-bh-5).toFixed(1)}" text-anchor="middle" style="fill:#46524B">${esc(o.short ? o.short(v) : v)}</text>`;
   });
@@ -5316,6 +5398,7 @@ function render() {
   renderingNow = true; try { $('#main').innerHTML = html; } finally { renderingNow = false; } // 作り直しの最中に古い入力欄から来る変更は無視する
   renderNav(navName, ({product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'})[r.name] || r.name);
   const key = r.name + '/' + r.id;
+  const routeChanged = key !== lastRoute;
   if (key !== lastRoute) {
     lastRoute = key;
     if (navRestoreY != null) { const y = navRestoreY; window.scrollTo(0, y); requestAnimationFrame(() => { window.scrollTo(0, y); setTimeout(() => { if (Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y); }, 120); }); }
@@ -5323,6 +5406,7 @@ function render() {
   }
   navRestoreY = null;
   drawCharts();
+  if (routeChanged) motionIn(); // 画面を移ったときだけ、動きのある表示にする
   fillAds();
   if (r.name === 'charts') drawFace3d();
   else if (r.name === 'log' && document.getElementById('face3d-log')) { const list = logDayList(), d = logFaceData(list[logDayIdx(list)]); bindLogDaySwipe(); drawFace3d({canvas:'face3d-log', load:'ld-load', tip:'', camZ:55, yawOnly:true, ready:st => { st.canvasId = 'face3d-log'; face3dApply(st, d.counts, d.max, d.mode); }}); }
