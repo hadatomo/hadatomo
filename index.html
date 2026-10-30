@@ -398,10 +398,7 @@ input[type="date"].input,input[type="time"].input{-webkit-appearance:none;appear
 input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::-webkit-date-and-time-value{text-align:left}
 .remind-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:6px}
 .time-pick{display:inline-flex;align-items:center;gap:6px;flex:none}
-.tp{position:relative;display:inline-flex;align-items:center;justify-content:center;width:72px;height:46px;border:1px solid var(--line2);border-radius:12px;background:var(--surface);font-size:17px;font-weight:600;color:var(--ink)}
-.tp-val::after{content:'';display:inline-block;width:6px;height:6px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(45deg);margin-left:8px;vertical-align:4px}
-.tp select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:16px}
-.tp:focus-within{border-color:var(--green-d);box-shadow:0 0 0 3px var(--green-s)}
+.time-pick .select{width:76px;min-width:0;padding:8px 10px;text-align:center}
 .time-pick b{font-weight:600;font-size:14px}
 .toast.undo{display:flex;align-items:center;gap:14px;pointer-events:auto}
 .toast-btn{background:none;border:0;color:#9FD3AE;font-weight:700;font-size:13.5px;cursor:pointer;padding:4px 2px;font-family:inherit}
@@ -3980,7 +3977,7 @@ function viewSettings() {
     <div class="card"><div class="card-h"><h2>記録のリマインダー</h2></div>
       <p class="small muted" style="margin-bottom:10px">毎日決まった時間に「肌を記録しよう」と通知が来るように、スマホ・パソコンのカレンダーに予定を追加できます。止めたいときは、カレンダーからその予定を削除してください。</p>
       <label class="lbl" for="f_remind_h">通知する時刻</label>
-      <div class="remind-row"><span class="time-pick"><span class="tp"><span class="tp-val" id="f_remind_h_v">21</span><select id="f_remind_h" aria-label="時">${Array.from({length:24}, (_, h) => `<option value="${String(h).padStart(2, '0')}" ${h === 21 ? 'selected' : ''}>${h}</option>`).join('')}</select></span><b>時</b><span class="tp"><span class="tp-val" id="f_remind_m_v">30</span><select id="f_remind_m" aria-label="分">${[0,5,10,15,20,25,30,35,40,45,50,55].map(m => `<option value="${String(m).padStart(2, '0')}" ${m === 30 ? 'selected' : ''}>${String(m).padStart(2, '0')}</option>`).join('')}</select></span><b>分</b></span><button class="btn btn-soft btn-sm" data-action="reminder-ics">カレンダーに追加する</button></div>
+      <div class="remind-row"><span class="time-pick"><select class="select" id="f_remind_h" aria-label="時">${Array.from({length:24}, (_, h) => `<option value="${String(h).padStart(2, '0')}" ${h === 21 ? 'selected' : ''}>${h}</option>`).join('')}</select><b>時</b><select class="select" id="f_remind_m" aria-label="分">${[0,5,10,15,20,25,30,35,40,45,50,55].map(m => `<option value="${String(m).padStart(2, '0')}" ${m === 30 ? 'selected' : ''}>${String(m).padStart(2, '0')}</option>`).join('')}</select><b>分</b></span><button class="btn btn-soft btn-sm" data-action="reminder-ics">カレンダーに追加する</button></div>
       <p class="hint">ファイル（.ics）が保存されます。iPhoneは開くと「カレンダーに追加」、パソコンはダブルクリックで追加できます。</p></div>
     <div class="card"><div class="card-h"><h2>月の予算</h2></div>
       <form id="budget-form" novalidate><div class="form-grid">${field('1か月のスキンケア予算（円）', `<input class="input" id="f_budget" name="budget" inputmode="numeric" value="${state.settings.monthlyBudget || ''}" placeholder="例：5000">`, {name:'budget', hint:'0または空欄で、予算を使わない設定になります'})}</div>
@@ -4431,7 +4428,6 @@ document.addEventListener('input', e => {
   }
 });
 document.addEventListener('change', e => {
-  if (e.target.id === 'f_remind_h' || e.target.id === 'f_remind_m') { const v = $('#' + e.target.id + '_v'); if (v) v.textContent = e.target.id === 'f_remind_h' ? String(Number(e.target.value)) : e.target.value; return; }
   if (e.target.id === 'scan-photo') { onScanPhoto(e.target); return; }
   if (e.target.dataset && e.target.dataset.change === 'price-set') { ui.priceSet = e.target.checked; const y = scrollY; render(); scrollTo(0, y); return; }
   if (e.target.dataset && e.target.dataset.change === 'price-vol') { ui.priceVol = e.target.checked; const y = scrollY; render(); scrollTo(0, y); return; }
