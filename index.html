@@ -92,7 +92,8 @@
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 /* スマホでのガクガク対策：横に揺れない・ダブルタップで拡大しない・重いぼかし処理を使わない */
-html,body{overflow-x:hidden;overflow-x:clip;max-width:100%}
+/* 横揺れ対策は、ページ全体ではなく中身の枠だけにかける（ページ全体にかけるとiPhoneでスクロールがガクガクするため） */
+.app{overflow-x:clip;max-width:100%}
 a,button,input,select,textarea,label,[data-action]{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 @media(max-width:959px){
   .topbar{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:var(--bg)!important}
@@ -102,7 +103,7 @@ a,button,input,select,textarea,label,[data-action]{touch-action:manipulation;-we
 body{margin:0;font-family:var(--font);background:var(--bg);color:var(--ink);font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;letter-spacing:.01em}
 #main{overflow-wrap:anywhere;word-break:normal}
 #main .card,#main .offer,#main .offer-top>div{min-width:0}
-body.no-scroll{overflow:hidden}
+body.no-scroll{position:fixed;left:0;right:0;overflow:hidden;width:100%}
 a{color:var(--green-d)}
 h1,h2,h3{margin:0;font-weight:600;letter-spacing:.02em}
 p{margin:0}
@@ -386,6 +387,11 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .life-btns .life-main{grid-column:1 / span 2;grid-row:1}
 .life-btns>:not(.life-main){grid-row:2}
 .life-links{display:inline-flex;gap:10px;margin-left:6px}
+.f3-expand{position:absolute;right:8px;top:8px;z-index:2;border:1px solid var(--line2);background:var(--surface);color:var(--ink);border-radius:999px;padding:4px 10px;font-size:13px;font-family:inherit;cursor:pointer;box-shadow:var(--shadow);line-height:1.4}
+.f3-full{position:fixed;inset:0;z-index:300;background:var(--bg);display:flex;flex-direction:column}
+.f3-full-head{display:flex;align-items:center;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top)) 14px 6px}
+.f3-full-stage{position:relative;flex:1;min-height:0;background:radial-gradient(circle at 50% 40%,var(--surface2),var(--bg))}
+.f3-full-stage canvas{width:100%;height:100%;display:block;touch-action:none}
 .t3-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.5fr);gap:12px;align-items:center}
 .t3-stage{max-width:none;margin:0}
 .t3-side{display:flex;flex-direction:column;gap:6px;min-width:0}
@@ -1192,10 +1198,14 @@ function openModal({title, body, footer='', size='', dismissable=false}) {
       <div class="modal-body">${body}</div>
       ${footer ? `<div class="modal-foot">${footer}</div>` : ''}
     </div></div>`;
-  document.body.classList.add('no-scroll');
+  lockScroll();
   return root.querySelector('.modal');
 }
-function closeModal() { $('#modal-root').innerHTML = ''; document.body.classList.remove('no-scroll'); }
+// 画面を開いている間、後ろのページが動かないように固定する（閉じたら元の位置に戻す）
+let lockedY = null;
+function lockScroll() { if (lockedY != null) return; lockedY = window.scrollY; document.body.style.top = `-${lockedY}px`; document.body.classList.add('no-scroll'); }
+function unlockScroll() { if (lockedY == null) return; const y = lockedY; lockedY = null; document.body.classList.remove('no-scroll'); document.body.style.top = ''; window.scrollTo(0, y); }
+function closeModal() { $('#modal-root').innerHTML = ''; unlockScroll(); }
 function confirmDialog(msg, {ok='削除する', danger=true, title='確認'} = {}) {
   return new Promise(res => {
     const r = $('#confirm-root');
@@ -1439,7 +1449,7 @@ function viewHome() {
       ${L.areas.length ? `<div class="chips" style="margin-top:6px">${L.areas.map(a => `<span class="chip beige">${esc(areaName(a))}</span>`).join('')}</div>` : ''}</div>`
     : `<div class="t3-side"><p class="small muted" style="margin:0 0 8px">まだ今日の記録がありません。1分ほどで記録できます。</p><button class="btn btn-primary btn-sm" data-action="new-log">${icon('plus')}記録する</button></div>`;
   const todayCard = `<div class="card"><div class="card-h"><h2>今日の肌記録</h2>${L ? `<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(L.id)}">編集</button>` : ''}</div>
-      <div class="t3-grid">${side}<div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load">3Dの顔を読み込んでいます…</div></div></div>
+      <div class="t3-grid">${side}<div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load">3Dの顔を読み込んでいます…</div></div></div>
       <p class="small muted" style="margin-top:6px">${DEV.touch ? '顔は指でなぞると、どの向きにも回せます。' : '顔はドラッグすると、どの向きにも回せます。'}${L && (L.acneSpots.length || L.areas.length) ? '赤い部分が、今日記録した部位です。' : ''}</p>
       ${lifeLine}</div>`;
 
@@ -3344,7 +3354,7 @@ function face3dCardHtml() {
   const first = d.weeks.find(x => x.logs.length), diff = first && first !== w ? AREAS.map(a => ({n:a.name, v:(w.c[a.id] || 0) - (first.c[a.id] || 0)})).filter(x => x.v) : [];
   return `<div class="card"><div class="card-h"><h2>3Dで見る肌の変化</h2><span class="chip">8週間</span></div>
     <p class="small muted" style="margin-bottom:8px">${d.mode === 'spots' ? '色の濃さと赤い印は、その週に記録したニキビの数（部位ごと）です。' : '色の濃さは、その週に「気になる部位」に選んだ日数です。'}${DEV.touch ? '顔を指でなぞると、どの向きにも回せます。部位をタップすると数が出ます。' : '顔をドラッグすると、どの向きにも回せます。部位をクリックすると数が出ます。'}下のボタンで、横・後ろ・上・下からも見られます。</p>
-    <div class="f3-stage"><canvas id="face3d" aria-label="3Dの顔で表示した、部位ごとの記録"></canvas><div class="f3-tip" id="f3-tip" hidden></div><div class="f3-load" id="f3-load">3Dの顔を読み込んでいます…</div></div>
+    <div class="f3-stage"><canvas id="face3d" aria-label="3Dの顔で表示した、部位ごとの記録"></canvas><button class="f3-expand" data-action="f3-full" data-id="charts" aria-label="大きく見る">⤢ 大きく見る</button><div class="f3-tip" id="f3-tip" hidden></div><div class="f3-load" id="f3-load">3Dの顔を読み込んでいます…</div></div>
     <div class="f3-ctrl">
       <button class="btn btn-ghost btn-sm" data-action="f3-step" data-id="-1" aria-label="前の週">◀</button>
       <div class="f3-week"><b id="f3-label">${f3md(w.s)}〜${f3md(w.e)}の週</b><span class="small muted" id="f3-sub">記録 ${w.logs.length}日</span></div>
@@ -3431,6 +3441,24 @@ function face3dShowWeek(i) {
   if (!st) return;
   st.counts = w.c; face3dColors(st.geo, w.c, d.max); face3dDots(st, w.c, d.mode); st.dirty = true;
 }
+// 3Dの顔を画面いっぱいに大きく表示して、細かく見る
+function openFace3dFull(src) {
+  const box = document.createElement('div'); box.className = 'f3-full'; box.id = 'f3-full';
+  box.innerHTML = `<div class="f3-full-head"><b>${src === 'home' ? '今日の肌記録' : '肌の変化（' + esc(($('#f3-label') || {}).textContent || '') + '）'}</b><button class="icon-btn" data-action="f3-full-close" aria-label="閉じる">×</button></div>
+    <div class="f3-full-stage"><canvas id="face3d-full" aria-label="3Dの顔（大きく表示）"></canvas><div class="f3-tip" id="f3full-tip" hidden></div><div class="f3-load" id="f3full-load">3Dの顔を読み込んでいます…</div></div>
+    <p class="small muted" style="text-align:center;margin:6px 12px 0">${DEV.touch ? '1本の指で回す／2本の指で広げると拡大' : 'ドラッグで回す／ホイールで拡大・縮小'}。部位を${DEV.tap}すると数が出ます。</p>
+    <div class="f3-views" style="padding:8px 12px calc(12px + env(safe-area-inset-bottom))">${[['front','正面'],['right','右から'],['left','左から'],['back','後ろ'],['top','上から'],['bottom','下から']].map(([k, l]) => `<button class="tab" data-action="f3-view" data-id="${k}">${l}</button>`).join('')}<button class="tab" data-action="f3-zoom" data-id="in" aria-label="大きくする">＋</button><button class="tab" data-action="f3-zoom" data-id="out" aria-label="小さくする">－</button></div>`;
+  document.body.appendChild(box); lockScroll();
+  let data;
+  if (src === 'home') { const hd = homeFaceData(); data = {counts:hd.counts, max:hd.max, mode:hd.mode, unit:hd.mode === 'spots' ? '個' : 'flag'}; }
+  else { const d = face3dWeeks(8), w = d.weeks[ui.f3Week == null ? 7 : ui.f3Week]; data = {counts:w.c, max:d.max, mode:d.mode, unit:null}; }
+  drawFace3d({canvas:'face3d-full', load:'f3full-load', tip:'f3full-tip', camZ:46, full:true, unit:data.unit, ready:st => { face3dApply(st, data.counts, data.max, data.mode); st.intro = 0; st.yaw = 0; st.user = true; }});
+}
+function closeFace3dFull() {
+  const box = $('#f3-full'); if (!box) return;
+  if (FACE3D.st) { FACE3D.st.stop = true; FACE3D.st = null; }
+  box.remove(); unlockScroll(); render(); // 元の画面の3Dを描き直す
+}
 function homeFaceData() {
   const L = logMap()[todayStr()];
   if (!L) return {counts:{}, max:1, mode:'areas'};
@@ -3449,7 +3477,7 @@ async function drawFace3d(opts) {
   let renderer;
   try { renderer = new T.WebGLRenderer({canvas:cv, antialias:true, alpha:true}); } catch (e) { const l = document.getElementById(opts.load); if (l) l.textContent = 'この端末では3D表示を使えません。'; return; }
   const W = cv.clientWidth || 300, H = cv.clientHeight || 300;
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2)); renderer.setSize(W, H, false);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, opts.full ? 3 : 2)); renderer.setSize(W, H, false);
   renderer.outputEncoding = T.sRGBEncoding;
   const scene = new T.Scene(), cam = new T.PerspectiveCamera(28, W / H, 1, 200);
   cam.position.set(0, 0.6, opts.camZ || 60);
@@ -3482,8 +3510,21 @@ async function drawFace3d(opts) {
   // 画面に見えていないときは描くのを止めて、スクロールを軽くする
   st.visible = true;
   if ('IntersectionObserver' in window) { const io = new IntersectionObserver(es => { st.visible = es[0].isIntersecting; if (st.visible) st.dirty = true; }); io.observe(cv); st.io = io; }
-  cv.addEventListener('pointerdown', e => { st.intro = 0; st.target = null; st.drag = {x:e.clientX, y:e.clientY, yaw:st.yaw, pitch:st.pitch, moved:false}; cv.setPointerCapture(e.pointerId); });
+  // 2本の指で広げる・つまむと拡大・縮小（大きく見る画面では、マウスのホイールでも）
+  const pts = new Map(); let pinch = null;
+  const minZ = opts.full ? 20 : 34, maxZ = opts.full ? 90 : 84;
+  cv.addEventListener('pointerdown', e => {
+    pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); st.intro = 0; st.target = null;
+    if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = {d:Math.hypot(a.x - b.x, a.y - b.y), z:st.zoomT || cam.position.z}; st.drag = null; return; }
+    st.drag = {x:e.clientX, y:e.clientY, yaw:st.yaw, pitch:st.pitch, moved:false}; cv.setPointerCapture(e.pointerId);
+  });
+  const ptUp = e => { pts.delete(e.pointerId); if (pts.size < 2) pinch = null; };
+  cv.addEventListener('pointerup', ptUp); cv.addEventListener('pointercancel', ptUp);
+  if (opts.full) cv.addEventListener('wheel', e => { e.preventDefault(); st.zoomT = clamp((st.zoomT || cam.position.z) + e.deltaY * 0.03, minZ, maxZ); st.dirty = true; }, {passive:false});
+  st.minZ = minZ; st.maxZ = maxZ;
   cv.addEventListener('pointermove', e => {
+    if (pts.has(e.pointerId)) pts.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if (pinch && pts.size === 2) { const [a, b] = [...pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y); st.zoomT = clamp(pinch.z * pinch.d / Math.max(10, d), minZ, maxZ); st.dirty = true; return; }
     if (!st.drag) return;
     const dx = e.clientX - st.drag.x, dy = e.clientY - st.drag.y;
     if (Math.abs(dx) + Math.abs(dy) > 4) st.drag.moved = true;
@@ -4409,7 +4450,9 @@ const actions = {
     const t = {front:[0, 0], right:[P / 2, 0], left:[-P / 2, 0], back:[P, 0], top:[0, 1.25], bottom:[0, -1.0]}[v]; if (!t) return;
     st.user = true; st.intro = 0; st.target = {yaw:base + t[0], pitch:t[1]}; st.dirty = true;
   },
-  'f3-zoom': v => { const st = FACE3D.st; if (!st) return; st.zoomT = clamp((st.zoomT || st.cam.position.z) + (v === 'in' ? -8 : 8), 34, 84); st.dirty = true; },
+  'f3-zoom': v => { const st = FACE3D.st; if (!st) return; st.zoomT = clamp((st.zoomT || st.cam.position.z) + (v === 'in' ? -8 : 8), st.minZ || 34, st.maxZ || 84); st.dirty = true; },
+  'f3-full': v => openFace3dFull(v),
+  'f3-full-close': () => closeFace3dFull(),
   'f3-step': v => { ui.f3Play = false; face3dShowWeek((ui.f3Week == null ? 7 : ui.f3Week) + Number(v)); },
   'f3-play': () => {
     if (ui.f3Play) { ui.f3Play = false; return; }
@@ -4658,6 +4701,7 @@ async function runWithUndo(work) {
 }
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target && e.target.id === 'st-area' && !e.isComposing) { e.preventDefault(); storeSearchByName(); return; }
+  if (e.key === 'Escape' && $('#f3-full')) { closeFace3dFull(); return; }
   if (e.key === 'Escape' && $('#modal-root').innerHTML && !$('#confirm-root').innerHTML) closeModal();
 });
 // 入力欄（フォーカスを保つため、結果部分だけを更新）
