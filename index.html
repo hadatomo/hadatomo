@@ -1520,10 +1520,7 @@ function viewHome() {
 
   let html = loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '';
   html += `<section class="hero">
-    <div class="eyebrow">Skin care manager</div>
-    <div class="hero-brand" style="margin-top:8px">${esc(SERVICE)}</div>
-    <p class="hero-copy">最小限で最大限を</p>
-    <p class="hero-date">${fmtDate(t)}${streakHtml(map, t)}</p>
+    <p class="hero-date" style="margin-top:0;font-size:16px;font-weight:600;color:var(--ink)">${fmtDate(t)}${streakHtml(map, t)}</p>
     <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${icon('plus')}今日の肌を記録</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('chart')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('note')}食事</button></div></section>`;
 
   const lifeLine = lifeSumHtml(todayLife);
