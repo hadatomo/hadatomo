@@ -605,14 +605,19 @@ details.fold[open] summary{margin-bottom:10px}
 
 /* ---------- Modal ---------- */
 .modal-backdrop{position:fixed;inset:0;z-index:100;background:rgba(30,36,32,.38);display:flex;align-items:flex-end;justify-content:center;animation:fade .15s}
-.modal{background:var(--surface);width:100%;max-height:92vh;border-radius:22px 22px 0 0;display:flex;flex-direction:column;animation:up .2s ease-out;box-shadow:0 -10px 40px rgba(0,0,0,.12)}
+.modal{background:var(--surface);width:100%;max-height:92vh;max-height:92dvh;border-radius:22px 22px 0 0;display:flex;flex-direction:column;animation:sheetUp .34s cubic-bezier(.2,.9,.3,1.05);box-shadow:0 -10px 40px rgba(0,0,0,.12);will-change:transform}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+.modal-backdrop.closing{opacity:0;transition:opacity .22s ease}
+.sheet-grab{display:flex;justify-content:center;padding:8px 0 0;cursor:grab;touch-action:none}
+.sheet-grab i{width:40px;height:5px;border-radius:99px;background:var(--line2)}
+.modal-head{touch-action:none}
 .modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
 .modal-head h2{font-size:17px}
 .modal-body{padding:20px;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}
 .modal-body .field,.modal-body .form-grid>*{min-width:0}
 .modal-foot{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--surface)}
 .modal-foot .btn{flex:1}
-@media(min-width:640px){.modal-backdrop{align-items:center;padding:24px}.modal{max-width:660px;border-radius:22px;max-height:88vh}.modal.small{max-width:440px}.modal-foot .btn{flex:none}.modal-foot{padding-bottom:14px}}
+@media(min-width:640px){.sheet-grab{display:none}.modal-head{touch-action:auto}.modal{animation:up .2s ease-out}.modal-backdrop{align-items:center;padding:24px}.modal{max-width:660px;border-radius:22px;max-height:88vh}.modal.small{max-width:440px}.modal-foot .btn{flex:none}.modal-foot{padding-bottom:14px}}
 .confirm-title{font-size:16px;margin-bottom:8px}
 .confirm-msg{white-space:pre-line;font-size:14px;color:var(--ink2)}
 .menu-list .grp{font-size:11px;letter-spacing:.14em;color:var(--gold);font-weight:700;margin:14px 0 2px}
@@ -1409,6 +1414,7 @@ function openModal({title, body, footer='', size='', dismissable=false}) {
   const root = $('#modal-root');
   root.innerHTML = `<div class="modal-backdrop" ${dismissable ? 'data-action="close-modal-bg"' : ''}>
     <div class="modal ${size}" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="sheet-grab" aria-hidden="true"><i></i></div>
       <div class="modal-head"><h2 id="modal-title">${esc(title)}</h2><button type="button" class="icon-btn" data-action="close-modal" aria-label="閉じる">×</button></div>
       <div class="modal-body">${body}</div>
       ${footer ? `<div class="modal-foot">${footer}</div>` : ''}
@@ -1420,7 +1426,38 @@ function openModal({title, body, footer='', size='', dismissable=false}) {
 let lockedY = null;
 function lockScroll() { if (lockedY != null) return; lockedY = window.scrollY; document.body.style.top = `-${lockedY}px`; document.body.classList.add('no-scroll'); }
 function unlockScroll() { if (lockedY == null) return; const y = lockedY; lockedY = null; document.body.classList.remove('no-scroll'); document.body.style.top = ''; window.scrollTo(0, y); }
-function closeModal() { $('#modal-root').innerHTML = ''; unlockScroll(); }
+function closeModal() { const r = $('#modal-root'); r.innerHTML = ''; delete r.dataset.dirty; unlockScroll(); }
+// ボトムシート：下にすべらせて閉じる（入力途中なら確認してから）
+async function dismissModal(fromDrag) {
+  const r = $('#modal-root'), m = r.querySelector('.modal'); if (!m) return;
+  if (r.dataset.dirty && !(await confirmDialog('入力した内容は保存されません。閉じますか？', {ok:'閉じる', title:'入力内容の破棄'}))) { if (fromDrag) { m.style.transition = ''; m.style.transform = ''; } return; }
+  const bg = r.querySelector('.modal-backdrop');
+  m.style.transition = 'transform .22s cubic-bezier(.4,0,1,1)'; m.style.transform = 'translateY(105%)';
+  if (bg) bg.classList.add('closing');
+  setTimeout(() => { if (r.querySelector('.modal') === m) closeModal(); }, 220);
+}
+// 入力したら「途中」の印を付ける
+document.addEventListener('input', e => { if (e.target.closest && e.target.closest('#modal-root form')) $('#modal-root').dataset.dirty = '1'; });
+document.addEventListener('change', e => { if (e.target.closest && e.target.closest('#modal-root form')) $('#modal-root').dataset.dirty = '1'; });
+// つまみ・見出しを下にドラッグすると閉じる（スマホ）
+(() => {
+  let drag = null;
+  document.addEventListener('pointerdown', e => {
+    if (window.innerWidth >= 640) return;
+    const h = e.target.closest('#modal-root .sheet-grab, #modal-root .modal-head'); if (!h || e.target.closest('button')) return;
+    const m = h.closest('.modal'); drag = {m, y:e.clientY, t:performance.now(), dy:0}; m.style.transition = 'none';
+  });
+  document.addEventListener('pointermove', e => {
+    if (!drag) return; drag.dy = Math.max(0, e.clientY - drag.y); drag.m.style.transform = `translateY(${drag.dy}px)`;
+  }, {passive:true});
+  const end = () => {
+    if (!drag) return; const d = drag; drag = null;
+    const v = d.dy / Math.max(1, performance.now() - d.t);
+    if (d.dy > 110 || (d.dy > 40 && v > 0.6)) dismissModal(true);
+    else { d.m.style.transition = 'transform .25s cubic-bezier(.2,.9,.3,1.2)'; d.m.style.transform = ''; }
+  };
+  document.addEventListener('pointerup', end); document.addEventListener('pointercancel', end);
+})();
 function confirmDialog(msg, {ok='削除する', danger=true, title='確認'} = {}) {
   return new Promise(res => {
     const r = $('#confirm-root');
@@ -4961,8 +4998,8 @@ function addDemo() {
    ========================================================= */
 const split2 = v => String(v).split('|');
 const actions = {
-  'close-modal': () => closeModal(),
-  'close-modal-bg': (id, el, e) => { if (e.target === el) closeModal(); },
+  'close-modal': () => dismissModal(),
+  'close-modal-bg': (id, el, e) => { if (e.target === el) dismissModal(); },
   'new-log': v => { const t = v === 'free' ? null : state.skinLogs.find(l => l.date === todayStr()); if (t) { toast('今日の記録はすでにあるので、編集画面を開きました'); openLogForm(t.id); } else openLogForm(); },
   'edit-log': id => openLogForm(id),
   'delete-log': async id => {
@@ -5306,7 +5343,7 @@ async function runWithUndo(work) {
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target && e.target.id === 'st-area' && !e.isComposing) { e.preventDefault(); storeSearchByName(); return; }
   if (e.key === 'Escape' && $('#f3-full')) { closeFace3dFull(); return; }
-  if (e.key === 'Escape' && $('#modal-root').innerHTML && !$('#confirm-root').innerHTML) closeModal();
+  if (e.key === 'Escape' && $('#modal-root').innerHTML && !$('#confirm-root').innerHTML) dismissModal();
 });
 // ---------- ハンバーガーメニュー（右から出てくるメニュー） ----------
 function drawerHtml() {
