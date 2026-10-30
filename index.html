@@ -362,6 +362,14 @@ details.fold[open] summary{margin-bottom:10px}
 .legal-kv dd{line-height:1.7}
 .nav-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .map-frame{width:100%;height:260px;border:0;border-radius:12px;background:var(--surface2);display:block}
+.store-map{width:100%;height:340px;border-radius:12px;background:var(--surface2);overflow:hidden;position:relative;z-index:0}
+.map-tabs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.map-legend{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 0;font-size:12px;color:var(--muted)}
+.map-legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px;vertical-align:-1px;border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.25)}
+.store-pin{width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center}
+.store-pin b{transform:rotate(45deg);color:#fff;font-size:11px;font-weight:700;font-family:var(--font)}
+.leaflet-popup-content{font-family:var(--font);font-size:13px;line-height:1.5;margin:10px 12px}
+.leaflet-popup-content a{color:var(--green-d)}
 .meal-block{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface)}
 .meal-head{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .meal-head label.btn{margin-left:auto}
@@ -2047,12 +2055,53 @@ function jaHours(h) {
 }
 function shopCard(s, i) {
   const tel = s.phone.replace(/[^\d+\-]/g, '');
-  return `<div class="offer"><div class="offer-top"><div><div class="offer-name">${esc(s.name)}</div>
+  return `<div class="offer" id="shop-${i}"><div class="offer-top"><div><div class="offer-name"><span class="chip" style="background:${PIN_COLORS[s.type] || PIN_COLORS['その他']};color:#fff;margin-right:6px">${i + 1}</span>${esc(s.name)}</div>
       <div class="chips" style="margin-top:4px"><span class="chip">${esc(s.type)}</span>${s.brand ? `<span class="chip beige">${esc(s.brand)}</span>` : ''}${stockChip('未確認')}</div></div>
       <div class="offer-total" style="font-size:16px">${esc(fmtDist(s.km))}</div></div>
     <div class="offer-grid" style="grid-template-columns:1fr"><div><span>${s.src === 'mhlw' ? '営業時間（医療情報ネットへの届出内容）' : '営業時間（地図データの登録内容・未確認）'}</span>${esc(jaHours(s.hours) || '登録なし')}</div><div><span>住所</span>${esc(s.address || '登録なし')}${s.approx ? '<div class="small muted">※位置は住所から推定しています</div>' : ''}</div>${s.phone ? `<div><span>電話</span>${esc(s.phone)}</div>` : ''}</div>
     <div class="offer-actions">${extLink(`https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}`, '地図')}${extLink(`https://www.google.com/maps/dir/?api=1&destination=${s.lat},${s.lng}`, '経路')}${extLink(`https://maps.apple.com/?q=${encodeURIComponent(s.name)}&ll=${s.lat},${s.lng}`, 'Appleマップ')}
       ${tel ? `<a class="btn btn-ghost btn-sm" href="tel:${esc(tel)}">電話で在庫を確認</a>` : ''}${extLink(s.url, '公式サイト')}<button class="btn btn-soft btn-sm" data-action="store-add" data-id="${i}">価格比較に追加</button></div></div>`;
+}
+// ---------- 店舗の地図（国土地理院の地図・航空写真を Leaflet で表示） ----------
+const PIN_COLORS = {'薬局':'#2F855A', 'ドラッグストア':'#C05621', '化粧品店':'#B83280', 'バラエティショップ':'#6B46C1', '百貨店':'#6B46C1', 'その他':'#4A5568'};
+const GSI_TILES = {
+  std:  {url:'https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png', max:18}, // 淡色地図（印が見やすい）
+  photo:{url:'https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg', max:18}
+};
+let leafletLoading = null, storeMap = null;
+function loadLeaflet() {
+  if (window.L) return Promise.resolve();
+  if (leafletLoading) return leafletLoading;
+  leafletLoading = new Promise((resolve, reject) => {
+    const css = document.createElement('link'); css.rel = 'stylesheet'; css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css'; document.head.appendChild(css);
+    const js = document.createElement('script'); js.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+    js.onload = () => resolve(); js.onerror = () => { leafletLoading = null; reject(new Error('地図の部品を読み込めませんでした')); };
+    document.head.appendChild(js);
+  });
+  return leafletLoading;
+}
+async function drawStoreMap() {
+  const el = document.getElementById('store-map'), R = ui.storeRes;
+  if (storeMap) { try { storeMap.remove(); } catch (e) { /* 何もしない */ } storeMap = null; }
+  if (!el || !R || R.status !== 'done') return;
+  try { await loadLeaflet(); } catch (e) { el.innerHTML = '<p class="small muted" style="padding:12px">地図を表示できませんでした。各店舗の「地図」ボタンから場所を確認できます。</p>'; return; }
+  if (!document.body.contains(el)) return;
+  const L = window.L, c = R.center, layer = GSI_TILES[ui.mapLayer] || GSI_TILES.std;
+  const map = L.map(el, {zoomControl:true, attributionControl:true, scrollWheelZoom:false, tap:true});
+  storeMap = map;
+  L.tileLayer(layer.url, {maxZoom:layer.max, maxNativeZoom:layer.max, detectRetina:false,
+    attribution:'<a href="https://maps.gsi.go.jp/development/ichiran.html" target="_blank" rel="noopener">国土地理院</a>'}).addTo(map);
+  L.circle([c.lat, c.lng], {radius:R.radius, color:'#2B6CB0', weight:1, fillOpacity:0.04}).addTo(map);
+  L.circleMarker([c.lat, c.lng], {radius:7, color:'#fff', weight:2, fillColor:'#2B6CB0', fillOpacity:1}).addTo(map).bindPopup(esc(c.label) + '（検索の中心）');
+  const shown = R.items.slice(0, ui.storeShow);
+  shown.forEach((s, i) => {
+    const color = PIN_COLORS[s.type] || PIN_COLORS['その他'];
+    const icon = L.divIcon({className:'', html:`<div class="store-pin" style="background:${color}"><b>${i + 1}</b></div>`, iconSize:[26, 26], iconAnchor:[13, 26], popupAnchor:[0, -24]});
+    L.marker([s.lat, s.lng], {icon, title:s.name}).addTo(map).bindPopup(`<b>${i + 1}. ${esc(s.name)}</b><br>${esc(s.type)}・${esc(fmtDist(s.km))}<br><a href="https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lng}" target="_blank" rel="noopener">Googleマップで開く</a>　<a href="#shop-${i}" data-jump="shop-${i}">一覧で見る</a>`);
+  });
+  const b = L.latLng(c.lat, c.lng).toBounds(R.radius * 2.1);
+  map.fitBounds(b);
+  el.addEventListener('click', e => { const a = e.target.closest('[data-jump]'); if (a) { e.preventDefault(); const t = document.getElementById(a.dataset.jump); if (t) t.scrollIntoView({behavior:'smooth', block:'center'}); } });
 }
 function storeResultsHtml() {
   const R = ui.storeRes;
@@ -2069,8 +2118,10 @@ function storeResultsHtml() {
   const others = cands.map((x, i) => x.lat === c.lat && x.lng === c.lng ? '' : `<button class="tab" data-action="store-pick" data-id="${i}">${esc(x.label)}</button>`).join('');
   return `<div class="card mt"><div class="card-h"><h2>「${esc(c.label)}」から${R.radius >= 1000 ? R.radius / 1000 + 'km' : R.radius + 'm'}以内（${R.items.length}件）</h2></div>
     ${others ? `<p class="small muted" style="margin-bottom:6px">場所が違う場合は、ほかの候補を選んでください：</p><div class="chips" style="margin-bottom:12px">${others}</div>` : ''}
-    <iframe class="map-frame" title="検索した場所の周辺地図" src="${esc(src)}" loading="lazy" referrerpolicy="no-referrer"></iframe>
-    <p class="small muted" style="margin:4px 0 12px">地図の印は検索の中心です。各店舗の場所は「地図」ボタンで確認できます。距離は検索の中心からの直線距離です。</p>
+    <div class="map-tabs"><button class="tab ${ui.mapLayer !== 'photo' ? 'active' : ''}" data-action="map-layer" data-id="std">地図</button><button class="tab ${ui.mapLayer === 'photo' ? 'active' : ''}" data-action="map-layer" data-id="photo">航空写真</button></div>
+    <div id="store-map" class="store-map" role="region" aria-label="検索した場所の周辺地図"><noscript><iframe class="map-frame" title="周辺地図" src="${esc(src)}"></iframe></noscript></div>
+    <div class="map-legend">${Object.entries(PIN_COLORS).filter(([t]) => R.items.some(x => (x.type || 'その他') === t)).map(([t, c]) => `<span><i style="background:${c}"></i>${esc(t)}</span>`).join('')}<span><i style="background:#2B6CB0"></i>検索の中心</span></div>
+    <p class="small muted" style="margin:4px 0 12px">印を押すと、店名と距離が出ます。番号は下の一覧の順番です（近い順）。地図：国土地理院。距離は検索の中心からの直線距離です。</p>
     ${R.items.length ? `<p class="small muted" style="margin-bottom:8px">${storeTypeCounts(R.items)}</p>` + R.items.slice(0, ui.storeShow).map((s, i) => shopCard(s, i)).join('') + (R.items.length > ui.storeShow ? `<button class="btn btn-ghost" style="width:100%;margin-top:10px" data-action="store-more">さらに表示（残り${R.items.length - ui.storeShow}件）</button>` : '') : '<p class="small muted">この範囲では、条件に合う店舗が地図データに見つかりませんでした。範囲を広げるか、下の「地図アプリで探す」をお試しください。</p>'}
     ${R.pharm ? `<p class="small muted" style="margin-top:12px">薬局のデータ：「医療情報ネット」オープンデータ（厚生労働省、${R.pharm.date ? esc(R.pharm.date.replace(/-/g, '/')) + '時点' : ''}）を加工して作成。届出の内容のため、実際と異なる場合があります。</p>` : ''}
     ${R.pharmFailed ? '<p class="small muted" style="margin-top:8px">国の薬局データを読み込めなかったため、薬局は地図データから探しています（一部の薬局が表示されない場合があります）。</p>' : ''}
@@ -2098,24 +2149,40 @@ function openStoreAddForm(i) {
     if (save()) { closeModal(); toast('価格比較に追加しました'); location.hash = '#/prices/' + encodeURIComponent(pid); }
   };
 }
+// 位置情報をオンにする手順（端末・ブラウザごと）。使っている端末の手順を先に、ほかは折りたたみで表示
+const GEO_STEPS = {
+  iphone_site:  ['iPhone・iPad（Safari）', ['アドレスバーの「ぁあ」（または「AA」）を押す', '「Webサイトの設定」→「位置情報」を「確認」か「許可」にする']],
+  iphone_os:    ['iPhone・iPad（端末の設定）', ['「設定」→「プライバシーとセキュリティ」→「位置情報サービス」をオンにする', '同じ画面で、使っているブラウザ（「Safari Webサイト」やChrome）を「このAppの使用中」にする']],
+  android_site: ['Android（Chrome）', ['アドレスバーの左のマークを押す', '「権限」→「位置情報」を「許可」にする']],
+  android_os:   ['Android（端末の設定）', ['「設定」→「位置情報」をオンにする', '「アプリの位置情報の権限」→「Chrome」を「アプリの使用中のみ許可」にする']],
+  chrome_site:  ['パソコン（Chrome・Edge）', ['アドレスバーの左のマーク（つまみ・鍵のアイコン）を押す', '「位置情報」をオン（許可）にする', '見つからなければ「サイトの設定」→「位置情報」→「許可」']],
+  safari_site:  ['パソコン（Mac の Safari）', ['画面上のメニュー「Safari」→「設定…」→「Webサイト」タブを開く', '左の「位置情報」を選び、hadatomo.github.io を「確認」か「許可」にする']],
+  mac_os:       ['パソコン（Mac の設定）', ['りんごマーク →「システム設定」→「プライバシーとセキュリティ」→「位置情報サービス」を開く', '「位置情報サービス」と、使っているブラウザをオンにして、ブラウザを開き直す']],
+  win_os:       ['パソコン（Windows の設定）', ['「設定」→「プライバシーとセキュリティ」→「位置情報」を開く', '「位置情報サービス」と「デスクトップアプリに位置情報へのアクセスを許可する」をオンにして、ブラウザを開き直す']]
+};
+function geoDevice() {
+  const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const android = /Android/.test(ua), chrome = /Chrome|CriOS|Edg/.test(ua), mac = /Macintosh/.test(ua) && !ios, win = /Windows/.test(ua);
+  return {ios, android, chrome, mac, win, safari: /Safari/.test(ua) && !chrome};
+}
+function geoStepsHtml(kind) {
+  const d = geoDevice();
+  const siteKey = d.ios ? 'iphone_site' : d.android ? 'android_site' : (d.mac && d.safari) ? 'safari_site' : 'chrome_site';
+  const osKey = d.ios ? 'iphone_os' : d.android ? 'android_os' : d.mac ? 'mac_os' : d.win ? 'win_os' : '';
+  const first = kind === 'site' ? [siteKey] : [osKey || siteKey];
+  const block = k => `<p class="small" style="margin:8px 0 2px"><b>${esc(GEO_STEPS[k][0])}</b></p><ol style="margin:0;padding-left:20px">${GEO_STEPS[k][1].map(x => `<li>${esc(x)}</li>`).join('')}</ol>`;
+  const others = Object.keys(GEO_STEPS).filter(k => !first.includes(k));
+  return `<p class="small" style="margin-top:6px">お使いの端末の手順：</p>${first.map(block).join('')}
+    <details class="fold" style="margin-top:8px"><summary class="small">ほかの端末・ブラウザの手順</summary>${others.map(block).join('')}</details>`;
+}
 function geoHelpHtml(kind) {
-  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent), mac = /Macintosh/.test(navigator.userAgent) && !ios;
-  const ua = navigator.userAgent, chrome = /Chrome|CriOS|Edg/.test(ua), safari = /Safari/.test(ua) && !chrome;
   const retry = '<button class="btn btn-primary btn-sm" data-action="use-geo" style="margin-top:10px">設定を変えたので、もう一度試す</button>';
   const alt = '<p class="small" style="margin-top:8px">位置情報を使いたくない場合は、下の欄に駅名・地名・住所を入力して探せます。</p>';
   if (kind === 'blocked-site' || kind === 'denied') {
-    const steps = ios ? (chrome ? '<li>Chromeの右下「…」→「設定」→「プライバシーとセキュリティ」→「サイトの設定」→「位置情報」で、このサイトを「許可」にする</li><li>iPhoneの「設定」→「アプリ」→「Chrome」→「位置情報」を「このAppの使用中」にする</li>'
-        : '<li>Safariのアドレスバーの「ぁあ」（または「AA」）を押す</li><li>「Webサイトの設定」→「位置情報」を<b>「確認」か「許可」</b>にする</li><li>それでも出ない場合：iPhoneの「設定」→「プライバシーとセキュリティ」→「位置情報サービス」→「Safari Webサイト」を「このAppの使用中」にする</li>')
-      : safari ? '<li>画面の一番上のメニューの「Safari」→「設定…」を開く</li><li>「Webサイト」タブ →左の「位置情報」を選ぶ</li><li>右の一覧の <b>hadatomo.github.io</b> を<b>「確認」か「許可」</b>にする</li>'
-      : chrome ? '<li>アドレスバーの左にある<b>調整マーク（つまみのアイコン）</b>を押す</li><li>「位置情報」のスイッチを<b>オン</b>にする（見つからなければ「サイトの設定」→「位置情報」→「許可」）</li>'
-      : '<li>アドレスバーの左のマーク（またはサイトの設定）から、このサイトの「位置情報」を「許可」にする</li>';
-    return `<div class="notice warn" style="margin:10px 0 0"><b>このサイトの位置情報が「許可しない」になっています。</b><br>一度「許可しない」を選ぶと、ブラウザの決まりで、アプリからもう一度たずねることができません。次の手順で許可してください（1分ほどでできます）。<ol style="margin:8px 0 0;padding-left:20px">${steps}</ol>${retry}${alt}</div>`;
+    return `<div class="notice warn" style="margin:10px 0 0"><b>このサイトの位置情報が「許可しない」になっています。</b><br>一度「許可しない」を選ぶと、ブラウザの決まりで、アプリからもう一度たずねることができません。次の手順で許可してください（1分ほどでできます）。${geoStepsHtml('site')}${retry}${alt}</div>`;
   }
   if (kind === 'blocked-os') {
-    const steps = ios ? '<li>iPhoneの「設定」→「プライバシーとセキュリティ」→「位置情報サービス」を<b>オン</b>にする</li><li>同じ画面で、使っているブラウザ（「Safari Webサイト」やChrome）を「このAppの使用中」にする</li>'
-      : mac ? `<li>画面左上のりんごマーク →「システム設定」を開く</li><li>「プライバシーとセキュリティ」→「位置情報サービス」を開く</li><li>一番上の「位置情報サービス」と、その下の一覧の<b>${safari ? 'Safari' : chrome ? 'Google Chrome' : '使っているブラウザ'}</b>を<b>オン</b>にする</li><li>ブラウザをいったん終了して開き直す</li>`
-      : '<li>端末の設定で、位置情報サービスをオンにし、使っているブラウザに位置情報を許可する</li>';
-    return `<div class="notice warn" style="margin:10px 0 0"><b>${mac ? 'Mac' : ios ? 'iPhone' : '端末'}の設定で、ブラウザの位置情報がオフになっています。</b><ol style="margin:8px 0 0;padding-left:20px">${steps}</ol>${retry}${alt}</div>`;
+    return `<div class="notice warn" style="margin:10px 0 0"><b>端末の設定で、ブラウザの位置情報がオフになっています。</b>次の手順でオンにしてください。${geoStepsHtml('os')}${retry}${alt}</div>`;
   }
   if (kind === 'blocked-os-maybe') return geoHelpHtml('blocked-os').replace('ブラウザの位置情報がオフになっています。', 'ブラウザの位置情報がオフになっている可能性があります（屋内や地下では、現在地を取れないこともあります）。');
   if (kind === 'unavailable') return '<div class="notice warn" style="margin:10px 0 0">現在地を特定できませんでした。屋内や地下では取得しにくいことがあります。少し場所を変えてもう一度試すか、下の欄に駅名・地名を入力してください。</div>';
@@ -3673,7 +3740,9 @@ ${row('Stripe（Stripe, Inc.）', '支払いに必要な情報（カード情報
 ${row('jsDelivr（Prospect One）', 'IPアドレス、ブラウザの情報', 'ログイン機能の部品の読み込み。プラン・アカウント画面を開いたとき')}
 ${row('Geoapify（Geoapify GmbH）', '入力した地名・駅名、検索する場所の座標', '近くの店舗の検索。店舗検索で「検索」を押したときだけ')}
 ${row('国土地理院（地名検索）', '入力した地名・駅名・住所', '場所の特定。店舗検索で「検索」を押したときだけ')}
-${row('OpenStreetMap', '表示する地図の範囲、IPアドレス', '検索結果の地図の表示（Geoapifyが使えないときの予備の検索を含む）')}
+${row('国土地理院（地図・航空写真）', '表示する地図の範囲、IPアドレス', '店舗検索の結果の地図の表示')}
+${row('cdnjs（Cloudflare）', 'IPアドレス、ブラウザの情報', '地図の部品（Leaflet）の読み込み。店舗検索の結果を表示したとき')}
+${row('OpenStreetMap', '検索する場所の座標、IPアドレス', 'Geoapifyが使えないときの予備の店舗検索')}
 ${row('楽天グループ（楽天ウェブサービス）・LINEヤフー（Yahoo!デベロッパーネットワーク）', '商品名・JANコード（運営者のサーバーを通して送信。利用者のIPアドレスなどは送りません）', '価格比較。「価格を調べる」を押したときだけ')}
 ${row('Google（Gemini API）', '「写真から読み取る」を押した写真（食事・化粧品のパッケージ）', '写真読み取り（プレミアム）。押したときだけ。運営者は写真を保存しません。Googleの無料枠を使う場合、送った内容がGoogleのサービス改善に使われることがあります')}
 ${row('GitHub（GitHub, Inc.）', 'IPアドレス、ブラウザの情報', '本サービスのページの配信')}
@@ -3740,7 +3809,7 @@ function viewSettings() {
         <li><b>位置情報</b>：「現在地の近くを探す」を押し、確認画面とブラウザの許可の両方で同意した場合だけ使います。保存はしません。地図のリンクを開くと、地図サービスに位置が送られます。</li>
         <li><b>アカウント</b>：有料プランの申し込み・管理のため、ログインした場合だけ、メールアドレスと契約状況をサーバー（Supabase・東京リージョン）に保存します。決済はStripeの画面で行い、カード情報は肌トモに保存されません。ログイン機能の部品は、プラン・アカウントの画面を開いたときに jsDelivr から読み込みます。</li>
         <li><b>薬局のデータ</b>：「医療情報ネット」オープンデータ（厚生労働省）を加工して、アプリと一緒に置いています。検索のときに外部に送る情報はありません。</li>
-        <li><b>店舗検索</b>：「検索」ボタンを押したときだけ、入力した駅名・地名・住所と、検索する場所（または許可した現在地）を、店舗検索サービスGeoapifyと国土地理院の地名検索に送ります（Geoapifyが使えないときは、予備としてOpenStreetMapのサーバーに送ります）。検索結果の地図には、OpenStreetMapの地図を読み込みます。</li>
+        <li><b>店舗検索</b>：「検索」ボタンを押したときだけ、入力した駅名・地名・住所と、検索する場所（または許可した現在地）を、店舗検索サービスGeoapifyと国土地理院の地名検索に送ります（Geoapifyが使えないときは、予備としてOpenStreetMapのサーバーに送ります）。検索結果の地図には、国土地理院の地図・航空写真を読み込みます（地図の部品は cdnjs から読み込みます）。</li>
         <li><b>食事の写真</b>：撮影した写真は端末内だけで使い、「保存する」にチェックしたものだけをこのブラウザ内に保存します。</li>
         <li><b>写真読み取り（${PREMIUM_NAME}）</b>：「写真から読み取る」を押したときだけ、その写真を${esc(SERVICE)}のサーバーを通してGoogleのAI（Gemini API）に送り、料理や文字を読み取ります。写真と結果はサーバーに保存しません。使った回数（1日あたり）だけを記録します。</li>
         <li><b>価格比較</b>：「価格を調べる」を押したときだけ、商品名（とJANコード）を${esc(SERVICE)}のサーバーを通して楽天市場・Yahoo!ショッピングの公式APIに送ります。あなたの情報（IPアドレスなど）は送りません。</li>
@@ -3911,6 +3980,7 @@ const actions = {
     p.offers = p.offers.filter(x => x.id !== oid);
     if (save()) { toast('削除しました'); render(); }
   },
+  'map-layer': v => { ui.mapLayer = v; const y = scrollY; render(); scrollTo(0, y); },
   'store-more': () => { ui.storeShow += 40; const y = scrollY; render(); scrollTo(0, y); },
   'use-geo': async () => {
     ui.geoHelp = '';
@@ -3932,7 +4002,7 @@ const actions = {
       storeSearchAt({lat:pos.coords.latitude, lng:pos.coords.longitude, label:'現在地'}, true);
     }, err => {
       ui.storeRes = null; ui.storeBusy = false;
-      ui.geoHelp = err && err.code === 1 ? (perm && perm.state === 'denied' ? 'blocked-site' : (perm && perm.state === 'granted' ? 'blocked-os' : 'blocked-site')) : err && err.code === 3 ? 'timeout' : (/Macintosh|iPhone|iPad/.test(navigator.userAgent) ? 'blocked-os-maybe' : 'unavailable');
+      ui.geoHelp = err && err.code === 1 ? (perm && perm.state === 'denied' ? 'blocked-site' : (perm && perm.state === 'granted' ? 'blocked-os' : 'blocked-site')) : err && err.code === 3 ? 'timeout' : 'blocked-os-maybe';
       render();
     }, {enableHighAccuracy:false, timeout:15000, maximumAge:60000});
   },
@@ -4204,6 +4274,7 @@ function render() {
   if (key !== lastRoute) { window.scrollTo(0, 0); lastRoute = key; }
   drawCharts();
   fillAds();
+  if (r.name === 'stores') drawStoreMap(); else if (storeMap) { try { storeMap.remove(); } catch (e) {} storeMap = null; }
 }
 window.addEventListener('hashchange', () => { if ($('#modal-root').innerHTML) closeModal(); render(); });
 let resizeTimer;
