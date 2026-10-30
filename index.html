@@ -463,6 +463,8 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 /* ===== 動き（モーション） ===== */
 @keyframes pgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 #main.pg-in{animation:pgIn .38s cubic-bezier(.2,.8,.2,1) both}
+.fade-once{animation:fadeOnce .7s ease both}
+@keyframes fadeOnce{from{opacity:0}to{opacity:1}}
 .kt{display:inline-block;opacity:0;transform:translateY(.55em) scale(.96);filter:blur(3px);animation:ktIn .55s cubic-bezier(.2,.9,.25,1.15) forwards;animation-delay:calc(var(--k) * 28ms + 60ms)}
 @keyframes ktIn{to{opacity:1;transform:none;filter:none}}
 .rv{opacity:0;transform:translateY(16px)}
@@ -486,7 +488,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .bn-item:active svg{transform:scale(.88)}
 .bn-item.active svg{animation:navPop .45s cubic-bezier(.2,.9,.3,1.5)}
 @keyframes navPop{0%{transform:scale(.85)}60%{transform:scale(1.28) translateY(-2px)}100%{transform:scale(1.18) translateY(-1px)}}
-@media (prefers-reduced-motion:reduce){#main.pg-in,.kt,.rv,.rv.in,.rv.in *,.chart.play *,.bn-item.active svg{animation:none!important;transition:none!important;opacity:1!important;transform:none!important;filter:none!important}}
+@media (prefers-reduced-motion:reduce){#main.pg-in,.fade-once,.kt,.rv,.rv.in,.rv.in *,.chart.play *,.bn-item.active svg{animation:none!important;transition:none!important;opacity:1!important;transform:none!important;filter:none!important}}
 @media print{.rv,.kt{opacity:1!important;transform:none!important;filter:none!important}}
 /* 待っている間の仮の表示（スケルトン） */
 .skel{display:block;border-radius:8px;height:12px;background:linear-gradient(90deg,rgba(120,105,80,.10) 25%,rgba(120,105,80,.22) 45%,rgba(120,105,80,.10) 65%);background-size:300% 100%;animation:skel 1.3s ease-in-out infinite}
@@ -989,6 +991,7 @@ const ICONS = {
   book:'<path d="M4 4h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z"/><path d="M20 4h-6a3 3 0 0 0-1 .2"/><path d="M20 4v14h-7"/>',
   pin:'<path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>',
   tag:'<path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="8" cy="8" r="1.5"/>',
+  image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-10 9"/>',
   moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
   leaf:'<path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14z"/><path d="M5 19 13 11"/>',
   check:'<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/>',
@@ -1536,14 +1539,24 @@ function revealEl(el) {
   el.querySelectorAll(COUNT_SEL).forEach(countUp);
   el.querySelectorAll('.chart').forEach(c => { c.classList.add('play'); setTimeout(() => c.classList.remove('play'), 2200); });
 }
-function motionIn() {
+// 下のバーの画面（ホーム・肌の記録・マイ化粧品・商品検索・アカウント）は、最初に開いたときだけ動かし、2回目からは動かさない
+const TAB_PAGES = ['home', 'log', 'my', 'search', 'stores', 'account'];
+const motionSeen = new Set();
+function motionIn(route) {
   const main = document.getElementById('main'); if (!main) return;
   if (!MOTION_OK()) return;
+  const tab = TAB_PAGES.includes(route);
+  if (tab && motionSeen.has(route)) { main.classList.remove('pg-in'); return; } // 2回目からは、そのまま表示
+  motionSeen.add(route);
   // 画面全体：下からふわっと
   main.classList.remove('pg-in'); void main.offsetWidth; main.classList.add('pg-in');
-  // 見出しの文字が1文字ずつ浮かび上がる（キネティック・タイポグラフィ）
-  splitChars(main.querySelector('.page-head h1'));
-  splitChars(main.querySelector('.hero-date'));
+  if (tab) {
+    // 下のバーの画面の見出し・日付は、ふわっと出るだけ（1回目だけ）
+    [main.querySelector('.page-head h1'), main.querySelector('.hero-date')].forEach(el => { if (el) el.classList.add('fade-once'); });
+  } else {
+    // ほかの画面の見出しは、文字が1文字ずつ浮かび上がる（キネティック・タイポグラフィ）
+    splitChars(main.querySelector('.page-head h1'));
+  }
   // カードは、画面に入ったときに順番に出てくる
   if (motionIO) motionIO.disconnect();
   let batch = 0, batchT = 0;
@@ -2695,7 +2708,7 @@ function viewScan() {
   let html = pageHead('カメラで登録', 'パッケージの写真・バーコード・文字を手がかりに、商品を探して登録します。') +
     `<div class="notice">カメラは、下のボタンを押したときだけ起動します。撮影した写真は<b>この端末の中だけ</b>で使い、外部には送信しません（商品を登録しなければ保存もしません）。写真から商品そのものを自動で判別するAI機能はまだないため、バーコードの数字やパッケージの文字を手がかりに、登録済みの商品と照合します。</div>
     <div class="card"><div class="card-h"><h2>1. パッケージを撮影</h2><span class="opt">任意</span></div>
-      <input type="file" accept="image/*" capture="environment" id="scan-photo" class="input" style="padding:9px" aria-label="パッケージを撮影">
+      <div class="page-actions"><label class="btn btn-primary btn-sm">${icon('camera')}カメラで撮る<input type="file" accept="image/*" capture="environment" id="scan-photo" hidden></label><label class="btn btn-ghost btn-sm">${icon('image')}写真を選ぶ<input type="file" accept="image/*" id="scan-photo-lib" hidden></label></div>
       ${sc.photo ? `<img class="img-prev" src="${sc.photo}" alt="撮影した写真" style="width:150px;height:150px"><div class="page-actions" style="margin-top:6px"><button class="btn btn-primary btn-sm" data-action="scan-ai" ${sc.aiBusy ? 'disabled' : ''}>${sc.aiBusy ? '読み取っています…' : '写真から文字を読み取る'} <span class="badge-premium">${PREMIUM_NAME}</span></button><button class="btn btn-ghost btn-sm" data-action="scan-clear-photo">写真を外す</button></div>
         ${sc.aiBusy ? skelHtml(4, {label:'写真を読み取り中', note:'商品名・成分を読み取っています（10秒ほどかかります）'}) : ''}${sc.aiMsg ? `<p class="small" style="margin-top:6px">${esc(sc.aiMsg)}</p>` : ''}
         <p class="hint">${PREMIUM_NAME}では、商品名・内容量・全成分の文字をAIで読み取って下の欄に入れます（成分表示は裏面を撮ると読み取れます。表と裏で2回読み取ると、成分は後ろに追加されます）。写真は読み取りのためだけにGoogleのAI（Gemini）に送り、保存しません。</p>` : ''}
@@ -3496,7 +3509,7 @@ function openLifeForm(id, part) {
   const pending = {}, aiRes = {};
   const mealBlock = m => `<div class="meal-block" data-meal="${m.k}">
     <div class="meal-head">${m.k === 'snack' ? `<b class="small">${m.l}</b>` : `<label class="check"><input type="checkbox" name="ate_${m.k}" ${d.meals[m.k].ate ? 'checked' : ''}><b>${m.l}</b></label><input type="time" class="input" style="width:130px;min-height:40px;font-size:16px;padding:6px 10px" name="time_${m.k}" value="${esc(d.meals[m.k].time)}" aria-label="${m.l}の時刻">`}
-      <label class="btn btn-ghost btn-sm">${icon('camera')}写真<input type="file" accept="image/*" capture="environment" data-mphoto="${m.k}" hidden></label></div>
+      <label class="btn btn-ghost btn-sm">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="${m.k}" hidden></label><label class="btn btn-ghost btn-sm">${icon('image')}写真を選ぶ<input type="file" accept="image/*" data-mphoto="${m.k}" hidden></label></div>
     <div data-mprev="${m.k}"></div>
     <div data-pinfo="${m.k}"></div>
     <div class="chips" data-mfoods="${m.k}" style="margin-top:8px"></div>
@@ -4758,6 +4771,8 @@ function viewSettings() {
       <form id="budget-form" novalidate><div class="form-grid">${field('1か月のスキンケア予算（円）', `<input class="input" id="f_budget" name="budget" inputmode="numeric" value="${state.settings.monthlyBudget || ''}" placeholder="例：5000">`, {name:'budget', hint:'0または空欄で、予算を使わない設定になります'})}</div>
       <button type="submit" class="btn btn-primary btn-sm" style="margin-top:12px">保存する</button></form></div>
     <div class="card"><div class="card-h"><h2>プライバシー</h2></div>
+      <p class="small" style="margin:0">記録は<b>この端末のブラウザの中だけ</b>に保存されます。外部に送るのは、あなたがボタンを押したときだけです。</p>
+      <details class="fold" style="margin-top:10px"><summary>詳しく見る</summary>
       <ul class="points small">
         <li><b>保存場所</b>：すべてのデータは<b>このブラウザの中（localStorage）だけ</b>に保存されます。サーバーへの送信、クラウド同期、ほかの端末との共有は行いません。</li>
         <li><b>肌写真</b>：保存は任意です。「ブラウザ内に保存する」にチェックした写真だけを保存し、外部には送信しません。</li>
@@ -4769,12 +4784,15 @@ function viewSettings() {
         <li><b>写真読み取り（${PREMIUM_NAME}）</b>：「写真から読み取る」を押したときだけ、その写真を${esc(SERVICE)}のサーバーを通してGoogleのAI（Gemini API）に送り、料理や文字を読み取ります。写真と結果はサーバーに保存しません。使った回数（1日あたり）だけを記録します。</li>
         <li><b>価格比較</b>：「価格を調べる」を押したときだけ、商品名（とJANコード）を${esc(SERVICE)}のサーバーを通して楽天市場・Yahoo!ショッピングの公式APIに送ります。あなたの情報（IPアドレスなど）は送りません。</li>
         <li><b>オフライン用の保存</b>：電波が弱い場所でも開けるように、アプリ本体・アイコン・薬局データをこの端末のブラウザに保存します（記録の内容は含みません）。画面の表示（ダーク・ライト）の設定も、この端末にだけ保存します。</li>
+        <li><b>おすすめケアポイント（AI分析・${PREMIUM_NAME}）</b>：直近7日の記録の<b>数値のまとめだけ</b>（睡眠時間の平均、ニキビの数など）を${esc(SERVICE)}のサーバーを通してGoogleのAI（Gemini API）に送ります。メモ・写真・名前は送りません。</li>
         <li><b>外部リンク</b>：通販サイト・地図のリンクを開くと、そのサイトの利用規約・プライバシーポリシーが適用されます。</li>
         <li><b>広告</b>：無料プランでは、ホーム・商品検索・成分辞典・店舗検索の画面に広告を表示する予定です（現在は準備中で、広告は配信していません）。肌の記録・グラフ・レポート・食事などの画面には表示しません。広告は肌トモのおすすめや価格比較の結果とは関係がなく、広告であることを明示します。広告を配信するときは、広告サービスに送られる情報（Cookieなど）について、この画面でお知らせします。プレミアムプランでは広告を表示しません。</li>
-      </ul>
+      </ul></details>
       <div class="ext-links" style="margin-top:12px"><a class="btn btn-ghost btn-sm" href="#/terms">利用規約</a><a class="btn btn-ghost btn-sm" href="#/privacy">プライバシーポリシー</a><a class="btn btn-ghost btn-sm" href="#/law">特定商取引法に基づく表記</a></div></div>
     <div class="card"><div class="card-h"><h2>データの保存状況</h2></div>
-      <dl class="kv"><dt>使用容量（目安）</dt><dd>約${kb}KB（ブラウザの上限は一般的に5MB前後）</dd><dt>肌の記録</dt><dd>${state.skinLogs.length}件（写真付き ${photos}件）</dd><dt>食事・運動・睡眠</dt><dd>${state.lifeLogs.length}件（食事の写真 ${mealPh}枚・自分で登録した食品 ${state.customFoods.length}件）</dd><dt>マイ化粧品</dt><dd>${state.myProducts.length}件</dd><dt>商品データベース</dt><dd>${state.catalog.length}件</dd></dl>
+      <p class="small" style="margin:0">使用容量 約${kb}KB・肌の記録 ${state.skinLogs.length}件</p>
+      <details class="fold" style="margin-top:10px"><summary>詳しく見る</summary>
+      <dl class="kv"><dt>使用容量（目安）</dt><dd>約${kb}KB（ブラウザの上限は一般的に5MB前後）</dd><dt>肌の記録</dt><dd>${state.skinLogs.length}件（写真付き ${photos}件）</dd><dt>食事・運動・睡眠</dt><dd>${state.lifeLogs.length}件（食事の写真 ${mealPh}枚・自分で登録した食品 ${state.customFoods.length}件）</dd><dt>マイ化粧品</dt><dd>${state.myProducts.length}件</dd><dt>商品データベース</dt><dd>${state.catalog.length}件</dd></dl></details>
       ${storageOK ? '' : '<div class="notice warn" style="margin-top:12px">現在このブラウザでは保存ができない状態です。</div>'}</div>
     <div class="card"><div class="card-h"><h2>バックアップ</h2></div>
       <p class="small muted" style="margin-bottom:12px">ブラウザの履歴やWebサイトデータを削除すると、記録も消えます。定期的にバックアップファイルを保存しておくと安心です。</p>
@@ -4793,7 +4811,7 @@ function viewSettings() {
         <li>医師の診断を代わりに行うものではありません。症状が強い・長引く場合は医療機関に相談してください。</li>
         <li>商品や成分の効果、組み合わせの安全性を保証するものではありません。</li>
         <li>グラフ・比較・レポートは記録データの集計であり、肌の変化の原因を断定するものではありません。</li>
-        <li>AIによる分析機能はありません。レポートは決められたルールに基づく集計です。</li>
+        <li>${PREMIUM_NAME}プランでは、AI（Google Gemini）による写真の読み取りと記録の分析を使えます。結果は目安で、正しさを保証するものではありません。無料プランのグラフ・レポート・ケアポイントは、決められたルールに基づく集計です。</li>
       </ul>
       <details class="fold" style="margin-top:12px"><summary>今後の予定（未実装）</summary><ul class="small muted" style="padding-left:18px;margin:0">
         <li>Amazonなど、楽天市場・Yahoo!ショッピング以外の通販サイトの価格の自動取得（各社の審査・利用規約の確認後）</li>
@@ -5299,7 +5317,7 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('input', e => { if (e.target.id === 'f3-range') { ui.f3Play = false; face3dShowWeek(Number(e.target.value)); } });
 document.addEventListener('change', e => {
-  if (e.target.id === 'scan-photo') { onScanPhoto(e.target); return; }
+  if (e.target.id === 'scan-photo' || e.target.id === 'scan-photo-lib') { onScanPhoto(e.target); return; }
   if (e.target.dataset && e.target.dataset.change === 'price-set') { ui.priceSet = e.target.checked; const y = scrollY; render(); scrollTo(0, y); return; }
   if (e.target.dataset && e.target.dataset.change === 'price-vol') { ui.priceVol = e.target.checked; const y = scrollY; render(); scrollTo(0, y); return; }
   if (e.target.id === 'st-radius') { ui.storeRadius = Number(e.target.value) || 1000; return; }
@@ -5406,7 +5424,7 @@ function render() {
   }
   navRestoreY = null;
   drawCharts();
-  if (routeChanged) motionIn(); // 画面を移ったときだけ、動きのある表示にする
+  if (routeChanged) motionIn(r.name + (r.id ? '/' + r.id : '')); // 画面を移ったときだけ、動きのある表示にする
   fillAds();
   if (r.name === 'charts') drawFace3d();
   else if (r.name === 'log' && document.getElementById('face3d-log')) { const list = logDayList(), d = logFaceData(list[logDayIdx(list)]); bindLogDaySwipe(); drawFace3d({canvas:'face3d-log', load:'ld-load', tip:'', camZ:55, yawOnly:true, ready:st => { st.canvasId = 'face3d-log'; face3dApply(st, d.counts, d.max, d.mode); }}); }
