@@ -349,6 +349,17 @@ details.fold[open] summary{margin-bottom:10px}
 .table-wrap{overflow-x:auto}
 .points li{margin-bottom:10px;font-size:14px;line-height:1.7}
 .points{padding-left:20px;margin:0}
+.legal{font-size:14px;line-height:1.85}
+.legal h3{font-size:15px;margin:22px 0 8px}
+.legal h3:first-of-type{margin-top:14px}
+.legal ol{padding-left:22px;margin:0}
+.legal li+li{margin-top:4px}
+.legal p{margin:0 0 8px}
+.legal .table-wrap{overflow-x:auto;margin:8px 0}
+.legal-table{border-collapse:collapse;width:100%;min-width:560px;font-size:13px}
+.legal-table th,.legal-table td{border:1px solid var(--line);padding:8px;vertical-align:top;text-align:left}
+.legal-table th{background:var(--surface-2,rgba(0,0,0,.03))}
+.legal-kv dd{line-height:1.7}
 .nav-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .map-frame{width:100%;height:260px;border:0;border-radius:12px;background:var(--surface2);display:block}
 .meal-block{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface)}
@@ -3426,7 +3437,7 @@ function viewPlan(query) {
         ${field('メールアドレス', '<input type="email" class="input" id="f_email" name="email" autocomplete="email" inputmode="email" maxlength="254">', {name:'email', required:true})}
         ${field('パスワード', `<input type="password" class="input" id="f_password" name="password" autocomplete="${signup ? 'new-password' : 'current-password'}">`, {name:'password', required:true, hint:signup ? '8文字以上で、英字と数字を組み合わせてください' : ''})}
         ${signup ? `${field('パスワード（確認）', '<input type="password" class="input" id="f_password2" name="password2" autocomplete="new-password">', {name:'password2', required:true})}
-          <div class="field" data-field="agree"><label class="check"><input type="checkbox" name="agree"> 利用規約・プライバシーポリシー（準備中）に同意します</label><div class="field-error" data-err="agree"></div></div>` : ''}
+          <div class="field" data-field="agree"><label class="check"><input type="checkbox" name="agree"> <a href="#/terms" target="_blank" rel="noopener">利用規約</a>・<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意します</label><div class="field-error" data-err="agree"></div></div>` : ''}
       </div>
       <button type="submit" class="btn btn-primary" style="margin-top:14px" ${acct.busy ? 'disabled' : ''}>${signup ? 'アカウントを作る' : 'ログイン'}</button>
       ${signup ? '<p class="hint">登録すると、確認のメールが届きます。メール内のリンクを押すと登録が完了します。</p>' : '<p style="margin-top:12px"><a href="#" class="small" data-action="acct-forgot">パスワードを忘れた場合</a></p>'}
@@ -3455,7 +3466,7 @@ function viewPlan(query) {
     ${!acct.confirm ? '<button class="btn btn-primary" style="margin-top:14px" data-action="acct-confirm">申し込み内容を確認する</button>'
     : `<div class="divider"></div><h3 style="font-size:15px;margin-bottom:10px">お申し込み内容の最終確認</h3>
       <dl class="kv">
-        <dt>サービス</dt><dd>肌トモ ${PREMIUM_NAME}</dd>
+        <dt>サービス</dt><dd>${esc(SERVICE)} ${PREMIUM_NAME}</dd>
         <dt>料金</dt><dd>${priceText()}</dd>
         <dt>支払い方法</dt><dd>クレジットカードなど（次のStripeの画面で入力します）</dd>
         <dt>支払いの時期</dt><dd>申し込み時に1か月分をお支払いいただき、以降は毎月、申し込み日と同じ日に自動でお支払いいただきます</dd>
@@ -3463,7 +3474,8 @@ function viewPlan(query) {
         <dt>解約の方法</dt><dd>このページの「契約内容の確認・解約」から、いつでも手続きできます。解約後も、お支払い済みの期間の終わりまで使えます</dd>
         <dt>返金</dt><dd>月の途中で解約しても、日割りでの返金はありません<span class="small muted">（※仮の内容。本番前に確定します）</span></dd>
       </dl>
-      <label class="check" style="margin-top:14px"><input type="checkbox" id="acct-agree"> 上記の内容と、利用規約・プライバシーポリシー（準備中）に同意します</label>
+      <p class="small" style="margin-top:8px"><a href="#/law" target="_blank" rel="noopener">特定商取引法に基づく表記</a></p>
+      <label class="check" style="margin-top:14px"><input type="checkbox" id="acct-agree"> 上記の内容と、<a href="#/terms" target="_blank" rel="noopener">利用規約</a>・<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意します</label>
       <div class="page-actions" style="margin-top:14px"><button class="btn btn-primary" data-action="acct-checkout" ${acct.busy || !acct.price ? 'disabled' : ''}>同意して、決済画面へ進む</button><button class="btn btn-ghost" data-action="acct-confirm-cancel">やめる</button></div>
       <p class="hint">次の画面（Stripe）でカード情報を入力し、ボタンを押すと申し込みが確定します。</p>`}
     </div>`;
@@ -3506,6 +3518,147 @@ async function handlePwSubmit(form) {
 }
 
 /* =========================================================
+   画面：利用規約・プライバシーポリシー・特定商取引法に基づく表記
+   ※ 名前・連絡先が決まったら LEGAL を書き換えます
+   ========================================================= */
+const LEGAL = {
+  draft: true,               // 下書きのあいだは true（画面に「下書き」と表示）
+  updated: '2026年10月30日',  // 最終改定日
+  operator: '',              // 運営責任者の氏名（空欄なら「請求があれば開示」と表示）
+  email: '',                 // 問い合わせ用メールアドレス
+  price: '月額1,200円（税込）'
+};
+function legalWrap(title, body) {
+  const contact = LEGAL.email ? `<a href="mailto:${esc(LEGAL.email)}">${esc(LEGAL.email)}</a>` : '（準備中）';
+  return `<a class="back" href="#/settings">← 設定</a>` + pageHead(title, `${SERVICE}　最終改定日：${LEGAL.updated}`) +
+    (LEGAL.draft ? '<div class="notice warn">この文書は<b>下書き</b>です。正式な公開前に内容を確定します。</div>' : '') +
+    `<div class="card legal">${body.replace(/\{CONTACT\}/g, contact)}</div>
+    <div class="ext-links" style="margin:6px 0 20px"><a class="btn btn-ghost btn-sm" href="#/terms">利用規約</a><a class="btn btn-ghost btn-sm" href="#/privacy">プライバシーポリシー</a><a class="btn btn-ghost btn-sm" href="#/law">特定商取引法に基づく表記</a></div>`;
+}
+function viewTerms() {
+  const S = esc(SERVICE), C = esc(COMPANY), P = esc(PREMIUM_NAME);
+  return legalWrap('利用規約', `
+<p>この利用規約（以下「本規約」）は、${C}（以下「運営者」）が提供する「${S}」（以下「本サービス」）の利用条件を定めるものです。本サービスを利用するすべての方（以下「利用者」）は、本規約に同意したうえで本サービスを利用するものとします。</p>
+<h3>第1条（本サービスの内容）</h3>
+<ol><li>本サービスは、肌の状態・スキンケア・化粧品・生活習慣・購入金額などを記録・管理し、利用者が自分に合ったケアを効率よく選ぶための情報整理を手助けするサービスです。</li>
+<li>本サービスは医療行為・診断・治療を行うものではありません。肌の症状が強い場合や長引く場合は、医療機関に相談してください。</li>
+<li>本サービスの集計・比較・提案は、利用者が入力した記録や公開情報をもとにした目安であり、商品や成分の効果・安全性、肌の変化の原因を保証または断定するものではありません。</li></ol>
+<h3>第2条（料金プラン）</h3>
+<ol><li>本サービスには、無料で使える「無料プラン」と、有料の「${P}プラン」（以下「有料プラン」）があります。各プランで使える機能は、アプリ内のプラン表示のとおりです。</li>
+<li>有料プランの料金は、申し込み画面に表示する金額とします（${esc(LEGAL.price)}）。</li>
+<li>有料プランの利用にはアカウント登録が必要です。無料プランはアカウント登録なしで利用できます。</li></ol>
+<h3>第3条（アカウント）</h3>
+<ol><li>利用者は、正確なメールアドレスを登録し、パスワードを自分の責任で管理するものとします。</li>
+<li>アカウントの第三者への貸与・譲渡・共有はできません。</li>
+<li>アカウントが第三者に使われたことによる損害について、運営者に故意または重大な過失がある場合を除き、運営者は責任を負いません。</li></ol>
+<h3>第4条（有料プランの支払い・更新）</h3>
+<ol><li>支払いは、決済代行会社Stripe（ストライプ）を通じたクレジットカード等で行います。カード情報は運営者のサーバーには保存されません。</li>
+<li>有料プランは1か月ごとの自動更新です。申し込み日を基準に毎月同じ日に料金が請求され、解約しない限り自動で更新されます。</li>
+<li>支払いが確認できない場合、有料プランの機能を停止することがあります。</li></ol>
+<h3>第5条（解約・返金）</h3>
+<ol><li>利用者は、アプリ内の「プラン・アカウント」画面から、いつでも解約の手続きができます。</li>
+<li>解約した場合も、すでに支払った期間の終了日までは有料プランを利用できます。次の更新日以降は料金が発生しません。</li>
+<li>月の途中で解約した場合の日割り計算による返金は行いません。ただし、法令により返金が必要な場合や、運営者の責任でサービスを提供できなかった場合はこの限りではありません。</li></ol>
+<h3>第6条（データの保存）</h3>
+<ol><li>肌の記録・写真・食事などのデータは、原則として利用者の端末のブラウザ内に保存されます。ブラウザのデータ削除や端末の故障などによりデータが失われた場合、運営者は復元できません。利用者は必要に応じてバックアップを保存してください。</li>
+<li>個人情報の取り扱いは、別に定める「プライバシーポリシー」によります。</li></ol>
+<h3>第7条（価格比較・外部サイト・広告）</h3>
+<ol><li>価格比較で表示する価格・送料・在庫は、各通販サイトの公式API等から取得した時点の情報であり、正確性・最新性を保証しません。購入前に各サイトで必ず確認してください。</li>
+<li>外部サイトでの購入・契約は、利用者と各サイトとの間で行われるものであり、運営者は当事者になりません。</li>
+<li>本サービスには、アフィリエイト（成果報酬型広告）リンクや広告が含まれることがあります。広告・アフィリエイトリンクには「PR」「広告」などと表示し、価格比較の並び順や本サービスのおすすめ内容には影響させません。</li></ol>
+<h3>第8条（禁止事項）</h3>
+<p>利用者は、次の行為をしてはいけません。</p>
+<ol><li>法令または公序良俗に反する行為</li>
+<li>本サービスのサーバーやネットワークに過度な負担をかける行為、不正アクセス、自動化された大量のアクセス</li>
+<li>本サービスを不正に改変・複製・再配布する行為、または有料プランの機能を不正に利用する行為</li>
+<li>他人のメールアドレス等を使って登録する行為、他人になりすます行為</li>
+<li>運営者や第三者の権利・利益を侵害する行為</li>
+<li>その他、運営者が不適切と合理的に判断する行為</li></ol>
+<h3>第9条（サービスの変更・停止・終了）</h3>
+<ol><li>運営者は、保守・障害・外部サービスの停止などの理由により、事前の通知なく本サービスの全部または一部を一時的に停止することがあります。</li>
+<li>運営者は、本サービスの内容を変更し、または提供を終了することがあります。有料プランの提供を終了する場合は、相当の期間をおいてアプリ内でお知らせします。</li></ol>
+<h3>第10条（免責）</h3>
+<ol><li>運営者は、本サービスが利用者の特定の目的に合うこと、期待する効果があることを保証しません。</li>
+<li>本サービスの利用によって利用者に損害が生じた場合、運営者に故意または重大な過失がある場合を除き、運営者の責任は、その損害が生じた月に利用者が運営者に支払った有料プランの料金の額を上限とします。</li>
+<li>前項は、消費者契約法その他の法令により、運営者の責任を制限できない場合には適用しません。</li></ol>
+<h3>第11条（規約の変更）</h3>
+<p>運営者は、必要に応じて本規約を変更することがあります。変更する場合は、効力が生じる日と変更内容をアプリ内で事前にお知らせします。変更後に本サービスを利用した場合、変更後の規約に同意したものとみなします。</p>
+<h3>第12条（準拠法・管轄裁判所）</h3>
+<p>本規約は日本法に従って解釈されます。本サービスに関して紛争が生じた場合は、運営者の住所地を管轄する地方裁判所を第一審の専属的合意管轄裁判所とします。</p>
+<h3>お問い合わせ</h3>
+<p>本規約に関するお問い合わせは、次の連絡先までお願いします。<br>メールアドレス：{CONTACT}</p>
+<p class="small muted">以上</p>`);
+}
+function viewPrivacy() {
+  const S = esc(SERVICE), C = esc(COMPANY), P = esc(PREMIUM_NAME);
+  const row = (to, what, why) => `<tr><td>${to}</td><td>${what}</td><td>${why}</td></tr>`;
+  return legalWrap('プライバシーポリシー', `
+<p>${C}（以下「運営者」）は、「${S}」（以下「本サービス」）における利用者の情報の取り扱いについて、次のとおり定めます。</p>
+<h3>1. 基本の考え方</h3>
+<p>本サービスは、<b>肌の記録・写真・食事・生活習慣などのデータを、利用者の端末のブラウザ内（localStorage）だけに保存</b>します。これらのデータを運営者のサーバーに送信・保存することはありません。</p>
+<h3>2. 取得する情報</h3>
+<ol><li><b>アカウント情報</b>：有料プランを申し込むためにアカウントを作成した場合、メールアドレス、パスワード（暗号化された形）、契約状況（プランの状態・次回更新日など）。</li>
+<li><b>決済情報</b>：支払いは決済代行会社Stripeの画面で行います。クレジットカード番号は運営者のサーバーに送られず、運営者は取得しません。運営者が受け取るのは、Stripe上の顧客番号・契約番号・支払いの状態です。</li>
+<li><b>検索に使う情報</b>：店舗検索・価格比較を使った場合に、入力した地名・駅名・商品名・JANコード、検索する場所（現在地の利用を許可した場合はその位置）。これらは検索のためだけに使い、運営者は保存しません。</li>
+<li><b>アクセス情報</b>：本サービスや外部サービスにアクセスする際、IPアドレス・ブラウザの種類などの情報が、各サーバーの通信記録として記録されることがあります。</li></ol>
+<h3>3. 利用目的</h3>
+<ol><li>本サービス（有料プランを含む）の提供・本人確認・ログイン</li>
+<li>料金の請求、契約状況の管理、解約・アカウント削除の手続き</li>
+<li>店舗検索・価格比較など、利用者が操作した機能の実行</li>
+<li>お問い合わせへの対応、重要なお知らせの連絡</li>
+<li>不正利用の防止、障害への対応、サービスの改善</li></ol>
+<h3>4. 第三者への提供</h3>
+<p>運営者は、法令に基づく場合を除き、本人の同意なく個人情報を第三者に提供しません。ただし、次の「5. 外部に送信される情報」に記載した、サービスの提供に必要な委託先への送信は除きます。</p>
+<h3>5. 外部に送信される情報（電気通信事業法に基づく公表）</h3>
+<p>本サービスでは、機能の提供のために、利用者の端末から次の外部サービスに情報が送信されます。</p>
+<div class="table-wrap"><table class="legal-table"><thead><tr><th>送信先</th><th>送信される情報</th><th>目的・タイミング</th></tr></thead><tbody>
+${row('Supabase（Supabase Inc.・サーバーは東京）', 'メールアドレス、パスワード、ログイン状態、契約状況', 'アカウントと有料プランの管理。ログイン・プラン画面を使ったときだけ')}
+${row('Stripe（Stripe, Inc.）', '支払いに必要な情報（カード情報はStripeに直接入力）', '有料プランの決済・解約。申し込み・管理画面を開いたときだけ')}
+${row('jsDelivr（Prospect One）', 'IPアドレス、ブラウザの情報', 'ログイン機能の部品の読み込み。プラン・アカウント画面を開いたとき')}
+${row('Geoapify（Geoapify GmbH）', '入力した地名・駅名、検索する場所の座標', '近くの店舗の検索。店舗検索で「検索」を押したときだけ')}
+${row('国土地理院（地名検索）', '入力した地名・駅名・住所', '場所の特定。店舗検索で「検索」を押したときだけ')}
+${row('OpenStreetMap', '表示する地図の範囲、IPアドレス', '検索結果の地図の表示（Geoapifyが使えないときの予備の検索を含む）')}
+${row('楽天グループ（楽天ウェブサービス）・LINEヤフー（Yahoo!デベロッパーネットワーク）', '商品名・JANコード（運営者のサーバーを通して送信。利用者のIPアドレスなどは送りません）', '価格比較。「価格を調べる」を押したときだけ')}
+${row('GitHub（GitHub, Inc.）', 'IPアドレス、ブラウザの情報', '本サービスのページの配信')}
+</tbody></table></div>
+<p class="small muted">広告（無料プラン）を配信する場合は、広告配信事業者に送られる情報（Cookie等）と、その無効化の方法をこの表に追加し、事前にお知らせします。現在は広告を配信していません。</p>
+<h3>6. 安全管理</h3>
+<p>運営者は、アカウント情報への不正アクセス・漏えいを防ぐため、通信の暗号化（HTTPS）、アクセス権限の制限（本人の情報だけを読める設定）など、必要な安全管理措置を行います。</p>
+<h3>7. 保存期間</h3>
+<p>アカウント情報は、アカウントを削除するまで保存します。アカウントを削除した場合、運営者のサーバー上のアカウント情報・契約状況は削除します。ただし、法令で保存が義務づけられている取引記録は、決済代行会社が法令の定める期間保存します。</p>
+<h3>8. 開示・訂正・削除などの請求</h3>
+<ol><li>利用者は、アプリ内の「プラン・アカウント」画面から、いつでもアカウントを削除できます。</li>
+<li>保有する個人データの開示・訂正・利用停止・削除などを希望する場合は、下記の連絡先までご連絡ください。本人確認のうえ、法令に従って対応します。</li>
+<li>端末内に保存されたデータは、アプリ内の「設定」から利用者自身でいつでも削除できます。</li></ol>
+<h3>9. 未成年の利用者</h3>
+<p>未成年の方が有料プランを申し込む場合は、保護者の同意を得てください。</p>
+<h3>10. 改定</h3>
+<p>運営者は、必要に応じて本ポリシーを改定します。重要な変更がある場合は、アプリ内でお知らせします。</p>
+<h3>11. お問い合わせ窓口</h3>
+<p>運営者：${C}<br>メールアドレス：{CONTACT}</p>
+<p class="small muted">以上</p>`);
+}
+function viewLaw() {
+  const C = esc(COMPANY), P = esc(PREMIUM_NAME);
+  const ask = '請求があった場合、遅滞なく開示します';
+  const r = (k, v) => `<dt>${k}</dt><dd>${v}</dd>`;
+  return legalWrap('特定商取引法に基づく表記', `<dl class="kv legal-kv">
+${r('販売事業者', `${C}`)}
+${r('運営責任者', LEGAL.operator ? esc(LEGAL.operator) : ask)}
+${r('所在地', ask)}
+${r('電話番号', ask + '（お問い合わせはメールでお願いします）')}
+${r('メールアドレス', '{CONTACT}')}
+${r('販売価格', `${P}プラン：${esc(LEGAL.price)}<br>申し込み画面に表示する金額が優先します`)}
+${r('商品代金以外の必要料金', 'インターネット接続に必要な通信料は、利用者の負担となります')}
+${r('支払方法', 'クレジットカード等（決済代行：Stripe）')}
+${r('支払時期', '申し込み時に初回分を支払い、以後は1か月ごとに、申し込み日と同じ日に自動で請求されます')}
+${r('サービスの提供時期', '決済の完了後、すぐに利用できます')}
+${r('解約・キャンセル', 'アプリ内の「プラン・アカウント」画面から、いつでも解約できます。解約後も、支払い済みの期間の終了日まで利用でき、次回以降の請求は発生しません')}
+${r('返品・返金', 'デジタルサービスの性質上、支払い済みの料金の返金（日割りを含む）はできません。ただし、法令により返金が必要な場合、または運営者の責任でサービスを提供できなかった場合を除きます')}
+${r('動作環境', '最新版のSafari・Google Chrome・Microsoft Edge・Firefox（JavaScriptとCookieが有効であること）')}
+</dl>`);
+}
+/* =========================================================
    画面：設定・プライバシー
    ========================================================= */
 function viewSettings() {
@@ -3532,9 +3685,11 @@ function viewSettings() {
         <li><b>薬局のデータ</b>：「医療情報ネット」オープンデータ（厚生労働省）を加工して、アプリと一緒に置いています。検索のときに外部に送る情報はありません。</li>
         <li><b>店舗検索</b>：「検索」ボタンを押したときだけ、入力した駅名・地名・住所と、検索する場所（または許可した現在地）を、店舗検索サービスGeoapifyと国土地理院の地名検索に送ります（Geoapifyが使えないときは、予備としてOpenStreetMapのサーバーに送ります）。検索結果の地図には、OpenStreetMapの地図を読み込みます。</li>
         <li><b>食事の写真</b>：撮影した写真は端末内だけで使い、「保存する」にチェックしたものだけをこのブラウザ内に保存します。</li>
+        <li><b>価格比較</b>：「価格を調べる」を押したときだけ、商品名（とJANコード）を${esc(SERVICE)}のサーバーを通して楽天市場・Yahoo!ショッピングの公式APIに送ります。あなたの情報（IPアドレスなど）は送りません。</li>
         <li><b>外部リンク</b>：通販サイト・地図のリンクを開くと、そのサイトの利用規約・プライバシーポリシーが適用されます。</li>
         <li><b>広告</b>：無料プランでは、ホーム・商品検索・成分辞典・店舗検索の画面に広告を表示する予定です（現在は準備中で、広告は配信していません）。肌の記録・グラフ・レポート・食事などの画面には表示しません。広告は肌トモのおすすめや価格比較の結果とは関係がなく、広告であることを明示します。広告を配信するときは、広告サービスに送られる情報（Cookieなど）について、この画面でお知らせします。プレミアムプランでは広告を表示しません。</li>
-      </ul></div>
+      </ul>
+      <div class="ext-links" style="margin-top:12px"><a class="btn btn-ghost btn-sm" href="#/terms">利用規約</a><a class="btn btn-ghost btn-sm" href="#/privacy">プライバシーポリシー</a><a class="btn btn-ghost btn-sm" href="#/law">特定商取引法に基づく表記</a></div></div>
     <div class="card"><div class="card-h"><h2>データの保存状況</h2></div>
       <dl class="kv"><dt>使用容量（目安）</dt><dd>約${kb}KB（ブラウザの上限は一般的に5MB前後）</dd><dt>肌の記録</dt><dd>${state.skinLogs.length}件（写真付き ${photos}件）</dd><dt>食事・運動・睡眠</dt><dd>${state.lifeLogs.length}件（食事の写真 ${mealPh}枚・自分で登録した食品 ${state.customFoods.length}件）</dd><dt>マイ化粧品</dt><dd>${state.myProducts.length}件</dd><dt>商品データベース</dt><dd>${state.catalog.length}件</dd></dl>
       ${storageOK ? '' : '<div class="notice warn" style="margin-top:12px">現在このブラウザでは保存ができない状態です。</div>'}</div>
@@ -3558,7 +3713,7 @@ function viewSettings() {
         <li>AIによる分析機能はありません。レポートは決められたルールに基づく集計です。</li>
       </ul>
       <details class="fold" style="margin-top:12px"><summary>今後の予定（未実装）</summary><ul class="small muted" style="padding-left:18px;margin:0">
-        <li>通販サイトのAPI連携による価格の自動取得（各社の利用規約・審査の確認後）</li>
+        <li>Amazonなど、楽天市場・Yahoo!ショッピング以外の通販サイトの価格の自動取得（各社の審査・利用規約の確認後）</li>
         <li>地図サービスAPIによる店舗検索、在庫情報（取得できる範囲）</li>
         <li>写真から商品そのものを判別する画像認識・成分表示の自動読み取り（OCR）。現在はバーコードの数字と、テキスト認識表示からの貼り付けで照合しています</li>
         <li>${PREMIUM_NAME}プラン：食事の写真から料理を読み取り、栄養の目安を推定する機能（画像認識AI・課金の仕組み・サーバーが必要）</li>
@@ -3952,8 +4107,8 @@ function render() {
   const r = parseRoute();
   const views = {home:viewHome, search:viewSearch, product:() => viewProduct(r.id), prices:() => viewPrices(r.id), stores:viewStores,
     ingredients:() => viewIngredients(r.id), scan:viewScan, my:() => r.id ? viewMyDetail(r.id) : viewMy(), compare:viewCompare, combo:viewCombo,
-    log:viewLog, charts:viewCharts, report:viewReport, spending:viewSpending, check:() => viewCheck(r.id), settings:viewSettings, plan:() => viewPlan(r.query), suggest:viewSuggest, visit:viewVisit};
-  const alias = {product:'search', prices:'search', compare:'charts', check:'spending'};
+    log:viewLog, charts:viewCharts, report:viewReport, spending:viewSpending, check:() => viewCheck(r.id), settings:viewSettings, terms:viewTerms, privacy:viewPrivacy, law:viewLaw, plan:() => viewPlan(r.query), suggest:viewSuggest, visit:viewVisit};
+  const alias = {product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'};
   const navName = alias[r.name] || (views[r.name] ? r.name : 'home');
   if (r.name !== 'check') ui._checkFrom = '';
   if (r.name === 'plan' && acct.status === 'idle') setTimeout(initCloud, 0);
