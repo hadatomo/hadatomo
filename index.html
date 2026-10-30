@@ -420,6 +420,13 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .ls-main em.good{color:var(--green-d)}
 .ls-go{color:var(--muted);font-size:18px;line-height:1}
 .advice{margin-top:12px}
+.diag{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.diag li{display:grid;grid-template-columns:22px 1fr;gap:8px;font-size:13.5px;line-height:1.5}
+.diag li>span{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff}
+.diag li.ok>span{background:var(--green)}
+.diag li.ng>span{background:#C0563B}
+.diag small{display:block;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
+.diag em{display:block;font-style:normal;color:#C0563B;font-size:12.5px;margin-top:2px}
 .advice h3{margin:0 0 4px;font-size:14.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .advice .ai-badge{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--green);color:#fff}
 .advice ol{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
@@ -4194,15 +4201,55 @@ function isPremium() {
 async function callVision(mode, image, payload) {
   if (!acct.client) await initCloud();
   if (!acct.client || !acct.user) throw new Error('ログインしてからお使いください。');
-  const {data, error} = await acct.client.functions.invoke('vision', {body:mode === 'advice' ? {mode, data:payload} : {mode, image}});
+  const {data, error} = await acct.client.functions.invoke('vision', {body:mode === 'advice' ? {mode, data:payload} : mode === 'diag' ? {mode} : {mode, image}});
   if (error) {
     let msg = 'サーバーに接続できませんでした。時間をおいてお試しください。';
-    try { const j = await error.context.json(); if (j && j.error) msg = j.error; } catch (e) { /* 何もしない */ }
+    try {
+      const st = error.context && error.context.status, j = await error.context.json();
+      if (j && (j.error || j.message || j.msg)) msg = String(j.error || j.message || j.msg);
+      if (/JWT/i.test(msg)) msg = 'サーバーの設定で、ログインの確認方法が合っていません（Verify JWT）。' + (st ? `［${st}］` : '');
+    } catch (e) { /* 何もしない */ }
+    if (mode !== 'diag') msg += '（うまくいかないときは「プラン・アカウント」の画面の「診断する」で原因を調べられます）';
     throw new Error(msg);
   }
   if (data && data.error) throw new Error(data.error);
   return data;
 }
+// ---------- 写真読み取り・AI分析がうまく動かないときの診断 ----------
+let diagRes = null, diagBusy = false;
+function diagCardHtml() {
+  let body = '<p class="small muted" style="margin:0">写真読み取りやAI分析がうまく動かないときに、サーバーの設定のどこに問題があるかを調べます（回数には数えません）。</p>';
+  if (diagBusy) body += '<p class="small" style="margin-top:10px">調べています…（20秒ほどかかることがあります）</p>';
+  else if (diagRes) body += diagResultHtml(diagRes);
+  return `<div class="card" id="diag-card"><div class="card-h"><h2>写真読み取り・AI分析の診断</h2></div>${body}
+    <button class="btn btn-ghost btn-sm" style="margin-top:12px" data-action="vision-diag" ${diagBusy ? 'disabled' : ''}>${diagRes ? 'もう一度調べる' : '診断する'}</button></div>`;
+}
+function diagResultHtml(r) {
+  if (r.error) return `<div class="notice warn" style="margin:10px 0 0"><b>診断できませんでした</b><br>${esc(r.error)}${r.fix ? `<br><b>直し方：</b>${esc(r.fix)}` : ''}</div>`;
+  const d = r.diag, rows = [];
+  const row = (ok, label, detail, fix) => rows.push(`<li class="${ok ? 'ok' : 'ng'}"><span>${ok ? '✓' : '✕'}</span><div><b>${esc(label)}</b>${detail ? `<small>${esc(detail)}</small>` : ''}${!ok && fix ? `<em>直し方：${esc(fix)}</em>` : ''}</div></li>`);
+  row(d.version === VISION_VERSION, 'サーバーの関数「vision」が最新', `版：${d.version || '不明'}`, '5_関数_vision.txt を Supabase の vision に貼り付けて「Deploy updates」を押してください。');
+  row(true, 'ログイン', d.email);
+  row(d.premium, 'プレミアムの契約', typeof d.subscription === 'object' && d.subscription ? `状態：${d.subscription.status}` : String(d.subscription || ''), 'プラン・アカウントの画面から申し込んでください（テスト中はテスト用カードで申し込めます）。');
+  row(d.quotaTable, '回数を数える表（vision_usage）', d.quotaError || '', '6_写真読み取り_SQL.txt を Supabase の「SQL Editor」に貼り付けて「Run」を押してください。');
+  row(d.geminiKey, 'GeminiのAPIキーの登録', '', 'Supabase の Edge Functions → Secrets に「GEMINI_API_KEY」を追加してください。');
+  if (d.geminiKey) row(d.geminiKeyOk, 'GeminiのAPIキーが有効', d.geminiError || (d.models.length ? `使えるモデル：${d.models.join('、')}` : ''), 'Google AI Studio でAPIキーを作り直し、Secrets の GEMINI_API_KEY を新しいキーに置きかえてください（前後に空白が入らないように）。');
+  if (d.textTest) row(d.textTest.ok, 'AIの応答テスト', `${d.textTest.model}・${(d.textTest.ms / 1000).toFixed(1)}秒${d.textTest.error ? '・' + d.textTest.error : ''}`, /quota|exhausted|429/i.test(d.textTest.error || '') ? 'Geminiの無料枠の上限に達しています。時間をおくか、Google AI Studio で利用枠を確認してください。' : 'しばらく時間をおいて、もう一度診断してください。続く場合は、表示された文を教えてください。');
+  const allOk = d.version === VISION_VERSION && d.premium && d.quotaTable && d.geminiKeyOk && d.textTest && d.textTest.ok;
+  return `<ul class="diag">${rows.join('')}</ul>${allOk ? '<div class="notice green" style="margin:10px 0 0">設定はすべて正常です。写真読み取り・AI分析を使えます。</div>' : ''}`;
+}
+async function runVisionDiag() {
+  diagBusy = true; diagRes = null; const upd = () => { const c = document.getElementById('diag-card'); if (c) c.outerHTML = diagCardHtml(); }; upd();
+  try { const r = await callVision('diag'); diagRes = r && r.diag ? r : {error:'診断の結果を受け取れませんでした。'}; }
+  catch (e) {
+    const m = String(e.message || e);
+    diagRes = {error:m, fix:/種類が正しくありません/.test(m) ? 'サーバーの関数「vision」が古いままです。5_関数_vision.txt を貼り付けて「Deploy updates」を押してください。'
+      : /JWT/i.test(m) ? 'Supabase の Edge Functions → vision の設定で「Verify JWT with legacy secret」をオフにしてください。'
+      : /接続できません|Failed to fetch|NetworkError/.test(m) ? '関数「vision」が見つからないか、止まっています。Supabase の Edge Functions に「vision」があるか確認してください。' : ''};
+  }
+  diagBusy = false; upd();
+}
+const VISION_VERSION = '2026-10-30-diag'; // サーバーの関数 vision の最新の版
 const AI_NOTE = 'AI（Google Gemini）による推定です。必ず内容を確認・修正してから使ってください。';
 const AI_CAT = {'化粧水':'化粧水・トナー','乳液':'乳液','美容液':'美容液・アンプル','クリーム':'クリーム','日焼け止め':'日焼け止め','洗顔料':'洗顔','クレンジング':'クレンジング','パック':'シートマスク・パック'};
 async function callBilling(action) {
@@ -4285,6 +4332,7 @@ function viewPlan(query) {
   const s = acct.sub;
   html += `<div class="card"><div class="card-h"><h2>アカウント</h2></div><dl class="kv"><dt>メールアドレス</dt><dd>${esc(acct.user.email || '')}</dd><dt>プラン</dt><dd>${!acct.subLoaded ? '<span class="muted">読み込み中…</span>' : isPremium() ? `<span class="badge-premium">${PREMIUM_NAME}</span>` : '無料プラン'}</dd></dl>
     <div class="page-actions" style="margin-top:14px"><button class="btn btn-ghost btn-sm" data-action="acct-logout">ログアウト</button><button class="btn btn-danger-ghost btn-sm" data-action="acct-delete">アカウントを削除</button></div></div>`;
+  html += diagCardHtml();
   if (!acct.subLoaded) return html;
   if (isPremium()) {
     const end = s.current_period_end ? fmtDate(ymd(new Date(s.current_period_end))) : '確認中';
@@ -4744,6 +4792,7 @@ const actions = {
     st.user = true; st.auto = false; st.target = {yaw:base + t[0], pitch:t[1]}; st.dirty = true;
   },
   'advice-ai': () => runAdvice(true),
+  'vision-diag': () => runVisionDiag(),
   'life-goal': () => openLifeGoal(),
   'f3-zoom': v => { const st = FACE3D.st; if (!st) return; st.zoomT = clamp((st.zoomT || st.cam.position.z) + (v === 'in' ? -8 : 8), st.minZ || 34, st.maxZ || 84); st.dirty = true; },
   'f3-full': v => openFace3dFull(v),
