@@ -209,8 +209,8 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(90,138,105,.16),transparent 70%)}
 .hero-brand{font-family:var(--serif);font-size:34px;letter-spacing:.26em;font-weight:500;line-height:1.1}
 .hero-copy{margin-top:10px;font-size:15px;color:var(--ink2);letter-spacing:.06em}
-.hero-date{margin:0;font-size:16px;font-weight:600;color:var(--ink)}
-.hero-top{display:flex;align-items:center;justify-content:center;gap:10px;max-width:420px;text-align:center}
+.hero-date{margin:0;font-size:15px;font-weight:700;color:var(--ink);line-height:1.2}
+.hero-top{display:flex;align-items:center;justify-content:center;gap:10px;max-width:420px;min-height:44px;border-radius:999px;background:var(--surface);border:1px solid var(--line2);text-align:center}
 .streak{display:inline-flex;align-items:center;gap:4px;flex:none}
 .streak-star{position:relative;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;filter:drop-shadow(0 0 6px rgba(245,184,46,.55));animation:starGlow 2.6s ease-in-out infinite}
 .streak-star svg{position:absolute;inset:0;width:100%;height:100%}
@@ -396,7 +396,7 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .f3-views{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
 .f3-load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted);padding:20px;text-align:center}
 .f3-tip{position:absolute;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:12.5px;padding:4px 10px;border-radius:8px;pointer-events:none;white-space:nowrap}
-.life-btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:16px;max-width:420px}
+.life-btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px;max-width:420px}
 .life-btns .btn{justify-content:center;padding-left:6px;padding-right:6px;white-space:nowrap}
 .life-btns .life-main{grid-column:1 / -1;grid-row:1}
 .life-btns>:not(.life-main){grid-row:2}
@@ -5111,7 +5111,12 @@ function render() {
   $('#main').innerHTML = html;
   renderNav(navName);
   const key = r.name + '/' + r.id;
-  if (key !== lastRoute) { stopMomentumTop(); lastRoute = key; }
+  if (key !== lastRoute) {
+    lastRoute = key;
+    if (navRestoreY != null) { const y = navRestoreY; window.scrollTo(0, y); requestAnimationFrame(() => { window.scrollTo(0, y); setTimeout(() => { if (Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y); }, 120); }); }
+    else stopMomentumTop();
+  }
+  navRestoreY = null;
   drawCharts();
   fillAds();
   if (r.name === 'charts') drawFace3d();
@@ -5131,9 +5136,14 @@ window.addEventListener('storage', e => {
 // 一度通った画面にもう一度来たときは、そこまで巻き戻す
 const navKey = () => { const h = location.hash || '#/home'; return h === '#' || h === '#/' ? '#/home' : h; };
 const navStack = [navKey()];
+// 画面ごとのスクロール位置（戻ったときに、元の位置に戻す）
+const navScroll = {};
+let navRestoreY = null;
+window.addEventListener('scroll', () => { navScroll[navStack[navStack.length - 1]] = window.scrollY; }, {passive:true});
 window.addEventListener('hashchange', () => {
   const k = navKey(), i = navStack.lastIndexOf(k);
-  if (i >= 0) navStack.length = i + 1; else navStack.push(k);
+  navRestoreY = i >= 0 && navScroll[k] != null ? navScroll[k] : null; // 来たことのある画面へ戻るときだけ、位置を戻す
+  if (i >= 0) navStack.length = i + 1; else { navStack.push(k); navScroll[k] = 0; }
   if (navStack.length > 50) navStack.splice(0, navStack.length - 50);
 });
 function goBack(fallback) {
