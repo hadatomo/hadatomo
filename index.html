@@ -46,7 +46,7 @@
 :root[data-theme="dark"] .badge-sample{background:#3A3018;color:#EBCB8E;border-color:#5A4A22}
 :root[data-theme="dark"] .badge-unverified{background:#2A2E2B;color:#B9B3A8;border-color:#3B403C}
 :root[data-theme="dark"] .tab.active{color:var(--bg)}
-:root[data-theme="dark"] .toast{color:var(--bg)}
+:root[data-theme="dark"] .toast{background:#2A302C;color:#EEF1EE}
 :root[data-theme="dark"] .toast-btn{color:var(--green-d)}
 :root[data-theme="dark"] .hero{background:linear-gradient(135deg,#1C2620 0%,#262219 100%)}
 :root[data-theme="dark"] .lock-card{background:linear-gradient(135deg,#221F18,#1E1C16)}
@@ -76,7 +76,7 @@
 :root:not([data-theme="light"]) .badge-sample{background:#3A3018;color:#EBCB8E;border-color:#5A4A22}
 :root:not([data-theme="light"]) .badge-unverified{background:#2A2E2B;color:#B9B3A8;border-color:#3B403C}
 :root:not([data-theme="light"]) .tab.active{color:var(--bg)}
-:root:not([data-theme="light"]) .toast{color:var(--bg)}
+:root:not([data-theme="light"]) .toast{background:#2A302C;color:#EEF1EE}
 :root:not([data-theme="light"]) .toast-btn{color:var(--green-d)}
 :root:not([data-theme="light"]) .hero{background:linear-gradient(135deg,#1C2620 0%,#262219 100%)}
 :root:not([data-theme="light"]) .lock-card{background:linear-gradient(135deg,#221F18,#1E1C16)}
@@ -788,9 +788,10 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 .time-pick .select{width:76px;min-width:0;padding:8px 10px;text-align:center}
 .time-pick b{font-weight:600;font-size:14px}
 .toast.undo{display:flex;align-items:center;gap:14px;pointer-events:auto}
-.toast-btn{background:none;border:0;color:#9FD3AE;font-weight:700;font-size:13.5px;cursor:pointer;padding:4px 2px;font-family:inherit}
-.toast{background:var(--ink);color:#fff;padding:11px 18px;border-radius:12px;font-size:13.5px;box-shadow:0 8px 24px rgba(0,0,0,.18);animation:up .2s}
-.toast.error{background:var(--danger)}
+.toast-btn{background:none;border:0;color:var(--green-d);font-weight:700;font-size:13.5px;cursor:pointer;padding:4px 2px;font-family:inherit}
+.toast{background:#fff;color:#1E2320;padding:12px 20px;border-radius:999px;font-size:13.5px;box-shadow:0 10px 30px rgba(0,0,0,.16),0 0 0 1px rgba(0,0,0,.05);animation:up .2s}
+.toast.error{background:#fff;color:#B4412E;box-shadow:0 10px 30px rgba(0,0,0,.16),0 0 0 1px rgba(180,65,46,.35)}
+.toast.undo{border-radius:999px}
 
 /* ---------- Charts / tables ---------- */
 .chart{width:100%;min-height:60px}
@@ -3781,7 +3782,7 @@ function openLogForm(id) {
     // 3Dの顔の色も、その場で変える
     const st = FACE3D.st; if (st && st.canvasId === 'face3d-form') {
       const c = {}; AREAS.forEach(a => { const v = fpCount(a.id) + ((fpNotes[a.id] || []).length ? 1 : 0); if (v) c[a.id] = v; });
-      st.selArea = fpArea; // 押した部位を緑に光らせる
+      face3dGridSelect(st, fpArea); // 押した部位を、マス目でくっきり緑に光らせる
       face3dApply(st, c, Math.max(3, ...Object.values(c), 1), $$('.spot-row', form).length ? 'spots' : 'areas');
     }
     fpPanel();
@@ -3818,7 +3819,7 @@ function openLogForm(id) {
   form.addEventListener('change', e => { if (e.target.matches('[data-fp-type]') && fpArea) { const row = fpSpotRow(fpArea); if (row) $('[name="sp_type"]', row).value = e.target.value; $('#modal-root').dataset.dirty = '1'; } });
   form._fpNotes = () => fpNotes;
   fpPanel();
-  setTimeout(() => drawFace3d({canvas:'face3d-form', load:'fp-load', tip:'', camZ:55, yawOnly:true, auto:false, ready:st => { st.canvasId = 'face3d-form'; st.onTap = a => { fpArea = a; fpSync(); }; fpSync(); }}), 60);
+  setTimeout(() => drawFace3d({canvas:'face3d-form', load:'fp-load', tip:'', camZ:55, yawOnly:true, auto:false, grid:true, ready:st => { st.canvasId = 'face3d-form'; st.onTap = a => { fpArea = a; fpSync(); }; fpSync(); }}), 60);
   const sumSpots = () => {
     const rows = $$('.spot-row', form);
     if (!rows.length) return;
@@ -4374,6 +4375,9 @@ async function drawFace3d(opts) {
   geo.setAttribute('color', new T.Float32BufferAttribute(new Float32Array(m.r.length * 3), 3));
   geo.setIndex(m.f); geo.computeVertexNormals();
   const mat = new T.MeshStandardMaterial({vertexColors:true, roughness:0.68, metalness:0, side:T.DoubleSide});
+  // 肌の記録の画面：顔にうすい格子を入れ、押した部位をマス目でくっきり仕切って光らせる
+  let gridInfo = null;
+  if (opts.grid) gridInfo = face3dGrid(T, m, mat);
   const face = new T.Mesh(geo, mat), group = new T.Group();
   group.add(face);
   // 首（頭の後ろは顔の形のデータに含めてある。マネキンのような胸像にして、立体だとわかりやすくする）
@@ -4384,7 +4388,7 @@ async function drawFace3d(opts) {
   [-1, 1].forEach(sd => { const ear = new T.Mesh(earGeo, headMat); ear.scale.set(1.0, 2.5, 1.6); ear.position.set(sd * 8.05, 0.6, -3.4); ear.rotation.set(0, sd * 0.35, sd * -0.08); group.add(ear);
     const inner = new T.Mesh(earGeo, new T.MeshStandardMaterial({color:new T.Color(0.86, 0.66, 0.56).convertSRGBToLinear(), roughness:0.8})); inner.scale.set(0.45, 1.7, 1.0); inner.position.set(sd * 8.55, 0.6, -2.9); inner.rotation.copy(ear.rotation); group.add(inner); });
   group.position.y = 0.4; scene.add(group);
-  const st = FACE3D.st = {renderer, scene, cam, geo, group, face, dots:[], dotGeo:new T.SphereGeometry(0.34, 14, 12), dotMat:new T.MeshStandardMaterial({color:0xC0392B, roughness:0.45}),
+  const st = FACE3D.st = {gridInfo, renderer, scene, cam, geo, group, face, dots:[], dotGeo:new T.SphereGeometry(0.34, 14, 12), dotMat:new T.MeshStandardMaterial({color:0xC0392B, roughness:0.45}),
     yaw:0, pitch:0.05, phase:0, auto:opts.auto !== false, dirty:true, stop:false, drag:null, idle:0, counts:{}, tip:opts.tip, unit:opts.unit || null};
   opts.ready(st);
   const l = document.getElementById(opts.load); if (l) l.hidden = true;
@@ -4417,7 +4421,7 @@ async function drawFace3d(opts) {
   });
   const up = e => {
     // 動かさずに押したときは、押した部位を知らせる（肌の記録の画面で使う）
-    if (st.onTap && st.drag && !st.drag.moved) { const a = face3dAreaAt(e); if (a) st.onTap(a); }
+    if (st.onTap && st.drag && !st.drag.moved) { const a = st.gridInfo ? face3dGridArea(st, e) : face3dAreaAt(e); if (a) st.onTap(a); }
     st.drag = null;
   };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', () => { st.drag = null; });
@@ -4442,6 +4446,63 @@ async function drawFace3d(opts) {
     requestAnimationFrame(loop);
   };
   loop();
+}
+// 顔の正面を、うすい格子（マス目）で区切る。マス目ごとに、どの部位（額・鼻…）かを決めておく
+function face3dGrid(T, m, mat) {
+  const v = m.v, n = v.length / 3; let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+  for (let i = 0; i < n; i++) { const x = v[i * 3], y = v[i * 3 + 1]; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  const size = 1.15, cols = Math.ceil((x1 - x0) / size) + 1, rows = Math.ceil((y1 - y0) / size) + 1;
+  // マス目ごとに、その中にある正面向きの点の部位を数えて、いちばん多い部位にする
+  const tally = new Map(), nrm = new Float32Array(n * 3);
+  const tmp = new T.BufferGeometry(); tmp.setAttribute('position', new T.Float32BufferAttribute(v, 3)); tmp.setIndex(m.f); tmp.computeVertexNormals(); nrm.set(tmp.attributes.normal.array); tmp.dispose();
+  for (let i = 0; i < n; i++) {
+    if (nrm[i * 3 + 2] < 0.25) continue; const id = FACE3D_REGIONS[m.r[i]]; if (!id) continue;
+    const c = Math.floor((v[i * 3] - x0) / size), r = Math.floor((v[i * 3 + 1] - y0) / size), k = r * cols + c;
+    const t = tally.get(k) || {}; t[id] = (t[id] || 0) + 1; tally.set(k, t);
+  }
+  const cellArea = new Array(cols * rows).fill(null);
+  tally.forEach((t, k) => { cellArea[k] = Object.entries(t).sort((a, b) => b[1] - a[1])[0][0]; });
+  const data = new Uint8Array(cols * rows * 4);
+  const tex = new T.DataTexture(data, cols, rows, T.RGBAFormat); tex.magFilter = T.NearestFilter; tex.minFilter = T.NearestFilter; tex.needsUpdate = true;
+  const uni = {uGridOrigin:{value:new T.Vector2(x0, y0)}, uGridSize:{value:size}, uGridDim:{value:new T.Vector2(cols, rows)}, uGridMask:{value:tex}};
+  mat.onBeforeCompile = sh => {
+    Object.assign(sh.uniforms, uni);
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vObjPos;\nvarying vec3 vObjNrm;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvObjPos = position;\nvObjNrm = normal;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vObjPos;\nvarying vec3 vObjNrm;\nuniform vec2 uGridOrigin;\nuniform float uGridSize;\nuniform vec2 uGridDim;\nuniform sampler2D uGridMask;')
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        if (vObjNrm.z > 0.2) {
+          vec2 g = (vObjPos.xy - uGridOrigin) / uGridSize;
+          vec2 cell = floor(g);
+          float sel = texture2D(uGridMask, (cell + 0.5) / uGridDim).r;
+          vec2 f = abs(fract(g) - 0.5);
+          float edge = smoothstep(0.43, 0.49, max(f.x, f.y));
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.30, 0.78, 0.46), sel * 0.55);
+          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.82, edge * (1.0 - sel) * 0.55);
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.12, 0.55, 0.30), edge * sel);
+        }`);
+  };
+  return {x0, y0, size, cols, rows, cellArea, data, tex};
+}
+// 押した点のマス目から部位を決め、その部位のマス目を光らせる
+function face3dGridSelect(st, area) {
+  const g = st && st.gridInfo; if (!g) return;
+  for (let k = 0; k < g.cellArea.length; k++) { const on = area && g.cellArea[k] === area ? 255 : 0; g.data[k * 4] = on; g.data[k * 4 + 3] = 255; }
+  g.tex.needsUpdate = true; st.dirty = true;
+}
+function face3dGridArea(st, e) {
+  const T = FACE3D.three, g = st && st.gridInfo; if (!g) return null;
+  const cv = st.renderer.domElement, rc = cv.getBoundingClientRect();
+  const p = new T.Vector2(((e.clientX - rc.left) / rc.width) * 2 - 1, -((e.clientY - rc.top) / rc.height) * 2 + 1);
+  const ray = new T.Raycaster(); ray.setFromCamera(p, st.cam);
+  const hit = ray.intersectObject(st.face)[0]; if (!hit) return null;
+  const lp = st.face.worldToLocal(hit.point.clone());
+  const c = Math.floor((lp.x - g.x0) / g.size), r = Math.floor((lp.y - g.y0) / g.size);
+  const at = (cc, rr) => cc >= 0 && rr >= 0 && cc < g.cols && rr < g.rows ? g.cellArea[rr * g.cols + cc] : null;
+  if (at(c, r)) return at(c, r);
+  // 目のまわりなど部位がないマス目は、いちばん近い部位のマス目を選ぶ
+  for (let d = 1; d <= 3; d++) for (let dr = -d; dr <= d; dr++) for (let dc = -d; dc <= d; dc++) { if (Math.max(Math.abs(dr), Math.abs(dc)) !== d) continue; const a = at(c + dc, r + dr); if (a) return a; }
+  return FACE3D_REGIONS[FACE3D.mesh.r[hit.face.a]] || null;
 }
 function face3dAreaAt(e) {
   const st = FACE3D.st, T = FACE3D.three; if (!st) return null;
