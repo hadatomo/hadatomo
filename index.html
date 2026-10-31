@@ -90,9 +90,15 @@
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;background:var(--bg)}
 /* 画面の上を下に引っぱったとき、「肌トモ」の上に背景のグラデーションが見えないように、上の帯と同じ色で埋める */
-.topbar::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:240px;background:#FAF9F6;pointer-events:none}
-:root[data-theme="dark"] .topbar::before{background:#121614}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .topbar::before{background:#121614}}
+.topbar::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:400px;background:inherit;pointer-events:none}
+/* 下に引っぱって更新：ふつうのバウンドは止めて、上に出る部分は「肌トモ」の帯と同じ色にする */
+html,body{overscroll-behavior-y:none}
+#page{position:relative}
+#page.ptr-back{transition:transform .22s ease}
+.ptr{position:absolute;left:50%;bottom:calc(100% + 14px);width:30px;height:30px;margin-left:-15px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--green-d);opacity:0;pointer-events:none}
+.ptr svg{width:24px;height:24px}
+.ptr.spin svg{animation:ptrSpin .7s linear infinite}
+@keyframes ptrSpin{to{transform:rotate(360deg)}}
 /* いちばん後ろの背景：おだやかな色のグラデーション（画面に固定して、スクロールしても動かない） */
 body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(160deg,#F4F0E6 0%,#E9F0E6 45%,#F3E8DE 100%)}
 /* 朝・昼・夜で背景の色を変える（少し濃いめ） */
@@ -913,7 +919,31 @@ a.used-tile{color:inherit;text-decoration:none}
 .f3-full-stage canvas{width:100%;height:100%;display:block;touch-action:none}
 .t3-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1.25fr);gap:10px;align-items:center}
 .t3-stage{max-width:none;margin:0;background:#fff}
-.ld-stage{max-width:220px;background:#fff}
+.ld-stage{max-width:180px;background:#fff}
+.ld-find{position:relative;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--green-d);background:var(--surface2);border-radius:999px;padding:6px 12px;cursor:pointer}
+.ld-find svg{width:16px;height:16px}
+.ld-find input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px}
+.ld-miss{text-align:center;margin:4px 0 0}
+/* はじめの質問 */
+.sw-dots{display:flex;gap:6px;justify-content:center;margin:0 0 16px}
+.sw-dots i{width:7px;height:7px;border-radius:50%;background:var(--line2)}
+.sw-dots i.on{background:var(--green-d);width:18px;border-radius:999px}
+.sw-q{font-size:18px;font-weight:700;margin:0 0 4px;text-align:center}
+.sw-sub{font-size:13px;color:var(--muted);text-align:center;margin:0 0 16px}
+.sw-opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.sw-opt{min-height:48px;border:1.5px solid var(--line2);border-radius:14px;background:var(--surface);color:var(--ink);font:inherit;font-weight:600;font-size:14.5px;cursor:pointer;padding:8px}
+.sw-opt.on{border-color:var(--green-d);background:var(--green-d);color:#fff}
+.sw-opt.wide{grid-column:1/-1}
+.sw-opt small{display:block;font-size:11.5px;font-weight:500;opacity:.75;margin-top:2px}
+.ld-arrow[hidden]{display:flex!important;visibility:hidden}
+.sw-nums{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.sw-nums label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:600}
+.sw-nums .unit{display:flex;align-items:center;gap:6px}
+.sw-err{color:var(--danger);font-size:12.5px;text-align:center;margin:10px 0 0}
+.sw-sec{font-size:13px;font-weight:700;margin:16px 0 8px}
+.sw-hello{text-align:center;font-size:40px;margin:4px 0 8px}
+.sw-foot{display:flex;gap:8px;width:100%}
+.sw-foot .btn{flex:1}
 :root[data-theme="dark"] .ld-stage{background:transparent}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ld-stage{background:transparent}}
 .ld-card{touch-action:pan-y}
@@ -1101,10 +1131,10 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
     <nav id="side-nav"></nav>
     <div class="sn-foot">データはこのブラウザ内にのみ保存されます。外部への自動送信は行いません。</div>
   </aside>
-  <div>
+  <div id="page">
     <header class="topbar">
       <a class="wordmark" data-t="肌トモ" href="#/home">肌トモ<small>最小限で最大限を</small></a>
-      <button class="icon-btn" id="top-menu" data-action="open-menu" aria-label="メニュー" title="メニュー"></button>
+      <button class="icon-btn" id="top-menu" data-action="open-menu" aria-label="メニュー" title="メニュー"></button><div class="ptr" id="ptr" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".18" stroke-width="2.6"/><circle class="ptr-arc" cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="56.5" stroke-dashoffset="56.5" transform="rotate(-90 12 12)"/></svg></div>
     </header>
     <main id="main" tabindex="-1"></main>
   </div>
@@ -1688,6 +1718,7 @@ function normalize(d) {
   out.settings.skinType = SKIN_TYPES.includes(ds.skinType) ? ds.skinType : ''; // 肌質
   out.settings.sensitive = !!ds.sensitive; // 敏感肌かどうか
   out.settings.ageBand = AGE_BANDS.includes(ds.ageBand) ? ds.ageBand : ''; // 年代（任意）
+  out.settings.onboarded = !!ds.onboarded; // はじめの質問に答えた（またはあとでにした）
   const rs = ds.research || {}; // 研究への協力（任意・初めはオフ）
   out.settings.research = {on:!!rs.on && !!rs.adult, adult:!!rs.adult, cid:/^[0-9a-f-]{36}$/.test(rs.cid || '') ? rs.cid : '', lastSent:isValidYmd(rs.lastSent) ? rs.lastSent : '', lastHash:String(rs.lastHash || '').slice(0, 20)};
   out.favorites = Array.isArray(d.favorites) ? Array.from(new Set(d.favorites.map(String))).filter(id => out.catalog.some(p => p.id === id)) : [];
@@ -2389,7 +2420,7 @@ function viewHome() {
 
   const shortcuts = `<div class="card" id="sc-card"><div class="card-h"><h2>ショートカット</h2><button class="link small sc-edit" data-action="sc-edit">${icon('gear')}変更</button></div><div class="shortcuts">${myShortcuts().map(x => `<a class="shortcut" href="${x.h}">${icon(x.ic)}${esc(x.l)}</a>`).join('')}</div></div>`;
 
-  const onboard = !state.settings.concerns.length ? `<div class="notice green" style="margin-bottom:16px"><b>はじめに：あなたの肌悩みを教えてください。</b>手持ちの化粧品と予算をふまえて、ケアの考え方と候補を整理します。<br><a class="btn btn-primary btn-sm" style="margin-top:10px" href="#/suggest">肌悩みを設定する</a></div>` : '';
+  const onboard = !state.settings.concerns.length ? `<div class="notice green" style="margin-bottom:16px"><b>はじめに：あなたの肌悩みを教えてください。</b>手持ちの化粧品と予算をふまえて、ケアの考え方と候補を整理します。<br><button type="button" class="btn btn-primary btn-sm" style="margin-top:10px" data-action="setup">質問に答える（1分）</button></div>` : '';
   html += onboard + `<div class="grid g2">${todayCard}${shortcuts}</div>`;
   html += adSlot('home');
   html += `<p class="small muted" style="margin-top:20px;text-align:center">肌トモは、肌の状態やスキンケアを記録・管理し、自分に合ったケアを効率よく選ぶための肌サポートアプリです。病気の診断や、化粧品の効果の保証は行いません。</p>`;
@@ -2454,6 +2485,80 @@ function findPick(i) {
   const kind = fs.kind; findState = null; closeModal();
   if (kind === 'my') setTimeout(() => openMyForm(null, p.id), 200);
   else { location.hash = '#/product/' + encodeURIComponent(p.id); render(); }
+}
+// ---------- はじめの質問（身長・体重・肌質・肌悩みなど） ----------
+let swState = null;
+function openSetupWizard() {
+  const st = state.settings;
+  swState = {i:0, v:{ageBand:st.ageBand || '', height:st.height || '', weight:st.weight || '', skinType:st.skinType || '', sensitive:st.sensitive ? 'yes' : (st.onboarded ? 'no' : ''), concerns:st.concerns.slice(), sleepNeed:st.sleepNeed || 420, budget:st.monthlyBudget || ''}};
+  openModal({title:'はじめの質問', body:'<div id="sw-body"></div>', footer:'<div class="sw-foot" id="sw-foot"></div>'});
+  const root = $('#modal-root');
+  root.querySelector('.modal-head [data-action="close-modal"]').setAttribute('data-action', 'setup-later');
+  if (!root._sw) { root.addEventListener('click', swClick); root._sw = 1; }
+  swPaint();
+}
+const SW_STEPS = ['hello', 'age', 'body', 'skin', 'concerns', 'life', 'done'];
+function swOpts(key, list, cur, multi) { return `<div class="sw-opts">${list.map(([v, l, w]) => { const on = multi ? cur.includes(v) : cur === v; return `<button type="button" class="sw-opt ${on ? 'on' : ''} ${w ? 'wide' : ''}" data-sw="${key}" data-v="${esc(v)}" aria-pressed="${on}">${l.includes('|') ? `${esc(l.split('|')[0])}<small>${esc(l.split('|')[1])}</small>` : esc(l)}</button>`; }).join('')}</div>`; }
+function swPaint() {
+  const s = swState; if (!s) return; const b = $('#sw-body'), f = $('#sw-foot'); if (!b || !f) return;
+  const step = SW_STEPS[s.i], v = s.v;
+  const dots = `<div class="sw-dots">${SW_STEPS.map((_, k) => `<i class="${k === s.i ? 'on' : ''}"></i>`).join('')}</div>`;
+  let h = '';
+  if (step === 'hello') h = `<div class="sw-hello">🌿</div><p class="sw-q">肌トモへようこそ</p><p class="sw-sub">はじめに、いくつか質問させてください（1分ほど）。<br>答えた内容は、ケアの提案や栄養の目安に使います。<br>このスマホの中にだけ保存され、あとから設定でいつでも変えられます。</p>`;
+  if (step === 'age') h = `<p class="sw-q">年代を教えてください</p><p class="sw-sub">年代に合ったケアの考え方に使います</p>` + swOpts('ageBand', AGE_BANDS.map(x => [x, x]).concat([['', '答えない', 1]]), v.ageBand);
+  if (step === 'body') h = `<p class="sw-q">身長と体重を教えてください</p><p class="sw-sub">1日のたんぱく質の目安（体重×1g）などに使います。空欄でも大丈夫です</p>
+    <div class="sw-nums"><label>身長<span class="unit"><input class="input" id="sw-h" inputmode="decimal" placeholder="例：160" value="${esc(v.height)}">cm</span></label><label>体重<span class="unit"><input class="input" id="sw-w" inputmode="decimal" placeholder="例：52" value="${esc(v.weight)}">kg</span></label></div>`;
+  if (step === 'skin') h = `<p class="sw-q">肌質はどれに近いですか？</p><p class="sw-sub">洗顔して何もつけずに1時間ほどたったときの感じで選んでください</p>`
+    + swOpts('skinType', [['乾燥肌', '乾燥肌|つっぱる'], ['脂性肌', '脂性肌|全体がテカる'], ['混合肌', '混合肌|Tゾーンだけテカる'], ['普通肌', '普通肌|どちらでもない'], ['', 'わからない', 1]], v.skinType)
+    + `<p class="sw-sec">刺激を感じやすい（敏感肌）ですか？</p>` + swOpts('sensitive', [['yes', 'はい'], ['no', 'いいえ']], v.sensitive);
+  if (step === 'concerns') h = `<p class="sw-q">いま気になっている肌悩みは？</p><p class="sw-sub">いくつでも選べます</p>` + swOpts('concerns', CONCERNS.map(x => [x, x]), v.concerns, true);
+  if (step === 'life') h = `<p class="sw-q">生活と予算</p><p class="sw-sub">睡眠の記録と、化粧品の支出の管理に使います</p>
+    <p class="sw-sec">ちょうどいい睡眠時間</p><select class="select" id="sw-sleep">${[300, 330, 360, 390, 420, 450, 480, 510, 540].map(m => `<option value="${m}" ${m === v.sleepNeed ? 'selected' : ''}>${fmtDur(m)}</option>`).join('')}</select>
+    <p class="sw-sec">化粧品に使う月の予算<span class="small muted">（任意）</span></p><div class="sw-nums" style="grid-template-columns:1fr"><span class="unit"><input class="input" id="sw-budget" inputmode="numeric" placeholder="例：5000" value="${esc(v.budget)}">円</span></div>`;
+  if (step === 'done') h = `<div class="sw-hello">✨</div><p class="sw-q">準備ができました</p><p class="sw-sub">さっそく今日の肌を記録してみましょう。<br>答えた内容は「設定」の「肌質・年代」から答え直せます。</p>`;
+  b.innerHTML = dots + h + '<p class="sw-err" id="sw-err" hidden></p>';
+  f.innerHTML = step === 'hello' ? `<button type="button" class="btn btn-ghost" data-action="setup-later">あとで</button><button type="button" class="btn btn-primary" data-swgo="1">はじめる</button>`
+    : step === 'done' ? `<button type="button" class="btn btn-primary" data-action="setup-finish">肌トモをはじめる</button>`
+    : `<button type="button" class="btn btn-ghost" data-swgo="-1">戻る</button><button type="button" class="btn btn-primary" data-swgo="1">${['age', 'skin', 'concerns'].includes(step) && !swHas(step) ? 'スキップ' : '次へ'}</button>`;
+}
+const swHas = step => { const v = swState.v; return step === 'age' ? !!v.ageBand : step === 'skin' ? !!(v.skinType || v.sensitive) : step === 'concerns' ? v.concerns.length > 0 : true; };
+// 入力欄の値を読み取る（数字のまちがいがあれば止める）
+function swRead() {
+  const v = swState.v, step = SW_STEPS[swState.i], err = $('#sw-err');
+  const bad = m => { if (err) { err.hidden = false; err.textContent = m; } return false; };
+  if (step === 'body') {
+    const h = toHalf($('#sw-h').value).trim(), w = toHalf($('#sw-w').value).trim();
+    if (h && !(Number(h) >= 80 && Number(h) <= 250)) return bad('身長は80〜250の数字で入れてください（空欄でも大丈夫です）');
+    if (w && !(Number(w) >= 20 && Number(w) <= 250)) return bad('体重は20〜250の数字で入れてください（空欄でも大丈夫です）');
+    v.height = h ? Math.round(Number(h) * 10) / 10 : ''; v.weight = w ? Math.round(Number(w) * 10) / 10 : '';
+  }
+  if (step === 'life') {
+    v.sleepNeed = Number($('#sw-sleep').value) || 420;
+    const bg = toHalf($('#sw-budget').value).replace(/[,円\s]/g, '');
+    if (bg && !/^\d{1,7}$/.test(bg)) return bad('予算は半角の数字で入れてください（空欄でも大丈夫です）');
+    v.budget = bg ? Number(bg) : '';
+  }
+  return true;
+}
+function swClick(e) {
+  if (!swState) return;
+  const o = e.target.closest('[data-sw]');
+  if (o) {
+    const k = o.dataset.sw, val = o.dataset.v, v = swState.v;
+    if (k === 'concerns') v.concerns = v.concerns.includes(val) ? v.concerns.filter(x => x !== val) : v.concerns.concat(val);
+    else v[k] = v[k] === val && val !== '' ? '' : val;
+    haptic(6); swPaint(); return;
+  }
+  const g = e.target.closest('[data-swgo]');
+  if (g) { const n = Number(g.dataset.swgo); if (n > 0 && !swRead()) return; if (n < 0) swRead(); swState.i = clamp(swState.i + n, 0, SW_STEPS.length - 1); swPaint(); const mb = $('#modal-root .modal-body'); if (mb) mb.scrollTop = 0; }
+}
+function swSave(done) {
+  const st = state.settings, v = swState ? swState.v : null;
+  if (v && done) {
+    st.ageBand = v.ageBand; st.skinType = v.skinType; st.sensitive = v.sensitive === 'yes'; st.concerns = v.concerns.filter(x => CONCERNS.includes(x));
+    st.height = Number(v.height) || 0; st.weight = Number(v.weight) || 0; st.sleepNeed = v.sleepNeed || 420; st.monthlyBudget = Number(v.budget) || 0;
+  }
+  st.onboarded = true; swState = null; save(); closeModal(); render();
 }
 // ---------- お気に入り ----------
 const isFav = id => (state.favorites || []).includes(id);
@@ -4087,14 +4192,22 @@ function logDayDetailHtml(list, i) {
 }
 function logDayCardHtml(logs) {
   const list = logs.slice().reverse(), i = logDayIdx(list);
-  return `<div class="card ld-card" id="log-day-card"><div class="card-h"><h2>日々の肌の変化</h2><span class="small muted">日付を左右にスワイプ</span></div>
+  return `<div class="card ld-card" id="log-day-card"><div class="card-h"><h2>日々の肌の変化</h2><label class="ld-find">${icon('calendar')}日付で探す<input type="date" id="ld-date" value="${esc(list[i] ? list[i].date : '')}" min="${esc(list[0].date)}" max="${todayStr()}" aria-label="見たい日付を選ぶ"></label></div>
     <div class="f3-stage ld-stage"><canvas id="face3d-log" aria-label="選んだ日の肌の記録を3Dの顔で表示"></canvas><div class="f3-load" id="ld-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>
     <div class="ld-swipe" id="ld-swipe">
       <button class="ld-arrow" id="ld-prev" data-action="log-day-step" data-id="-1" aria-label="前の記録" ${i <= 0 ? 'hidden' : ''}>‹</button>
       <div class="ld-info" id="ld-info">${logDayInfoHtml(list, i)}</div>
       <button class="ld-arrow" id="ld-next" data-action="log-day-step" data-id="1" aria-label="次の記録" ${i >= list.length - 1 ? 'hidden' : ''}>›</button>
     </div>
+    <p class="small muted ld-miss" id="ld-miss" hidden></p>
     <div class="ld-detail" id="ld-detail">${logDayDetailHtml(list, i)}</div></div>`;
+}
+// 日付で探す：その日の記録がなければ、いちばん近い日の記録を出す
+function logDayFind(date) {
+  const list = logDayList(); if (!list.length || !isValidYmd(date)) return;
+  let best = list[0]; list.forEach(l => { if (Math.abs(diffDays(l.date, date)) < Math.abs(diffDays(best.date, date))) best = l; });
+  logDaySet(best.date);
+  const m = document.getElementById('ld-miss'); if (m) { m.hidden = best.date === date; m.textContent = best.date === date ? '' : `${fmtMD(date)}の記録はないので、いちばん近い${fmtMD(best.date)}を出しています`; }
 }
 // 日付を変える（3Dの顔は作り直さず、色だけ塗り替える＝軽い）
 function logDaySet(date) {
@@ -4103,6 +4216,8 @@ function logDaySet(date) {
   const info = document.getElementById('ld-info'), det = document.getElementById('ld-detail');
   if (info) { info.innerHTML = logDayInfoHtml(list, i); info.classList.remove('ld-flash'); void info.offsetWidth; info.classList.add('ld-flash'); }
   if (det) det.innerHTML = logDayDetailHtml(list, i);
+  const di = document.getElementById('ld-date'); if (di) di.value = l.date;
+  const ms = document.getElementById('ld-miss'); if (ms) ms.hidden = true;
   // 一番古い記録では「‹」、最新の記録では「›」を出さない
   const pv = document.getElementById('ld-prev'), nx = document.getElementById('ld-next');
   if (pv) pv.hidden = i <= 0; if (nx) nx.hidden = i >= list.length - 1;
@@ -4112,8 +4227,9 @@ function logDayStep(n) { const list = logDayList(); const i = logDayIdx(list) + 
 // 左右のスワイプ（3Dの顔の上以外）：左へ払う＝次の日、右へ払う＝前の日
 function bindLogDaySwipe() {
   const card = document.getElementById('log-day-card'); if (!card) return;
+  const di = document.getElementById('ld-date'); if (di) di.addEventListener('change', () => logDayFind(di.value));
   let sx = null, sy = 0;
-  card.addEventListener('pointerdown', e => { if (e.target.closest('canvas,button')) { sx = null; return; } sx = e.clientX; sy = e.clientY; });
+  card.addEventListener('pointerdown', e => { if (e.target.closest('canvas,button,label,input')) { sx = null; return; } sx = e.clientX; sy = e.clientY; });
   card.addEventListener('pointerup', e => { if (sx == null) return; const dx = e.clientX - sx, dy = e.clientY - sy; sx = null; if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.3) logDayStep(dx < 0 ? 1 : -1); });
   card.addEventListener('pointercancel', () => { sx = null; });
 }
@@ -4190,6 +4306,9 @@ function openLogForm(id) {
   const usable = state.myProducts.filter(p => p.status === '使用中' || p.status === '一時停止' || d.usedProducts.includes(p.id));
   openModal({title: ex ? '肌の記録を編集' : '肌の記録', body: `<form id="log-form" novalidate><div class="form-grid">
     ${d.date ? `<input type="hidden" id="f_date" name="date" value="${esc(d.date)}">` : field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint: !ex && map[t] ? '今日の記録はすでにあります。別の日付を選ぶか、一覧から今日の記録を編集してください。' : ''})}
+    <div class="field face-ai"><div class="meal-photo-top">${isPremium()
+      ? `<label class="btn mpt-btn mpt-mid">${icon('camera')}顔を撮って自動で記録<input type="file" accept="image/*" capture="user" id="f_faceai" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label>`
+      : `<button type="button" class="btn mpt-btn mpt-locked mpt-one" id="faceai-lock"><span class="mpt-l">${icon('camera')}顔を撮って自動で記録</span><span class="badge-premium">${PREMIUM_NAME}</span></button>`}</div><div id="faceai-info"></div></div>
     ${field('肌の調子', condSeg(d.condition) + `<p class="cond-ai ai-text" id="cond-ai">${ex ? '' : condAiNote(null)}</p>`, {name:'condition', required:true})}
     <div class="field fp-field" id="fp-field"><div class="fp-bighead"><b>顔を押して記録</b><button type="button" class="icon-btn" data-fp-done aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button></div><span class="lbl fp-lbl">顔を押して記録<span class="opt">ニキビ選択＝ニキビ、肌質選択＝乾燥・テカリなどの状態</span></span>
       <div class="fp-mode" role="group" aria-label="選び方"><button type="button" class="on" data-fp-mode="tap" aria-pressed="true">ニキビ選択</button><button type="button" data-fp-mode="range" aria-pressed="false">肌質選択</button></div>
@@ -4227,7 +4346,7 @@ function openLogForm(id) {
     <div class="field"><span class="lbl">肌の写真<span class="opt">任意</span></span>
       <input type="file" accept="image/*" id="f_photo" class="input" style="padding:9px" aria-label="写真を選択">
       <div id="photo-area"></div>
-      <p class="hint">写真は外部に送信されません。保存しない場合は、この画面でのプレビューだけです。</p>
+      <p class="hint">ここで選んだ写真は外部に送信されません（「顔を撮って自動で記録」の写真だけ、読み取りのためにAIへ送ります）。保存しない場合は、この画面でのプレビューだけです。</p>
     </div>
   </div></form>`,
   footer: `<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="submit" form="log-form" class="btn btn-primary">${ex ? '保存する' : '記録する'}</button>`});
@@ -4242,7 +4361,7 @@ function openLogForm(id) {
   $$('input[name="areas"]', form).forEach(cb => cb.onchange = syncFace);
   syncFace();
   // ---- 3Dの顔を押して、マス目ごとに記録する（複数のマス目を選んで、状態と強さ1〜5を入れる）----
-  const fpMarks = JSON.parse(JSON.stringify(d.cellMarks || {})); const fpSel = new Set(); let fpRange = false;
+  const fpMarks = JSON.parse(JSON.stringify(d.cellMarks || {})); const fpSel = new Set(); let fpRange = false; let aiPending = null;
   // 1マス選択：押した順を覚えて「戻る」で1つずつ取り消せる。押したマスは「次へ」を押すまで四角い枠で点滅させる
   const fpHist = []; let fpLast = null, fpBlinkOn = true, fpBlinkT = null, fpTouched = false, fpPh = null;
   const fpEl = () => document.getElementById('fp-field') || form;
@@ -4398,6 +4517,7 @@ function openLogForm(id) {
   setTimeout(() => drawFace3d({canvas:'face3d-form', load:'fp-load', tip:'', camZ:63, minZ:12, yawOnly:true, grid:true, panY:true, panAt:40, ready:st => {
     st.canvasId = 'face3d-form';
     placeOldSpots(); fpLines(false);
+    if (aiPending) { const r = aiPending; aiPending = null; setTimeout(() => aiApply(r), 0); }
     // 1マス選択：押したマスにニキビを付ける／消す
     st.onTapCell = key => {
       fpToggleAcne(key); fpHist.push(key); fpLast = key;
@@ -4453,6 +4573,49 @@ function openLogForm(id) {
     try { pendingPhoto = await readImage(file, 640, 0.72); renderPhoto(); }
     catch (err) { toast(err.message, 'error'); e.target.value = ''; }
   };
+  // ---- 顔の写真から、AIで今日の肌の記録を自動で入れる（プレミアム）----
+  // AIの結果（部位ごとのニキビの数・赤みや乾燥などの強さ）を、顔のマス目に置いて、ふだんの記録と同じように直せるようにする
+  const aiApply = r => {
+    const g = grid();
+    if (!g) {
+      // 3Dの顔がまだ（または読み込めない）ときは、数と強さだけ先に入れておき、顔が出たらマス目にも置く
+      aiPending = r; const mx = c => Math.max(0, ...(r.zones || []).filter(x => x.concern === c).map(x => x.level));
+      form.elements.acneCount.value = clamp((r.acne || []).reduce((a, x) => a + x.count, 0), 0, 99);
+      setSeg('redness', mx('赤み')); setSeg('dryness', mx('乾燥')); setSeg('oil', mx('テカリ'));
+      if (r.condition) { setSeg('condition', r.condition); condTouched = true; }
+      return;
+    }
+    Object.keys(fpMarks).forEach(k => delete fpMarks[k]); oldSpots = {}; fpHist.length = 0; fpLast = null;
+    const zoneCells = z => { const zi = FACE3D_ZONES.indexOf(z), ks = []; if (zi < 1) return ks; for (let k = 0; k < g.cellZone.length; k++) if (g.cellZone[k] === zi && g.cellArea[k]) ks.push([k % g.cols, Math.floor(k / g.cols)]); return ks; };
+    (r.zones || []).forEach(x => zoneCells(x.zone).forEach(([c, rr]) => { const key = `${c},${rr}`; (fpMarks[key] = fpMarks[key] || {})[x.concern] = clamp(x.level, 1, 5); }));
+    (r.acne || []).forEach(x => {
+      const ks = zoneCells(x.zone); if (!ks.length) return;
+      const cx = ks.reduce((a, c) => a + c[0], 0) / ks.length, cy = ks.reduce((a, c) => a + c[1], 0) / ks.length;
+      ks.sort((p, q) => Math.hypot(p[0] - cx, p[1] - cy) - Math.hypot(q[0] - cx, q[1] - cy));
+      const n = Math.min(x.count, ks.length), step = ks.length / n;
+      for (let i = 0; i < n; i++) { const [c, rr] = ks[Math.floor(i * step)]; (fpMarks[`${c},${rr}`] = fpMarks[`${c},${rr}`] || {})['ニキビ'] = 1; }
+    });
+    fpTouched = true; syncAcne(); fpGlobal();
+    if (r.condition) { setSeg('condition', r.condition); condTouched = true; const note = $('#cond-ai', form); if (note) note.textContent = 'AIが写真から選びました。違うときは押して直してください。'; }
+    $('#modal-root').dataset.dirty = '1'; fpSync();
+  };
+  const faceAi = async file => {
+    const box = $('#faceai-info', form); if (!file || !box) return;
+    let img; try { img = await readImage(file, 1024, 0.82); } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; return; }
+    pendingPhoto = await readImage(file, 640, 0.72).catch(() => img); renderPhoto();
+    box.innerHTML = skelHtml(3, {dots:true, label:'顔の写真を読み取り中', note:'肌の状態を読み取っています（10秒ほどかかります）'});
+    try {
+      const r = (await callVision('skin', img)).result || {};
+      if (!r.face) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">顔の肌をうまく読み取れませんでした。${esc(r.note || '明るい場所で、顔の正面がはっきり写るように撮り直してください。')}</div>`; return; }
+      aiApply(r);
+      const n = (r.acne || []).reduce((a, x) => a + x.count, 0);
+      box.innerHTML = `<div class="notice green" style="margin:8px 0 0"><b>写真から今日の記録を入れました</b>${r.note ? `<br>${esc(r.note)}` : ''}<br><span class="small">ニキビ ${n}個${(r.zones || []).length ? '・' + [...new Set(r.zones.map(x => x.concern))].join('・') : ''}</span>
+        <p class="small muted" style="margin:6px 0 0">${esc(AI_NOTE)}光の当たり方で見え方が変わります。違うところは顔を押して直してから「記録する」を押してください。</p></div>`;
+      haptic(20);
+    } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; }
+  };
+  ['f_faceai', 'f_faceai2'].forEach(id => { const inp = $('#' + id, form); if (inp) inp.onchange = e => { const f = e.target.files[0]; e.target.value = ''; faceAi(f); }; });
+  { const lk = $('#faceai-lock', form); if (lk) lk.onclick = () => { $('#faceai-info', form).innerHTML = `<div class="notice" style="margin:8px 0 0">顔の写真を撮るだけで今日の肌を記録できる機能は、<b>${PREMIUM_NAME}プラン</b>の機能です。AIが写真からニキビの数や、部位ごとの赤み・乾燥・テカリなどの目安を読み取って入れます。<br>無料プランでは、下の顔を押して記録してください。<br><a href="#/plan">プランの詳細を見る</a></div>`; }; }
   form.onsubmit = e => {
     e.preventDefault();
     const fe = form.elements, date = fe.date.value;
@@ -6092,7 +6255,7 @@ function viewPrivacy() {
 <ol><li><b>アカウント情報</b>：有料プランを申し込むためにアカウントを作成した場合、メールアドレス、パスワード（暗号化された形）、契約状況（プランの状態・次回更新日など）。</li>
 <li><b>決済情報</b>：支払いは決済代行会社Stripeの画面で行います。クレジットカード番号は運営者のサーバーに送られず、運営者は取得しません。運営者が受け取るのは、Stripe上の顧客番号・契約番号・支払いの状態です。</li>
 <li><b>検索に使う情報</b>：店舗検索・価格比較を使った場合に、入力した地名・駅名・商品名・JANコード、検索する場所（現在地の利用を許可した場合はその位置）。これらは検索のためだけに使い、運営者は保存しません。</li>
-<li><b>写真読み取りの情報</b>：プレミアムプランで「写真から読み取る」を使った場合、その写真（読み取りのためにAIへ送るだけで保存しません）と、1日あたりの利用回数。</li>
+<li><b>写真読み取りの情報</b>：プレミアムプランで「写真から読み取る」「顔を撮って自動で記録」を使った場合、その写真（読み取りのためにAIへ送るだけで保存しません）と、1日あたりの利用回数。</li>
 <li><b>アクセス情報</b>：本サービスや外部サービスにアクセスする際、IPアドレス・ブラウザの種類などの情報が、各サーバーの通信記録として記録されることがあります。</li></ol>
 <h3>3. 利用目的</h3>
 <ol><li>本サービス（有料プランを含む）の提供・本人確認・ログイン</li>
@@ -6117,7 +6280,7 @@ ${row('国土地理院（地図・航空写真）', '表示する地図の範囲
 ${row('cdnjs（Cloudflare）・unpkg', 'IPアドレス、ブラウザの情報', '地図の部品（MapLibre・PMTiles）と3D表示の部品（three.js）の読み込み。店舗検索の結果・肌の変化の画面を表示したとき')}
 ${row('OpenStreetMap', '検索する場所の座標、IPアドレス', 'Geoapifyが使えないときの予備の店舗検索')}
 ${row('楽天グループ（楽天ウェブサービス）・LINEヤフー（Yahoo!デベロッパーネットワーク）', '商品名・JANコード（運営者のサーバーを通して送信。利用者のIPアドレスなどは送りません）', '価格比較。「価格を調べる」を押したときだけ')}
-${row('Google（Gemini API）', '「写真から読み取る」を押した写真（食事・化粧品のパッケージ）', '写真読み取り（プレミアム）。押したときだけ。運営者は写真を保存しません。Googleの無料枠を使う場合、送った内容がGoogleのサービス改善に使われることがあります')}
+${row('Google（Gemini API）', '「写真から読み取る」「顔を撮って自動で記録」で選んだ写真（食事・化粧品のパッケージ・顔）', '写真読み取り（プレミアム）。押したときだけ。運営者は写真を保存しません。Googleの無料枠を使う場合、送った内容がGoogleのサービス改善に使われることがあります')}
 ${row('Supabase（運営者のデータベース・東京）', '肌質・敏感肌かどうか・年代（答えた場合）、記録の日数、肌の状態の平均、成分ごとの肌の変化の平均、端末ごとのランダムな番号', '研究への協力（任意）。設定で「協力する」を選んだ場合だけ、1日1回まで')}
 ${row('GitHub（GitHub, Inc.）', 'IPアドレス、ブラウザの情報', '本サービスのページの配信')}
 </tbody></table></div>
@@ -6328,7 +6491,8 @@ function skinProfileCardHtml() {
       <div class="field"><label class="lbl" for="f_ageBand">年代<span class="opt">任意</span></label><select class="select" id="f_ageBand"><option value="">答えない</option>${AGE_BANDS.map(x => `<option ${st.ageBand === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
     </div>
     <label class="check" style="margin-top:10px"><input type="checkbox" id="f_sensitive" ${st.sensitive ? 'checked' : ''}> 敏感肌（刺激を感じやすい）</label>
-    <p class="small muted" style="margin:8px 0 0">このブラウザ内にだけ保存されます。「研究への協力」をオンにした場合だけ、統計のために送られます。</p></div>`;
+    <p class="small muted" style="margin:8px 0 0">このブラウザ内にだけ保存されます。「研究への協力」をオンにした場合だけ、統計のために送られます。</p>
+    <button type="button" class="btn btn-soft btn-sm" style="margin-top:10px" data-action="setup">はじめの質問に答え直す</button></div>`;
 }
 function researchCardHtml() {
   const r = researchState(), n = state.skinLogs.filter(l => !l.demo).length;
@@ -6393,7 +6557,7 @@ function viewSettings() {
         <li><b>薬局のデータ</b>：「医療情報ネット」オープンデータ（厚生労働省）を加工して、アプリと一緒に置いています。検索のときに外部に送る情報はありません。</li>
         <li><b>店舗検索</b>：「検索」ボタンを押したときだけ、入力した駅名・地名・住所と、検索する場所（または許可した現在地）を、店舗検索サービスGeoapifyと国土地理院の地名検索に送ります（Geoapifyが使えないときは、予備としてOpenStreetMapのサーバーに送ります）。検索結果の地図には、国土地理院の地図・航空写真を読み込みます（地図の部品は cdnjs・unpkg から読み込みます）。</li>
         <li><b>食事の写真</b>：撮影した写真は端末内だけで使い、「保存する」にチェックしたものだけをこのブラウザ内に保存します。</li>
-        <li><b>写真読み取り（${PREMIUM_NAME}）</b>：「写真から読み取る」を押したときだけ、その写真を${esc(SERVICE)}のサーバーを通してGoogleのAI（Gemini API）に送り、料理や文字を読み取ります。写真と結果はサーバーに保存しません。使った回数（1日あたり）だけを記録します。</li>
+        <li><b>写真読み取り（${PREMIUM_NAME}）</b>：「写真から読み取る」「顔を撮って自動で記録」を使ったときだけ、その写真を${esc(SERVICE)}のサーバーを通してGoogleのAI（Gemini API）に送り、料理・文字・肌の状態の目安を読み取ります。写真と結果はサーバーに保存しません。使った回数（1日あたり）だけを記録します。</li>
         <li><b>価格比較</b>：「価格を調べる」を押したときだけ、商品名（とJANコード）を${esc(SERVICE)}のサーバーを通して楽天市場・Yahoo!ショッピングの公式APIに送ります。あなたの情報（IPアドレスなど）は送りません。</li>
         <li><b>オフライン用の保存</b>：電波が弱い場所でも開けるように、アプリ本体・アイコン・薬局データをこの端末のブラウザに保存します（記録の内容は含みません）。画面の表示（ダーク・ライト）の設定も、この端末にだけ保存します。</li>
         <li><b>おすすめケアポイント（AI分析・${PREMIUM_NAME}）</b>：直近7日の記録の<b>数値のまとめだけ</b>（睡眠時間の平均、ニキビの数など）を${esc(SERVICE)}のサーバーを通してGoogleのAI（Gemini API）に送ります。メモ・写真・名前は送りません。</li>
@@ -6604,6 +6768,9 @@ const actions = {
   'flt-done': () => { closeModal(); render(); },
   'flt-clear': k => { if (k === 'ing') ui.ing = false; else if (k === 'sort') ui.sort = 'std'; else ui[k] = ''; render(); },
   'add-sheet': kind => openAddSheet(kind),
+  'setup': () => openSetupWizard(),
+  'setup-later': () => swSave(false),
+  'setup-finish': () => { swSave(true); haptic(35); },
   'add-find': kind => { closeModal(); setTimeout(() => openFindSheet(kind), 200); },
   'find-pick': i => findPick(i),
   'add-camera': () => { closeModal(); location.hash = '#/scan'; },
@@ -7158,6 +7325,30 @@ document.addEventListener('click', e => {
   e.preventDefault(); goBack(a.getAttribute('href'));
 });
 window.addEventListener('hashchange', () => { if ($('#modal-root').innerHTML) closeModal(); render(); });
+// 下に引っぱって更新（ページのいちばん上で下へ引っぱって離すと読み込み直す）
+(function pullToRefresh() {
+  const page = document.getElementById('page'), ptr = document.getElementById('ptr'); if (!page || !ptr) return;
+  const arc = ptr.querySelector('.ptr-arc'), svg = ptr.querySelector('svg');
+  const MAX = 110, GO = 70; let y0 = null, d = 0, busy = false;
+  const set = v => { d = v; page.style.transform = v ? `translateY(${v}px)` : ''; ptr.style.opacity = String(Math.min(1, v / GO));
+    // 引っぱる量に合わせて輪が伸びながら回る（くるくる）
+    if (!busy) { const k = Math.min(1, v / GO); arc.setAttribute('stroke-dashoffset', String(56.5 * (1 - k * 0.8))); svg.style.transform = `rotate(${v * 3}deg)`; } };
+  const blocked = t => $('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big') || (t && t.closest && t.closest('canvas,input,textarea,select,.f3-stage'));
+  window.addEventListener('touchstart', e => { if (busy || e.touches.length !== 1 || window.scrollY > 0 || blocked(e.target)) { y0 = null; return; } y0 = e.touches[0].clientY; page.classList.remove('ptr-back'); }, {passive:true});
+  window.addEventListener('touchmove', e => {
+    if (y0 == null) return;
+    const dy = e.touches[0].clientY - y0;
+    if (dy <= 0 || window.scrollY > 0) { if (d) set(0); return; }
+    e.preventDefault(); set(Math.min(MAX, dy * 0.5));
+  }, {passive:false});
+  const end = () => {
+    if (y0 == null) return; y0 = null;
+    page.classList.add('ptr-back');
+    if (d >= GO) { busy = true; set(56); ptr.style.opacity = '1'; arc.setAttribute('stroke-dashoffset', '40'); svg.style.transform = ''; ptr.classList.add('spin'); haptic(8); setTimeout(() => location.reload(), 700); }
+    else set(0);
+  };
+  window.addEventListener('touchend', end); window.addEventListener('touchcancel', end);
+})();
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(drawCharts, 150); });
 $('#top-menu').innerHTML = '<span class="hb" aria-hidden="true"><i></i><i></i><i></i></span>'; $('#top-menu').setAttribute('aria-expanded', 'false');
@@ -7168,6 +7359,8 @@ if (researchState() && researchState().on) setTimeout(() => { if (researchState(
 if (hasSavedLogin()) setTimeout(initCloud, 0); // 以前ログインしていた場合だけ、ログイン状態を確認する
 document.title = `${SERVICE}｜最小限で最大限を`;
 render();
+// はじめて開いたときは、先に「はじめの質問」を出す
+if (!state.settings.onboarded && !EMBED) setTimeout(() => { if (!$('#modal-root').innerHTML) openSetupWizard(); }, 400);
 </script>
 </body>
 </html>
