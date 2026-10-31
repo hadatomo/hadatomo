@@ -114,7 +114,7 @@ button{font-family:inherit}
 .sidebar{display:none}
 .topbar{position:relative;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:12px 18px;padding-top:calc(12px + env(safe-area-inset-top));background:rgba(250,249,246,.9);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
 .wordmark{font-family:var(--serif);font-size:20px;letter-spacing:.24em;color:var(--ink);text-decoration:none;font-weight:500}
-.top-title{margin:0;font-size:22px;line-height:45px;padding:4px 0;white-space:nowrap}
+.top-title{margin:0;font-size:21px;line-height:45px;padding:4px 0;white-space:nowrap;font-family:"Hiragino Maru Gothic ProN","Hiragino Maru Gothic Pro","Zen Maru Gothic","M PLUS Rounded 1c","BIZ UDPGothic",var(--font);font-weight:400;letter-spacing:.14em;color:var(--ink2)}
 .tt-in{animation:ttIn .45s ease both}
 @keyframes ttIn{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.tt-in{animation:none}}
@@ -672,11 +672,13 @@ details.acc-cmp{margin-top:14px}
 .meal-acc .meal-head{margin-bottom:4px}
 .food-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .food-list:empty{display:none}
-.food-row{display:grid;grid-template-columns:minmax(0,1fr) 92px auto 28px;align-items:center;gap:6px;padding:6px 8px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.food-row{display:grid;grid-template-columns:auto auto minmax(0,1fr) 28px;grid-template-areas:"n n n x" "q k . x";align-items:center;gap:6px 10px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.food-row .fr-n{grid-area:n}.food-row .fr-q{grid-area:q;width:auto;min-width:112px}.food-row .fr-k{grid-area:k}.food-row .chip-x{grid-area:x;align-self:center}
 .fr-n{font-size:13px;line-height:1.35;min-width:0;overflow-wrap:anywhere}
 .fr-q{min-height:36px;font-size:13px;padding:4px 24px 4px 8px}
 .fr-k{font-size:11.5px;color:var(--muted);white-space:nowrap}
 .meal-photo-top{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.meal-photo-top .mpt-one{grid-column:1/-1}
 .health-btn{justify-self:start;margin-top:-4px}
 .health-note{font-size:12px;color:var(--muted);margin:-6px 0 0;padding:8px 12px;background:var(--surface2);border-radius:12px}
 .mpt-col{display:flex;flex-direction:column;align-items:center;gap:4px}
@@ -692,7 +694,9 @@ details.acc-cmp{margin-top:14px}
 .food-sug-i.custom{color:var(--green-d);font-weight:600}
 .food-sug-i:last-child{border-bottom:0}
 .mpt-btn{min-height:52px;justify-content:center;gap:6px;flex-wrap:wrap;position:relative}
-.mpt-btn .badge-premium{font-size:10px}
+.mpt-btn .badge-premium{font-size:11px}
+.mpt-locked{flex-direction:column;gap:6px;min-height:76px;border-radius:18px;padding:10px 8px}
+.mpt-l{display:inline-flex;align-items:center;gap:6px}
 .nut-card{background:var(--surface2);border-radius:16px;padding:14px}
 .nut-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
 .nut-row{display:grid;grid-template-columns:5.2em minmax(0,1fr) 7.6em 2.8em;align-items:center;gap:8px;font-size:12.5px;margin-top:7px}
@@ -4497,13 +4501,12 @@ function openLifeForm(id, part) {
     ${field('歩数', `<input class="input" id="f_steps" name="steps" inputmode="numeric" value="${d.steps == null ? '' : esc(d.steps)}" placeholder="例：6500">`, {name:'steps', hint:'iPhoneの「ヘルスケア」アプリなどで確認した歩数を入力できます'})}</div>
     <div class="form-grid" data-part="meal" ${show('meal')}><div class="section-title">MEAL 食事</div>
     <div class="meal-photo-top">${isPremium()
-      ? `<label class="btn btn-soft mpt-btn">${icon('image')}写真を選ぶ<input type="file" accept="image/*" data-mphoto="auto" class="vh"></label><label class="btn btn-primary mpt-btn">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="auto" class="vh"></label>`
-      : `<div class="mpt-col"><button type="button" class="btn btn-soft mpt-btn" data-mcam="1">${icon('image')}写真を選ぶ</button><span class="mpt-prem">${PREMIUM_NAME}</span></div><div class="mpt-col"><button type="button" class="btn btn-soft mpt-btn" data-mcam="1">${icon('camera')}撮る</button><span class="mpt-prem">${PREMIUM_NAME}</span></div>`}</div>
+      ? `<label class="btn btn-primary mpt-btn mpt-one">${icon('camera')}写真で記録（選ぶ・撮る）<input type="file" accept="image/*" data-mphoto="auto" class="vh"></label>`
+      : `<button type="button" class="btn btn-soft mpt-btn mpt-locked mpt-one" data-mcam="1"><span class="mpt-l">${icon('camera')}写真で記録（選ぶ・撮る）</span><span class="badge-premium">${PREMIUM_NAME}</span></button>`}</div>
     <div id="mpt-info"></div>
     ${(part === 'meal' ? [FOOD_MEALS.find(x => x.k === slot0)].concat(FOOD_MEALS.filter(x => x.k !== slot0)) : FOOD_MEALS).map(mealBlock).join('')}
     <div class="nut-card" id="nut-total"></div>
     <p class="hint" style="margin-top:-8px">${esc(NUT_NOTE)}</p>
-    ${field('食事の内容（当てはまるもの）', checksHtml('tags', FOOD_TAGS, d.tags || []), {name:'tags', optLabel:'任意・複数選択可'})}</div>
     ${field('メモ', `<textarea class="textarea" id="f_memo" name="memo" maxlength="300" placeholder="例：夜遅くにラーメン、飲み会、寝つきが悪かった">${esc(d.memo)}</textarea>`, {name:'memo'})}
   </div></form>`, footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="submit" form="life-form" class="btn btn-primary">保存する</button>`});
   const form = $('#life-form');
@@ -4695,7 +4698,7 @@ function openLifeForm(id, part) {
       // 野菜・たんぱく質は、食べたものから自動で決める（入力欄はなし）。甘いもの・水分は前の値を残す
       ...(() => { if (!foods.length) return {veg:d.veg || '', protein:d.protein || ''}; const tt = nutTotals(foods), g = nutNeeds();
         const lvl = (v, need) => v >= need * 0.7 ? 'しっかり' : v >= need * 0.3 ? '少し' : 'ほぼなし'; return {veg:lvl(tt.veg, g.veg), protein:lvl(tt.p, g.p)}; })(),
-      sweets:d.sweets || '', water:d.water || '', tags:$$('input[name="tags"]:checked', form).map(i => i.value),
+      sweets:d.sweets || '', water:d.water || '', tags:d.tags || [], // 「食事の内容」の入力欄はなし（前の値は残す）
       foods:foods.map(normFood), mealPhotos, exercise:exercise.slice(), exRecorded:exercise.length > 0 || fe.noEx.checked, steps, memo:fe.memo.value.trim()};
     let backup = null;
     if (ex) { backup = Object.assign({}, ex); Object.assign(ex, data); } else state.lifeLogs.push(Object.assign({id:uid(), demo:false}, data));
