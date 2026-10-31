@@ -133,7 +133,7 @@ button{font-family:inherit}
 .topbar{position:relative;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:12px 18px;padding-top:calc(12px + env(safe-area-inset-top));background:#FAF9F6;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
 .wordmark{font-family:var(--serif);font-size:20px;letter-spacing:.24em;color:var(--ink);text-decoration:none;font-weight:500}
 .top-title{margin:0;font-size:21px;line-height:45px;padding:4px 0;white-space:nowrap;font-family:"Hiragino Maru Gothic ProN","Hiragino Maru Gothic Pro","Zen Maru Gothic","M PLUS Rounded 1c","BIZ UDPGothic",var(--font);font-weight:400;letter-spacing:.14em;color:var(--ink2)}
-.tt-in{animation:ttIn .45s ease both}
+.tt-in{animation:none}
 @keyframes ttIn{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.tt-in{animation:none}}
 .wordmark small{display:block;font-family:var(--font);font-size:10px;letter-spacing:.08em;color:var(--muted);margin-top:2px}
@@ -606,7 +606,7 @@ details.acc-cmp{margin-top:14px}
 .sbig .input::placeholder{color:var(--muted);opacity:.55;font-weight:400}
 .sbar-top .sbar-f{min-height:54px;width:54px;padding:0;border-radius:50%;justify-content:center}
 .top-actions{display:flex;gap:8px;margin:0 0 12px}
-.my-add{width:100%;justify-content:center;min-height:52px;font-size:16px}
+.my-add{width:100%;justify-content:center}
 .my-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 14px}
 .my-f{justify-content:center;gap:6px;padding-left:6px;padding-right:6px;white-space:nowrap}
 .my-f span{font-size:11.5px;font-weight:700;color:var(--muted)}
@@ -5520,7 +5520,12 @@ async function drawFace3d(opts) {
   // 回す操作（指・マウス）
   // ホームでは、顔の上でも上下のスクロールができるようにする（左右の動きで回す）。肌の変化の画面では、上下左右すべて回転に使う
   st.yawOnly = !!opts.yawOnly && DEV.touch;
-  cv.style.touchAction = st.yawOnly ? 'pan-y' : 'none';
+  // スマホ：顔の上ではブラウザに任せず、横の動きは顔を回す・縦の動きはページ（または下から出る画面）のスクロールにする
+  cv.style.touchAction = 'none';
+  const scroller = () => { for (let el = cv.parentElement; el && el !== document.body; el = el.parentElement) { const oy = getComputedStyle(el).overflowY; if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) return el; } return null; };
+  const scrollByY = dy => { const sc = scroller(); if (sc) sc.scrollTop += dy; else window.scrollBy(0, dy); };
+  let flingRaf = 0;
+  const fling = v => { cancelAnimationFrame(flingRaf); let last = performance.now(); const step = now => { const dt = Math.min(40, now - last); last = now; v *= Math.pow(0.95, dt / 16); if (Math.abs(v) < 0.02) return; scrollByY(-v * dt); flingRaf = requestAnimationFrame(step); }; flingRaf = requestAnimationFrame(step); };
   // 画面に見えていないときは描くのを止めて、スクロールを軽くする
   st.visible = true;
   if ('IntersectionObserver' in window) { const io = new IntersectionObserver(es => { st.visible = es[0].isIntersecting; if (st.visible) st.dirty = true; }); io.observe(cv); st.io = io; }
@@ -5530,7 +5535,8 @@ async function drawFace3d(opts) {
   cv.addEventListener('pointerdown', e => {
     pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); st.target = null; st.user = true; st.idle = 0; if (DEV.touch) st.auto = false;
     if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = {d:Math.hypot(a.x - b.x, a.y - b.y), z:st.zoomT || cam.position.z}; st.drag = null; return; }
-    st.drag = {x:e.clientX, y:e.clientY, yaw:st.yaw, pitch:st.pitch, cy:cam.position.y, moved:false, dir:null, id:e.pointerId}; if (!st.yawOnly) cv.setPointerCapture(e.pointerId);
+    cancelAnimationFrame(flingRaf);
+    st.drag = {x:e.clientX, y:e.clientY, yaw:st.yaw, pitch:st.pitch, cy:cam.position.y, moved:false, dir:null, id:e.pointerId, ly:e.clientY, lt:performance.now(), v:0}; try { cv.setPointerCapture(e.pointerId); } catch (er) { /* 何もしない */ }
     // 範囲選択モード：なぞった始まりと終わりのマス目で四角く選ぶ（回さない）
     if (st.rangeMode && st.onRange) { const k = face3dGridCell(st, e); st.range = k ? {a:k, b:k} : null; if (k) st.onRange(k, k, 'move'); }
   });
@@ -5540,7 +5546,7 @@ async function drawFace3d(opts) {
   st.minZ = minZ; st.maxZ = maxZ;
   st.panY = !!opts.panY; st.panAt = opts.panAt || 40;
   // 範囲選択中・拡大中は、顔の上で画面がスクロールしないようにする
-  st.touchFix = () => { const want = (st.rangeMode || (st.panY && (st.zoomT || cam.position.z) < st.panAt)) ? 'none' : (st.yawOnly ? 'pan-y' : 'none'); if (cv.style.touchAction !== want) cv.style.touchAction = want; };
+  st.touchFix = () => { if (cv.style.touchAction !== 'none') cv.style.touchAction = 'none'; };
   st.setRange = on => { st.rangeMode = !!on; st.range = null; st.touchFix(); };
   cv.addEventListener('pointermove', e => {
     if (pts.has(e.pointerId)) pts.set(e.pointerId, {x:e.clientX, y:e.clientY});
@@ -5550,8 +5556,12 @@ async function drawFace3d(opts) {
     if (Math.abs(dx) + Math.abs(dy) > 4) st.drag.moved = true;
     // スマホ：最初に動かした向きで決める。縦なら画面のスクロールを優先して顔は回さない。横なら顔を左右に回す
     if (st.yawOnly && !st.rangeMode && !(st.panY && (st.zoomT || cam.position.z) < st.panAt)) {
-      if (!st.drag.dir && Math.abs(dx) + Math.abs(dy) > 6) { st.drag.dir = Math.abs(dy) > Math.abs(dx) ? 'v' : 'h'; if (st.drag.dir === 'h') { try { cv.setPointerCapture(st.drag.id); } catch (er) { /* 何もしない */ } } }
-      if (st.drag.dir !== 'h') return;
+      if (!st.drag.dir && Math.abs(dx) + Math.abs(dy) > 6) st.drag.dir = Math.abs(dy) > Math.abs(dx) ? 'v' : 'h';
+      if (st.drag.dir === 'v') { // 縦：顔は動かさず、ページをスクロール
+        const now = performance.now(), d = e.clientY - st.drag.ly; scrollByY(-d);
+        st.drag.v = 0.7 * st.drag.v + 0.3 * (d / Math.max(1, now - st.drag.lt)); st.drag.ly = e.clientY; st.drag.lt = now; return;
+      }
+      if (st.drag.dir !== 'h') { st.drag.ly = e.clientY; st.drag.lt = performance.now(); return; }
     }
     if (st.rangeMode && st.onRange) { if (st.range) { const k = face3dGridCell(st, e); if (k && k !== st.range.b) { st.range.b = k; st.onRange(st.range.a, k, 'move'); } } return; }
     // 拡大しているときは、上下になぞると顔の上下（おでこ・あご）へ動かせる
@@ -5559,6 +5569,7 @@ async function drawFace3d(opts) {
     st.yaw = st.drag.yaw + dx * 0.012; if (!st.yawOnly) st.pitch = clamp(st.drag.pitch + dy * 0.01, -1.35, 1.35); st.idle = 0; st.user = true; st.target = null; st.dirty = true;
   });
   const up = e => {
+    if (st.drag && st.drag.dir === 'v') { if (performance.now() - st.drag.lt < 80) fling(st.drag.v); st.drag = null; return; } // 指を離したあとも少しすべるようにスクロール
     if (st.rangeMode && st.onRange) { if (st.range) st.onRange(st.range.a, st.range.b, 'end'); st.range = null; st.drag = null; return; }
     // 動かさずに押したときは、押した部位を知らせる（肌の記録の画面で使う）
     if (st.zoneMode && st.onTapZone && st.drag && !st.drag.moved) { const z = face3dZoneAtEvent(st, e); if (z) st.onTapZone(z); }
@@ -7399,7 +7410,7 @@ function renderNav(active, sideActive) {
   NAV.forEach(n => { if (n.g !== g) { g = n.g; if (g) side += `<div class="sn-group">${esc(g)}</div>`; } side += `<a class="sn-item ${sideActive === n.r ? 'active' : ''}" href="#/${n.r}">${icon(n.icon)}${esc(n.label)}</a>`; });
   $('#side-nav').innerHTML = side;
   const moreActive = !BOTTOM_NAV.includes(active);
-  $('#bottom-nav').innerHTML = BOTTOM_NAV.map(r => r === 'account' ? {r:'account', label:'アカウント', icon:'user'} : NAV.find(n => n.r === r)).map(n => `<a class="bn-item ${active === n.r ? 'active' : ''}" href="#/${n.r}">${icon(n.icon)}<span>${esc(n.r === 'search' ? '商品検索' : n.label)}</span></a>`).join('');
+  $('#bottom-nav').innerHTML = BOTTOM_NAV.map(r => r === 'account' ? {r:'account', label:'アカウント', icon:'user'} : NAV.find(n => n.r === r)).map(n => `<a class="bn-item ${active === n.r ? 'active' : ''}" href="#/${n.r}">${icon(n.icon)}<span>${esc(({log:'記録', search:'検索'})[n.r] || n.label)}</span></a>`).join('');
   const tm = document.getElementById('top-menu'); if (tm) tm.classList.toggle('on', moreActive);
 }
 let lastRoute = '';
