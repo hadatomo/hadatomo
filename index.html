@@ -132,7 +132,7 @@ button{font-family:inherit}
 .sidebar{display:none}
 .topbar{position:relative;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:12px 18px;padding-top:calc(12px + env(safe-area-inset-top));background:#FAF9F6;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
 .wordmark{font-family:var(--serif);font-size:20px;letter-spacing:.24em;color:var(--ink);text-decoration:none;font-weight:500}
-.top-title{margin:0;font-size:21px;line-height:45px;padding:4px 0;white-space:nowrap;font-family:"Hiragino Maru Gothic ProN","Hiragino Maru Gothic Pro","Zen Maru Gothic","M PLUS Rounded 1c","BIZ UDPGothic",var(--font);font-weight:400;letter-spacing:.14em;color:var(--ink2)}
+.top-title{margin:0;font-size:21px;line-height:45px;padding:4px 0;white-space:nowrap;font-family:var(--font);font-weight:600;letter-spacing:.02em;color:var(--ink)}
 .tt-in{animation:none}
 @keyframes ttIn{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.tt-in{animation:none}}
@@ -610,8 +610,8 @@ details.acc-cmp{margin-top:14px}
 .my-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 14px}
 .my-f{justify-content:center;gap:6px;padding-left:6px;padding-right:6px;white-space:nowrap}
 .my-f span{font-size:11.5px;font-weight:700;color:var(--muted)}
-.my-f.active{background:var(--green-d);border-color:var(--green-d);color:#fff}
-.my-f.active span{color:rgba(255,255,255,.85)}
+.my-f.active{background:#E3F0E6;border-color:var(--green);color:var(--green-d)}
+.my-f.active span{color:var(--green-d)}
 .sbar .input{min-height:46px}
 .sbar-f{min-height:46px;padding:0 14px;position:relative;gap:6px}
 .sbar-f svg{width:18px;height:18px}
@@ -2556,7 +2556,7 @@ function openSetupWizard() {
   if (!root._sw) { root.addEventListener('click', swClick); root._sw = 1; }
   swPaint();
 }
-const SW_STEPS = ['hello', 'gender', 'age', 'body', 'skin', 'concerns', 'life', 'done'];
+const SW_STEPS = ['hello', 'age', 'body', 'skin', 'concerns', 'life', 'done'];
 function swOpts(key, list, cur, multi) { return `<div class="sw-opts">${list.map(([v, l, w]) => { const on = multi ? cur.includes(v) : cur === v; return `<button type="button" class="sw-opt ${on ? 'on' : ''} ${w ? 'wide' : ''}" data-sw="${key}" data-v="${esc(v)}" aria-pressed="${on}">${l.includes('|') ? `${esc(l.split('|')[0])}<small>${esc(l.split('|')[1])}</small>` : esc(l)}</button>`; }).join('')}</div>`; }
 function swPaint() {
   const s = swState; if (!s) return; const b = $('#sw-body'), f = $('#sw-foot'); if (!b || !f) return;
@@ -3828,7 +3828,7 @@ function viewMy() {
   const useN = {}; state.skinLogs.forEach(l => (l.usedProducts || []).forEach(id => { useN[id] = (useN[id] || 0) + 1; }));
   const list = state.myProducts.filter(p => ui.myFilter === 'すべて' || p.status === ui.myFilter)
     .sort((a,b) => (useN[b.id] || 0) - (useN[a.id] || 0) || FREQS.indexOf(a.frequency) - FREQS.indexOf(b.frequency) || b.startDate.localeCompare(a.startDate));
-  let html = `<button class="btn btn-primary my-add" data-action="add-sheet" data-id="my">${icon('plus')}マイ化粧品を追加</button>`;
+  let html = `<button class="btn btn-primary my-add" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button>`;
   html += `<div class="my-filters" role="tablist">${filters.map(f => `<button class="btn btn-ghost btn-sm my-f ${ui.myFilter === f ? 'active' : ''}" role="tab" aria-selected="${ui.myFilter === f}" data-action="my-filter" data-id="${esc(f)}">${esc(label(f))}<span>${f === 'すべて' ? state.myProducts.length : counts[f]}</span></button>`).join('')}</div>`;
   const tools = state.myProducts.length ? `<div class="mtools"><a href="#/compare">${icon('compare')}商品と肌状態の比較<i>›</i></a><a href="#/combo">${icon('flask')}成分の組み合わせ<i>›</i></a></div>` : '';
   if (!state.myProducts.length) {
@@ -5234,7 +5234,7 @@ function face3dFemale(base) {
   }
   return {v, f:base.f, r:base.r, lic:base.lic, female:true};
 }
-function face3dGender() { const g = state.settings.gender; return g === '女性' ? 'f' : 'm'; }
+function face3dGender() { return 'm'; } // 女性版の顔は不自然だったので使わない（いつも元の顔）
 function face3dPickMesh() {
   if (!FACE3D.base) return;
   if (face3dGender() === 'f') { FACE3D.fem = FACE3D.fem || face3dFemale(FACE3D.base); FACE3D.mesh = FACE3D.fem; } else FACE3D.mesh = FACE3D.base;
@@ -5627,8 +5627,7 @@ async function drawFace3d(opts) {
     // 最初からゆっくり左右に回って、両方の頬が見えるようにする
     // ・パソコン：触っている間は止まり、離して少しすると再開
     // ・スマホ：画面の揺れを防ぐため、最初に左右へ1往復だけ回って正面で止まる。スクロール中は回さない
-    const scrolling = DEV.touch && performance.now() - lastScrollAt < 200;
-    if (st.auto && !scrolling && !st.drag && !st.target && pts.size === 0 && st.idle > (st.user ? 150 : 0)) {
+    if (st.auto && !st.drag && !st.target && pts.size === 0 && st.idle > (st.user ? 150 : 0)) {
       if (Math.abs(st.yaw) > Math.PI) st.yaw = ((st.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; // 何周も回したあとは、近い向きに戻す
       st.phase += DEV.touch ? 0.0075 : 0.0055; /* 自動で回る速さ（少しゆっくり） */ const want = Math.sin(st.phase) * 0.95;
       st.yaw += (want - st.yaw) * (st.user ? 0.03 : 0.12); st.pitch += (0.05 - st.pitch) * 0.03;
@@ -5637,7 +5636,7 @@ async function drawFace3d(opts) {
     }
     if (st.target && !st.drag) { st.yaw += (st.target.yaw - st.yaw) * 0.14; st.pitch += (st.target.pitch - st.pitch) * 0.14; if (Math.abs(st.target.yaw - st.yaw) < 0.002 && Math.abs(st.target.pitch - st.pitch) < 0.002) st.target = null; st.dirty = true; } // ボタンで選んだ向きへ回る
     if (st.zoomT && Math.abs(st.zoomT - cam.position.z) > 0.05) { cam.position.z += (st.zoomT - cam.position.z) * 0.18; if (st.panY && cam.position.z >= st.panAt && Math.abs(cam.position.y - 0.6) > 0.01) cam.position.y += (0.6 - cam.position.y) * 0.25; if (st.touchFix) st.touchFix(); st.dirty = true; }
-    if (st.dirty && !(DEV.touch && performance.now() - lastScrollAt < 200 && !st.drag)) { group.rotation.y = st.yaw; group.rotation.x = st.pitch; renderer.render(scene, cam); st.dirty = false; }
+    if (st.dirty) { group.rotation.y = st.yaw; group.rotation.x = st.pitch; renderer.render(scene, cam); st.dirty = false; }
     requestAnimationFrame(loop);
   };
   loop();
@@ -6702,7 +6701,6 @@ function skinProfileCardHtml() {
   const st = state.settings;
   return `<div class="card"><div class="card-h"><h2>肌質・年代</h2></div>
     <div class="form-grid two" style="gap:12px">
-      <div class="field"><label class="lbl" for="f_gender">性別<span class="opt">3Dの顔の形</span></label><select class="select" id="f_gender"><option value="">答えない</option>${['女性', '男性'].map(x => `<option ${st.gender === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
       <div class="field"><label class="lbl" for="f_skinType">肌質</label><select class="select" id="f_skinType"><option value="">未設定</option>${SKIN_TYPES.map(x => `<option ${st.skinType === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
       <div class="field"><label class="lbl" for="f_ageBand">年代<span class="opt">任意</span></label><select class="select" id="f_ageBand"><option value="">答えない</option>${AGE_BANDS.map(x => `<option ${st.ageBand === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
     </div>
