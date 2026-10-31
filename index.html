@@ -3903,7 +3903,8 @@ function logFaceData(l) {
   if (l.faceV === 2 || (l.cellMarks && Object.keys(l.cellMarks).length)) return {counts:{}, max:1, mode:'areas', types:{}, marks:l.cellMarks || {}};
   const types = acneTypeMap([l]);
   if (l.acneSpots.length) { const c = areaCounts([l], 'spots'); return {counts:c, max:Math.max(3, ...Object.values(c)), mode:'spots', types}; }
-  const c = {}; l.areas.forEach(a => c[a] = 1); return {counts:c, max:1.4, mode:'areas', types};
+  // ニキビの数も顔の印もない記録は、「気になる部位」だけで顔を塗らない（全部消して保存した記録が真っ赤にならないように）
+  return {counts:{}, max:1, mode:'areas', types:{}, marks:{}};
 }
 function logDayList() { return logsDesc().slice().reverse(); } // 古い順
 function logDayIdx(list) { let i = list.findIndex(l => l.date === ui.logDay); if (i < 0) i = list.length - 1; return i; }
