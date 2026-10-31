@@ -743,6 +743,7 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .meal-photo-top>.mpt-btn{white-space:nowrap;flex-wrap:nowrap}
 .meal-photo-top>.mpt-btn:nth-child(2){padding-left:14px;padding-right:14px}
 .meal-photo-top .mpt-l{white-space:nowrap}
+.meal-photo-top.mpt-even{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 .meal-photo-top>.mpt-locked{flex-direction:row;min-height:52px;border-radius:999px;padding:0 12px;gap:8px}
 .mpt-blk.meal-photo-top>.mpt-locked{min-height:44px}
 .meal-photo-top .mpt-one{grid-column:1/-1}
@@ -3569,7 +3570,7 @@ function viewScan() {
   let html = pageHead('カメラで登録', 'パッケージの写真・バーコード・文字を手がかりに、商品を探して登録します。') +
     `<div class="notice">カメラは、下のボタンを押したときだけ起動します。撮影した写真は<b>この端末の中だけ</b>で使い、外部には送信しません（商品を登録しなければ保存もしません）。写真から商品そのものを自動で判別するAI機能はまだないため、バーコードの数字やパッケージの文字を手がかりに、登録済みの商品と照合します。</div>
     <div class="card"><div class="card-h"><h2>1. パッケージを撮影</h2><span class="opt">任意</span></div>
-      <div class="page-actions"><label class="btn btn-primary btn-sm">${icon('camera')}カメラで撮る<input type="file" accept="image/*" capture="environment" id="scan-photo" class="vh"></label><label class="btn btn-ghost btn-sm">${icon('image')}写真を選ぶ<input type="file" accept="image/*" id="scan-photo-lib" class="vh"></label></div>
+      <div class="page-actions"><label class="btn btn-primary btn-sm">${icon('camera')}カメラで撮る<input type="file" accept="image/*" capture="environment" id="scan-photo" class="vh"></label><label class="btn btn-ghost btn-sm">${icon('image')}選ぶ<input type="file" accept="image/*" id="scan-photo-lib" class="vh"></label></div>
       ${sc.photo ? `<img class="img-prev" src="${sc.photo}" alt="撮影した写真" style="width:150px;height:150px"><div class="page-actions" style="margin-top:6px"><button class="btn btn-primary btn-sm" data-action="scan-ai" ${sc.aiBusy ? 'disabled' : ''}>${sc.aiBusy ? '読み取っています…' : '写真から文字を読み取る'}${isPremium() ? '' : ` <span class="badge-premium">${PREMIUM_NAME}</span>`}</button><button class="btn btn-ghost btn-sm" data-action="scan-clear-photo">写真を外す</button></div>
         ${sc.aiBusy ? skelHtml(4, {label:'写真を読み取り中', note:'商品名・成分を読み取っています（10秒ほどかかります）'}) : ''}${sc.aiMsg ? `<p class="small" style="margin-top:6px">${esc(sc.aiMsg)}</p>` : ''}
         <p class="hint">${PREMIUM_NAME}では、商品名・内容量・全成分の文字をAIで読み取って下の欄に入れます（成分表示は裏面を撮ると読み取れます。表と裏で2回読み取ると、成分は後ろに追加されます）。写真は読み取りのためだけにGoogleのAI（Gemini）に送り、保存しません。</p>` : ''}
@@ -4770,9 +4771,9 @@ function openLifeForm(id, part) {
     <summary class="meal-sum"><b>${m.l}</b><span class="meal-now">今の食事</span><span class="meal-sumtx" data-msum="${m.k}"></span><i class="meal-chev" aria-hidden="true">›</i></summary>
     <div class="meal-head">${m.k === 'snack' ? '' : `<label class="check"><input type="checkbox" name="ate_${m.k}" ${d.meals[m.k].ate ? 'checked' : ''}><b>食べた</b></label><input type="time" class="input" style="width:130px;min-height:40px;font-size:16px;padding:6px 10px" name="time_${m.k}" value="${esc(d.meals[m.k].time)}" aria-label="${m.l}の時刻">`}
 </div>
-    ${part === 'meal' && m.k === slot0 ? '' : `<div class="meal-photo-top mpt-blk">${isPremium()
-      ? `<label class="btn mpt-btn mpt-mid">${icon('image')}写真を選ぶ<input type="file" accept="image/*" data-mphoto="${m.k}" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="${m.k}" class="vh"></label>`
-      : `<button type="button" class="btn mpt-btn mpt-locked" data-mcam="${m.k}"><span class="mpt-l">${icon('image')}写真を選ぶ</span><span class="badge-premium">${PREMIUM_NAME}</span></button><button type="button" class="btn mpt-btn mpt-locked" data-mcam="${m.k}"><span class="mpt-l">${icon('camera')}撮る</span></button>`}</div>`}
+    ${part === 'meal' && m.k === slot0 ? '' : `<div class="meal-photo-top mpt-blk mpt-even">${isPremium()
+      ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" data-mphoto="${m.k}" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="${m.k}" class="vh"></label>`
+      : `<button type="button" class="btn mpt-btn mpt-locked" data-mcam="${m.k}"><span class="mpt-l">${icon('image')}選ぶ</span><span class="badge-premium">${PREMIUM_NAME}</span></button><button type="button" class="btn mpt-btn mpt-locked" data-mcam="${m.k}"><span class="mpt-l">${icon('camera')}撮る</span></button>`}</div>`}
     <div data-mprev="${m.k}"></div>
     <div data-pinfo="${m.k}"></div>
     <div class="food-list" data-mfoods="${m.k}"></div>
@@ -4810,9 +4811,9 @@ function openLifeForm(id, part) {
       <div class="field-error" data-err="exercise"></div></div>
     ${field('歩数', `<input class="input" id="f_steps" name="steps" inputmode="numeric" value="${d.steps == null ? '' : esc(d.steps)}" placeholder="例：6500">`, {name:'steps', hint:'iPhoneの「ヘルスケア」アプリなどで確認した歩数を入力できます'})}</div>
     <div class="form-grid" data-part="meal" ${show('meal')}><div class="section-title">MEAL 食事</div>
-    <div class="meal-photo-top">${isPremium()
-      ? `<label class="btn mpt-btn mpt-mid">${icon('image')}写真を選ぶ<input type="file" accept="image/*" data-mphoto="auto" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="auto" class="vh"></label>`
-      : `<button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('image')}写真を選ぶ</span><span class="badge-premium">${PREMIUM_NAME}</span></button><button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('camera')}撮る</span></button>`}</div>
+    <div class="meal-photo-top mpt-even">${isPremium()
+      ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" data-mphoto="auto" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="auto" class="vh"></label>`
+      : `<button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('image')}選ぶ</span><span class="badge-premium">${PREMIUM_NAME}</span></button><button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('camera')}撮る</span></button>`}</div>
     <div id="mpt-info"></div>
     ${(part === 'meal' ? [FOOD_MEALS.find(x => x.k === slot0)].concat(FOOD_MEALS.filter(x => x.k !== slot0)) : FOOD_MEALS).map(mealBlock).join('')}
     <div class="nut-card" id="nut-total"></div>
