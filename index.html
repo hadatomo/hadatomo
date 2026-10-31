@@ -3891,8 +3891,8 @@ function face3dShowLog(st, d) {
   if (!st) return;
   if (d && d.marks && st.gridInfo) {
     // 範囲選択で入れた状態は区切り（額・頬など）ごとの色、1マス選択のニキビは赤いマスで、入力した画面と同じように見せる
-    face3dApply(st, {}, 1, 'areas'); st.gridInfo.uni.uZoneMode.value = 1;
-    face3dGridPaint(st, d.marks, null, 'acne'); face3dZonePaint(st, d.marks, new Set()); face3dAcneDots(st, d.marks); return;
+    face3dApply(st, {}, 1, 'areas'); st.gridInfo.uni.uZoneMode.value = 0;
+    face3dGridPaint(st, d.marks, null, 'acne'); face3dZonePaint(st, d.marks, new Set()); face3dZoneVertexPaint(st); face3dAcneDots(st, d.marks); return;
   }
   if (st.gridInfo) { st.gridInfo.uni.uZoneMode.value = 0; face3dGridPaint(st, {}, null, 'both'); }
   face3dApply(st, d.counts, d.max, d.mode, d.types);
@@ -4091,7 +4091,7 @@ function openLogForm(id) {
   const fpMarks = JSON.parse(JSON.stringify(d.cellMarks || {})); const fpSel = new Set(); let fpRange = false;
   // 1マス選択：押した順を覚えて「戻る」で1つずつ取り消せる。押したマスは「次へ」を押すまで四角い枠で点滅させる
   const fpHist = []; let fpLast = null, fpBlinkOn = true, fpBlinkT = null;
-  const fpBlinkPaint = () => { const st = FACE3D.st; if (st && st.canvasId === 'face3d-form' && !fpRange) face3dGridPaint(st, fpMarks, fpLast && fpBlinkOn ? new Set([fpLast]) : null, 'both'); };
+  const fpBlinkPaint = () => { const st = FACE3D.st; if (st && st.canvasId === 'face3d-form' && !fpRange) face3dGridPaint(st, fpMarks, fpLast && fpBlinkOn ? new Set([fpLast]) : null, 'acne'); };
   const fpBlink = on => {
     clearInterval(fpBlinkT); fpBlinkT = null; fpBlinkOn = true;
     if (on && fpLast) fpBlinkT = setInterval(() => { if (!document.body.contains(form)) { clearInterval(fpBlinkT); return; } fpBlinkOn = !fpBlinkOn; fpBlinkPaint(); }, 450);
@@ -4154,7 +4154,8 @@ function openLogForm(id) {
     face3dApply(st, {}, 1, 'areas'); // 肌の色を元に戻す（色はマス目と区切りで見せる）
     // どちらの選び方でも、ニキビ（1マス選択）と赤み・乾燥など（範囲選択）の両方を見せる
     if (fpRange) { face3dGridPaint(st, fpMarks, fpSel, 'acne'); face3dZonePaint(st, fpMarks, fpSel); }
-    else face3dGridPaint(st, fpMarks, fpLast && fpBlinkOn ? new Set([fpLast]) : null, 'both');
+    else { face3dGridPaint(st, fpMarks, fpLast && fpBlinkOn ? new Set([fpLast]) : null, 'acne'); face3dZonePaint(st, fpMarks, new Set()); }
+    face3dZoneVertexPaint(st); // 赤み・乾燥などは、どちらの選び方でもグラデーションの色で見せる
     face3dAcneDots(st, fpMarks); // ニキビは、どちらの選び方でも赤い点で見せる
   } };
   const fpPanel = () => {
@@ -4784,6 +4785,26 @@ function face3dColors(geo, counts, max, types, sel) {
   }
   geo.attributes.color.needsUpdate = true;
 }
+// 範囲選択で入れた状態の色を、顔の頂点の色として塗り、まわりと混ぜてふんわりしたグラデーションにする
+function face3dZoneVertexPaint(st) {
+  const g = st && st.gridInfo; if (!g) return;
+  const zc = g.uni.uZoneCol.value, m = FACE3D.mesh, v = m.v, n = m.r.length, nb = face3dPrep().nb, col = st.geo.attributes.color.array, lin = x => Math.pow(x, 2.2);
+  if (!g.vZone) { g.vZone = new Int8Array(n); for (let i = 0; i < n; i++) g.vZone[i] = g.nrm[i * 3 + 2] > -0.15 && v[i * 3 + 2] > -2.6 ? face3dZoneOf(v[i * 3], v[i * 3 + 1]) : 0; }
+  let R = new Float32Array(n * 4), any = false;
+  for (let i = 0; i < n; i++) { const z = g.vZone[i], c = z ? zc[z] : null; if (c && c.w > 0) { R[i * 4] = lin(c.x) * c.w; R[i * 4 + 1] = lin(c.y) * c.w; R[i * 4 + 2] = lin(c.z) * c.w; R[i * 4 + 3] = c.w; any = true; } }
+  if (!any) return;
+  for (let pass = 0; pass < 2; pass++) { // まわりの点と2回混ぜる
+    const N = new Float32Array(n * 4);
+    for (let i = 0; i < n; i++) { const L = nb[i]; if (!L.length) { for (let k = 0; k < 4; k++) N[i * 4 + k] = R[i * 4 + k]; continue; } for (const j of L) for (let k = 0; k < 4; k++) N[i * 4 + k] += R[j * 4 + k]; for (let k = 0; k < 4; k++) N[i * 4 + k] /= L.length; }
+    R = N;
+  }
+  for (let i = 0; i < n; i++) {
+    const a = R[i * 4 + 3]; if (a < 0.003) continue;
+    const t = Math.min(0.85, a * 1.6);
+    for (let k = 0; k < 3; k++) col[i * 3 + k] += (R[i * 4 + k] / a - col[i * 3 + k]) * t;
+  }
+  st.geo.attributes.color.needsUpdate = true; st.dirty = true;
+}
 // 1マス選択で付けたニキビを、そのマスの顔の表面に赤い点で置く（範囲選択の赤みと見分けやすいように）
 function face3dAcneDots(st, marks) {
   const T = FACE3D.three, g = st && st.gridInfo; if (!g) return;
@@ -5094,7 +5115,7 @@ function face3dGrid(T, m, mat, lines = true) {
     Object.assign(sh.uniforms, uni);
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vObjPos;\nvarying vec3 vObjNrm;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvObjPos = position;\nvObjNrm = normal;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vObjPos;\nvarying vec3 vObjNrm;\nuniform vec2 uGridOrigin;\nuniform float uGridSize;\nuniform vec2 uGridDim;\nuniform sampler2D uGridMask;\nuniform float uZoneMode;\nuniform float uGridLines;\nuniform float uZoneSel[' + FACE3D_ZONE_N + '];\nuniform vec4 uZoneCol[' + FACE3D_ZONE_N + '];\n' + FACE3D_ZONE_GLSL)
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vObjPos;\nvarying vec3 vObjNrm;\nuniform vec2 uGridOrigin;\nuniform float uGridSize;\nuniform vec2 uGridDim;\nuniform sampler2D uGridMask;\nuniform float uZoneMode;\nuniform float uGridLines;\nuniform float uZoneSel[' + FACE3D_ZONE_N + '];\nuniform vec4 uZoneCol[' + FACE3D_ZONE_N + '];\n' + FACE3D_ZONE_GLSL + '\nvec4 zoneCol(float z) { vec4 c = vec4(0.0); for (int i = 1; i < ' + FACE3D_ZONE_N + '; i++) { if (abs(float(i) - z) < 0.5) c = uZoneCol[i]; } return c; }')
       .replace('#include <color_fragment>', `#include <color_fragment>
         if (vObjNrm.z > (uZoneMode > 0.5 ? -0.15 : 0.2) && vObjPos.z > -2.6) {
           vec2 g = (vObjPos.xy - uGridOrigin) / uGridSize;
@@ -5114,7 +5135,7 @@ function face3dGrid(T, m, mat, lines = true) {
               if (zoneAt(p + vec2(d, 0.0)) != z0 || zoneAt(p - vec2(d, 0.0)) != z0 || zoneAt(p + vec2(0.0, d)) != z0 || zoneAt(p - vec2(0.0, d)) != z0) b = 1.0;
               float zs = 0.0; vec4 zc = vec4(0.0);
               for (int i = 1; i < ${FACE3D_ZONE_N}; i++) { if (abs(float(i) - z0) < 0.5) { zs = uZoneSel[i]; zc = uZoneCol[i]; } }
-              if (zc.a > 0.001) diffuseColor.rgb = mix(diffuseColor.rgb, pow(max(zc.rgb, vec3(0.002)), vec3(2.2)), clamp(zc.a, 0.0, 0.85));
+              // 状態の色は、頂点の色（face3dZoneVertexPaint）でふんわりしたグラデーションにして塗る
               diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.30, 0.78, 0.46), zs * 0.32);
               diffuseColor.rgb = mix(diffuseColor.rgb, zs > 0.5 ? vec3(0.10, 0.60, 0.32) : diffuseColor.rgb * 0.78, b * 0.95 * max(uGridLines, zs));
             }
