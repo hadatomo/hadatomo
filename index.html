@@ -698,6 +698,8 @@ details.acc-cmp{margin-top:14px}
 .food-sug-i:last-child{border-bottom:0}
 .mpt-btn{min-height:52px;justify-content:center;gap:6px;flex-wrap:wrap;position:relative}
 .mpt-btn .badge-premium{font-size:11px}
+.mpt-mid{background:#7FA58B;border-color:#7FA58B;color:#fff}
+.mpt-mid svg{color:#fff}
 .mpt-locked{flex-direction:column;gap:6px;min-height:76px;border-radius:18px;padding:10px 8px}
 .mpt-l{display:inline-flex;align-items:center;gap:6px}
 .nut-card{background:var(--surface2);border-radius:16px;padding:14px}
@@ -4054,8 +4056,8 @@ function spotRow(s) {
     <button type="button" class="btn btn-ghost btn-sm spot-del" data-remove-spot>この行を削除</button>
   </div>`;
 }
-const FP_HINT_TAP = '「1マス選択」：ニキビがある場所のマスを押すと赤い点が付きます（押したマスは「次へ」を押すまで点滅します。間違えたら「戻る」で1つ前に戻せます）。顔を横になぞると回せます。「＋」や2本の指で拡大できます。';
-const FP_HINT_ZONE = '「範囲選択」：額・眉間・鼻・こめかみ（左右）・頬（左右）・顎に分かれています。部分を押して選び、乾燥・テカリなどの状態と強さを入れてください（もう一度押すと外れます）。';
+const FP_HINT_TAP = '「ニキビ選択」：ニキビがある場所のマスを押すと赤い点が付きます（押したマスは「次へ」を押すまで点滅します。間違えたら「戻る」で1つ前に戻せます）。顔を横になぞると回せます。「＋」や2本の指で拡大できます。';
+const FP_HINT_ZONE = '「肌質選択」：額・眉間・鼻・こめかみ（左右）・頬（左右）・顎に分かれています。部分を押して選び、乾燥・テカリなどの状態と強さを入れてください（もう一度押すと外れます）。';
 function openLogForm(id) {
   const ex = id ? getLog(id) : null;
   const t = todayStr(), map = logMap();
@@ -4066,8 +4068,8 @@ function openLogForm(id) {
   openModal({title: ex ? '肌の記録を編集' : '肌の記録', body: `<form id="log-form" novalidate><div class="form-grid">
     ${d.date ? `<input type="hidden" id="f_date" name="date" value="${esc(d.date)}">` : field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint: !ex && map[t] ? '今日の記録はすでにあります。別の日付を選ぶか、一覧から今日の記録を編集してください。' : ''})}
     ${field('肌の調子', condSeg(d.condition) + `<p class="cond-ai" id="cond-ai">${ex ? '' : condAiNote(null)}</p>`, {name:'condition', required:true})}
-    <div class="field fp-field"><span class="lbl">顔を押して記録<span class="opt">1マス選択＝ニキビ、範囲選択＝乾燥・テカリなどの状態</span></span>
-      <div class="fp-mode" role="group" aria-label="選び方"><button type="button" class="on" data-fp-mode="tap" aria-pressed="true">1マス選択</button><button type="button" data-fp-mode="range" aria-pressed="false">範囲選択</button></div>
+    <div class="field fp-field"><span class="lbl">顔を押して記録<span class="opt">ニキビ選択＝ニキビ、肌質選択＝乾燥・テカリなどの状態</span></span>
+      <div class="fp-mode" role="group" aria-label="選び方"><button type="button" class="on" data-fp-mode="tap" aria-pressed="true">ニキビ選択</button><button type="button" data-fp-mode="range" aria-pressed="false">肌質選択</button></div>
       <div class="fp-wrap"><div class="f3-stage fp-stage"><canvas id="face3d-form" aria-label="押して部位を選ぶ3Dの顔"></canvas><div class="fp-zoom"><button type="button" class="icon-btn" data-fp-zoom="in" aria-label="拡大">＋</button><button type="button" class="icon-btn" data-fp-zoom="out" aria-label="縮小">−</button></div><div class="f3-load" id="fp-load"><span class="skel skel-face"></span></div></div>
       <div class="fp-panel" id="fp-panel"></div></div>
       <p class="hint" id="fp-hint">${FP_HINT_TAP}</p></div>
@@ -4503,7 +4505,7 @@ function openLifeForm(id, part) {
     ${field('歩数', `<input class="input" id="f_steps" name="steps" inputmode="numeric" value="${d.steps == null ? '' : esc(d.steps)}" placeholder="例：6500">`, {name:'steps', hint:'iPhoneの「ヘルスケア」アプリなどで確認した歩数を入力できます'})}</div>
     <div class="form-grid" data-part="meal" ${show('meal')}><div class="section-title">MEAL 食事</div>
     <div class="meal-photo-top">${isPremium()
-      ? `<label class="btn btn-soft mpt-btn">${icon('image')}写真を選ぶ<input type="file" accept="image/*" data-mphoto="auto" class="vh"></label><label class="btn btn-primary mpt-btn">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="auto" class="vh"></label>`
+      ? `<label class="btn mpt-btn mpt-mid">${icon('image')}写真を選ぶ<input type="file" accept="image/*" data-mphoto="auto" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="auto" class="vh"></label>`
       : `<button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('image')}写真を選ぶ</span><span class="badge-premium">${PREMIUM_NAME}</span></button><button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('camera')}撮る</span><span class="badge-premium">${PREMIUM_NAME}</span></button>`}</div>
     <div id="mpt-info"></div>
     ${(part === 'meal' ? [FOOD_MEALS.find(x => x.k === slot0)].concat(FOOD_MEALS.filter(x => x.k !== slot0)) : FOOD_MEALS).map(mealBlock).join('')}
