@@ -694,7 +694,7 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .fp-field:not(.fp-big) .fp-wrap{grid-template-columns:1fr}
 .fp-field:not(.fp-big) .fp-stage{width:200px;max-width:200px;margin:4px auto 0;border:0;background:transparent;box-shadow:none}
 .fp-field:not(.fp-big) .fp-gest{display:none}
-.fp-open{position:absolute;inset:0;z-index:3;border:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fp-open{position:absolute;top:0;right:0;width:52px;height:52px;z-index:3;border:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}
 .fp-open i{position:absolute;top:4px;right:2px;width:40px;height:40px;border-radius:50%;background:var(--surface);border:1px solid var(--line2);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:15px;color:var(--ink)}
 .fp-sumline{text-align:center;font-size:13px;color:var(--ink2);margin:8px 0 0}
 .fp-openbtn{display:flex;margin:10px auto 0;justify-content:center;min-width:220px}
@@ -4578,12 +4578,16 @@ function openLogForm(id) {
     placeOldSpots(); fpLines(false);
     if (aiPending) { const r = aiPending; aiPending = null; setTimeout(() => aiApply(r), 0); }
     // 1マス選択：押したマスにニキビを付ける／消す
+    // 小さい顔のときは、指でなぞると回せる。押したとき（なぞらずに離したとき）は、大きくして記録する画面を開く
+    const smallTap = () => { if (fpEl().classList.contains('fp-big')) return false; const o = $('[data-fp-open]', fpEl()); if (o) o.click(); return true; };
     st.onTapCell = key => {
+      if (smallTap()) return;
       fpToggleAcne(key); fpHist.push(key); fpLast = key;
       haptic(8); syncAcne(); condAuto(); $('#modal-root').dataset.dirty = '1'; fpTouched = true; fpSync(); fpBlink(true);
     };
     // 範囲選択：押した区切り（額・鼻・頬など）のマス目を、まとめて選ぶ／外す
     st.onTapZone = z => {
+      if (smallTap()) return;
       const g = grid(); const ks = []; for (let k = 0; k < g.cellZone.length; k++) if (g.cellZone[k] === z && g.cellArea[k]) ks.push(`${k % g.cols},${Math.floor(k / g.cols)}`);
       const all = ks.length && ks.every(k => fpSel.has(k)); ks.forEach(k => all ? fpSel.delete(k) : fpSel.add(k)); fpSync();
     };
