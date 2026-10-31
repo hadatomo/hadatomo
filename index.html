@@ -33,7 +33,7 @@
   --beige:#4A4232;--beige-s:#29251D;--gold:#C9A877;
   --danger:#E3907C;--danger-s:#3A2420;--warn:#D9A955;--warn-s:#33291A;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.25);color-scheme:dark}
-:root[data-theme="dark"] .topbar{background:rgba(18,22,20,.92)!important}
+:root[data-theme="dark"] .topbar{background:#121614!important}
 :root[data-theme="dark"] .bottom-nav{background:rgba(27,32,29,.96)!important;border-color:var(--line)!important}
 :root[data-theme="dark"] .input,:root[data-theme="dark"] .select,:root[data-theme="dark"] .textarea,:root[data-theme="dark"] .checks .check,:root[data-theme="dark"] .used-list .check{background:var(--surface2);color:var(--ink)}
 :root[data-theme="dark"] .field.has-error .input,:root[data-theme="dark"] .field.has-error .select,:root[data-theme="dark"] .field.has-error .textarea{background:#2A1D1A}
@@ -63,7 +63,7 @@
   --beige:#4A4232;--beige-s:#29251D;--gold:#C9A877;
   --danger:#E3907C;--danger-s:#3A2420;--warn:#D9A955;--warn-s:#33291A;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.25);color-scheme:dark}
-:root:not([data-theme="light"]) .topbar{background:rgba(18,22,20,.92)!important}
+:root:not([data-theme="light"]) .topbar{background:#121614!important}
 :root:not([data-theme="light"]) .bottom-nav{background:rgba(27,32,29,.96)!important;border-color:var(--line)!important}
 :root:not([data-theme="light"]) .input,:root:not([data-theme="light"]) .select,:root:not([data-theme="light"]) .textarea,:root:not([data-theme="light"]) .checks .check,:root:not([data-theme="light"]) .used-list .check{background:var(--surface2);color:var(--ink)}
 :root:not([data-theme="light"]) .field.has-error .input,:root:not([data-theme="light"]) .field.has-error .select,:root:not([data-theme="light"]) .field.has-error .textarea{background:#2A1D1A}
@@ -89,6 +89,10 @@
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;background:var(--bg)}
+/* 画面の上を下に引っぱったとき、「肌トモ」の上に背景のグラデーションが見えないように、上の帯と同じ色で埋める */
+.topbar::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:240px;background:#FAF9F6;pointer-events:none}
+:root[data-theme="dark"] .topbar::before{background:#121614}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .topbar::before{background:#121614}}
 /* いちばん後ろの背景：おだやかな色のグラデーション（画面に固定して、スクロールしても動かない） */
 body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(160deg,#F4F0E6 0%,#E9F0E6 45%,#F3E8DE 100%)}
 /* 朝・昼・夜で背景の色を変える（少し濃いめ） */
@@ -120,7 +124,7 @@ button{font-family:inherit}
 
 /* ---------- Layout ---------- */
 .sidebar{display:none}
-.topbar{position:relative;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:12px 18px;padding-top:calc(12px + env(safe-area-inset-top));background:rgba(250,249,246,.9);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+.topbar{position:relative;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:12px 18px;padding-top:calc(12px + env(safe-area-inset-top));background:#FAF9F6;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
 .wordmark{font-family:var(--serif);font-size:20px;letter-spacing:.24em;color:var(--ink);text-decoration:none;font-weight:500}
 .top-title{margin:0;font-size:21px;line-height:45px;padding:4px 0;white-space:nowrap;font-family:"Hiragino Maru Gothic ProN","Hiragino Maru Gothic Pro","Zen Maru Gothic","M PLUS Rounded 1c","BIZ UDPGothic",var(--font);font-weight:400;letter-spacing:.14em;color:var(--ink2)}
 .tt-in{animation:ttIn .45s ease both}
@@ -908,7 +912,7 @@ a.used-tile{color:inherit;text-decoration:none}
 .f3-full-stage canvas{width:100%;height:100%;display:block;touch-action:none}
 .t3-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1.25fr);gap:10px;align-items:center}
 .t3-stage{max-width:none;margin:0;background:#fff}
-.ld-stage{max-width:270px;background:#fff}
+.ld-stage{max-width:220px;background:#fff}
 :root[data-theme="dark"] .ld-stage{background:transparent}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ld-stage{background:transparent}}
 .ld-card{touch-action:pan-y}
@@ -1608,7 +1612,7 @@ function sampleCatalog() {
 let storageOK = true;
 let loadWarning = '';
 function freshState() {
-  return {version:2, catalog:sampleCatalog(), myProducts:[], skinLogs:[], lifeLogs:[], customFoods:[], settings:{monthlyBudget:0, concerns:[]}};
+  return {version:2, catalog:[], myProducts:[], skinLogs:[], lifeLogs:[], customFoods:[], settings:{monthlyBudget:0, concerns:[]}};
 }
 function normOffer(o) {
   return {id:String(o.id||uid()), isSample:!!o.isSample, kind:o.kind === 'store' ? 'store' : 'online', shop:String(o.shop||''), url:safeUrl(o.url),
@@ -1625,7 +1629,8 @@ function normFood(x) {
 function normalize(d) {
   const samples = Object.fromEntries(sampleCatalog().map(s => [s.id, s]));
   const out = {version:2, catalog:[], myProducts:[], skinLogs:[], lifeLogs:[], customFoods:[], settings:{monthlyBudget:0}};
-  out.catalog = Array.isArray(d.catalog) ? d.catalog.filter(p => p && p.id && p.name).map(p => {
+  // 架空のサンプル商品は扱わない（実際にある商品だけ。以前の版で入っていたサンプルはここで外す）
+  out.catalog = Array.isArray(d.catalog) ? d.catalog.filter(p => p && p.id && p.name && !p.isSample).map(p => {
     // 第1版のサンプル商品には新しい項目がないため、内蔵サンプルの内容で補う
     if (p.isSample && samples[p.id] && !Array.isArray(p.purposes)) p = Object.assign({}, samples[p.id], {image:p.image});
     const verify = p.isSample ? 'sample' : (p.verify === 'verified' ? 'verified' : 'unverified');
@@ -1633,10 +1638,9 @@ function normalize(d) {
       origin:ORIGINS.includes(p.origin) ? p.origin : 'その他', price:Math.max(0, num(p.price)), volume:String(p.volume||''), image:safeImg(p.image), imageUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.imageUrl || '')) ? String(p.imageUrl) : '', shopUrl:safeUrl(p.shopUrl),
       purposes:strArr(p.purposes, PURPOSES), ingredients:String(p.ingredients||''), features:String(p.features||''), usage:String(p.usage||''), caution:String(p.caution||''),
       jan:/^(\d{8}|\d{13})$/.test(String(p.jan||'')) ? String(p.jan) : '',
-      source:String(p.source||''), checkedAt:isValidYmd(p.checkedAt) ? p.checkedAt : '', offers:Array.isArray(p.offers) ? p.offers.filter(o => o && o.shop).map(normOffer) : []};
-  }) : sampleCatalog();
+      source:String(p.source||''), checkedAt:isValidYmd(p.checkedAt) ? p.checkedAt : '', offers:Array.isArray(p.offers) ? p.offers.filter(o => o && o.shop && !o.isSample).map(normOffer) : []};
+  }) : [];
   // 第1版からの移行時だけ、新しく追加したサンプル商品を補う（削除済みのサンプルは第2版以降は復活させない）
-  if (d.version !== 2) Object.values(samples).forEach(s => { if (!out.catalog.some(c => c.id === s.id) && !['sample-1','sample-2','sample-3','sample-4','sample-5','sample-6'].includes(s.id)) out.catalog.push(s); });
   out.myProducts = Array.isArray(d.myProducts) ? d.myProducts.filter(p => p && p.id && p.name && isValidYmd(p.startDate)).map(p => ({
     id:String(p.id), catalogId:p.catalogId ? String(p.catalogId) : '', name:String(p.name), brand:String(p.brand||''), category:CATEGORIES.includes(p.category) ? p.category : 'その他',
     purposes:strArr(p.purposes, PURPOSES), ingredients:String(p.ingredients||''),
@@ -2152,7 +2156,8 @@ function drawCharts() {
 }
 function xLabels(dates, x, iw, h) {
   const n = dates.length, step = Math.max(1, Math.ceil(n / Math.max(2, Math.floor(iw / 46))));
-  return dates.map((d, i) => i % step === 0 ? `<text class="ax" x="${x(i).toFixed(1)}" y="${h-8}" text-anchor="middle">${fmtShort(d)}</text>` : '').join('');
+  // 右端（いちばん新しい日）から数えて日付を出す。右端の日付は欄の中に収まるように右寄せ
+  return dates.map((d, i) => (n - 1 - i) % step === 0 ? `<text class="ax" x="${x(i).toFixed(1)}" y="${h-8}" text-anchor="${i === n - 1 && n > 1 ? 'end' : 'middle'}"${i === n - 1 && n > 1 ? ' dx="6"' : ''}>${fmtShort(d)}</text>` : '').join('');
 }
 function lineChart(w, o) {
   const h = o.height || 200, pl = 34, pr = 14, pt = 12, pb = 28;
@@ -2399,8 +2404,52 @@ function searchTabs(cur) { const n = (state.favorites || []).length; return `<di
 function openAddSheet(kind) {
   const my = kind === 'my';
   openModal({title:my ? '化粧品を追加' : '商品を追加', size:'small', dismissable:true, body:`<div class="add-opts">
-    <button class="add-opt main big" data-action="add-manual" data-id="${my ? 'my' : 'cat'}">${icon('note')}<span><b>自分で入力する</b><small>${my ? '商品検索から選ぶ・手で入力する' : '商品名・成分などを入力する'}</small></span><i>›</i></button>
+    <button class="add-opt main big" data-action="add-find" data-id="${my ? 'my' : 'cat'}">${icon('search')}<span><b>商品を探して追加</b><small>楽天市場・Yahoo!ショッピングの実際の商品から選ぶ</small></span><i>›</i></button>
+    <button class="add-opt small" data-action="add-manual" data-id="${my ? 'my' : 'cat'}">${icon('note')}<span><b>自分で入力する</b><small>見つからないときは、パッケージを見ながら入力</small></span><i>›</i></button>
     <button class="add-opt small" data-action="add-camera">${icon('camera')}<span><b>カメラで登録${isPremium() ? '' : ` <span class="badge-premium">${PREMIUM_NAME}</span>`}</b><small>パッケージやバーコードを撮る・写真を選ぶ</small></span><i>›</i></button></div>`});
+}
+// 実際の商品（楽天市場・Yahoo!ショッピング）を名前で探して、そのまま追加する
+let findState = null;
+function openFindSheet(kind) {
+  findState = {kind, q:'', items:null, loading:false, err:'', timer:null};
+  openModal({title:'商品を探して追加', dismissable:true, body:`<div class="ac-wrap sbig find-bar">${icon('search')}<input type="search" id="find-q" class="input" placeholder="商品名・ブランド名で探す" autocomplete="off" aria-label="商品名・ブランド名で探す"></div>
+    <div id="find-list" class="net-list" style="margin-top:12px"><p class="small muted">例：「キュレル 化粧水」「イニスフリー」など。実際に売られている商品が出てきます。</p></div>
+    <p class="credit small muted" style="margin-top:10px">Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p>`});
+  const inp = document.getElementById('find-q');
+  if (inp) { setTimeout(() => inp.focus(), 280); inp.addEventListener('input', () => { clearTimeout(findState.timer); const q = inp.value.trim(); findState.timer = setTimeout(() => findRun(q), 600); });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(findState.timer); findRun(inp.value.trim()); inp.blur(); } }); }
+}
+async function findRun(q) {
+  const fs = findState; if (!fs) return;
+  fs.q = q; fs.err = '';
+  if (q.length < 2) { fs.items = null; fs.loading = false; findPaint(); return; }
+  fs.loading = true; findPaint();
+  try {
+    const ctrl = new AbortController(), tm = setTimeout(() => ctrl.abort(), 25000);
+    const res = await fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', signal:ctrl.signal, headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify({q, mode:'discover'})});
+    const j = await res.json().catch(() => ({})); clearTimeout(tm);
+    if (findState !== fs || fs.q !== q) return;
+    if (!res.ok || j.error) throw new Error('x');
+    fs.items = (Array.isArray(j.items) ? j.items : []).slice(0, 30);
+  } catch (e) { if (findState === fs && fs.q === q) { fs.items = null; fs.err = '商品を探せませんでした。電波のよい場所で、もう一度お試しください。'; } }
+  if (findState === fs && fs.q === q) { fs.loading = false; findPaint(); }
+}
+function findPaint() {
+  const box = document.getElementById('find-list'), fs = findState; if (!box || !fs) return;
+  if (fs.loading) { box.innerHTML = skelHtml(4, {dots:true, label:'商品を検索中'}); return; }
+  if (fs.err) { box.innerHTML = `<p class="small muted">${esc(fs.err)}</p>`; return; }
+  if (!fs.items) { box.innerHTML = '<p class="small muted">例：「キュレル 化粧水」「イニスフリー」など。実際に売られている商品が出てきます。</p>'; return; }
+  if (!fs.items.length) { box.innerHTML = `<p class="small muted">見つかりませんでした。別の言葉で探すか、<button type="button" class="link" data-action="add-manual" data-id="${fs.kind}">自分で入力</button>してください。</p>`; return; }
+  box.innerHTML = fs.items.map((x, i) => `<div class="net-item">${x.image ? `<img src="${esc(x.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="net-noimg">${icon('bottle')}</span>`}
+      <span class="net-t"><b>${esc(truncate(x.name, 60))}</b><small>${esc(x.site)}${x.shop ? '・' + esc(truncate(x.shop, 18)) : ''}</small><em>${yen(x.price)}</em></span>
+      <span class="net-btns"><button class="btn btn-primary btn-sm" data-action="find-pick" data-id="${i}">${icon('plus')}追加</button></span></div>`).join('');
+}
+function findPick(i) {
+  const fs = findState, x = fs && fs.items && fs.items[Number(i)]; if (!x) return;
+  const p = netToCat(x); if (!p) return;
+  const kind = fs.kind; findState = null; closeModal();
+  if (kind === 'my') setTimeout(() => openMyForm(null, p.id), 200);
+  else { location.hash = '#/product/' + encodeURIComponent(p.id); render(); }
 }
 // ---------- お気に入り ----------
 const isFav = id => (state.favorites || []).includes(id);
@@ -2477,14 +2526,20 @@ function netHtml() {
   }).join('')}</div><p class="small muted" style="margin-top:8px">価格は検索した時点のものです。「追加」すると、この商品を商品一覧に登録して、お気に入りやマイ化粧品に使えます。${n.items.some(x => x.ad) ? '一部のリンクは広告（アフィリエイト）です。' : ''}</p>
     <p class="credit small muted">Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p>`;
 }
-function netAdd(i) {
-  const x = ui.net && ui.net.items && ui.net.items[Number(i)]; if (!x) return;
+function netToCat(x) {
+  const old = state.catalog.find(c => c.shopUrl && c.shopUrl === x.url); if (old) return old;
   const vol = (x.name.match(/(\d+(?:\.\d+)?)\s*(ml|mL|ML|g|G)(?![a-z])/) || [])[0] || '';
   const p = {id:uid(), isSample:false, verify:'unverified', name:x.name.replace(/[【\[].*?[】\]]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80) || x.name.slice(0, 80), brand:'', category:guessCat(x.name), origin:'日本',
     price:x.price, volume:vol.replace(/\s/g, '').replace(/mL|ML/, 'ml').replace('G', 'g'), image:null, imageUrl:/^https:\/\//.test(x.image || '') ? x.image : '', shopUrl:x.url, purposes:[], ingredients:'', features:'', usage:'', caution:'',
     jan:/^(\d{8}|\d{13})$/.test(x.jan || '') ? x.jan : '', source:`${x.site}（${x.shop || 'ショップ'}）`, checkedAt:todayStr(), offers:[]};
+  const g = guessFromName(p.name); if (g && g.brand) p.brand = g.brand; if (g && g.purposes && g.purposes.length) p.purposes = g.purposes.filter(v => PURPOSES.includes(v));
   state.catalog.push(p);
-  if (!save()) { state.catalog.pop(); return; }
+  if (!save()) { state.catalog.pop(); return null; }
+  return p;
+}
+function netAdd(i) {
+  const x = ui.net && ui.net.items && ui.net.items[Number(i)]; if (!x) return;
+  if (!netToCat(x)) return;
   toast('商品を追加しました。ブランドや成分は、商品の画面の「編集」で入力できます');
   netPaint(); const box = document.getElementById('search-results'); if (box) box.innerHTML = searchResults();
 }
@@ -2542,7 +2597,8 @@ function searchResultsCore() {
   if (ui.sort === 'new') list = list.slice().reverse();
   if (ui.sort === 'price') list = list.slice().sort((a,b) => (a.price || Infinity) - (b.price || Infinity));
   if (ui.sort === 'unit') list = list.slice().sort((a,b) => (perUnitValue(a.price, a.volume) ?? Infinity) - (perUnitValue(b.price, b.volume) ?? Infinity));
-  if (!state.catalog.length) return `<div class="card">${emptyBox('search', '商品が登録されていません', '使っている商品や気になる商品を登録しましょう。', '<button class="btn btn-primary btn-sm" data-action="new-cat">商品を追加</button>')}</div>`;
+  if (!state.catalog.length) return ui.q.trim().length >= 2 ? '' : `<div class="card">${emptyBox('search', '商品名で検索してください', '上の検索バーに商品名やブランド名を入れると、楽天市場・Yahoo!ショッピングで実際に売られている商品が出てきます。')}</div>`;
+  if (!list.length && ui.q.trim().length >= 2) return '';
   if (!list.length) return `<div class="card">${emptyBox('search', '条件に合う商品が見つかりません', '検索条件を変えるか、新しく商品を登録してください。', '<button class="btn btn-soft btn-sm" data-action="new-cat">商品を追加</button>')}</div>`;
   const maxNote = typeof max === 'number' && isNaN(max) ? '<p class="small" style="color:var(--danger);margin-bottom:8px">予算の上限は半角数字で入力してください（条件から外しています）。</p>' : '';
   return `${maxNote}<div class="rhead"><span class="small muted">${list.length}件${ui.sort === 'unit' ? '（内容量が読めない商品は最後）' : ''}</span>
@@ -4007,7 +4063,7 @@ function logDayInfoHtml(list, i) {
   const l = list[i]; if (!l) return '';
   const y = parseYmd(l.date).getFullYear();
   return `<div class="ld-date"><b>${fmtMD(l.date)}</b></div>
-    <div class="t3-tags" style="justify-content:center;margin-top:4px"><span class="t-cond" style="background:${COND_COLORS[l.condition] || '#999'};color:${COND_FG[l.condition] || '#fff'}">${esc(COND_LABELS[l.condition] || '—')}</span>${l.areas.map(a => `<span>${esc(areaName(a))}</span>`).join('')}${l.demo ? '<span class="badge-sample">デモ</span>' : ''}</div>`;
+    <div class="t3-tags" style="justify-content:center;margin-top:4px"><span class="t-cond" style="background:${COND_COLORS[l.condition] || '#999'};color:${COND_FG[l.condition] || '#fff'}">${esc(COND_LABELS[l.condition] || '—')}</span>${l.demo ? '<span class="badge-sample">デモ</span>' : ''}</div>`;
 }
 // その日の記録の詳しい内容（記録一覧にあった情報を、ここにまとめて表示）
 function logDayDetailHtml(list, i) {
@@ -4020,9 +4076,8 @@ function logDayDetailHtml(list, i) {
       <div class="stat"><div class="lbl">乾燥</div><div class="val">${l.dryness}</div></div>
       <div class="stat"><div class="lbl">皮脂</div><div class="val">${l.oil}</div></div>
     </div>
-    ${l.acneSpots.length ? `<p class="sub-line"><b>ニキビの詳細</b>${l.acneSpots.map(s => esc(`${areaName(s.area)} ${s.count}個（${s.type}・${s.size.replace(/（.*）/, '')}・${s.status}）`)).join('／')}</p>` : ''}
+    ${l.acneSpots.length ? `<p class="sub-line"><b>ニキビの詳細</b>${l.acneSpots.map(s => esc(`${s.count}個（${s.type}・${s.size.replace(/（.*）/, '')}・${s.status}）`)).join('／')}</p>` : ''}
     ${l.acneTypes.length || l.otherConcerns.length ? `<div class="chips" style="margin-top:10px">${l.acneTypes.map(a => `<span class="chip">${esc(a)}</span>`).join('')}${l.otherConcerns.map(a => `<span class="chip">${esc(a)}</span>`).join('')}</div>` : ''}
-    ${l.areaNotes && Object.keys(l.areaNotes).length ? `<p class="sub-line"><b>部位ごとの状態</b>${Object.entries(l.areaNotes).map(([k, v]) => `${esc(areaName(k))}：${esc(v.join('・'))}`).join('／')}</p>` : ''}
     ${l.usageRecorded ? `<p class="sub-line"><b>使った化粧品</b>${usedNames.length ? esc(usedNames.join('、')) : 'なし'}</p>` : ''}
     ${life ? `<p class="sub-line"><b>睡眠</b>${esc(fmtHM(sleepMin(life)))}</p>` : ''}
     ${l.memo ? `<div class="log-memo">${esc(l.memo)}</div>` : ''}
@@ -5062,8 +5117,8 @@ function adviceHtml() {
   const list = adviceBusy ? skelHtml(3, {dots:true, label:'AIが分析中'}) : `<ol>${pts.map((x, i) => `<li><i>${i + 1}</i><div><b>${esc(x.title)}</b><span>${esc(x.text)}</span></div></li>`).join('')}</ol>`;
   let foot;
   if (adviceBusy) foot = '<span class="small muted">AIが記録を分析しています…</span>';
-  else if (ai) foot = `<span class="small muted">直近7日の記録をAI（Google Gemini）が分析しました。目安としてご覧ください。</span><button class="btn btn-ghost btn-sm ai-btn" data-action="advice-ai" data-id="again">もう一度分析</button>`;
-  else if (prem) foot = `<span class="small muted">${adviceErr ? esc(adviceErr) : '直近7日の記録から表示しています。'}</span><button class="btn btn-ghost btn-sm ai-btn" data-action="advice-ai">AIで分析する</button>`;
+  else if (ai) foot = `<span class="small muted">直近7日の記録をAI（Google Gemini）が分析しました。目安としてご覧ください。</span><button class="btn btn-ghost btn-sm" data-action="advice-ai" data-id="again">もう一度分析</button>`;
+  else if (prem) foot = `<span class="small muted">${adviceErr ? esc(adviceErr) : '直近7日の記録から表示しています。'}</span><button class="btn btn-ghost btn-sm" data-action="advice-ai">AIで分析する</button>`;
   else foot = `<span class="small muted">直近7日の記録から表示しています。プレミアムでは、AIがあなたの記録を詳しく分析します。</span><a class="link small" href="#/plan">プランを見る →</a>`;
   return head + list + `<div class="adv-foot">${foot}</div>`;
 }
@@ -6357,7 +6412,7 @@ function viewSettings() {
     <div class="card"><div class="card-h"><h2>動作確認用データ</h2></div>
       <p class="small muted" style="margin-bottom:12px">グラフやレポートの見え方を試すために、架空の「デモ」記録（約4週間分）・食事睡眠・マイ化粧品を追加できます。デモデータには「デモ」と表示され、まとめて削除できます。</p>
       <div class="page-actions">${hasDemo ? '<button class="btn btn-danger-ghost btn-sm" data-action="demo-remove">デモデータを削除</button>' : '<button class="btn btn-soft btn-sm" data-action="demo-add">デモデータを追加</button>'}
-      <button class="btn btn-ghost btn-sm" data-action="reset-samples">サンプル商品を初期状態に戻す</button></div></div>
+</div></div>
     <div class="card"><div class="card-h"><h2>すべてのデータを削除</h2></div>
       <p class="small muted" style="margin-bottom:12px">肌の記録・食事睡眠・マイ化粧品・支出・登録した商品をすべて削除します。削除した直後（数秒間）だけ「元に戻す」で取り消せます。心配な場合は、先にバックアップを書き出してください。</p>
       <button class="btn btn-danger btn-sm" data-action="delete-all">すべて削除する</button></div>
@@ -6548,6 +6603,8 @@ const actions = {
   'flt-done': () => { closeModal(); render(); },
   'flt-clear': k => { if (k === 'ing') ui.ing = false; else if (k === 'sort') ui.sort = 'std'; else ui[k] = ''; render(); },
   'add-sheet': kind => openAddSheet(kind),
+  'add-find': kind => { closeModal(); setTimeout(() => openFindSheet(kind), 200); },
+  'find-pick': i => findPick(i),
   'add-camera': () => { closeModal(); location.hash = '#/scan'; },
   'add-manual': kind => { closeModal(); (actions[kind === 'my' ? 'new-my' : 'new-cat'])(); },
   'acc-toggle': (k, el) => {
