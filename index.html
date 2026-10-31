@@ -657,6 +657,25 @@ details.acc-cmp{margin-top:14px}
 .fp-steps{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .fp-steps .btn{min-height:40px;justify-content:center}
 .fp-steps .btn:disabled{opacity:.4}
+.meal-acc{padding:0}
+.meal-acc > *:not(summary){margin-left:12px;margin-right:12px}
+.meal-acc > .food-list,.meal-acc > .food-ac,.meal-acc > .food-pick{margin-left:12px;margin-right:12px}
+.meal-acc[open]{padding-bottom:12px}
+.meal-sum{display:flex;align-items:center;gap:8px;padding:14px 12px;cursor:pointer;list-style:none;-webkit-tap-highlight-color:transparent}
+.meal-sum::-webkit-details-marker{display:none}
+.meal-sum b{font-size:15px;flex:none}
+.meal-sumtx{flex:1;min-width:0;font-size:12px;color:var(--muted);display:flex;justify-content:flex-end;gap:6px;white-space:nowrap}
+.ms-n{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.ms-k{flex:none;color:var(--ink2);font-weight:600}
+.meal-chev{font-style:normal;color:var(--muted);font-size:20px;line-height:1;transition:transform .2s;flex:none}
+.meal-acc[open] .meal-chev{transform:rotate(90deg)}
+.meal-acc .meal-head{margin-bottom:4px}
+.food-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.food-list:empty{display:none}
+.food-row{display:grid;grid-template-columns:minmax(0,1fr) 92px auto 28px;align-items:center;gap:6px;padding:6px 8px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.fr-n{font-size:13px;line-height:1.35;min-width:0;overflow-wrap:anywhere}
+.fr-q{min-height:36px;font-size:13px;padding:4px 24px 4px 8px}
+.fr-k{font-size:11.5px;color:var(--muted);white-space:nowrap}
 .meal-photo-top{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .health-btn{justify-self:start;margin-top:-4px}
 .health-note{font-size:12px;color:var(--muted);margin:-6px 0 0;padding:8px 12px;background:var(--surface2);border-radius:12px}
@@ -4436,14 +4455,15 @@ function openLifeForm(id, part) {
   // 食事だけを開いたときは、今の時刻で朝食・昼食・夕食・間食を自動で選び、その食事の入力欄だけを出す
   const nowHM = () => { const n = new Date(); return `${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}`; };
   const slot0 = mealByTime(nowHM());
-  const mealBlock = m => `<div class="meal-block" data-meal="${m.k}">
-    <div class="meal-head">${m.k === 'snack' ? `<b class="small">${m.l}</b>` : `<label class="check"><input type="checkbox" name="ate_${m.k}" ${d.meals[m.k].ate ? 'checked' : ''}><b>${m.l}</b><span class="meal-now">今の食事</span></label><input type="time" class="input" style="width:130px;min-height:40px;font-size:16px;padding:6px 10px" name="time_${m.k}" value="${esc(d.meals[m.k].time)}" aria-label="${m.l}の時刻">`}
+  const mealBlock = m => `<details class="meal-block meal-acc" data-meal="${m.k}" ${part === 'meal' && m.k === slot0 ? 'open' : ''}>
+    <summary class="meal-sum"><b>${m.l}</b><span class="meal-now">今の食事</span><span class="meal-sumtx" data-msum="${m.k}"></span><i class="meal-chev" aria-hidden="true">›</i></summary>
+    <div class="meal-head">${m.k === 'snack' ? '' : `<label class="check"><input type="checkbox" name="ate_${m.k}" ${d.meals[m.k].ate ? 'checked' : ''}><b>食べた</b></label><input type="time" class="input" style="width:130px;min-height:40px;font-size:16px;padding:6px 10px" name="time_${m.k}" value="${esc(d.meals[m.k].time)}" aria-label="${m.l}の時刻">`}
 </div>
     <div data-mprev="${m.k}"></div>
     <div data-pinfo="${m.k}"></div>
-    <div class="chips" data-mfoods="${m.k}" style="margin-top:8px"></div>
+    <div class="food-list" data-mfoods="${m.k}"></div>
     <div class="food-ac"><input class="input" data-fq="${m.k}" placeholder="食べたものを入力（例：ごはん、サラダ）" autocomplete="off" enterkeyhint="done" aria-label="${m.l}に食べたもの"><div class="food-sug" data-fsug="${m.k}" hidden></div></div>
-    <div class="food-pick"><select class="select vh" data-fsel="${m.k}" aria-hidden="true" tabindex="-1">${foodOptions()}</select><select class="select" data-fqty="${m.k}" aria-label="量">${QTYS.map(q => `<option value="${q.v}" ${q.v === 1 ? 'selected' : ''}>${q.l}</option>`).join('')}</select><button type="button" class="btn btn-soft btn-sm" data-fadd="${m.k}">追加</button></div>
+    <div class="food-pick"><select class="select vh" data-fsel="${m.k}" aria-hidden="true" tabindex="-1">${foodOptions()}</select><button type="button" class="btn btn-soft btn-sm" data-fadd="${m.k}">追加</button></div>
     <div class="spot-row" data-fcustom="${m.k}" hidden>
       <label class="mini" style="grid-column:1/-1">食品名<input class="input" data-cf="name" maxlength="30" placeholder="例：〇〇のサラダチキン"></label>
       <label class="mini">エネルギー（kcal）<input class="input" data-cf="kcal" inputmode="decimal"></label>
@@ -4455,7 +4475,7 @@ function openLifeForm(id, part) {
       <p class="hint" style="grid-column:1/-1">パッケージの「栄養成分表示」の、1食分（1袋・1個など）の値を入力してください。</p>
       <button type="button" class="btn btn-primary btn-sm" data-cadd="${m.k}" style="grid-column:1/-1;justify-self:start">この内容で追加</button>
     </div>
-    <div class="field-error" data-err="food_${m.k}"></div></div>`;
+    <div class="field-error" data-err="food_${m.k}"></div></details>`;
   openModal({title: part ? `${LIFE_PARTS[part].t}の記録` : (ex ? '食事・運動・睡眠を編集' : '食事・運動・睡眠の記録'), body:`<form id="life-form" novalidate><div class="form-grid">
     <p class="small muted">分かる項目だけで大丈夫です。未入力の項目は「記録なし」として扱います。</p>
     ${d.date ? `<input type="hidden" id="f_date" name="date" value="${esc(d.date)}">` : field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint:'睡眠は「この日の朝に起きた睡眠」を記録します'})}
@@ -4491,7 +4511,11 @@ function openLifeForm(id, part) {
   const markAte = k => { const cb = form.elements['ate_' + k]; if (cb) cb.checked = true; };
   const renderFoods = () => {
     FOOD_MEALS.forEach(m => {
-      $(`[data-mfoods="${m.k}"]`, form).innerHTML = foods.filter(x => x.meal === m.k).map(x => `<span class="chip">${esc(x.name)}${x.qty !== 1 ? ' ×' + esc(qtyLabel(x.qty)) : ''} <span class="muted">${Math.round(x.kcal * x.qty)}kcal</span><button type="button" class="chip-x" data-fdel="${esc(x.id)}" aria-label="${esc(x.name)}を削除">×</button></span>`).join('');
+      const fs = foods.filter(x => x.meal === m.k);
+      $(`[data-mfoods="${m.k}"]`, form).innerHTML = fs.map(x => `<div class="food-row"><span class="fr-n">${esc(x.name)}</span><select class="select fr-q" data-fqid="${esc(x.id)}" aria-label="${esc(x.name)}の量">${(QTYS.some(q => q.v === x.qty) ? QTYS : QTYS.concat([{v:x.qty, l:qtyLabel(x.qty)}])).map(q => `<option value="${q.v}" ${q.v === x.qty ? 'selected' : ''}>${q.l}</option>`).join('')}</select><span class="fr-k">${Math.round(x.kcal * x.qty)}kcal</span><button type="button" class="chip-x" data-fdel="${esc(x.id)}" aria-label="${esc(x.name)}を削除">×</button></div>`).join('');
+      // 閉じているときも、食べたものがまとめて見えるようにする
+      const sm = $(`[data-msum="${m.k}"]`, form), ate = form.elements['ate_' + m.k];
+      if (sm) sm.innerHTML = fs.length ? `<span class="ms-n">${esc(fs.map(x => x.name.replace(/（.*?）/g, '')).join('・'))}</span><span class="ms-k">${Math.round(fs.reduce((a, x) => a + x.kcal * x.qty, 0))}kcal</span>` : (ate && ate.checked ? '記録あり' : '未記録');
     });
     $('#nut-total', form).innerHTML = nutBarsHtml(nutTotals(foods), foods.length);
   };
@@ -4509,7 +4533,7 @@ function openLifeForm(id, part) {
   FOOD_MEALS.forEach(m => renderPhoto(m.k)); renderFoods(); renderExercise();
   // 今の時刻（写真のときは撮った時刻）の食事に「今の食事」の印を付ける
   const showSlot = (k, prefill) => {
-    $$('.meal-block', form).forEach(b => b.classList.toggle('now', part === 'meal' && b.dataset.meal === k));
+    $$('.meal-block', form).forEach(b => { b.classList.toggle('now', part === 'meal' && b.dataset.meal === k); if (b.dataset.meal === k && (part === 'meal' || !prefill)) b.open = true; });
     const te = form.elements['time_' + k]; if (prefill && te && !te.value) te.value = nowHM(); // 自動で選んだ食事は、今の時刻を入れておく（食べたものを入れると記録される）
   };
   showSlot(slot0, true);
@@ -4546,7 +4570,7 @@ function openLifeForm(id, part) {
         else { const box = $(`[data-fcustom="${k}"]`, form); box.hidden = false; $('[data-cf="name"]', box).value = q; return; } }
     }
     if (b.dataset.fadd) {
-      const k = b.dataset.fadd, sel = $(`[data-fsel="${k}"]`, form), qty = Number($(`[data-fqty="${k}"]`, form).value) || 1;
+      const k = b.dataset.fadd, sel = $(`[data-fsel="${k}"]`, form), qty = 1;
       setErr('food_' + k, '');
       if (!sel.value) { setErr('food_' + k, '食べたものを入力してください。'); return; }
       if (sel.value === '__custom') { $(`[data-fcustom="${k}"]`, form).hidden = false; return; }
@@ -4564,7 +4588,7 @@ function openLifeForm(id, part) {
       if (!toHalf(g('kcal').value).trim()) { setErr('food_' + k, 'エネルギー（kcal）を入力してください。'); return; }
       if (Object.values(vals).some(v => isNaN(v))) { setErr('food_' + k, '数値は0以上の半角数字で入力してください。'); return; }
       setErr('food_' + k, '');
-      const qty = Number($(`[data-fqty="${k}"]`, form).value) || 1;
+      const qty = 1;
       foods.push(Object.assign({id:uid(), meal:k, qty, name}, vals));
       if (g('keep').checked && !state.customFoods.some(x => x.name === name)) {
         state.customFoods.push(Object.assign({id:uid(), name}, vals)); save();
@@ -4618,6 +4642,7 @@ function openLifeForm(id, part) {
   form.addEventListener('change', async e => {
     const el = e.target;
     if (el.name === 'meal-slot') { showSlot(el.value); return; }
+    if (el.dataset.fqid) { const f = foods.find(x => x.id === el.dataset.fqid); if (f) { f.qty = Number(el.value) || 1; renderFoods(); } return; }
     if (el.dataset.fsel) { $(`[data-fcustom="${el.dataset.fsel}"]`, form).hidden = el.value !== '__custom'; return; }
     if (el.dataset.mphoto) {
       const k = el.dataset.mphoto, file = el.files && el.files[0]; if (!file) return;
