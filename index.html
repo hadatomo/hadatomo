@@ -952,6 +952,8 @@ a.used-tile{color:inherit;text-decoration:none}
 .ldc-d.sel{background:var(--green-d);color:#fff}
 .ldc-d.sel::after{background:#fff}
 .ldc-note{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin:6px 0 0}
+.adv-basis{font-size:11.5px;color:var(--muted);background:var(--surface2);border-radius:10px;padding:6px 9px;margin:6px 0 0;line-height:1.55}
+.adv-basis b{display:inline-block;font-size:10.5px;color:var(--green-d);margin-right:6px}
 .adv-chips{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:6px}
 .adv-chips small{font-size:11px;color:var(--muted);margin-right:2px;width:100%}
 .adv-c{font-size:12px;font-weight:600;border-radius:999px;padding:2px 9px}
@@ -1758,6 +1760,7 @@ function normalize(d) {
   out.settings.skinType = SKIN_TYPES.includes(ds.skinType) ? ds.skinType : ''; // 肌質
   out.settings.sensitive = !!ds.sensitive; // 敏感肌かどうか
   out.settings.ageBand = AGE_BANDS.includes(ds.ageBand) ? ds.ageBand : ''; // 年代（任意）
+  out.settings.gender = ['女性', '男性'].includes(ds.gender) ? ds.gender : ''; // 性別（3Dの顔の形に使う。任意）
   out.settings.onboarded = !!ds.onboarded; // はじめの質問に答えた（またはあとでにした）
   const rs = ds.research || {}; // 研究への協力（任意・初めはオフ）
   out.settings.research = {on:!!rs.on && !!rs.adult, adult:!!rs.adult, cid:/^[0-9a-f-]{36}$/.test(rs.cid || '') ? rs.cid : '', lastSent:isValidYmd(rs.lastSent) ? rs.lastSent : '', lastHash:String(rs.lastHash || '').slice(0, 20)};
@@ -2181,7 +2184,7 @@ let chartDefs = [];
 // ・画面を移ったときだけ動かす（入力中や保存のあとに何度も動かない）
 // ・縦方向と透明度だけを動かす（スマホで画面が横に揺れないように）
 // ・端末の設定で「視差効果を減らす」をオンにしている人には動かさない
-const MOTION_OK = () => !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) && 'IntersectionObserver' in window;
+const MOTION_OK = () => false; // 画面を変えるたびに数字・グラフ・カードが動くのは不自然なので、動きはすべて止める
 let motionIO = null;
 function splitChars(el, base = 0) {
   if (!el || el.dataset.kt) return 0;
@@ -2546,14 +2549,14 @@ function findPick(i) {
 let swState = null;
 function openSetupWizard() {
   const st = state.settings;
-  swState = {i:0, v:{ageBand:st.ageBand || '', height:st.height || '', weight:st.weight || '', skinType:st.skinType || '', sensitive:st.sensitive ? 'yes' : (st.onboarded ? 'no' : ''), concerns:st.concerns.slice(), sleepNeed:st.sleepNeed || 420, budget:st.monthlyBudget || ''}};
+  swState = {i:0, v:{gender:st.gender || '', ageBand:st.ageBand || '', height:st.height || '', weight:st.weight || '', skinType:st.skinType || '', sensitive:st.sensitive ? 'yes' : (st.onboarded ? 'no' : ''), concerns:st.concerns.slice(), sleepNeed:st.sleepNeed || 420, budget:st.monthlyBudget || ''}};
   openModal({title:'はじめの質問', body:'<div id="sw-body"></div>', footer:'<div class="sw-foot" id="sw-foot"></div>'});
   const root = $('#modal-root');
   root.querySelector('.modal-head [data-action="close-modal"]').setAttribute('data-action', 'setup-later');
   if (!root._sw) { root.addEventListener('click', swClick); root._sw = 1; }
   swPaint();
 }
-const SW_STEPS = ['hello', 'age', 'body', 'skin', 'concerns', 'life', 'done'];
+const SW_STEPS = ['hello', 'gender', 'age', 'body', 'skin', 'concerns', 'life', 'done'];
 function swOpts(key, list, cur, multi) { return `<div class="sw-opts">${list.map(([v, l, w]) => { const on = multi ? cur.includes(v) : cur === v; return `<button type="button" class="sw-opt ${on ? 'on' : ''} ${w ? 'wide' : ''}" data-sw="${key}" data-v="${esc(v)}" aria-pressed="${on}">${l.includes('|') ? `${esc(l.split('|')[0])}<small>${esc(l.split('|')[1])}</small>` : esc(l)}</button>`; }).join('')}</div>`; }
 function swPaint() {
   const s = swState; if (!s) return; const b = $('#sw-body'), f = $('#sw-foot'); if (!b || !f) return;
@@ -2561,6 +2564,7 @@ function swPaint() {
   const dots = `<div class="sw-dots">${SW_STEPS.map((_, k) => `<i class="${k === s.i ? 'on' : ''}"></i>`).join('')}</div>`;
   let h = '';
   if (step === 'hello') h = `<div class="sw-hello">🌿</div><p class="sw-q">肌トモへようこそ</p><p class="sw-sub">はじめに、いくつか質問させてください（1分ほど）。<br>答えた内容は、ケアの提案や栄養の目安に使います。<br>このスマホの中にだけ保存され、あとから設定でいつでも変えられます。</p>`;
+  if (step === 'gender') h = `<p class="sw-q">性別を教えてください</p><p class="sw-sub">記録に使う3Dの顔を、性別に合わせた形にします</p>` + swOpts('gender', [['女性', '女性'], ['男性', '男性'], ['', '答えない', 1]], v.gender);
   if (step === 'age') h = `<p class="sw-q">年代を教えてください</p><p class="sw-sub">年代に合ったケアの考え方に使います</p>` + swOpts('ageBand', AGE_BANDS.map(x => [x, x]).concat([['', '答えない', 1]]), v.ageBand);
   if (step === 'body') h = `<p class="sw-q">身長と体重を教えてください</p><p class="sw-sub">1日のたんぱく質の目安（体重×1g）などに使います。空欄でも大丈夫です</p>
     <div class="sw-nums"><label>身長<span class="unit"><input class="input" id="sw-h" inputmode="decimal" placeholder="例：160" value="${esc(v.height)}">cm</span></label><label>体重<span class="unit"><input class="input" id="sw-w" inputmode="decimal" placeholder="例：52" value="${esc(v.weight)}">kg</span></label></div>`;
@@ -2575,9 +2579,9 @@ function swPaint() {
   b.innerHTML = dots + h + '<p class="sw-err" id="sw-err" hidden></p>';
   f.innerHTML = step === 'hello' ? `<button type="button" class="btn btn-ghost" data-action="setup-later">あとで</button><button type="button" class="btn btn-primary" data-swgo="1">はじめる</button>`
     : step === 'done' ? `<button type="button" class="btn btn-primary" data-action="setup-finish">肌トモをはじめる</button>`
-    : `<button type="button" class="btn btn-ghost" data-swgo="-1">戻る</button><button type="button" class="btn btn-primary" data-swgo="1">${['age', 'skin', 'concerns'].includes(step) && !swHas(step) ? 'スキップ' : '次へ'}</button>`;
+    : `<button type="button" class="btn btn-ghost" data-swgo="-1">戻る</button><button type="button" class="btn btn-primary" data-swgo="1">${['gender', 'age', 'skin', 'concerns'].includes(step) && !swHas(step) ? 'スキップ' : '次へ'}</button>`;
 }
-const swHas = step => { const v = swState.v; return step === 'age' ? !!v.ageBand : step === 'skin' ? !!(v.skinType || v.sensitive) : step === 'concerns' ? v.concerns.length > 0 : true; };
+const swHas = step => { const v = swState.v; return step === 'gender' ? !!v.gender : step === 'age' ? !!v.ageBand : step === 'skin' ? !!(v.skinType || v.sensitive) : step === 'concerns' ? v.concerns.length > 0 : true; };
 // 入力欄の値を読み取る（数字のまちがいがあれば止める）
 function swRead() {
   const v = swState.v, step = SW_STEPS[swState.i], err = $('#sw-err');
@@ -2611,7 +2615,7 @@ function swClick(e) {
 function swSave(done) {
   const st = state.settings, v = swState ? swState.v : null;
   if (v && done) {
-    st.ageBand = v.ageBand; st.skinType = v.skinType; st.sensitive = v.sensitive === 'yes'; st.concerns = v.concerns.filter(x => CONCERNS.includes(x));
+    st.gender = v.gender; st.ageBand = v.ageBand; st.skinType = v.skinType; st.sensitive = v.sensitive === 'yes'; st.concerns = v.concerns.filter(x => CONCERNS.includes(x));
     st.height = Number(v.height) || 0; st.weight = Number(v.weight) || 0; st.sleepNeed = v.sleepNeed || 420; st.monthlyBudget = Number(v.budget) || 0;
   }
   st.onboarded = true; swState = null; save(); closeModal(); render();
@@ -5209,9 +5213,54 @@ function face3dLoad() {
   if (FACE3D.loading) return FACE3D.loading;
   FACE3D.loading = Promise.all([
     window.THREE ? Promise.resolve() : loadScript('https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'),
-    fetch('face3d.json').then(r => { if (!r.ok) throw new Error('face'); return r.json(); })
-  ]).then(([, m]) => { FACE3D.three = window.THREE; FACE3D.mesh = m; }).catch(e => { FACE3D.loading = null; throw e; });
+    fetch('face3d.json?v=20261101').then(r => { if (!r.ok) throw new Error('face'); return r.json(); })
+  ]).then(([, m]) => { FACE3D.three = window.THREE; FACE3D.base = m; FACE3D.mesh = m; }).catch(e => { FACE3D.loading = null; throw e; });
   return FACE3D.loading;
+}
+// 性別に合わせた顔：女性は同じ顔の形のデータ（点の数・部位・マス目は同じ）を少し変形して作る
+//   あごを細く・鼻を小さく・眉の骨をなだらかに・唇を少しふっくら・頭を少し小さく
+const sm3 = (a, b, t) => { const k = clamp((t - a) / (b - a), 0, 1); return k * k * (3 - 2 * k); };
+function face3dFemale(base) {
+  const v = base.v.slice(), n = v.length / 3;
+  for (let i = 0; i < n; i++) {
+    let x = v[i * 3], y = v[i * 3 + 1], z = v[i * 3 + 2];
+    const front = sm3(1, 4, z);
+    x *= 1 - 0.11 * sm3(-1.5, -9.5, y) * sm3(-8, 2, z);           // あご・えらを細く
+    if (Math.abs(x) < 2.6 && y > -4.6 && y < 3.2 && z > 4) { const k = (1 - Math.abs(x) / 2.6) * sm3(-4.6, -2.5, y) * sm3(3.2, 1.5, y); z -= (z - 4) * 0.2 * k; x *= 1 - 0.1 * k; } // 鼻を小さく
+    if (y > 2.8 && y < 6.5) z -= 0.3 * front * sm3(2.8, 4, y) * sm3(6.5, 5, y);   // 眉の骨をなだらかに
+    if (Math.abs(x) < 3 && y > -7.6 && y < -4.6) z += 0.22 * front * (1 - Math.abs(x) / 3); // 唇を少しふっくら
+    if (y < -8) z -= 0.35 * front * sm3(-8, -10.5, y);          // あご先を少し引く
+    v[i * 3] = x * 0.96; v[i * 3 + 1] = y * 0.96 + 0.3; v[i * 3 + 2] = z * 0.96;
+  }
+  return {v, f:base.f, r:base.r, lic:base.lic, female:true};
+}
+function face3dGender() { const g = state.settings.gender; return g === '女性' ? 'f' : 'm'; }
+function face3dPickMesh() {
+  if (!FACE3D.base) return;
+  if (face3dGender() === 'f') { FACE3D.fem = FACE3D.fem || face3dFemale(FACE3D.base); FACE3D.mesh = FACE3D.fem; } else FACE3D.mesh = FACE3D.base;
+}
+// 女性の髪：頭の形のデータを少し外側にふくらませて、頭の上・後ろ・横をぴったり覆う。顔の前は開ける
+//   （顔を押す操作は髪を通り抜けて顔に届く）
+function face3dHair(T, group, m) {
+  const mat = new T.MeshStandardMaterial({color:new T.Color(0.26, 0.17, 0.13).convertSRGBToLinear(), roughness:0.8, metalness:0, side:T.DoubleSide});
+  const v = m.v, n = v.length / 3;
+  const tmp = new T.BufferGeometry(); tmp.setAttribute('position', new T.Float32BufferAttribute(v, 3)); tmp.setIndex(m.f); tmp.computeVertexNormals();
+  const nr = tmp.attributes.normal.array; tmp.dispose();
+  const hairline = x => 9.6 - Math.max(0, Math.abs(x) - 4.2) * 0.95; // 生えぎわ：真ん中は高く、こめかみに向かって下がる
+  // 三角形は少し広めに選び、生えぎわはなめらかな線で切る（下の shader で、線より前の部分は描かない）
+  const isHair = i => { const x = v[i * 3], y = v[i * 3 + 1], z = v[i * 3 + 2]; return y > hairline(x) - 2.5 || (z < 0.8 && y > -6); };
+  mat.onBeforeCompile = sh => {
+    sh.vertexShader = 'varying vec3 vHP;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vHP = position;');
+    sh.fragmentShader = 'varying vec3 vHP;\n' + sh.fragmentShader.replace('void main() {', 'void main() {\n float hl = 10.1 - max(0.0, abs(vHP.x) - 4.2) * 0.95;\n float ze = -1.4 + 0.22 * max(0.0, vHP.y);\n if (!(vHP.y > hl || (vHP.z < ze && vHP.y > -4.8))) discard;');
+  };
+  const pos = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { const k = 0.55; pos[i * 3] = v[i * 3] + nr[i * 3] * k; pos[i * 3 + 1] = v[i * 3 + 1] + nr[i * 3 + 1] * k; pos[i * 3 + 2] = v[i * 3 + 2] + nr[i * 3 + 2] * k; }
+  const idx = []; for (let t = 0; t < m.f.length; t += 3) { const a = m.f[t], b = m.f[t + 1], c = m.f[t + 2]; if (isHair(a) || isHair(b) || isHair(c)) idx.push(a, b, c); }
+  const shell = new T.BufferGeometry(); shell.setAttribute('position', new T.Float32BufferAttribute(pos, 3)); shell.setIndex(idx); shell.computeVertexNormals();
+  group.add(new T.Mesh(shell, mat));
+  // 後ろと横に垂れる髪（耳の後ろから、肩の少し上まで）
+  const back = new T.CylinderGeometry(8.9, 9.8, 12.5, 56, 1, true, Math.PI * 0.58, Math.PI * 0.84);
+  const bm = new T.Mesh(back, mat); bm.position.set(0, -5.0, -2.4); bm.scale.set(1, 1, 1.15); group.add(bm);
 }
 // 顔の地の色（肌・眉・目・唇）と、色をなめらかにつなぐための近くの点の一覧を、最初に一度だけ作る
 function face3dPrep() {
@@ -5437,7 +5486,7 @@ function adviceHtml() {
   const pts = ai ? ADVICE_AREAS.map((a, i) => ai.points.find(x => x.area === a) || local[i]) : local; // AIが出さなかった角度は、ルールの結果でうめる
   const prem = isPremium();
   const head = `<h3>おすすめケアポイント${ai ? '<span class="ai-badge">AI分析</span>' : ''}</h3>${ai && ai.summary ? `<p class="small muted" style="margin:0">${esc(ai.summary)}</p>` : ''}`;
-  const list = adviceBusy ? skelHtml(4, {dots:true, label:'AIが分析中'}) : `<ol class="adv4">${pts.map((x, i) => `<li><i>${'①②③④'[i] || i + 1}</i><div><em class="adv-area">${esc(x.area || ADVICE_AREAS[i] || '')}</em><b>${esc(x.title)}</b><span>${esc(x.text)}</span>${advChips(Object.assign({area:ADVICE_AREAS[i]}, x))}</div></li>`).join('')}</ol>`;
+  const list = adviceBusy ? skelHtml(4, {dots:true, label:'AIが分析中'}) : `<ol class="adv4">${pts.map((x, i) => `<li><i>${'①②③④'[i] || i + 1}</i><div><em class="adv-area">${esc(x.area || ADVICE_AREAS[i] || '')}</em><b>${esc(x.title)}</b><span>${esc(x.text)}</span>${ai && x.basis ? `<p class="adv-basis"><b>根拠</b>${esc(x.basis)}</p>` : ''}${ai ? advChips(Object.assign({area:ADVICE_AREAS[i]}, x)) : ''}</div></li>`).join('')}</ol>`;
   let foot;
   if (adviceBusy) foot = '<span class="small muted">AIが記録を分析しています…</span>';
   else if (ai) foot = `<span class="small muted">直近7日の記録をAI（Google Gemini）が分析しました。目安としてご覧ください。</span><button class="btn btn-ghost btn-sm" data-action="advice-ai" data-id="again">もう一度分析</button>`;
@@ -5484,6 +5533,7 @@ async function drawFace3d(opts) {
   if (!cv) return;
   try { await face3dLoad(); } catch (e) { const l = document.getElementById(opts.load); if (l) l.textContent = '3Dの顔を表示できませんでした。電波のよい場所で、ページを読み込み直してください。'; return; }
   if (!document.body.contains(cv)) return;
+  face3dPickMesh();
   const T = FACE3D.three, m = FACE3D.mesh;
   let renderer;
   try { renderer = new T.WebGLRenderer({canvas:cv, antialias:true, alpha:true}); } catch (e) { const l = document.getElementById(opts.load); if (l) l.textContent = 'この端末では3D表示を使えません。'; return; }
@@ -5512,6 +5562,7 @@ async function drawFace3d(opts) {
   const earGeo = new T.SphereGeometry(1, 24, 18);
   [-1, 1].forEach(sd => { const ear = new T.Mesh(earGeo, headMat); ear.scale.set(1.0, 2.5, 1.6); ear.position.set(sd * 8.05, 0.6, -3.4); ear.rotation.set(0, sd * 0.35, sd * -0.08); group.add(ear);
     const inner = new T.Mesh(earGeo, new T.MeshStandardMaterial({color:new T.Color(0.86, 0.66, 0.56).convertSRGBToLinear(), roughness:0.8})); inner.scale.set(0.45, 1.7, 1.0); inner.position.set(sd * 8.55, 0.6, -2.9); inner.rotation.copy(ear.rotation); group.add(inner); });
+  if (face3dGender() === 'f') face3dHair(T, group, m);
   group.position.y = 0.4; scene.add(group);
   const st = FACE3D.st = {gridInfo, renderer, scene, cam, geo, group, face, dots:[], dotGeo:new T.SphereGeometry(0.34, 14, 12), dotMat:new T.MeshStandardMaterial({color:0xC0392B, roughness:0.45}),
     yaw:0, pitch:0.05, phase:0, auto:opts.auto !== false, dirty:true, stop:false, drag:null, idle:0, counts:{}, tip:opts.tip, unit:opts.unit || null};
@@ -6651,6 +6702,7 @@ function skinProfileCardHtml() {
   const st = state.settings;
   return `<div class="card"><div class="card-h"><h2>肌質・年代</h2></div>
     <div class="form-grid two" style="gap:12px">
+      <div class="field"><label class="lbl" for="f_gender">性別<span class="opt">3Dの顔の形</span></label><select class="select" id="f_gender"><option value="">答えない</option>${['女性', '男性'].map(x => `<option ${st.gender === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
       <div class="field"><label class="lbl" for="f_skinType">肌質</label><select class="select" id="f_skinType"><option value="">未設定</option>${SKIN_TYPES.map(x => `<option ${st.skinType === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
       <div class="field"><label class="lbl" for="f_ageBand">年代<span class="opt">任意</span></label><select class="select" id="f_ageBand"><option value="">答えない</option>${AGE_BANDS.map(x => `<option ${st.ageBand === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
     </div>
@@ -7295,9 +7347,9 @@ document.addEventListener('keydown', e => {
 // 入力欄（フォーカスを保つため、結果部分だけを更新）
 // 肌質・年代・敏感肌
 document.addEventListener('change', e => {
-  const id = e.target.id; if (!['f_skinType', 'f_ageBand', 'f_sensitive'].includes(id)) return;
+  const id = e.target.id; if (!['f_skinType', 'f_ageBand', 'f_sensitive', 'f_gender'].includes(id)) return;
   const st = state.settings;
-  if (id === 'f_skinType') st.skinType = e.target.value; else if (id === 'f_ageBand') st.ageBand = e.target.value; else st.sensitive = e.target.checked;
+  if (id === 'f_skinType') st.skinType = e.target.value; else if (id === 'f_ageBand') st.ageBand = e.target.value; else if (id === 'f_gender') st.gender = e.target.value; else st.sensitive = e.target.checked;
   save(); haptic(20); if (researchState().on) researchSend();
 });
 document.addEventListener('input', e => {
