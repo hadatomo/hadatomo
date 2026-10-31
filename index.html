@@ -1963,6 +1963,12 @@ function hapticStrong(skipFirst) {
   try { if (typeof navigator.vibrate === 'function' && navigator.vibrate([80, 60, 80])) return; } catch (e) { /* 次の方法へ */ }
   [0, 110, 220].forEach((t, i) => { if (!(skipFirst && i === 0)) setTimeout(switchTick, t); });
 }
+// 下に引っぱって更新：ぐるぐるが始まったときのバイブ（保存のときより強く：Androidは長く2回／iPhoneは「コツッ」を4回）
+function hapticSpin() {
+  hapticAt = Date.now();
+  try { if (typeof navigator.vibrate === 'function' && navigator.vibrate([130, 60, 130])) return; } catch (e) { /* 次の方法へ */ }
+  [0, 90, 180, 270].forEach(t => setTimeout(switchTick, t));
+}
 function toast(msg, type='') {
   // 保存・記録・追加できたときはブルッと知らせる
   if (type !== 'error' && /保存しました|記録しました|追加しました|登録しました/.test(msg)) haptic(type === 'undo' ? 20 : 35);
@@ -7547,8 +7553,7 @@ window.addEventListener('hashchange', () => { if ($('#modal-root').innerHTML) cl
   const set = v => { d = v; page.style.transform = v ? `translateY(${v}px)` : ''; ptr.style.opacity = String(Math.min(1, v / GO));
     // 引っぱる量に合わせて輪が伸びながら回る（くるくる）
     if (!busy) { const k = Math.min(1, v / GO); arc.setAttribute('stroke-dashoffset', String(56.5 * (1 - k * 0.8))); svg.style.transform = `rotate(${v * 3}deg)`;
-      // Safariと同じように、離せば更新される所まで引っぱった瞬間に「コツッ」と鳴らす（戻してもう一度引っぱると、また鳴る）
-      if (v >= GO && !armed) { armed = true; hapticAt = 0; haptic(6); } else if (v < GO - 10) armed = false; } };
+    } };
   const blocked = t => $('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big') || (t && t.closest && t.closest('canvas,input,textarea,select,.f3-stage'));
   window.addEventListener('touchstart', e => { if (busy || e.touches.length !== 1 || window.scrollY > 0 || blocked(e.target)) { y0 = null; return; } y0 = e.touches[0].clientY; armed = false; page.classList.remove('ptr-back'); }, {passive:true});
   window.addEventListener('touchmove', e => {
@@ -7560,7 +7565,7 @@ window.addEventListener('hashchange', () => { if ($('#modal-root').innerHTML) cl
   const end = () => {
     if (y0 == null) return; y0 = null;
     page.classList.add('ptr-back');
-    if (d >= GO) { busy = true; set(56); ptr.style.opacity = '1'; arc.setAttribute('stroke-dashoffset', '40'); svg.style.transform = ''; ptr.classList.add('spin'); hapticStrong(false); setTimeout(() => location.reload(), 700); } // 離して更新が決まったときは、引っぱったときの「カチッ」より強く
+    if (d >= GO) { busy = true; set(56); ptr.style.opacity = '1'; arc.setAttribute('stroke-dashoffset', '40'); svg.style.transform = ''; ptr.classList.add('spin'); hapticSpin(); setTimeout(() => location.reload(), 700); } // ぐるぐるが始まったときに、保存のときより強くバイブ
     else set(0);
   };
   window.addEventListener('touchend', end); window.addEventListener('touchcancel', end);
