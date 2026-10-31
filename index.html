@@ -927,7 +927,6 @@ a.used-tile{color:inherit;text-decoration:none}
 .t3-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1.25fr);gap:10px;align-items:center}
 .t3-stage{max-width:none;margin:0;background:#fff}
 .ld-stage{max-width:180px;background:#fff}
-.ld-card .card-h{position:relative}
 .ld-calbtn svg{width:20px;height:20px;color:var(--green-d)}
 .ld-cal{position:absolute;right:0;top:calc(100% + 6px);z-index:15;width:min(300px,calc(100vw - 64px));background:var(--surface);border:1px solid var(--line2);border-radius:18px;box-shadow:var(--shadow);padding:12px}
 .ldc-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
@@ -944,6 +943,11 @@ a.used-tile{color:inherit;text-decoration:none}
 .ldc-d.sel{background:var(--green-d);color:#fff}
 .ldc-d.sel::after{background:#fff}
 .ldc-note{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin:6px 0 0}
+.adv-chips{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:6px}
+.adv-chips small{font-size:11px;color:var(--muted);margin-right:2px;width:100%}
+.adv-c{font-size:12px;font-weight:600;border-radius:999px;padding:2px 9px}
+.adv-c.good{background:#E3F0E6;color:var(--green-d)}
+.adv-c.bad{background:#FBE9E4;color:#B04A32}
 .adv-area{display:block;font-style:normal;font-size:11px;font-weight:700;color:var(--green-d);letter-spacing:.04em}
 .advice .adv4 li>i{background:none;font-size:18px;width:22px;height:22px}
 .ldc-note i{width:5px;height:5px;border-radius:50%;background:var(--green)}
@@ -970,7 +974,10 @@ a.used-tile{color:inherit;text-decoration:none}
 .sw-foot .btn{flex:1}
 :root[data-theme="dark"] .ld-stage{background:transparent}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ld-stage{background:transparent}}
-.ld-card{touch-action:pan-y}
+.ld-card{touch-action:pan-y;position:relative}
+.ld-card .ld-top{position:absolute;top:10px;right:10px;margin:0;z-index:6}
+/* 3Dの顔は横いっぱいの枠にして、顔の左右の空いているところをなぞっても回せるようにする（顔の大きさは前と同じ） */
+.ld-card .ld-stage{max-width:none;width:100%;aspect-ratio:auto;height:190px;margin:0}
 .ld-swipe{display:grid;grid-template-columns:40px 1fr 40px;align-items:center;gap:6px;margin-top:8px;user-select:none;-webkit-user-select:none}
 .ld-arrow[hidden]{display:block;visibility:hidden}
 .ld-arrow{width:40px;height:40px;border-radius:50%;border:1px solid var(--line2);background:var(--surface);color:var(--ink);font-size:24px;line-height:1;cursor:pointer;font-family:inherit}
@@ -4225,7 +4232,7 @@ function logDayDetailHtml(list, i) {
 }
 function logDayCardHtml(logs) {
   const list = logs.slice().reverse(), i = logDayIdx(list);
-  return `<div class="card ld-card" id="log-day-card"><div class="card-h"><h2>肌の変化</h2><button type="button" class="icon-btn ld-calbtn" id="ld-calbtn" aria-label="日付で探す" aria-expanded="false">${icon('calendar')}</button><div class="ld-cal" id="ld-cal" hidden></div></div>
+  return `<div class="card ld-card" id="log-day-card"><div class="card-h ld-top"><button type="button" class="icon-btn ld-calbtn" id="ld-calbtn" aria-label="日付で探す" aria-expanded="false">${icon('calendar')}</button><div class="ld-cal" id="ld-cal" hidden></div></div>
     <div class="f3-stage ld-stage"><canvas id="face3d-log" aria-label="選んだ日の肌の記録を3Dの顔で表示"></canvas><div class="f3-load" id="ld-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>
     <div class="ld-swipe" id="ld-swipe">
       <button class="ld-arrow" id="ld-prev" data-action="log-day-step" data-id="-1" aria-label="前の記録" ${i <= 0 ? 'hidden' : ''}>‹</button>
@@ -5328,45 +5335,61 @@ function adviceInput() {
       return {days:lifes.filter(l => MEALS.some(m => l.meals && l.meals[m.k] && l.meals[m.k].ate) || (l.foods || []).length).length, foodDays:fd.length,
         skippedBreakfast:lifes.filter(l => l.meals && l.meals.breakfast && !l.meals.breakfast.ate && !(l.foods || []).some(f => f.meal === 'breakfast')).length,
         avgKcal:tot.length ? Math.round(avg(tot.map(x => x.kcal))) : null, avgProtein:tot.length ? r1(avg(tot.map(x => x.p))) : null, proteinGoal:g.protein,
-        avgVeg:tot.length ? Math.round(avg(tot.map(x => x.veg))) : null, snackDays:fd.filter(l => l.foods.some(f => f.meal === 'snack')).length, tags:tagC};
+        avgVeg:tot.length ? Math.round(avg(tot.map(x => x.veg))) : null, snackDays:fd.filter(l => l.foods.some(f => f.meal === 'snack')).length, tags:tagC,
+        // 食べた物の名前（回数の多い順に25個まで）。ビタミンなど、数字で記録していない栄養のかたよりをAIが見るため
+        foods:(() => { const c = {}; fd.forEach(l => l.foods.forEach(f => { const n = String(f.name).replace(/（.*?）/g, '').slice(0, 20); c[n] = (c[n] || 0) + 1; })); return Object.entries(c).sort((a, b) => b[1] - a[1]).slice(0, 25).map(([n, k]) => `${n}×${k}`); })(),
+        vitCDays:fd.filter(l => l.foods.some(f => VITC_RE.test(f.name))).length};
     })(),
-    products:state.myProducts.filter(p => p.status === '使用中').slice(0, 12).map(p => p.category)
+    // 使っている化粧品の種類と、入っている主な成分（商品名は送らない）
+    products:state.myProducts.filter(p => p.status === '使用中').slice(0, 12).map(p => ({category:p.category, ings:knownIngs(ingsOfMy(p)).map(x => x.entry.name.replace(/（.*?）/g, ''))}))
   };
 }
 // 記録から決まったルールで出す改善ポイント（AIが使えないときも、すぐ表示できる）
 const ADVICE_AREAS = ['スキンケア', '睡眠', '運動', '食事'];
+const VITC_RE = /ブロッコリー|キウイ|いちご|苺|みかん|オレンジ|グレープフルーツ|パプリカ|ピーマン|トマト|キャベツ|じゃがいも|ポテト|柿|レモン|ほうれん草|小松菜|カリフラワー|芽キャベツ|アセロラ|フルーツ|果物|野菜ジュース|サラダ/;
 function adviceLocal(d) {
   const sk = d.skin, sl = d.sleep, ex = d.exercise, ml = d.meal, need = d.profile.sleepNeedHours;
-  // ① スキンケア
+  // 使っている化粧品に入っている成分（成分辞典で見つかったもの）
+  const use = {}; state.myProducts.filter(p => p.status === '使用中').forEach(p => knownIngs(ingsOfMy(p)).forEach(x => { (use[x.entry.key] = use[x.entry.key] || []).push(p); }));
+  const inUse = k => (use[k] || []).map(p => shortName(p.name).slice(0, 14));
+  const warn = (k, label) => inUse(k).length ? `使用中の「${inUse(k)[0]}」には${label}が入っています。` : '';
+  // ① スキンケア（成分のおすすめ・控えたい成分つき）
   let skin;
   const topArea = Object.entries(sk.acneByArea).sort((a, b) => b[1] - a[1])[0];
-  if (!sk.days) skin = {title:'肌の記録から', text:'まずは毎日の肌の状態を記録しましょう。数日分そろうと、あなたに合ったケアのポイントを出せます。'};
-  else if (sk.redness != null && sk.redness >= 3.5) skin = {title:'刺激を減らす', text:`赤みが平均${sk.redness}です。こすらない・新しい化粧品は1つずつ試す。続くときは皮膚科に相談を。`};
-  else if (topArea && topArea[1] >= 2) skin = {title:`${topArea[0]}のニキビ`, text:`この1週間で${topArea[0]}に${topArea[1]}個。触らない・寝具や髪が当たらないようにし、その部位は油分の多い化粧品を控えめに。`};
-  else if (sk.dryness != null && sk.dryness >= 3) skin = {title:'保湿をていねいに', text:`乾燥が平均${sk.dryness}と高めです。洗顔後すぐに化粧水→乳液・クリームでふたを。熱いお湯での洗顔は避けて。`};
-  else if (sk.oil != null && sk.oil >= 3.5) skin = {title:'皮脂のケア', text:`皮脂が平均${sk.oil}と多めです。朝晩の洗顔はやさしく1回ずつ。保湿は軽めのものに。`};
-  else if (sk.cond != null && sk.condPrevWeek != null && sk.cond - sk.condPrevWeek >= 0.3) skin = {title:'調子が上向き', text:`肌の調子が先週より良くなっています（${sk.condPrevWeek}→${sk.cond}）。今のケアを続けましょう。`};
-  else skin = {title:'今のケアを続ける', text:'大きく気になる変化はありません。日焼け止めと保湿を毎日続けるのが、いちばんの近道です。'};
+  if (!sk.days) skin = {title:'肌の記録から', text:'まずは毎日の肌の状態を記録しましょう。数日分そろうと、乾燥・皮脂・赤みなどに合わせて、おすすめの成分を出せます。', good:['セラミド', '日焼け止め（毎朝）'], avoid:[]};
+  else if (sk.redness != null && sk.redness >= 3.5) skin = {title:'刺激を減らして鎮静', text:`赤みが平均${sk.redness}と強めです。肌が敏感になっているので、こすらず、ツボクサ（CICA）やパンテノールなど肌あれを防ぐ成分で落ち着かせましょう。${warn('fragrance', '香料')}${warn('ethanol', 'エタノール')}${warn('retinoid', 'レチノール')}赤みが続くときは皮膚科に相談を。`, good:['ツボクサ（CICA）', 'パンテノール', 'アラントイン', 'セラミド'], avoid:['香料', 'エタノール', 'AHA・BHA（ピーリング）', 'レチノール']};
+  else if (sk.dryness != null && sk.dryness >= 3) skin = {title:'セラミドでバリアを守る', text:`乾燥が平均${sk.dryness}と高めです。乾燥で肌のバリア機能が下がると、刺激やニキビも起きやすくなります。洗顔後すぐにセラミド入りの保湿で、水分を逃がさないようにしましょう。${use.ceramide ? '' : '今の化粧品にはセラミド入りが見つかりませんでした。'}${warn('ethanol', 'エタノール')}`, good:['セラミド', 'ヒアルロン酸', 'グリセリン', 'パンテノール'], avoid:['エタノール（多く入った物）', 'スクラブ・ピーリングのしすぎ', '熱いお湯での洗顔']};
+  else if (topArea && topArea[1] >= 2) skin = {title:`${topArea[0]}のニキビ対策`, text:`この1週間で${topArea[0]}に${topArea[1]}個。毛穴のつまりと皮脂を整えるナイアシンアミドや、角質をやわらかくするサリチル酸（BHA）が向いています。触らない・枕カバーをこまめに替えるのも大事です。${use.aha && use.retinoid ? '角質ケアとレチノールを同じ夜に重ねると刺激が出やすいので、日を分けましょう。' : ''}`, good:['ナイアシンアミド', 'サリチル酸（BHA）', 'ビタミンC誘導体'], avoid:['油分の多いオイル・クリーム', 'ニキビを触る・つぶす']};
+  else if (sk.oil != null && sk.oil >= 3.5) skin = {title:'皮脂バランスを整える', text:`皮脂が平均${sk.oil}と多めです。皮脂が多いときも、実は乾燥が原因のことがあります。洗顔は朝晩やさしく1回ずつにして、皮脂を整えるナイアシンアミドやビタミンC誘導体を。保湿は軽いジェルや乳液に。`, good:['ナイアシンアミド', 'ビタミンC誘導体', 'ヒアルロン酸'], avoid:['洗浄力の強い洗顔の使いすぎ', '重いオイル']};
+  else skin = {title:'守りのケアを続ける', text:`大きな肌トラブルはありません。${sk.cond != null && sk.condPrevWeek != null && sk.cond > sk.condPrevWeek ? `肌の調子も上向きです（${sk.condPrevWeek}→${sk.cond}）。` : ''}毎朝の日焼け止めと、セラミドでの保湿を続けるのが、いちばんの近道です。`, good:['セラミド', '日焼け止め（毎朝）', 'ビタミンC誘導体'], avoid:[]};
   // ② 睡眠
   let sleep;
-  if (!sl.days) sleep = {title:'睡眠も記録を', text:'寝た時刻と起きた時刻を記録すると、睡眠と肌の調子の関係がわかります。ヘルスケア連携も使えます。'};
-  else if (sl.avgHours < need - 0.5) sleep = {title:'睡眠をあと少し', text:`平均${sl.avgHours}時間でした（目安${need}時間）。肌は眠っている間に整います。まずは30分早く布団に入ることから。`};
-  else if (sl.avgBedtime && /^(1|2|3|4):/.test(sl.avgBedtime)) sleep = {title:'寝る時刻を早めに', text:`寝る時刻の平均が${sl.avgBedtime}ごろです。0時までに寝る日を増やしてみましょう。`};
-  else sleep = {title:'睡眠はいい調子', text:`平均${sl.avgHours}時間眠れています。寝る前のスマホを控えると、眠りの質がさらに上がります。`};
+  if (!sl.days) sleep = {title:'睡眠も記録を', text:'寝た時刻と起きた時刻を記録すると、睡眠と肌の調子の関係がわかります。ヘルスケア連携も使えます。', good:[], avoid:[]};
+  else if (sl.avgHours < need - 0.5) sleep = {title:'睡眠をあと少し', text:`平均${sl.avgHours}時間でした（目安${need}時間）。肌の生まれ変わりは眠っている間に進みます。まずは30分早く布団に入ることから。`, good:['寝る1時間前にお風呂', '毎日同じ時刻に起きる'], avoid:['寝る前のスマホ', '夜のカフェイン']};
+  else if (sl.avgBedtime && /^(1|2|3|4):/.test(sl.avgBedtime)) sleep = {title:'寝る時刻を早めに', text:`寝る時刻の平均が${sl.avgBedtime}ごろです。時間が足りていても、寝る時刻が遅いと体のリズムが乱れやすくなります。0時までに寝る日を増やしてみましょう。`, good:['0時までに寝る', '朝に日光を浴びる'], avoid:['寝る前のスマホ']};
+  else sleep = {title:'睡眠はいい調子', text:`平均${sl.avgHours}時間眠れています。この調子で続けましょう。寝る前のスマホを控えると、眠りの質がさらに上がります。`, good:['今のリズムを続ける'], avoid:['寝る前のスマホ']};
   // ③ 運動
   let move;
-  if (!ex.recordedDays) move = {title:'運動も記録を', text:'運動した日・しなかった日を記録すると、肌との関係がわかります。歩数はヘルスケア連携で自動で入ります。'};
-  else if (ex.activeDays < 3) move = {title:'体を少し動かす', text:`運動した日は${ex.activeDays}日でした。10分の散歩やストレッチでも血のめぐりが良くなります。`};
-  else move = {title:'運動を続けよう', text:`この1週間で${ex.activeDays}日・合計${ex.totalMin}分運動できています。汗をかいたら早めに洗顔を。`};
-  // ④ 食事
+  if (!ex.recordedDays) move = {title:'運動も記録を', text:'運動した日・しなかった日を記録すると、肌との関係がわかります。歩数はヘルスケア連携で自動で入ります。', good:[], avoid:[]};
+  else if (ex.activeDays < 3) move = {title:'体を少し動かす', text:`運動した日は${ex.activeDays}日でした。軽い運動で血のめぐりが良くなると、肌に栄養が届きやすくなります。10分の散歩やストレッチからで大丈夫です。`, good:['10分の散歩', 'ストレッチ', '階段を使う'], avoid:[]};
+  else move = {title:'運動を続けよう', text:`この1週間で${ex.activeDays}日・合計${ex.totalMin}分運動できています。汗をかいたら、そのままにせず早めに洗顔や保湿を。屋外では日焼け止めを忘れずに。`, good:['運動後すぐの洗顔・保湿', '屋外では日焼け止め'], avoid:['汗をそのままにする']};
+  // ④ 食事（足りない栄養と、おすすめの食べ物）
   let meal;
-  if (!ml.days) meal = {title:'食事も記録を', text:'食べたものを記録すると、栄養のかたよりと肌の関係がわかります。'};
-  else if (ml.avgProtein != null && ml.avgProtein < ml.proteinGoal * 0.8) meal = {title:'たんぱく質を足す', text:`たんぱく質が1日平均${ml.avgProtein}g（目安${ml.proteinGoal}g）。卵・納豆・魚などを1品足すと、肌の材料が増えます。`};
-  else if (ml.avgVeg != null && ml.avgVeg < 250) meal = {title:'野菜をもう一品', text:`野菜が1日平均${ml.avgVeg}gでした（目安350g）。みそ汁の具やサラダを1品足すだけでも違います。`};
-  else if (ml.snackDays >= 4) meal = {title:'間食を控えめに', text:`間食した日が${ml.snackDays}日ありました。甘い物は日中に少しだけ、飲み物は無糖に。`};
-  else if (ml.skippedBreakfast >= 3) meal = {title:'朝ごはんを食べる', text:`朝食を抜いた日が${ml.skippedBreakfast}日。バナナやヨーグルトだけでも、1日のリズムが整います。`};
-  else meal = {title:'食事はいい調子', text:'栄養のバランスがとれています。水分もこまめにとりましょう。'};
+  if (!ml.days) meal = {title:'食事も記録を', text:'食べたものを記録すると、たんぱく質・野菜などの足りない栄養と、おすすめの食べ物を出せます。', good:[], avoid:[]};
+  else if (ml.avgProtein != null && ml.avgProtein < ml.proteinGoal * 0.8) meal = {title:'たんぱく質が足りません', text:`たんぱく質が1日平均${ml.avgProtein}g（目安${ml.proteinGoal}g）でした。たんぱく質は肌や髪の材料です。毎食、手のひら1枚分の肉・魚・卵・大豆製品を足しましょう。`, good:['卵', '納豆', '鶏むね肉', '鮭', '豆腐', 'ギリシャヨーグルト'], avoid:[]};
+  else if (ml.foodDays >= 3 && ml.vitCDays < 3) meal = {title:'ビタミンCが少なめかも', text:`この1週間、ビタミンCの多い野菜や果物を食べた日が${ml.vitCDays}日でした。ビタミンCは肌のハリのもとになるコラーゲンを作るのに必要で、体にためておけないので毎日少しずつとるのがコツです。`, good:['キウイ', 'ブロッコリー', 'パプリカ', 'いちご', 'みかん'], avoid:[]};
+  else if (ml.avgVeg != null && ml.avgVeg < 250) meal = {title:'野菜をもう一品', text:`野菜が1日平均${ml.avgVeg}gでした（目安350g）。野菜のビタミン・ミネラル・食物繊維は、肌と腸の調子を整えます。みそ汁の具やサラダを1品足すだけでも違います。`, good:['ブロッコリー', 'ほうれん草', 'にんじん', 'トマト', 'きのこ'], avoid:[]};
+  else if (ml.snackDays >= 4) meal = {title:'甘い間食を控えめに', text:`間食した日が${ml.snackDays}日ありました。甘い物が多いと、皮脂が増えたりニキビが出やすくなったりする人がいます。間食はナッツやヨーグルトにすると、肌にうれしい栄養もとれます。`, good:['ナッツ', 'ヨーグルト', 'バナナ'], avoid:['甘いお菓子', 'ジュース・甘い飲み物']};
+  else if (topArea && topArea[1] >= 2) meal = {title:'ビタミンB群でニキビ予防', text:'ニキビが続くときは、皮脂の調子を整えるビタミンB2・B6を意識しましょう。脂っこい物や甘い物が続かないようにするのもポイントです。', good:['納豆', '卵', 'まぐろ', 'バナナ', 'レバー'], avoid:['揚げ物の食べすぎ', '甘いお菓子']};
+  else meal = {title:'食事はいい調子', text:'たんぱく質も野菜もとれています。この調子で、水分もこまめにとりましょう。', good:['水をこまめに'], avoid:[]};
   return [skin, sleep, move, meal].map((x, i) => Object.assign({area:ADVICE_AREAS[i]}, x));
+}
+// おすすめ・控えたいもののラベル（角度ごと）
+const ADV_LABELS = {スキンケア:['おすすめ成分', '控えたい成分'], 食事:['おすすめの食べ物', '控えたいもの'], 睡眠:['おすすめ', '控えたいこと'], 運動:['おすすめ', '気をつけること']};
+function advChips(x) {
+  const lb = ADV_LABELS[x.area] || ['おすすめ', '控えたいもの'], g = (x.good || []).filter(Boolean), a = (x.avoid || []).filter(Boolean);
+  return (g.length ? `<div class="adv-chips"><small>${lb[0]}</small>${g.map(v => `<span class="adv-c good">${esc(v)}</span>`).join('')}</div>` : '')
+    + (a.length ? `<div class="adv-chips"><small>${lb[1]}</small>${a.map(v => `<span class="adv-c bad">${esc(v)}</span>`).join('')}</div>` : '');
 }
 const ADVICE_KEY = 'skinwise_advice';
 function adviceCache() { try { return JSON.parse(localStorage.getItem(ADVICE_KEY) || 'null'); } catch (e) { return null; } }
@@ -5379,7 +5402,7 @@ function adviceHtml() {
   const pts = ai ? ADVICE_AREAS.map((a, i) => ai.points.find(x => x.area === a) || local[i]) : local; // AIが出さなかった角度は、ルールの結果でうめる
   const prem = isPremium();
   const head = `<h3>おすすめケアポイント${ai ? '<span class="ai-badge">AI分析</span>' : ''}</h3>${ai && ai.summary ? `<p class="small muted" style="margin:0">${esc(ai.summary)}</p>` : ''}`;
-  const list = adviceBusy ? skelHtml(4, {dots:true, label:'AIが分析中'}) : `<ol class="adv4">${pts.map((x, i) => `<li><i>${'①②③④'[i] || i + 1}</i><div><em class="adv-area">${esc(x.area || ADVICE_AREAS[i] || '')}</em><b>${esc(x.title)}</b><span>${esc(x.text)}</span></div></li>`).join('')}</ol>`;
+  const list = adviceBusy ? skelHtml(4, {dots:true, label:'AIが分析中'}) : `<ol class="adv4">${pts.map((x, i) => `<li><i>${'①②③④'[i] || i + 1}</i><div><em class="adv-area">${esc(x.area || ADVICE_AREAS[i] || '')}</em><b>${esc(x.title)}</b><span>${esc(x.text)}</span>${advChips(Object.assign({area:ADVICE_AREAS[i]}, x))}</div></li>`).join('')}</ol>`;
   let foot;
   if (adviceBusy) foot = '<span class="small muted">AIが記録を分析しています…</span>';
   else if (ai) foot = `<span class="small muted">直近7日の記録をAI（Google Gemini）が分析しました。目安としてご覧ください。</span><button class="btn btn-ghost btn-sm" data-action="advice-ai" data-id="again">もう一度分析</button>`;
@@ -6381,7 +6404,7 @@ ${row('国土地理院（地図・航空写真）', '表示する地図の範囲
 ${row('cdnjs（Cloudflare）・unpkg', 'IPアドレス、ブラウザの情報', '地図の部品（MapLibre・PMTiles）と3D表示の部品（three.js）の読み込み。店舗検索の結果・肌の変化の画面を表示したとき')}
 ${row('OpenStreetMap', '検索する場所の座標、IPアドレス', 'Geoapifyが使えないときの予備の店舗検索')}
 ${row('楽天グループ（楽天ウェブサービス）・LINEヤフー（Yahoo!デベロッパーネットワーク）', '商品名・JANコード（運営者のサーバーを通して送信。利用者のIPアドレスなどは送りません）', '価格比較。「価格を調べる」を押したときだけ')}
-${row('Google（Gemini API）', '「写真から読み取る」「顔を撮って自動で記録」で選んだ写真（食事・化粧品のパッケージ・顔）', '写真読み取り（プレミアム）。押したときだけ。運営者は写真を保存しません。Googleの無料枠を使う場合、送った内容がGoogleのサービス改善に使われることがあります')}
+${row('Google（Gemini API）', '「写真から読み取る」「顔を撮って自動で記録」で選んだ写真（食事・化粧品のパッケージ・顔）／おすすめケアポイントのための直近7日の記録のまとめ（数値・食べた物の名前・化粧品の種類と主な成分名）', '写真読み取り・AI分析（プレミアム）。使ったときだけ。運営者は写真を保存しません。Googleの無料枠を使う場合、送った内容がGoogleのサービス改善に使われることがあります')}
 ${row('Supabase（運営者のデータベース・東京）', '肌質・敏感肌かどうか・年代（答えた場合）、記録の日数、肌の状態の平均、成分ごとの肌の変化の平均、端末ごとのランダムな番号', '研究への協力（任意）。設定で「協力する」を選んだ場合だけ、1日1回まで')}
 ${row('GitHub（GitHub, Inc.）', 'IPアドレス、ブラウザの情報', '本サービスのページの配信')}
 </tbody></table></div>
@@ -6661,7 +6684,7 @@ function viewSettings() {
         <li><b>写真読み取り（${PREMIUM_NAME}）</b>：「写真から読み取る」「顔を撮って自動で記録」を使ったときだけ、その写真を${esc(SERVICE)}のサーバーを通してGoogleのAI（Gemini API）に送り、料理・文字・肌の状態の目安を読み取ります。写真と結果はサーバーに保存しません。使った回数（1日あたり）だけを記録します。</li>
         <li><b>価格比較</b>：「価格を調べる」を押したときだけ、商品名（とJANコード）を${esc(SERVICE)}のサーバーを通して楽天市場・Yahoo!ショッピングの公式APIに送ります。あなたの情報（IPアドレスなど）は送りません。</li>
         <li><b>オフライン用の保存</b>：電波が弱い場所でも開けるように、アプリ本体・アイコン・薬局データをこの端末のブラウザに保存します（記録の内容は含みません）。画面の表示（ダーク・ライト）の設定も、この端末にだけ保存します。</li>
-        <li><b>おすすめケアポイント（AI分析・${PREMIUM_NAME}）</b>：直近7日の記録の<b>数値のまとめだけ</b>（睡眠時間の平均、ニキビの数など）を${esc(SERVICE)}のサーバーを通してGoogleのAI（Gemini API）に送ります。メモ・写真・名前は送りません。</li>
+        <li><b>おすすめケアポイント（AI分析・${PREMIUM_NAME}）</b>：直近7日の記録の<b>まとめだけ</b>（睡眠時間の平均、ニキビの数、食べた物の名前と回数、使っている化粧品の種類と主な成分の名前など。商品名・メモ・写真は送りません）を${esc(SERVICE)}のサーバーを通してGoogleのAI（Gemini API）に送ります。メモ・写真・名前は送りません。</li>
         <li><b>外部リンク</b>：通販サイト・地図のリンクを開くと、そのサイトの利用規約・プライバシーポリシーが適用されます。</li>
         <li><b>広告</b>：無料プランでは、ホーム・商品検索・成分辞典・店舗検索の画面に広告を表示する予定です（現在は準備中で、広告は配信していません）。肌の記録・グラフ・レポート・食事などの画面には表示しません。広告は肌トモのおすすめや価格比較の結果とは関係がなく、広告であることを明示します。広告を配信するときは、広告サービスに送られる情報（Cookieなど）について、この画面でお知らせします。プレミアムプランでは広告を表示しません。</li>
       </ul></details>
