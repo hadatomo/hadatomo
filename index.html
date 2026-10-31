@@ -648,6 +648,7 @@ details.acc-cmp{margin-top:14px}
 .fp-sum .chip{white-space:normal;text-align:left;cursor:pointer;font-family:inherit}
 @media(max-width:560px){.fp-wrap{grid-template-columns:1fr}.fp-stage{max-width:none;margin:0}}
 .fp-hidden{display:none}
+.fp-legend .link{background:none;border:0;color:var(--green-d);font-family:inherit;cursor:pointer;text-decoration:underline;padding:0;margin-left:auto}
 .hap-wrap{position:relative;display:flex;flex:1;min-width:0}
 .hap-wrap > .btn{flex:1;width:100%}
 @media(min-width:640px){.hap-wrap{flex:none}.hap-wrap > .btn{width:auto}}
@@ -655,8 +656,8 @@ details.acc-cmp{margin-top:14px}
 .hap-ov input{position:absolute;left:50%;top:50%;width:1px;height:1px;margin:0;opacity:0.01;pointer-events:none}
 .cond-seg{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
 .cond-seg .seg-opt{min-width:0}
-.cond-seg .seg-opt span{min-height:64px;padding:6px 0;color:var(--ink2);flex-direction:column;gap:2px}
-.cond-seg .seg-opt span em{font-style:normal;font-size:10.5px;line-height:1.2;white-space:nowrap;letter-spacing:-.02em}
+.cond-seg .seg-opt span{min-height:58px;padding:5px 2px;color:var(--ink2);flex-direction:column;gap:3px}
+.cond-seg .seg-opt span em{font-style:normal;font-size:9.5px;line-height:1.2;white-space:nowrap;letter-spacing:-.04em}
 .cond-ai{font-size:12px;color:var(--green-d);margin:6px 0 0;line-height:1.5}
 .cond-ai:empty{display:none}
 .cond-seg .seg-opt:first-child span{color:#D9473A}
@@ -1022,14 +1023,17 @@ const COND_MARK_NAMES = ['','ばつ','三角','まる','二重丸','はなまる
 const condMarkSvg = v => {
   const a = 'fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"';
   if (v === 5) {
-    // 花びら（外側のぎざぎざ）＋ うずまき
-    let d = ''; const n = 9;
-    for (let i = 0; i <= n; i++) { const t = i / n * Math.PI * 2, x = 16 + 12.5 * Math.cos(t), y = 16 + 12.5 * Math.sin(t);
-      if (!i) d += `M${x.toFixed(1)} ${y.toFixed(1)}`; else d += `A3.6 3.6 0 0 1 ${x.toFixed(1)} ${y.toFixed(1)}`; }
-    return `<svg viewBox="0 0 32 32" width="34" height="34" aria-hidden="true"><path d="${d}" ${a} stroke-width="1.9"/><path d="M16 16.2a1.6 1.6 0 1 1 1.6-1.6 3.4 3.4 0 1 1-3.4-3.4 5.4 5.4 0 1 1-5.2 6.9" ${a} stroke-width="1.9"/></svg>`;
+    // はなまる：まわりの花びら（8枚）＋ 真ん中のうずまき
+    const n = 8, R0 = 12.2, cx = 20, cy = 20; let d = '';
+    for (let i = 0; i <= n; i++) { const t = (i / n) * Math.PI * 2 - Math.PI / 2, x = cx + R0 * Math.cos(t), y = cy + R0 * Math.sin(t);
+      d += i ? `A4.9 4.9 0 0 1 ${x.toFixed(2)} ${y.toFixed(2)}` : `M${x.toFixed(2)} ${y.toFixed(2)}`; }
+    let sp = ''; const turns = 2.25, steps = 64;
+    for (let i = 0; i <= steps; i++) { const t = (i / steps) * turns * Math.PI * 2, r = 0.6 + 2.9 * (t / (Math.PI * 2)), x = cx + r * Math.cos(t + Math.PI), y = cy + r * Math.sin(t + Math.PI);
+      sp += (i ? 'L' : 'M') + x.toFixed(2) + ' ' + y.toFixed(2); }
+    return `<svg viewBox="0 0 40 40" width="31" height="31" aria-hidden="true"><path d="${d}" ${a} stroke-width="2.1"/><path d="${sp}" ${a} stroke-width="2.1"/></svg>`;
   }
   const g = {4:'<circle cx="16" cy="16" r="10.5"/><circle cx="16" cy="16" r="5.6"/>', 3:'<circle cx="16" cy="16" r="10"/>', 2:'<path d="M16 5.5 27 25.5H5z"/>', 1:'<path d="M7.5 7.5l17 17M24.5 7.5l-17 17"/>'}[v] || '';
-  return `<svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><g ${a}>${g}</g></svg>`;
+  return `<svg viewBox="0 0 32 32" width="25" height="25" aria-hidden="true"><g ${a}>${g}</g></svg>`;
 };
 const condSeg = value => `<div class="seg cond-seg" role="radiogroup" aria-label="肌の調子">${[5,4,3,2,1].map(v => `<label class="seg-opt"><input type="radio" name="condition" value="${v}" ${Number(value) === v ? 'checked' : ''}><span title="${COND_LABELS[v]}">${condMarkSvg(v)}<em>${COND_LABELS[v]}</em></span></label>`).join('')}</div>`;
 const COND_COLORS = ['','#C9785F','#D6A06A','#BDAE84','#86AE90','#4F8360'];
@@ -3932,6 +3936,8 @@ function openLogForm(id) {
   const grid = () => (FACE3D.st && FACE3D.st.canvasId === 'face3d-form' && FACE3D.st.gridInfo) || null;
   const cellArea = k => { const g = grid(); if (!g) return null; const [c, r] = k.split(',').map(Number); return g.cellArea[r * g.cols + c] || null; };
   const selAreas = () => [...new Set([...fpSel].map(cellArea).filter(Boolean))];
+  const cellZoneName = k => { const g = grid(); if (!g) return ''; const [c, r] = k.split(',').map(Number); return FACE3D_ZONES[g.cellZone[r * g.cols + c]] || ''; };
+  const selZones = () => FACE3D_ZONES.filter(z => z && [...fpSel].some(k => cellZoneName(k) === z));
   const fpSpotRow = a => $$('.spot-row', form).find(r => $('[name="sp_area"]', r).value === a);
   const fpCount = a => $$('.spot-row', form).filter(r => $('[name="sp_area"]', r).value === a).reduce((x, r) => x + (parseInt(toHalf($('[name="sp_count"]', r).value), 10) || 0), 0);
   const setSeg = (name, v) => { const r = $(`input[name="${name}"][value="${v}"]`, form); if (r && !r.checked) { r.checked = true; r.dispatchEvent(new Event('change', {bubbles:true})); } };
@@ -3969,13 +3975,13 @@ function openLogForm(id) {
     const pn = $('#fp-panel', form); if (!pn) return;
     if (!fpSel.size) {
       const used = AREA_CONCERNS.filter(c => maxLevel(c));
-      pn.innerHTML = `<p class="small muted" style="margin:0">${fpRange ? '顔の上を指でなぞると、なぞった範囲のマスをまとめて選べます。' : '顔のマス目を押して選んでください（何マスでも選べます）。'}</p>
-        ${used.length ? `<div class="fp-legend">${used.map(c => `<span><i style="background:${CONCERN_COLORS[c]}"></i>${esc(c)} ${maxLevel(c)}</span>`).join('')}</div>` : ''}
+      pn.innerHTML = `<p class="small muted" style="margin:0">${fpRange ? '額・鼻・頬などの部分を押すと、まとめて選べます。' : '顔のマス目を押して選んでください（何マスでも選べます）。'}</p>
+        ${used.length ? `<div class="fp-legend">${used.map(c => `<span><i style="background:${CONCERN_COLORS[c]}"></i>${esc(c)} ${maxLevel(c)}</span>`).join('')}<button type="button" class="link small" data-fp-clear>すべて消す</button></div>` : ''}
         ${$$('.spot-row', form).length ? `<p class="small" style="margin:8px 0 0">ニキビ（合計 ${form.elements.acneCount.value}個）：${AREAS.filter(a => fpCount(a.id)).map(a => `${esc(a.name)} ${fpCount(a.id)}個`).join('・')}</p>` : ''}`;
       return;
     }
     const areas = selAreas(), a0 = areas[0], n = a0 ? fpCount(a0) : 0;
-    pn.innerHTML = `<div class="fp-h"><b>${fpSel.size}マス選択中<small>${esc(areas.map(areaName).join('・'))}</small></b><button type="button" class="link small" data-fp-close>選択をやめる</button></div>
+    pn.innerHTML = `<div class="fp-h"><b>${fpSel.size}マス選択中<small>${esc(selZones().join('・'))}</small></b><button type="button" class="link small" data-fp-close>選択をやめる</button></div>
       ${a0 ? `<div class="fp-row"><span>ニキビ<small>（${esc(areaName(a0))}）</small></span><div class="counter sm"><button type="button" class="icon-btn" data-fp-acne="-1" aria-label="減らす">−</button><b>${n}</b><button type="button" class="icon-btn" data-fp-acne="1" aria-label="増やす">＋</button></div></div>` : ''}
       <p class="small muted" style="margin:6px 0 6px">ある状態を押して、強さを選んでください</p>
       <div class="fp-chips">${AREA_CONCERNS.map(c => { const lv = selLevel(c); return `<button type="button" class="fp-chip ${lv ? 'on' : ''}" style="--cc:${CONCERN_COLORS[c]}" data-fp-note="${esc(c)}" aria-pressed="${!!lv}"><i></i>${esc(c)}${lv ? ` ${lv}` : ''}</button>`; }).join('')}</div>
@@ -3985,16 +3991,17 @@ function openLogForm(id) {
   };
   const fpSync = () => { fpPaint(); fpPanel(); };
   form.addEventListener('click', e => {
-    const b = e.target.closest('[data-fp-acne],[data-fp-note],[data-fp-close],[data-fp-zoom],[data-fp-mode]'); if (!b) return;
+    const b = e.target.closest('[data-fp-acne],[data-fp-note],[data-fp-close],[data-fp-clear],[data-fp-zoom],[data-fp-mode]'); if (!b) return;
     if (b.dataset.fpMode) {
       fpRange = b.dataset.fpMode === 'range';
       $$('[data-fp-mode]', form).forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
-      const st = FACE3D.st; if (st && st.setRange) st.setRange(fpRange);
-      const h = $('#fp-hint', form); if (h) h.textContent = fpRange ? '「範囲でまとめて」：顔の上を指でなぞると、なぞった四角い範囲のマスをまとめて選べます（この間は顔は回りません）。「＋」や2本の指で拡大できます。' : '「1マスずつ」：押したマスが緑の枠で光ります（もう一度押すと外れます）。顔を横になぞると回せます。「＋」や2本の指で拡大できます。';
+      const st = FACE3D.st; if (st && st.gridInfo) { st.gridInfo.uni.uZoneMode.value = fpRange ? 1 : 0; st.dirty = true; }
+      const h = $('#fp-hint', form); if (h) h.textContent = fpRange ? '「範囲でまとめて」：額・眉間・鼻・こめかみ（左右）・頬（左右）・顎に分かれています。押すとその部分がまとめて選ばれます（もう一度押すと外れます）。' : '「1マスずつ」：押したマスが緑の枠で光ります（もう一度押すと外れます）。顔を横になぞると回せます。「＋」や2本の指で拡大できます。';
       fpPanel(); return;
     }
     if (b.dataset.fpZoom) { const st = FACE3D.st; if (st) { st.zoomT = clamp((st.zoomT || st.cam.position.z) + (b.dataset.fpZoom === 'in' ? -7 : 7), st.minZ, st.maxZ); st.dirty = true; } return; }
     if ('fpClose' in b.dataset) { fpSel.clear(); fpSync(); return; }
+    if ('fpClear' in b.dataset) { Object.keys(fpMarks).forEach(k => delete fpMarks[k]); fpSel.clear(); fpGlobal(); $('#modal-root').dataset.dirty = '1'; fpSync(); return; }
     if (b.dataset.fpAcne) {
       const a0 = selAreas()[0]; if (!a0) return;
       const step = Number(b.dataset.fpAcne); let row = fpSpotRow(a0);
@@ -4030,7 +4037,15 @@ function openLogForm(id) {
   fpPanel();
   setTimeout(() => drawFace3d({canvas:'face3d-form', load:'fp-load', tip:'', camZ:44, minZ:12, yawOnly:true, auto:false, grid:true, panY:true, panAt:40, ready:st => {
     st.canvasId = 'face3d-form';
-    st.onTapCell = key => { if (fpSel.has(key)) fpSel.delete(key); else fpSel.add(key); fpSync(); };
+    st.onTapCell = key => {
+      if (fpRange) {
+        // 押した区切りのマス目を、まとめて選ぶ／外す
+        const g = grid(), [c0, r0] = key.split(',').map(Number), z = g.cellZone[r0 * g.cols + c0];
+        const ks = []; for (let k = 0; k < g.cellZone.length; k++) if (z && g.cellZone[k] === z && g.cellArea[k]) ks.push(`${k % g.cols},${Math.floor(k / g.cols)}`);
+        const all = ks.length && ks.every(k => fpSel.has(k)); ks.forEach(k => all ? fpSel.delete(k) : fpSel.add(k));
+      } else if (fpSel.has(key)) fpSel.delete(key); else fpSel.add(key);
+      fpSync();
+    };
     // 範囲選択：なぞり始めのマスと今のマスを角にした四角の中（顔の上のマスだけ）をまとめて選ぶ
     st.onRange = (a, b, phase) => {
       if (phase === 'cancel') { if (fpBase) { fpSel.clear(); fpBase.forEach(k => fpSel.add(k)); fpBase = null; fpSync(); } return; }
@@ -4348,6 +4363,20 @@ function openLifeForm(id, part) {
    ========================================================= */
 /* ---------- 3Dの顔で見る肌の変化（週ごとに、部位ごとの記録を顔の色とニキビの印で表示） ---------- */
 const FACE3D_REGIONS = ['', 'forehead', 'nose', 'rcheek', 'lcheek', 'mouth', 'chin'];
+// 範囲でまとめて選ぶときの大まかな区切り（顔の向かって左＝本人の右）
+const FACE3D_ZONES = ['', '額', '眉間', '鼻', '右こめかみ', '左こめかみ', '右頬', '左頬', '顎'];
+const FACE3D_ZONE_AREA = ['', 'forehead', 'forehead', 'nose', 'rcheek', 'lcheek', 'rcheek', 'lcheek', 'chin'];
+function face3dZoneOf(x, y, reg) {
+  const ax = Math.abs(x), R = x < 0;
+  if (y > 9 || ax > 7.6 || y < -10) return 0;
+  if (reg === 'nose' || (ax <= 1.5 && y >= -2.2 && y < 3.3)) return 3;
+  if (reg === 'mouth' || reg === 'chin' || (y < -2.2 && ax < 3.4) || y < -6.2) return 8;
+  if (ax <= 1.5 && y >= 3.3 && y < 5.8) return 2;
+  if (y >= 5.8 || (y >= 4.6 && ax < 5.0)) return ax >= 5.6 && y < 7.4 ? (R ? 4 : 5) : 1;
+  if (ax >= 5.0 && y >= 1.6) return R ? 4 : 5;
+  if (y >= 1.9 && y < 4.6 && ax > 1.5 && ax < 5.0) return 0; // 目とまぶたは除く
+  return R ? 6 : 7;
+}
 const f3md = s => { const d = parseYmd(s); return `${d.getMonth() + 1}/${d.getDate()}`; };
 const FACE3D = {three:null, mesh:null, loading:null, st:null};
 function face3dWeeks(n) {
@@ -4696,14 +4725,29 @@ function face3dGrid(T, m, mat) {
   }
   const cellArea = new Array(cols * rows).fill(null);
   tally.forEach((t, k) => { cellArea[k] = Object.entries(t).sort((a, b) => b[1] - a[1])[0][0]; });
+  // 大まかな区切り（額・眉間・鼻・こめかみ左右・頬左右・顎）を、顔の形の位置から決める。目は除く
+  const zt = new Map();
+  for (let i = 0; i < n; i++) {
+    if (nrm[i * 3 + 2] < 0.25) continue;
+    const z = face3dZoneOf(v[i * 3], v[i * 3 + 1], FACE3D_REGIONS[m.r[i]]); if (!z) continue;
+    const c = Math.floor((v[i * 3] - x0) / size), r = Math.floor((v[i * 3 + 1] - y0) / size), k = r * cols + c;
+    const t = zt.get(k) || {}; t[z] = (t[z] || 0) + 1; zt.set(k, t);
+  }
+  const cellZone = new Array(cols * rows).fill(0);
+  zt.forEach((t, k) => { cellZone[k] = Number(Object.entries(t).sort((a, b) => b[1] - a[1])[0][0]); });
+  // 部位のなかったマス目（眉間・こめかみなど）にも、区切りから部位を入れて選べるようにする
+  for (let k = 0; k < cellArea.length; k++) { if (!cellZone[k]) { cellArea[k] = null; continue; } if (!cellArea[k]) cellArea[k] = FACE3D_ZONE_AREA[cellZone[k]]; }
+  const zdata = new Uint8Array(cols * rows * 4);
+  for (let k = 0; k < cellZone.length; k++) zdata[k * 4] = cellZone[k] * 20;
+  const ztex = new T.DataTexture(zdata, cols, rows, T.RGBAFormat); ztex.magFilter = T.NearestFilter; ztex.minFilter = T.NearestFilter; ztex.needsUpdate = true;
   const data = new Uint8Array(cols * rows * 4);
   const tex = new T.DataTexture(data, cols, rows, T.RGBAFormat); tex.magFilter = T.NearestFilter; tex.minFilter = T.NearestFilter; tex.needsUpdate = true;
-  const uni = {uGridOrigin:{value:new T.Vector2(x0, y0)}, uGridSize:{value:size}, uGridDim:{value:new T.Vector2(cols, rows)}, uGridMask:{value:tex}};
+  const uni = {uGridOrigin:{value:new T.Vector2(x0, y0)}, uGridSize:{value:size}, uGridDim:{value:new T.Vector2(cols, rows)}, uGridMask:{value:tex}, uZone:{value:ztex}, uZoneMode:{value:0}};
   mat.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, uni);
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vObjPos;\nvarying vec3 vObjNrm;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvObjPos = position;\nvObjNrm = normal;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vObjPos;\nvarying vec3 vObjNrm;\nuniform vec2 uGridOrigin;\nuniform float uGridSize;\nuniform vec2 uGridDim;\nuniform sampler2D uGridMask;')
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vObjPos;\nvarying vec3 vObjNrm;\nuniform vec2 uGridOrigin;\nuniform float uGridSize;\nuniform vec2 uGridDim;\nuniform sampler2D uGridMask;\nuniform sampler2D uZone;\nuniform float uZoneMode;')
       .replace('#include <color_fragment>', `#include <color_fragment>
         if (vObjNrm.z > 0.2) {
           vec2 g = (vObjPos.xy - uGridOrigin) / uGridSize;
@@ -4714,14 +4758,27 @@ function face3dGrid(T, m, mat) {
           float amt = (a255 - sel) / 200.0;
           vec2 f = abs(fract(g) - 0.5);
           float edge = smoothstep(0.42, 0.49, max(f.x, f.y));
+          // 範囲でまとめるとき：細かいマス目の線は消して、区切り（額・鼻・頬など）の境目だけに線を引く
+          if (uZoneMode > 0.5) {
+            float z0 = texture2D(uZone, (cell + 0.5) / uGridDim).r;
+            vec2 fr = fract(g);
+            float zl = texture2D(uZone, (cell + vec2(-1.0, 0.0) + 0.5) / uGridDim).r, zr = texture2D(uZone, (cell + vec2(1.0, 0.0) + 0.5) / uGridDim).r;
+            float zd = texture2D(uZone, (cell + vec2(0.0, -1.0) + 0.5) / uGridDim).r, zu = texture2D(uZone, (cell + vec2(0.0, 1.0) + 0.5) / uGridDim).r;
+            float b = 0.0;
+            if (abs(zl - z0) > 0.01) b = max(b, 1.0 - smoothstep(0.06, 0.16, fr.x));
+            if (abs(zr - z0) > 0.01) b = max(b, smoothstep(0.84, 0.94, fr.x));
+            if (abs(zd - z0) > 0.01) b = max(b, 1.0 - smoothstep(0.06, 0.16, fr.y));
+            if (abs(zu - z0) > 0.01) b = max(b, smoothstep(0.84, 0.94, fr.y));
+            edge = z0 > 0.01 ? b : 0.0;
+          }
           vec3 mc = pow(max(mk.rgb, vec3(0.002)), vec3(2.2)); // 0のときに計算が壊れないように
           if (amt > 0.001) diffuseColor.rgb = mix(diffuseColor.rgb, mc, clamp(amt, 0.0, 0.85));
           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.30, 0.78, 0.46), sel * 0.30);
-          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.84, edge * (1.0 - sel) * 0.5);
+          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.84, edge * (1.0 - sel) * (uZoneMode > 0.5 ? 0.9 : 0.5));
           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.10, 0.60, 0.32), edge * sel);
         }`);
   };
-  return {x0, y0, size, cols, rows, cellArea, data, tex};
+  return {x0, y0, size, cols, rows, cellArea, cellZone, data, tex, uni};
 }
 // 押した点のマス目（"列,行"）を返す。部位のないマス目は、いちばん近い部位のマス目にする
 function face3dGridCell(st, e) {
