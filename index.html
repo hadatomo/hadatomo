@@ -1963,11 +1963,12 @@ function hapticStrong(skipFirst) {
   try { if (typeof navigator.vibrate === 'function' && navigator.vibrate([80, 60, 80])) return; } catch (e) { /* 次の方法へ */ }
   [0, 110, 220].forEach((t, i) => { if (!(skipFirst && i === 0)) setTimeout(switchTick, t); });
 }
-// 下に引っぱって更新：ぐるぐるが始まったときのバイブ（保存のときより強く：Androidは長く2回／iPhoneは「コツッ」を4回）
+// 下に引っぱって更新：ぐるぐるが始まったときのバイブ（Androidは長めに2回／iPhoneは「コツッ」1回）
+// iPhoneは、指を離した操作の中ですぐ（待たずに）鳴らさないと鳴らない
 function hapticSpin() {
   hapticAt = Date.now();
   try { if (typeof navigator.vibrate === 'function' && navigator.vibrate([130, 60, 130])) return; } catch (e) { /* 次の方法へ */ }
-  [0, 90, 180, 270].forEach(t => setTimeout(switchTick, t));
+  switchTick();
 }
 function toast(msg, type='') {
   // 保存・記録・追加できたときはブルッと知らせる
@@ -7565,7 +7566,7 @@ window.addEventListener('hashchange', () => { if ($('#modal-root').innerHTML) cl
   const end = () => {
     if (y0 == null) return; y0 = null;
     page.classList.add('ptr-back');
-    if (d >= GO) { busy = true; set(56); ptr.style.opacity = '1'; arc.setAttribute('stroke-dashoffset', '40'); svg.style.transform = ''; ptr.classList.add('spin'); hapticSpin(); setTimeout(() => location.reload(), 700); } // ぐるぐるが始まったときに、保存のときより強くバイブ
+    if (d >= GO) { hapticSpin(); busy = true; set(56); ptr.style.opacity = '1'; arc.setAttribute('stroke-dashoffset', '40'); svg.style.transform = ''; ptr.classList.add('spin'); setTimeout(() => location.reload(), 700); } // ぐるぐるが始まったときにバイブ（上で鳴らしている）
     else set(0);
   };
   window.addEventListener('touchend', end); window.addEventListener('touchcancel', end);
