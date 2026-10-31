@@ -566,6 +566,12 @@ details.acc-cmp{margin-top:14px}
 .add-opt{display:grid;grid-template-columns:26px 1fr 12px;gap:12px;align-items:center;text-align:left;padding:16px;border:1px solid var(--line2);border-radius:16px;background:var(--surface);color:var(--ink);font-family:inherit;cursor:pointer}
 .add-opt svg{width:24px;height:24px;color:var(--green-d)}
 .add-opt.main{border-color:var(--green);background:var(--green-p,#EEF5EF)}
+/* 大きさの比率 3：2（自分で入力する：カメラで登録） */
+.add-opt.big{min-height:116px}
+.add-opt.small{min-height:77px;height:77px;padding-top:8px;padding-bottom:8px}
+.add-opt.small b{font-size:14.5px}
+.add-opt.small small{font-size:12px}
+.add-opt b .badge-premium{font-size:10.5px;vertical-align:2px;margin-left:4px}
 .add-opt b{display:block;font-size:15.5px}
 .add-opt small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
 .add-opt i{font-style:normal;color:var(--muted);font-size:18px}
@@ -2005,8 +2011,8 @@ function searchTabs(cur) { const n = (state.favorites || []).length; return `<di
 function openAddSheet(kind) {
   const my = kind === 'my';
   openModal({title:my ? '化粧品を追加' : '商品を追加', size:'small', dismissable:true, body:`<div class="add-opts">
-    <button class="add-opt main" data-action="add-camera">${icon('camera')}<span><b>カメラで登録</b><small>パッケージやバーコードを撮る・写真を選ぶ</small></span><i>›</i></button>
-    <button class="add-opt" data-action="add-manual" data-id="${my ? 'my' : 'cat'}">${icon('note')}<span><b>自分で入力する</b><small>${my ? '商品検索から選ぶ・手で入力する' : '商品名・成分などを入力する'}</small></span><i>›</i></button></div>`});
+    <button class="add-opt main big" data-action="add-manual" data-id="${my ? 'my' : 'cat'}">${icon('note')}<span><b>自分で入力する</b><small>${my ? '商品検索から選ぶ・手で入力する' : '商品名・成分などを入力する'}</small></span><i>›</i></button>
+    <button class="add-opt small" data-action="add-camera">${icon('camera')}<span><b>カメラで登録${isPremium() ? '' : ` <span class="badge-premium">${PREMIUM_NAME}</span>`}</b><small>パッケージやバーコードを撮る・写真を選ぶ</small></span><i>›</i></button></div>`});
 }
 // ---------- お気に入り ----------
 const isFav = id => (state.favorites || []).includes(id);
