@@ -927,9 +927,26 @@ a.used-tile{color:inherit;text-decoration:none}
 .t3-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1.25fr);gap:10px;align-items:center}
 .t3-stage{max-width:none;margin:0;background:#fff}
 .ld-stage{max-width:180px;background:#fff}
-.ld-find{position:relative;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--green-d);background:var(--surface2);border-radius:999px;padding:6px 12px;cursor:pointer}
-.ld-find svg{width:16px;height:16px}
-.ld-find input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;font-size:16px}
+.ld-card .card-h{position:relative}
+.ld-calbtn svg{width:20px;height:20px;color:var(--green-d)}
+.ld-cal{position:absolute;right:0;top:calc(100% + 6px);z-index:15;width:min(300px,calc(100vw - 64px));background:var(--surface);border:1px solid var(--line2);border-radius:18px;box-shadow:var(--shadow);padding:12px}
+.ldc-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.ldc-h b{font-size:14.5px}
+.ldc-nav{width:34px;height:34px;border:0;border-radius:50%;background:var(--surface2);color:var(--ink);font-size:20px;line-height:1;cursor:pointer;font-family:inherit}
+.ldc-nav:disabled{opacity:.3}
+.ldc-w,.ldc-g{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.ldc-w span{font-size:11px;color:var(--muted);padding:2px 0}
+.ldc-d{position:relative;aspect-ratio:1/1;border:0;border-radius:50%;background:none;color:var(--ink);font:inherit;font-size:13.5px;cursor:pointer}
+.ldc-d:disabled{color:var(--line2);cursor:default}
+.ldc-d.has{font-weight:700;color:var(--green-d)}
+.ldc-d.has::after{content:"";position:absolute;left:50%;bottom:3px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--green)}
+.ldc-d.today{box-shadow:inset 0 0 0 1.5px var(--line2)}
+.ldc-d.sel{background:var(--green-d);color:#fff}
+.ldc-d.sel::after{background:#fff}
+.ldc-note{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin:6px 0 0}
+.adv-area{display:block;font-style:normal;font-size:11px;font-weight:700;color:var(--green-d);letter-spacing:.04em}
+.advice .adv4 li>i{background:none;font-size:18px;width:22px;height:22px}
+.ldc-note i{width:5px;height:5px;border-radius:50%;background:var(--green)}
 .ld-miss{text-align:center;margin:4px 0 0}
 /* はじめの質問 */
 .sw-dots{display:flex;gap:6px;justify-content:center;margin:0 0 16px}
@@ -4208,7 +4225,7 @@ function logDayDetailHtml(list, i) {
 }
 function logDayCardHtml(logs) {
   const list = logs.slice().reverse(), i = logDayIdx(list);
-  return `<div class="card ld-card" id="log-day-card"><div class="card-h"><h2>日々の肌の変化</h2><label class="ld-find">${icon('calendar')}日付で探す<input type="date" id="ld-date" value="${esc(list[i] ? list[i].date : '')}" min="${esc(list[0].date)}" max="${todayStr()}" aria-label="見たい日付を選ぶ"></label></div>
+  return `<div class="card ld-card" id="log-day-card"><div class="card-h"><h2>肌の変化</h2><button type="button" class="icon-btn ld-calbtn" id="ld-calbtn" aria-label="日付で探す" aria-expanded="false">${icon('calendar')}</button><div class="ld-cal" id="ld-cal" hidden></div></div>
     <div class="f3-stage ld-stage"><canvas id="face3d-log" aria-label="選んだ日の肌の記録を3Dの顔で表示"></canvas><div class="f3-load" id="ld-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>
     <div class="ld-swipe" id="ld-swipe">
       <button class="ld-arrow" id="ld-prev" data-action="log-day-step" data-id="-1" aria-label="前の記録" ${i <= 0 ? 'hidden' : ''}>‹</button>
@@ -4219,6 +4236,24 @@ function logDayCardHtml(logs) {
     <div class="ld-detail" id="ld-detail">${logDayDetailHtml(list, i)}</div></div>`;
 }
 // 日付で探す：その日の記録がなければ、いちばん近い日の記録を出す
+// 日付で探す：右上のカレンダーのマークを押すと小さなカレンダーが開き、日にちを押すと閉じてその日の記録を出す
+let ldCalYM = '';
+function ldCalHtml() {
+  const t = todayStr(), have = new Set(logDayList().map(l => l.date));
+  const [y, m] = ldCalYM.split('-').map(Number), first = new Date(y, m - 1, 1), days = new Date(y, m, 0).getDate(), lead = first.getDay();
+  const ymd = d => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  const lst = logDayList(), canNext = ymd(days) < t, cur = (lst[logDayIdx(lst)] || {}).date;
+  let cells = ''; for (let i = 0; i < lead; i++) cells += '<span></span>';
+  for (let d = 1; d <= days; d++) { const k = ymd(d), fut = k > t;
+    cells += `<button type="button" class="ldc-d ${have.has(k) ? 'has' : ''} ${k === t ? 'today' : ''} ${k === cur ? 'sel' : ''}" data-ldc="${k}" ${fut ? 'disabled' : ''}>${d}</button>`; }
+  return `<div class="ldc-h"><button type="button" class="ldc-nav" data-ldcm="-1" aria-label="前の月">‹</button><b>${y}年${m}月</b><button type="button" class="ldc-nav" data-ldcm="1" aria-label="次の月" ${canNext ? '' : 'disabled'}>›</button></div>
+    <div class="ldc-w">${['日','月','火','水','木','金','土'].map(w => `<span>${w}</span>`).join('')}</div><div class="ldc-g">${cells}</div><p class="ldc-note"><i></i>記録がある日</p>`;
+}
+function ldCalOpen(on) {
+  const box = document.getElementById('ld-cal'), btn = document.getElementById('ld-calbtn'); if (!box) return;
+  if (on) { const lst = logDayList(); ldCalYM = ((lst[logDayIdx(lst)] || {}).date || todayStr()).slice(0, 7); box.innerHTML = ldCalHtml(); }
+  box.hidden = !on; if (btn) btn.setAttribute('aria-expanded', String(on));
+}
 function logDayFind(date) {
   const list = logDayList(); if (!list.length || !isValidYmd(date)) return;
   let best = list[0]; list.forEach(l => { if (Math.abs(diffDays(l.date, date)) < Math.abs(diffDays(best.date, date))) best = l; });
@@ -4232,7 +4267,6 @@ function logDaySet(date) {
   const info = document.getElementById('ld-info'), det = document.getElementById('ld-detail');
   if (info) { info.innerHTML = logDayInfoHtml(list, i); info.classList.remove('ld-flash'); void info.offsetWidth; info.classList.add('ld-flash'); }
   if (det) det.innerHTML = logDayDetailHtml(list, i);
-  const di = document.getElementById('ld-date'); if (di) di.value = l.date;
   const ms = document.getElementById('ld-miss'); if (ms) ms.hidden = true;
   // 一番古い記録では「‹」、最新の記録では「›」を出さない
   const pv = document.getElementById('ld-prev'), nx = document.getElementById('ld-next');
@@ -4243,7 +4277,16 @@ function logDayStep(n) { const list = logDayList(); const i = logDayIdx(list) + 
 // 左右のスワイプ（3Dの顔の上以外）：左へ払う＝次の日、右へ払う＝前の日
 function bindLogDaySwipe() {
   const card = document.getElementById('log-day-card'); if (!card) return;
-  const di = document.getElementById('ld-date'); if (di) di.addEventListener('change', () => logDayFind(di.value));
+  const cb = document.getElementById('ld-calbtn'), cal = document.getElementById('ld-cal');
+  if (cb && cal) {
+    cb.addEventListener('click', e => { e.stopPropagation(); ldCalOpen(cal.hidden); });
+    cal.addEventListener('click', e => {
+      e.stopPropagation();
+      const d = e.target.closest('[data-ldc]'); if (d) { ldCalOpen(false); logDayFind(d.dataset.ldc); haptic(8); return; }
+      const nv = e.target.closest('[data-ldcm]'); if (nv) { const [y, m] = ldCalYM.split('-').map(Number), dt = new Date(y, m - 1 + Number(nv.dataset.ldcm), 1); ldCalYM = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`; cal.innerHTML = ldCalHtml(); }
+    });
+    if (!window._ldcDoc) { window._ldcDoc = 1; document.addEventListener('click', ev => { const c = document.getElementById('ld-cal'); if (c && !c.hidden && !ev.target.closest('#ld-cal,#ld-calbtn')) ldCalOpen(false); }); }
+  }
   let sx = null, sy = 0;
   card.addEventListener('pointerdown', e => { if (e.target.closest('canvas,button,label,input')) { sx = null; return; } sx = e.clientX; sy = e.clientY; });
   card.addEventListener('pointerup', e => { if (sx == null) return; const dx = e.clientX - sx, dy = e.clientY - sy; sx = null; if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.3) logDayStep(dx < 0 ? 1 : -1); });
@@ -4598,7 +4641,7 @@ function openLogForm(id) {
       aiPending = r; const mx = c => Math.max(0, ...(r.zones || []).filter(x => x.concern === c).map(x => x.level));
       form.elements.acneCount.value = clamp((r.acne || []).reduce((a, x) => a + x.count, 0), 0, 99);
       setSeg('redness', mx('赤み')); setSeg('dryness', mx('乾燥')); setSeg('oil', mx('テカリ'));
-      if (r.condition) { setSeg('condition', r.condition); condTouched = true; }
+      condAuto(); // 肌の調子は、AIの写真の見立てではなく、あなたの過去の選び方から学習したもので選ぶ（学習が終わるまでは自分で選ぶ）
       return;
     }
     Object.keys(fpMarks).forEach(k => delete fpMarks[k]); oldSpots = {}; fpHist.length = 0; fpLast = null;
@@ -4612,7 +4655,7 @@ function openLogForm(id) {
       for (let i = 0; i < n; i++) { const [c, rr] = ks[Math.floor(i * step)]; (fpMarks[`${c},${rr}`] = fpMarks[`${c},${rr}`] || {})['ニキビ'] = 1; }
     });
     fpTouched = true; syncAcne(); fpGlobal();
-    if (r.condition) { setSeg('condition', r.condition); condTouched = true; const note = $('#cond-ai', form); if (note) note.textContent = 'AIが写真から選びました。違うときは押して直してください。'; }
+    condAuto(); // 肌の調子：最初の1か月（28日分）は自分で選んでもらい、その選び方を学習してから自動で選ぶ
     $('#modal-root').dataset.dirty = '1'; fpSync();
   };
   const faceAi = async file => {
@@ -4869,18 +4912,31 @@ function openLifeForm(id, part) {
   const numIn = (v, max) => { const x = toHalf(v).trim(); if (x === '') return 0; const n = Number(x); return isFinite(n) && n >= 0 && n <= max ? Math.round(n * 10) / 10 : NaN; };
   // ---- 食べたものの入力予測（ひらがな・カタカナの違いは気にしない。よく食べるものを先に出す）----
   const kana = x => toHalf(String(x || '')).toLowerCase().replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60)).replace(/\s/g, '');
-  const freq = {}; state.lifeLogs.forEach(l => (l.foods || []).forEach(f => { freq[f.name] = (freq[f.name] || 0) + 1; }));
-  const foodItems = () => FOOD_DB.map(f => ({v:'db:' + f.k, n:f.n, kcal:f.kcal})).concat(state.customFoods.map(f => ({v:'cu:' + f.id, n:f.name, kcal:Math.round(f.kcal)})));
-  const sugFor = q => {
-    const qq = kana(q), items = foodItems();
-    const hit = qq ? items.filter(x => kana(x.n).includes(qq)) : items.filter(x => freq[x.n]);
-    return hit.sort((a, b) => (qq ? (kana(b.n).startsWith(qq) - kana(a.n).startsWith(qq)) : 0) || (freq[b.n] || 0) - (freq[a.n] || 0)).slice(0, 7);
+  // その人の傾向を学習：食べた回数を、最近ほど重く・同じ食事（朝食なら朝食）で食べた物はさらに重く数える
+  const today0 = todayStr(), score = {}, hist = {};
+  state.lifeLogs.forEach(l => (l.foods || []).forEach(f => {
+    const age = Math.max(0, diffDays(l.date, today0)), w = Math.exp(-age / 45);
+    (score[f.name] = score[f.name] || {all:0}).all += w; score[f.name][f.meal] = (score[f.name][f.meal] || 0) + w;
+    if (!hist[f.name] || hist[f.name].date < l.date) hist[f.name] = {date:l.date, kcal:f.kcal, p:f.p, f:f.f, c:f.c, veg:f.veg};
+  }));
+  const scoreOf = (n, k) => { const s0 = score[n]; return s0 ? s0.all + (s0[k] || 0) * 1.5 : 0; };
+  const foodItems = () => {
+    const items = FOOD_DB.map(f => ({v:'db:' + f.k, n:f.n, kcal:f.kcal})).concat(state.customFoods.map(f => ({v:'cu:' + f.id, n:f.name, kcal:Math.round(f.kcal)})));
+    const known = new Set(items.map(x => x.n));
+    // 写真の読み取りなどで入れた、リストにない食べ物も候補にする
+    Object.entries(hist).forEach(([n, h]) => { if (!known.has(n)) items.push({v:'hist:' + n, n, kcal:Math.round(h.kcal)}); });
+    return items;
+  };
+  const sugFor = (q, k) => {
+    const qq = kana(q); if (!qq) return []; // 何も入れていないときは候補を出さない（入力したときだけ予測して出す）
+    const hit = foodItems().filter(x => kana(x.n).includes(qq));
+    return hit.sort((a, b) => (kana(b.n).startsWith(qq) - kana(a.n).startsWith(qq)) || scoreOf(b.n, k) - scoreOf(a.n, k) || a.n.length - b.n.length).slice(0, 7);
   };
   const sugShow = k => {
-    const inp = $(`[data-fq="${k}"]`, form), box = $(`[data-fsug="${k}"]`, form), q = inp.value.trim(), list = sugFor(q);
+    const inp = $(`[data-fq="${k}"]`, form), box = $(`[data-fsug="${k}"]`, form), q = inp.value.trim(), list = sugFor(q, k);
     box.innerHTML = list.map(x => `<button type="button" class="food-sug-i" data-fpick="${k}" data-v="${esc(x.v)}">${esc(x.n)}<span>${x.kcal}kcal</span></button>`).join('')
       + (q ? `<button type="button" class="food-sug-i custom" data-fcust="${k}">「${esc(q)}」を自分で入力する</button>` : '')
-      + (!q && !list.length ? '<p class="small muted" style="margin:6px 10px">食べたものの名前を入れると、候補が出ます。</p>' : '');
+      ;
     box.hidden = !box.innerHTML;
   };
   const sugHide = k => { const box = $(`[data-fsug="${k}"]`, form); if (box) box.hidden = true; };
@@ -4890,12 +4946,14 @@ function openLifeForm(id, part) {
   form.addEventListener('keydown', e => { const k = e.target.dataset && e.target.dataset.fq; if (k && e.key === 'Enter' && !e.isComposing) { e.preventDefault(); const f = $(`[data-fsug="${k}"] [data-fpick]`, form); if (f) f.click(); else { const c = $(`[data-fsug="${k}"] [data-fcust]`, form); if (c) c.click(); } } });
   form.addEventListener('click', async e => {
     const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.fpick && b.dataset.v.startsWith('hist:')) { const k = b.dataset.fpick, n = b.dataset.v.slice(5), h = hist[n]; if (h) { foods.push({id:uid(), meal:k, qty:1, name:n, kcal:h.kcal, p:h.p, f:h.f, c:h.c, veg:h.veg}); markAte(k); renderFoods(); } $(`[data-fq="${k}"]`, form).value = ''; sugHide(k); haptic(8); return; }
     if (b.dataset.fpick) { const k = b.dataset.fpick, sel = $(`[data-fsel="${k}"]`, form); sel.value = b.dataset.v; $(`[data-fadd="${k}"]`, form).click(); $(`[data-fq="${k}"]`, form).value = ''; sugHide(k); haptic(8); return; }
     if (b.dataset.fcust) { const k = b.dataset.fcust, q = $(`[data-fq="${k}"]`, form).value.trim(), box = $(`[data-fcustom="${k}"]`, form); box.hidden = false; $('[data-cf="name"]', box).value = q; $('[data-cf="kcal"]', box).focus(); sugHide(k); return; }
     if (b.dataset.fadd && !$(`[data-fsel="${b.dataset.fadd}"]`, form).value) {
       // 入力欄の文字から選ぶ（候補の一番上）。候補がなければ自分で入力
       const k = b.dataset.fadd, q = $(`[data-fq="${k}"]`, form).value.trim();
-      if (q) { const top = sugFor(q)[0]; if (top) { $(`[data-fsel="${k}"]`, form).value = top.v; $(`[data-fq="${k}"]`, form).value = ''; sugHide(k); }
+      if (q) { const top = sugFor(q, k)[0]; if (top && top.v.startsWith('hist:')) { const tb = document.createElement('button'); tb.dataset.fpick = k; tb.dataset.v = top.v; tb.type = 'button'; tb.hidden = true; form.appendChild(tb); tb.click(); tb.remove(); return; }
+        if (top) { $(`[data-fsel="${k}"]`, form).value = top.v; $(`[data-fq="${k}"]`, form).value = ''; sugHide(k); }
         else { const box = $(`[data-fcustom="${k}"]`, form); box.hidden = false; $('[data-cf="name"]', box).value = q; return; } }
     }
     if (b.dataset.fadd) {
@@ -5253,36 +5311,58 @@ function adviceInput() {
   const spots = areaCounts(logs, 'spots'), flags = areaCounts(logs, 'areas');
   const conc = {}; logs.forEach(l => (l.otherConcerns || []).forEach(x => conc[x] = (conc[x] || 0) + 1));
   const L = logMap()[t];
+  const sleepNeedH = r1((state.settings.sleepNeed || 420) / 60);
   return {
+    profile:{skinType:state.settings.skinType || null, sensitive:!!state.settings.sensitive, concerns:state.settings.concerns, sleepNeedHours:sleepNeedH},
     skin:{days:logs.length, cond:r1(S.cond), condPrevWeek:r1(P.cond), acneTotal:S.acneTotal, acnePrevWeek:prev.length ? P.acneTotal : null, redness:r1(S.red), dryness:r1(S.dry), oil:r1(S.oil),
       acneByArea:Object.fromEntries(Object.entries(spots).map(([k, v]) => [areaName(k), v])), concernAreasDays:Object.fromEntries(Object.entries(flags).map(([k, v]) => [areaName(k), v])), otherConcerns:conc,
       today:L ? {cond:COND_LABELS[L.condition], acne:L.acneCount, redness:L.redness, dryness:L.dryness, oil:L.oil, areas:L.areas.map(areaName)} : null},
     sleep:{days:sl.length, avgHours:sl.length ? r1(avg(sl) / 60) : null, minHours:sl.length ? r1(Math.min(...sl) / 60) : null, avgBedtime:beds.length ? (() => { const m = Math.round(avg(beds)) % 1440; return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`; })() : null},
     exercise:{recordedDays:lifes.filter(l => l.exRecorded).length, activeDays:lifes.filter(l => l.exRecorded && exTotal(l) > 0).length, totalMin:lifes.reduce((a, l) => a + (l.exRecorded ? exTotal(l) : 0), 0)},
-    meal:{days:lifes.filter(l => MEALS.some(m => l.meals && l.meals[m.k] && l.meals[m.k].ate)).length, skippedBreakfast:lifes.filter(l => l.meals && l.meals.breakfast && !l.meals.breakfast.ate).length,
-      vegLow:cnt('veg', 'ほぼなし') + cnt('veg', '少し'), proteinLow:cnt('protein', 'ほぼなし'), sweetsMany:cnt('sweets', '多め'), waterLow:cnt('water', '少なめ'), tags:tagC},
+    meal:(() => {
+      const fd = lifes.filter(l => (l.foods || []).length), tot = fd.map(l => nutTotals(l.foods)), g = lifeGoals();
+      return {days:lifes.filter(l => MEALS.some(m => l.meals && l.meals[m.k] && l.meals[m.k].ate) || (l.foods || []).length).length, foodDays:fd.length,
+        skippedBreakfast:lifes.filter(l => l.meals && l.meals.breakfast && !l.meals.breakfast.ate && !(l.foods || []).some(f => f.meal === 'breakfast')).length,
+        avgKcal:tot.length ? Math.round(avg(tot.map(x => x.kcal))) : null, avgProtein:tot.length ? r1(avg(tot.map(x => x.p))) : null, proteinGoal:g.protein,
+        avgVeg:tot.length ? Math.round(avg(tot.map(x => x.veg))) : null, snackDays:fd.filter(l => l.foods.some(f => f.meal === 'snack')).length, tags:tagC};
+    })(),
     products:state.myProducts.filter(p => p.status === '使用中').slice(0, 12).map(p => p.category)
   };
 }
 // 記録から決まったルールで出す改善ポイント（AIが使えないときも、すぐ表示できる）
+const ADVICE_AREAS = ['スキンケア', '睡眠', '運動', '食事'];
 function adviceLocal(d) {
-  const out = [], sk = d.skin, sl = d.sleep, ex = d.exercise, ml = d.meal;
-  if (!sk.days && !sl.days && !ex.recordedDays && !ml.days) return [{title:'まずは記録から', text:'肌と、睡眠・運動・食事を数日記録すると、あなたに合った改善ポイントを表示します。'}];
+  const sk = d.skin, sl = d.sleep, ex = d.exercise, ml = d.meal, need = d.profile.sleepNeedHours;
+  // ① スキンケア
+  let skin;
   const topArea = Object.entries(sk.acneByArea).sort((a, b) => b[1] - a[1])[0];
-  if (topArea && topArea[1] >= 2) out.push({title:`${topArea[0]}のニキビ`, text:`この1週間で${topArea[0]}に${topArea[1]}個。触らない・寝具や髪が当たらないようにし、その部位は油分の多い化粧品を控えめに。`});
-  if (sl.avgHours != null && sl.avgHours < 6.5) out.push({title:'睡眠をあと少し', text:`平均${sl.avgHours}時間でした。肌は眠っている間に整います。まずは30分早く布団に入ることから。`});
-  else if (sl.avgBedtime && /^(1|2|3|4):/.test(sl.avgBedtime)) out.push({title:'寝る時刻を早めに', text:`寝る時刻の平均が${sl.avgBedtime}ごろです。0時までに寝る日を増やしてみましょう。`});
-  if (sk.dryness != null && sk.dryness >= 3.5) out.push({title:'保湿をていねいに', text:`乾燥が平均${sk.dryness}と高めです。洗顔後すぐに化粧水→乳液・クリームでふたを。熱いお湯での洗顔は避けて。`});
-  if (sk.oil != null && sk.oil >= 3.8) out.push({title:'皮脂のケア', text:`皮脂が平均${sk.oil}と多めです。朝晩の洗顔はやさしく1回ずつ。保湿は軽めのものに。`});
-  if (sk.redness != null && sk.redness >= 3.5) out.push({title:'刺激を減らす', text:`赤みが平均${sk.redness}です。こすらない・新しい化粧品は1つずつ試す。続くときは皮膚科に相談を。`});
-  if (ml.vegLow >= 3) out.push({title:'野菜をもう一品', text:`野菜が少ない日が${ml.vegLow}日ありました。みそ汁の具やサラダを1品足すだけでも違います。`});
-  if (ml.sweetsMany >= 2) out.push({title:'甘いものを控えめに', text:`甘いもの・間食が多い日が${ml.sweetsMany}日。飲み物を無糖にするだけでも減らせます。`});
-  if (ml.waterLow >= 2) out.push({title:'水分をこまめに', text:`水分が少ない日が${ml.waterLow}日。コップ1杯の水を、朝・昼・夕方に。`});
-  if ((ml.tags['夜遅い食事'] || 0) >= 2) out.push({title:'夕食は早めに', text:`夜遅い食事が${ml.tags['夜遅い食事']}日。寝る2〜3時間前までに済ませると、眠りも肌も整いやすくなります。`});
-  if (ex.recordedDays >= 3 && ex.activeDays < 3) out.push({title:'体を少し動かす', text:`運動した日は${ex.activeDays}日でした。10分の散歩やストレッチでも血のめぐりが良くなります。`});
-  if (sk.cond != null && sk.condPrevWeek != null && sk.cond - sk.condPrevWeek >= 0.3) out.push({title:'調子が上向き', text:`肌の調子が先週より良くなっています（${sk.condPrevWeek}→${sk.cond}）。今のケアを続けましょう。`});
-  if (!sl.days || !ml.days) out.push({title:'生活の記録も', text:'睡眠や食事も記録すると、肌の変化との関係がわかりやすくなります。'});
-  return out.slice(0, 4);
+  if (!sk.days) skin = {title:'肌の記録から', text:'まずは毎日の肌の状態を記録しましょう。数日分そろうと、あなたに合ったケアのポイントを出せます。'};
+  else if (sk.redness != null && sk.redness >= 3.5) skin = {title:'刺激を減らす', text:`赤みが平均${sk.redness}です。こすらない・新しい化粧品は1つずつ試す。続くときは皮膚科に相談を。`};
+  else if (topArea && topArea[1] >= 2) skin = {title:`${topArea[0]}のニキビ`, text:`この1週間で${topArea[0]}に${topArea[1]}個。触らない・寝具や髪が当たらないようにし、その部位は油分の多い化粧品を控えめに。`};
+  else if (sk.dryness != null && sk.dryness >= 3) skin = {title:'保湿をていねいに', text:`乾燥が平均${sk.dryness}と高めです。洗顔後すぐに化粧水→乳液・クリームでふたを。熱いお湯での洗顔は避けて。`};
+  else if (sk.oil != null && sk.oil >= 3.5) skin = {title:'皮脂のケア', text:`皮脂が平均${sk.oil}と多めです。朝晩の洗顔はやさしく1回ずつ。保湿は軽めのものに。`};
+  else if (sk.cond != null && sk.condPrevWeek != null && sk.cond - sk.condPrevWeek >= 0.3) skin = {title:'調子が上向き', text:`肌の調子が先週より良くなっています（${sk.condPrevWeek}→${sk.cond}）。今のケアを続けましょう。`};
+  else skin = {title:'今のケアを続ける', text:'大きく気になる変化はありません。日焼け止めと保湿を毎日続けるのが、いちばんの近道です。'};
+  // ② 睡眠
+  let sleep;
+  if (!sl.days) sleep = {title:'睡眠も記録を', text:'寝た時刻と起きた時刻を記録すると、睡眠と肌の調子の関係がわかります。ヘルスケア連携も使えます。'};
+  else if (sl.avgHours < need - 0.5) sleep = {title:'睡眠をあと少し', text:`平均${sl.avgHours}時間でした（目安${need}時間）。肌は眠っている間に整います。まずは30分早く布団に入ることから。`};
+  else if (sl.avgBedtime && /^(1|2|3|4):/.test(sl.avgBedtime)) sleep = {title:'寝る時刻を早めに', text:`寝る時刻の平均が${sl.avgBedtime}ごろです。0時までに寝る日を増やしてみましょう。`};
+  else sleep = {title:'睡眠はいい調子', text:`平均${sl.avgHours}時間眠れています。寝る前のスマホを控えると、眠りの質がさらに上がります。`};
+  // ③ 運動
+  let move;
+  if (!ex.recordedDays) move = {title:'運動も記録を', text:'運動した日・しなかった日を記録すると、肌との関係がわかります。歩数はヘルスケア連携で自動で入ります。'};
+  else if (ex.activeDays < 3) move = {title:'体を少し動かす', text:`運動した日は${ex.activeDays}日でした。10分の散歩やストレッチでも血のめぐりが良くなります。`};
+  else move = {title:'運動を続けよう', text:`この1週間で${ex.activeDays}日・合計${ex.totalMin}分運動できています。汗をかいたら早めに洗顔を。`};
+  // ④ 食事
+  let meal;
+  if (!ml.days) meal = {title:'食事も記録を', text:'食べたものを記録すると、栄養のかたよりと肌の関係がわかります。'};
+  else if (ml.avgProtein != null && ml.avgProtein < ml.proteinGoal * 0.8) meal = {title:'たんぱく質を足す', text:`たんぱく質が1日平均${ml.avgProtein}g（目安${ml.proteinGoal}g）。卵・納豆・魚などを1品足すと、肌の材料が増えます。`};
+  else if (ml.avgVeg != null && ml.avgVeg < 250) meal = {title:'野菜をもう一品', text:`野菜が1日平均${ml.avgVeg}gでした（目安350g）。みそ汁の具やサラダを1品足すだけでも違います。`};
+  else if (ml.snackDays >= 4) meal = {title:'間食を控えめに', text:`間食した日が${ml.snackDays}日ありました。甘い物は日中に少しだけ、飲み物は無糖に。`};
+  else if (ml.skippedBreakfast >= 3) meal = {title:'朝ごはんを食べる', text:`朝食を抜いた日が${ml.skippedBreakfast}日。バナナやヨーグルトだけでも、1日のリズムが整います。`};
+  else meal = {title:'食事はいい調子', text:'栄養のバランスがとれています。水分もこまめにとりましょう。'};
+  return [skin, sleep, move, meal].map((x, i) => Object.assign({area:ADVICE_AREAS[i]}, x));
 }
 const ADVICE_KEY = 'skinwise_advice';
 function adviceCache() { try { return JSON.parse(localStorage.getItem(ADVICE_KEY) || 'null'); } catch (e) { return null; } }
@@ -5290,11 +5370,12 @@ function adviceSig(d) { const str = todayStr() + JSON.stringify(d); let h = 0; f
 let adviceBusy = false, adviceErr = '';
 function adviceHtml() {
   const d = adviceInput(), c = adviceCache(), sig = adviceSig(d);
-  const ai = c && c.sig === sig && c.res && c.res.points && c.res.points.length ? c.res : null;
-  const pts = ai ? ai.points : adviceLocal(d);
+  const ai = c && c.sig === sig && c.res && c.res.points && c.res.points.length && c.res.points.every(x => x.area) ? c.res : null; // 4つの角度で出した結果だけ使う
+  const local = adviceLocal(d);
+  const pts = ai ? ADVICE_AREAS.map((a, i) => ai.points.find(x => x.area === a) || local[i]) : local; // AIが出さなかった角度は、ルールの結果でうめる
   const prem = isPremium();
   const head = `<h3>おすすめケアポイント${ai ? '<span class="ai-badge">AI分析</span>' : ''}</h3>${ai && ai.summary ? `<p class="small muted" style="margin:0">${esc(ai.summary)}</p>` : ''}`;
-  const list = adviceBusy ? skelHtml(3, {dots:true, label:'AIが分析中'}) : `<ol>${pts.map((x, i) => `<li><i>${i + 1}</i><div><b>${esc(x.title)}</b><span>${esc(x.text)}</span></div></li>`).join('')}</ol>`;
+  const list = adviceBusy ? skelHtml(4, {dots:true, label:'AIが分析中'}) : `<ol class="adv4">${pts.map((x, i) => `<li><i>${'①②③④'[i] || i + 1}</i><div><em class="adv-area">${esc(x.area || ADVICE_AREAS[i] || '')}</em><b>${esc(x.title)}</b><span>${esc(x.text)}</span></div></li>`).join('')}</ol>`;
   let foot;
   if (adviceBusy) foot = '<span class="small muted">AIが記録を分析しています…</span>';
   else if (ai) foot = `<span class="small muted">直近7日の記録をAI（Google Gemini）が分析しました。目安としてご覧ください。</span><button class="btn btn-ghost btn-sm" data-action="advice-ai" data-id="again">もう一度分析</button>`;
