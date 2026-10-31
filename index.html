@@ -655,7 +655,7 @@ details.acc-cmp{margin-top:14px}
 @media(max-width:560px){.fp-wrap{grid-template-columns:1fr}.fp-stage{max-width:none;margin:0}}
 .fp-hidden{display:none}
 .fp-hl{display:inline-flex;align-items:center;gap:8px}
-.fp-undo{width:34px;height:34px;border-radius:50%;border:1px solid var(--line2);background:var(--surface);color:var(--green-d);font-size:18px;line-height:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;font-family:inherit}
+.fp-undo{height:32px;padding:0 14px!important;border-radius:999px;border:1px solid var(--line2);background:var(--surface);color:var(--green-d);font-size:13px;font-weight:600;line-height:1;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;font-family:inherit}
 .fp-undo:disabled{opacity:.35;cursor:default}
 .fp-steps{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .fp-steps .btn{min-height:40px;justify-content:center}
@@ -685,6 +685,9 @@ details.acc-cmp{margin-top:14px}
 .fr-k{font-size:11.5px;color:var(--muted);white-space:nowrap}
 .meal-photo-top{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .meal-photo-top .mpt-one{grid-column:1/-1}
+.mpt-blk{margin-top:8px}
+.mpt-blk .mpt-btn{min-height:44px;font-size:13px}
+.mpt-blk .mpt-locked{min-height:64px}
 .health-btn{justify-self:start;margin-top:-4px}
 .health-note{font-size:12px;color:var(--muted);margin:-6px 0 0;padding:8px 12px;background:var(--surface2);border-radius:12px}
 .mpt-col{display:flex;flex-direction:column;align-items:center;gap:4px}
@@ -4061,7 +4064,7 @@ function spotRow(s) {
     <button type="button" class="btn btn-ghost btn-sm spot-del" data-remove-spot>この行を削除</button>
   </div>`;
 }
-const FP_HINT_TAP = '「ニキビ選択」：ニキビがある場所のマスを押すと赤い点が付きます（押したマスは四角い枠で点滅します。間違えたら「ニキビ ○個」の横の ↩ で1つ前に戻せます）。顔を横になぞると回せます。「＋」や2本の指で拡大できます。';
+const FP_HINT_TAP = '「ニキビ選択」：ニキビがある場所のマスを押すと赤い点が付きます（押したマスは四角い枠で点滅します。間違えたら「ニキビ ○個」の横の「戻る」で1つ前に戻せます）。顔を横になぞると回せます。「＋」や2本の指で拡大できます。';
 const FP_HINT_ZONE = '「肌質選択」：額・眉間・鼻・こめかみ（左右）・頬（左右）・顎に分かれています。部分を押して選び、乾燥・テカリなどの状態と強さを入れてください（もう一度押すと外れます）。';
 function openLogForm(id) {
   const ex = id ? getLog(id) : null;
@@ -4197,7 +4200,7 @@ function openLogForm(id) {
     if (!fpRange) {
       // 1マス選択：ニキビだけ
       const by = acneByArea(), total = Object.values(by).reduce((x, n) => x + n, 0);
-      pn.innerHTML = `<div class="fp-h"><span class="fp-hl"><b>ニキビ <span class="fp-acne-n">${total}</span>個</b><button type="button" class="fp-undo" data-fp-undo ${fpHist.length ? '' : 'disabled'} aria-label="1つ前に戻す" title="1つ前に戻す">↩</button></span>${acneCells().length ? '<button type="button" class="link small" data-fp-acne-clear>すべて消す</button>' : ''}</div>
+      pn.innerHTML = `<div class="fp-h"><span class="fp-hl"><b>ニキビ <span class="fp-acne-n">${total}</span>個</b><button type="button" class="fp-undo" data-fp-undo ${fpHist.length ? '' : 'disabled'} aria-label="1つ前に戻す" title="1つ前に戻す">戻る</button></span>${acneCells().length ? '<button type="button" class="link small" data-fp-acne-clear>すべて消す</button>' : ''}</div>
         <p class="small muted" style="margin:0">${total ? AREAS.filter(a => by[a.id]).map(a => `${esc(a.name)} ${by[a.id]}個`).join('・') : 'ニキビがある場所のマスを押してください。1マス＝1個として数えます。'}</p>`;
       return;
     }
@@ -4471,6 +4474,9 @@ function openLifeForm(id, part) {
     <summary class="meal-sum"><b>${m.l}</b><span class="meal-now">今の食事</span><span class="meal-sumtx" data-msum="${m.k}"></span><i class="meal-chev" aria-hidden="true">›</i></summary>
     <div class="meal-head">${m.k === 'snack' ? '' : `<label class="check"><input type="checkbox" name="ate_${m.k}" ${d.meals[m.k].ate ? 'checked' : ''}><b>食べた</b></label><input type="time" class="input" style="width:130px;min-height:40px;font-size:16px;padding:6px 10px" name="time_${m.k}" value="${esc(d.meals[m.k].time)}" aria-label="${m.l}の時刻">`}
 </div>
+    ${part === 'meal' && m.k === slot0 ? '' : `<div class="meal-photo-top mpt-blk">${isPremium()
+      ? `<label class="btn mpt-btn mpt-mid">${icon('image')}写真を選ぶ<input type="file" accept="image/*" data-mphoto="${m.k}" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="${m.k}" class="vh"></label>`
+      : `<button type="button" class="btn mpt-btn mpt-locked" data-mcam="${m.k}"><span class="mpt-l">${icon('image')}写真を選ぶ</span><span class="badge-premium">${PREMIUM_NAME}</span></button><button type="button" class="btn mpt-btn mpt-locked" data-mcam="${m.k}"><span class="mpt-l">${icon('camera')}撮る</span><span class="badge-premium">${PREMIUM_NAME}</span></button>`}</div>`}
     <div data-mprev="${m.k}"></div>
     <div data-pinfo="${m.k}"></div>
     <div class="food-list" data-mfoods="${m.k}"></div>
@@ -4617,7 +4623,7 @@ function openLifeForm(id, part) {
     }
     if (b.dataset.health) { await applyHealth(b.dataset.health, true); return; }
     if (b.dataset.mcam) {
-      $('#mpt-info', form).innerHTML = `<div class="notice" style="margin:8px 0 0">写真で食事を記録する機能は、<b>${PREMIUM_NAME}プラン</b>の機能です。写真から料理と栄養の目安をAIが読み取り、撮った時刻で朝食・昼食・夕食も自動で決めます。<br>無料プランでは、下のリストから食べたものを選んでください。<br><a href="#/plan">プランの詳細を見る</a></div>`;
+      (b.dataset.mcam === '1' ? $('#mpt-info', form) : $(`[data-pinfo="${b.dataset.mcam}"]`, form)).innerHTML = `<div class="notice" style="margin:8px 0 0">写真で食事を記録する機能は、<b>${PREMIUM_NAME}プラン</b>の機能です。写真から料理と栄養の目安をAIが読み取り、撮った時刻で朝食・昼食・夕食も自動で決めます。<br>無料プランでは、下のリストから食べたものを選んでください。<br><a href="#/plan">プランの詳細を見る</a></div>`;
       return;
     }
     if (b.dataset.premium) {
