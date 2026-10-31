@@ -114,6 +114,10 @@ button{font-family:inherit}
 .sidebar{display:none}
 .topbar{position:relative;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:12px 18px;padding-top:calc(12px + env(safe-area-inset-top));background:rgba(250,249,246,.9);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
 .wordmark{font-family:var(--serif);font-size:20px;letter-spacing:.24em;color:var(--ink);text-decoration:none;font-weight:500}
+.top-title{margin:0;font-size:22px;line-height:45px;padding:4px 0;white-space:nowrap}
+.tt-in{animation:ttIn .45s ease both}
+@keyframes ttIn{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.tt-in{animation:none}}
 .wordmark small{display:block;font-family:var(--font);font-size:10px;letter-spacing:.08em;color:var(--muted);margin-top:2px}
 main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area-inset-bottom))}
 .bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
@@ -644,6 +648,11 @@ details.acc-cmp{margin-top:14px}
 .fp-sum .chip{white-space:normal;text-align:left;cursor:pointer;font-family:inherit}
 @media(max-width:560px){.fp-wrap{grid-template-columns:1fr}.fp-stage{max-width:none;margin:0}}
 .fp-hidden{display:none}
+.hap-wrap{position:relative;display:flex;flex:1;min-width:0}
+.hap-wrap > .btn{flex:1;width:100%}
+@media(min-width:640px){.hap-wrap{flex:none}.hap-wrap > .btn{width:auto}}
+.hap-ov{position:absolute;inset:0;z-index:2;cursor:pointer;-webkit-tap-highlight-color:transparent;border-radius:inherit}
+.hap-ov input{position:absolute;left:50%;top:50%;width:1px;height:1px;margin:0;opacity:0.01;pointer-events:none}
 .cond-seg{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
 .cond-seg .seg-opt{min-width:0}
 .cond-seg .seg-opt span{min-height:52px;padding:6px 0;color:var(--ink2)}
@@ -936,7 +945,7 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
   </aside>
   <div>
     <header class="topbar">
-      <a class="wordmark" href="#/home">肌トモ<small>最小限で最大限を</small></a>
+      <a class="wordmark" data-t="肌トモ" href="#/home">肌トモ<small>最小限で最大限を</small></a>
       <button class="icon-btn" id="top-menu" data-action="open-menu" aria-label="メニュー" title="メニュー"></button>
     </header>
     <main id="main" tabindex="-1"></main>
@@ -1678,7 +1687,20 @@ function openModal({title, body, footer='', size='', dismissable=false}) {
       ${footer ? `<div class="modal-foot">${footer}</div>` : ''}
     </div></div>`;
   lockScroll();
+  $$('.modal-foot button[type="submit"]', root).forEach(hapticize);
   return root.querySelector('.modal');
+}
+// iPhoneで確実に「コツッ」と鳴らすため、保存ボタンの上に見えないスイッチを重ねる。
+// 指で実際にスイッチを押すとiPhoneの触覚が出て、そのまま下のボタンを押したことにする
+function hapticize(btn) {
+  if (!btn || (btn.parentNode && btn.parentNode.classList.contains('hap-wrap'))) return;
+  // ボタンの中ではなく、ボタンを包む箱に重ねる（ボタンの中にスイッチを入れると、iPhoneで押し方が変になることがあるため）
+  const wrap = document.createElement('span'); wrap.className = 'hap-wrap'; btn.parentNode.insertBefore(wrap, btn); wrap.appendChild(btn);
+  const lb = document.createElement('label'); lb.className = 'hap-ov'; lb.setAttribute('aria-hidden', 'true');
+  const ip = document.createElement('input'); ip.type = 'checkbox'; ip.setAttribute('switch', ''); ip.tabIndex = -1;
+  lb.appendChild(ip); wrap.appendChild(lb);
+  lb.addEventListener('click', e => e.stopPropagation());
+  ip.addEventListener('change', () => { if (btn.disabled) return; hapticAt = Date.now(); if (typeof navigator.vibrate === 'function') { try { navigator.vibrate([35, 50, 35]); } catch (er) { /* 何もしない */ } } btn.click(); });
 }
 // 画面を開いている間、後ろのページが動かないように固定する（閉じたら元の位置に戻す）
 let lockedY = null;
@@ -6212,6 +6234,15 @@ function stopMomentumTop() {
   de.style.overflow = 'hidden'; window.scrollTo(0, 0);
   requestAnimationFrame(() => { de.style.overflow = ''; window.scrollTo(0, 0); });
 }
+// 左上：ホームでは「肌トモ」、肌の記録・マイ化粧品・商品検索・アカウントでは、その画面の名前を出す
+function setTopTitle(t) {
+  const tb = $('.topbar'); if (!tb) return;
+  const cur = tb.firstElementChild, want = t || '肌トモ';
+  if (cur && cur.dataset.t === want) return;
+  const html = t ? `<h1 class="wordmark top-title" data-t="${esc(t)}">${esc(t)}</h1>` : `<a class="wordmark" data-t="肌トモ" href="#/home">肌トモ<small>最小限で最大限を</small></a>`;
+  if (cur && cur.classList.contains('wordmark')) cur.outerHTML = html; else tb.insertAdjacentHTML('afterbegin', html);
+  const el = tb.firstElementChild; if (cur) { el.classList.add('tt-in'); }
+}
 function render() {
   const r = parseRoute();
   const views = {home:viewHome, search:viewSearch, product:() => viewProduct(r.id), prices:() => viewPrices(r.id), stores:viewStores,
@@ -6234,6 +6265,7 @@ function render() {
   html = html.replace(/<a class="back" href="([^"]*)">([^<]*)<\/a>/g, (m, href, label) => `<a class="back" href="${href}" data-back="1">${prevNav && prevNav !== href ? '← 戻る' : label}</a>`);
   renderingNow = true; try { $('#main').innerHTML = html; } finally { renderingNow = false; } // 作り直しの最中に古い入力欄から来る変更は無視する
   renderNav(navName, ({product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'})[r.name] || r.name);
+  setTopTitle(r.id ? '' : ({log:'肌の記録', my:'マイ化粧品', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント'})[r.name] || '');
   const key = r.name + '/' + r.id;
   const routeChanged = key !== lastRoute;
   if (key !== lastRoute) {
