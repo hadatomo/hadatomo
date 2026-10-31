@@ -746,6 +746,9 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .meal-photo-top>.mpt-btn{white-space:nowrap;flex-wrap:nowrap}
 .meal-photo-top>.mpt-btn:nth-child(2){padding-left:14px;padding-right:14px}
 .meal-photo-top .mpt-l{white-space:nowrap}
+.ai-basis{display:inline-block;font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 7px;margin-left:2px;vertical-align:1px}
+.ai-basis.b-l,.ai-basis.b-p{background:#E3F0E6;color:var(--green-d)}
+.ai-basis.b-e{background:var(--surface2);color:var(--muted)}
 .meal-photo-top.mpt-even{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 .meal-photo-top>.mpt-locked{flex-direction:row;min-height:52px;border-radius:999px;padding:0 12px;gap:8px}
 .mpt-blk.meal-photo-top>.mpt-locked{min-height:44px}
@@ -4948,9 +4951,9 @@ function openLifeForm(id, part) {
         aiRes[k] = r.items || [];
         if (!aiRes[k].length) { box.innerHTML = `<div class="notice" style="margin:8px 0 0">料理を読み取れませんでした。${esc(r.note || '料理全体が写るように撮り直すか、下のリストから選んでください。')}</div>`; }
         else box.innerHTML = `<div class="notice green" style="margin:8px 0 0"><b>読み取った料理（目安）</b>
-          ${aiRes[k].map((x, i) => `<label class="check" style="margin-top:6px;align-items:flex-start"><input type="checkbox" data-aipick="${k}" value="${i}" checked><span>${esc(x.name)}${x.amount ? `（${esc(x.amount)}）` : ''}<br><span class="small muted">${Math.round(x.kcal)}kcal・たんぱく質${x.p}g・脂質${x.f}g・炭水化物${x.c}g${x.veg ? `・野菜${x.veg}g` : ''}</span></span></label>`).join('')}
+          ${aiRes[k].map((x, i) => `<label class="check" style="margin-top:6px;align-items:flex-start"><input type="checkbox" data-aipick="${k}" value="${i}" checked><span>${esc(x.name)}${x.amount ? `（${esc(x.amount)}）` : ''}${x.basis ? ` <span class="ai-basis b-${({表示:'l', 商品:'p', 推定:'e'})[x.basis] || 'e'}">${esc(({表示:'パッケージの表示', 商品:'商品の公式の値', 推定:'見た目から推定'})[x.basis] || '見た目から推定')}</span>` : ''}<br><span class="small muted">${Math.round(x.kcal)}kcal・たんぱく質${x.p}g・脂質${x.f}g・炭水化物${x.c}g${x.veg ? `・野菜${x.veg}g` : ''}</span></span></label>`).join('')}
           <button type="button" class="btn btn-primary btn-sm" data-aiadd="${k}" style="margin-top:8px">チェックしたものを追加</button>
-          <p class="small muted" style="margin-top:6px">${esc(AI_NOTE)}量が違う場合は、追加したあとで消して、リストから選び直せます。</p></div>`;
+          <p class="small muted" style="margin-top:6px">${esc(AI_NOTE)}袋や箱の商品は、裏の「栄養成分表示」も一緒に写すと、その数字をそのまま使うので正確になります。量が違う場合は、追加したあとで消して、リストから選び直せます。</p></div>`;
       } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; }
       b.disabled = false;
       return;
