@@ -581,7 +581,10 @@ details.acc-cmp{margin-top:14px}
 .net-h svg{width:16px;height:16px;color:var(--green-d)}
 .net-list{display:flex;flex-direction:column}
 .net-item{display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px;padding:10px 0;border-top:1px solid var(--line);align-items:start}
-.net-item img,.net-noimg{width:64px;height:64px;object-fit:contain;border-radius:10px;background:#fff;border:1px solid var(--line)}
+.net-item .xim,.net-noimg{width:64px;height:64px;border-radius:10px;background:#fff;border:1px solid var(--line);flex:none}
+.xim{display:block;overflow:hidden;background:#fff;position:relative}
+.xim img{width:100%;height:100%;object-fit:contain;display:block;transform:scale(1.24)}
+.thumb .xim{position:absolute;inset:0}
 .net-noimg{display:flex;align-items:center;justify-content:center;color:var(--muted)}
 .net-noimg svg{width:22px;height:22px}
 .net-t{display:flex;flex-direction:column;min-width:0}
@@ -2011,10 +2014,19 @@ function emptyBox(iconName, title, text, btnHtml='') {
 // マイ化粧品を「写真＋短い名前」のタイルで見せる（ホームの使用中の化粧品）
 const shortName = n => String(n || '').replace(/^【[^】]*】\s*/, '');
 const myTileHtml = p => `<a class="used-tile" href="#/my/${encodeURIComponent(p.id)}">${thumbHtml(Object.assign({}, getCat(p.catalogId) || {category:p.category}, {name:p.name, isSample:false}), false)}<span class="used-nm">${esc(truncate(shortName(p.name), 10))}</span><span class="used-sub">${esc(p.category || '')}</span></a>`;
+// 通販サイトの商品画像：小さいサムネイルではなく大きい画像を使う（楽天は600×600、Yahoo!は600px）
+function hiResImg(u) {
+  u = String(u || ''); if (!/^https:\/\//.test(u)) return '';
+  if (/(^|\.)rakuten\.co\.jp\//.test(u) || /thumbnail\.image\.rakuten/.test(u)) return /[?&]_ex=\d+x\d+/.test(u) ? u.replace(/_ex=\d+x\d+/, '_ex=600x600') : u + (u.includes('?') ? '&' : '?') + '_ex=600x600';
+  if (/item-shopping\.c\.yimg\.jp\/i\/[a-z]\//.test(u)) return u.replace(/\/i\/[a-z]\//, '/i/n/');
+  return u;
+}
+// 通販サイトの画像は、まわりの宣伝の文字や「送料無料」などのバッジが入っていることが多いので、真ん中を少し大きくして商品だけが見えるようにする
+function extImgHtml(u, cls) { const src = hiResImg(u); return src ? `<span class="xim ${cls || ''}"><img src="${esc(src)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="if(!this.dataset.f){this.dataset.f=1;this.src=${esc(JSON.stringify(u))}}"></span>` : ''; }
 function thumbHtml(p, showSample=true) {
-  const img = safeImg(p && p.image) || (p && p.imageUrl) || '';
+  const own = safeImg(p && p.image), img = own || (p && p.imageUrl) || '';
   const cat = (p && p.category) || 'その他';
-  const inner = img ? `<img src="${img}" alt="${esc(p.name)}の画像" loading="lazy">`
+  const inner = own ? `<img src="${own}" alt="${esc(p.name)}の画像" loading="lazy">` : img ? extImgHtml(img, 'thumb-x')
     : `<div class="ph" style="background:${CAT_BG[cat] || '#F2F1EE'}"><div class="bottle"></div>${esc(CAT_EN[cat] || 'SKIN CARE')}</div>`;
   return `<div class="thumb">${inner}${showSample && p && p.isSample ? '<span class="tag badge-sample">サンプル</span>' : ''}</div>`;
 }
@@ -2476,7 +2488,7 @@ function findPaint() {
   if (fs.err) { box.innerHTML = `<p class="small muted">${esc(fs.err)}</p>`; return; }
   if (!fs.items) { box.innerHTML = '<p class="small muted">例：「キュレル 化粧水」「イニスフリー」など。実際に売られている商品が出てきます。</p>'; return; }
   if (!fs.items.length) { box.innerHTML = `<p class="small muted">見つかりませんでした。別の言葉で探すか、<button type="button" class="link" data-action="add-manual" data-id="${fs.kind}">自分で入力</button>してください。</p>`; return; }
-  box.innerHTML = fs.items.map((x, i) => `<div class="net-item">${x.image ? `<img src="${esc(x.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="net-noimg">${icon('bottle')}</span>`}
+  box.innerHTML = fs.items.map((x, i) => `<div class="net-item">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
       <span class="net-t"><b>${esc(truncate(x.name, 60))}</b><small>${esc(x.site)}${x.shop ? '・' + esc(truncate(x.shop, 18)) : ''}</small><em>${yen(x.price)}</em></span>
       <span class="net-btns"><button class="btn btn-primary btn-sm" data-action="find-pick" data-id="${i}">${icon('plus')}追加</button></span></div>`).join('');
 }
@@ -2630,7 +2642,7 @@ function netHtml() {
   if (!n.items.length) return head + '<p class="small muted">見つかりませんでした。別の言葉で検索してください。</p>';
   return head + `<div class="net-list">${n.items.map((x, i) => {
     const added = state.catalog.find(c => c.shopUrl && c.shopUrl === x.url);
-    return `<div class="net-item">${x.image ? `<img src="${esc(x.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="net-noimg">${icon('bottle')}</span>`}
+    return `<div class="net-item">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
       <span class="net-t"><b>${esc(truncate(x.name, 60))}</b><small>${esc(x.site)}${x.shop ? '・' + esc(truncate(x.shop, 18)) : ''}</small><em>${yen(x.price)}${x.shipping === 'included' ? '<span class="small muted">（送料込）</span>' : ''}</em></span>
       <span class="net-btns">${added ? `<a class="btn btn-ghost btn-sm" href="#/product/${encodeURIComponent(added.id)}">登録済み</a>` : `<button class="btn btn-primary btn-sm" data-action="net-add" data-id="${i}">${icon('plus')}追加</button>`}<a class="link small" href="${esc(x.url)}" target="_blank" rel="noopener sponsored">サイトで見る</a></span></div>`;
   }).join('')}</div><p class="small muted" style="margin-top:8px">価格は検索した時点のものです。「追加」すると、この商品を商品一覧に登録して、お気に入りやマイ化粧品に使えます。${n.items.some(x => x.ad) ? '一部のリンクは広告（アフィリエイト）です。' : ''}</p>
@@ -4307,9 +4319,9 @@ function openLogForm(id) {
   const usable = state.myProducts.filter(p => p.status === '使用中' || p.status === '一時停止' || d.usedProducts.includes(p.id));
   openModal({title: ex ? '肌の記録を編集' : '肌の記録', body: `<form id="log-form" novalidate><div class="form-grid">
     ${d.date ? `<input type="hidden" id="f_date" name="date" value="${esc(d.date)}">` : field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint: !ex && map[t] ? '今日の記録はすでにあります。別の日付を選ぶか、一覧から今日の記録を編集してください。' : ''})}
-    <div class="field face-ai"><div class="meal-photo-top">${isPremium()
-      ? `<label class="btn mpt-btn mpt-mid">${icon('camera')}顔を撮って自動で記録<input type="file" accept="image/*" capture="user" id="f_faceai" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label>`
-      : `<button type="button" class="btn mpt-btn mpt-locked mpt-one" id="faceai-lock"><span class="mpt-l">${icon('camera')}顔を撮って自動で記録</span><span class="badge-premium">${PREMIUM_NAME}</span></button>`}</div><div id="faceai-info"></div></div>
+    <div class="field face-ai"><span class="lbl">顔の写真で自動で記録<span class="opt">写真から今日の肌をAIが入れます</span></span><div class="meal-photo-top mpt-even">${isPremium()
+      ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="user" id="f_faceai" class="vh"></label>`
+      : `<button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('image')}選ぶ</span><span class="badge-premium">${PREMIUM_NAME}</span></button><button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('camera')}撮る</span></button>`}</div><div id="faceai-info"></div></div>
     ${field('肌の調子', condSeg(d.condition) + `<p class="cond-ai ai-text" id="cond-ai">${ex ? '' : condAiNote(null)}</p>`, {name:'condition', required:true})}
     <div class="field fp-field" id="fp-field"><div class="fp-bighead"><b>顔を押して記録</b><button type="button" class="icon-btn" data-fp-done aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button></div><span class="lbl fp-lbl">顔を押して記録<span class="opt">ニキビ選択＝ニキビ、肌質選択＝乾燥・テカリなどの状態</span></span>
       <div class="fp-mode" role="group" aria-label="選び方"><button type="button" class="on" data-fp-mode="tap" aria-pressed="true">ニキビ選択</button><button type="button" data-fp-mode="range" aria-pressed="false">肌質選択</button></div>
@@ -4616,7 +4628,7 @@ function openLogForm(id) {
     } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; }
   };
   ['f_faceai', 'f_faceai2'].forEach(id => { const inp = $('#' + id, form); if (inp) inp.onchange = e => { const f = e.target.files[0]; e.target.value = ''; faceAi(f); }; });
-  { const lk = $('#faceai-lock', form); if (lk) lk.onclick = () => { $('#faceai-info', form).innerHTML = `<div class="notice" style="margin:8px 0 0">顔の写真を撮るだけで今日の肌を記録できる機能は、<b>${PREMIUM_NAME}プラン</b>の機能です。AIが写真からニキビの数や、部位ごとの赤み・乾燥・テカリなどの目安を読み取って入れます。<br>無料プランでは、下の顔を押して記録してください。<br><a href="#/plan">プランの詳細を見る</a></div>`; }; }
+  $$('[data-faceai-lock]', form).forEach(lk => { lk.onclick = () => { $('#faceai-info', form).innerHTML = `<div class="notice" style="margin:8px 0 0">顔の写真を撮るだけで今日の肌を記録できる機能は、<b>${PREMIUM_NAME}プラン</b>の機能です。AIが写真からニキビの数や、部位ごとの赤み・乾燥・テカリなどの目安を読み取って入れます。<br>無料プランでは、下の顔を押して記録してください。<br><a href="#/plan">プランの詳細を見る</a></div>`; }; });
   form.onsubmit = e => {
     e.preventDefault();
     const fe = form.elements, date = fe.date.value;
