@@ -90,7 +90,11 @@
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;background:var(--bg)}
 /* いちばん後ろの背景：おだやかな色のグラデーション（画面に固定して、スクロールしても動かない） */
-body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(160deg,#F8F6F0 0%,#F1F5EF 45%,#F7F0EA 100%)}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(160deg,#F4F0E6 0%,#E9F0E6 45%,#F3E8DE 100%)}
+/* 朝・昼・夜で背景の色を変える（少し濃いめ） */
+html[data-tod="morning"] body::before{background:linear-gradient(160deg,#FCE6D2 0%,#F9EBD9 40%,#E3EEF4 100%)}
+html[data-tod="day"] body::before{background:linear-gradient(160deg,#E2EFF6 0%,#E6F2E6 50%,#F5EFDD 100%)}
+html[data-tod="night"] body::before{background:linear-gradient(160deg,#E4E1F2 0%,#E9E1EE 45%,#F2E3E3 100%)}
 :root[data-theme="dark"] body::before{background:linear-gradient(160deg,#121614 0%,#151C18 50%,#1A1714 100%)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) body::before{background:linear-gradient(160deg,#121614 0%,#151C18 50%,#1A1714 100%)}}
 /* スマホでのガクガク対策：横に揺れない・ダブルタップで拡大しない・重いぼかし処理を使わない */
@@ -4046,7 +4050,7 @@ function logDaySet(date) {
   // 一番古い記録では「‹」、最新の記録では「›」を出さない
   const pv = document.getElementById('ld-prev'), nx = document.getElementById('ld-next');
   if (pv) pv.hidden = i <= 0; if (nx) nx.hidden = i >= list.length - 1;
-  const st = FACE3D.st; if (st && st.canvasId === 'face3d-log') face3dShowLog(st, logFaceData(l));
+  const st = FACE3D.st; if (st && st.canvasId === 'face3d-log') { face3dShowLog(st, logFaceData(l)); st.auto = true; st.user = false; st.phase = 0; st.target = null; st.dirty = true; } // 日付を変えたら、また左右にゆっくり回して見せる
 }
 function logDayStep(n) { const list = logDayList(); const i = logDayIdx(list) + n; if (i >= 0 && i < list.length) logDaySet(list[i].date); }
 // 左右のスワイプ（3Dの顔の上以外）：左へ払う＝次の日、右へ払う＝前の日
@@ -7099,6 +7103,9 @@ window.addEventListener('hashchange', () => { if ($('#modal-root').innerHTML) cl
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(drawCharts, 150); });
 $('#top-menu').innerHTML = '<span class="hb" aria-hidden="true"><i></i><i></i><i></i></span>'; $('#top-menu').setAttribute('aria-expanded', 'false');
+// 朝（5〜11時）・昼（11〜17時）・夜（17〜5時）で背景の色を変える。10分ごとに確かめる
+const setTimeOfDay = () => { const h = new Date().getHours(); document.documentElement.dataset.tod = h >= 5 && h < 11 ? 'morning' : h >= 11 && h < 17 ? 'day' : 'night'; };
+setTimeOfDay(); setInterval(setTimeOfDay, 10 * 60 * 1000);
 if (researchState() && researchState().on) setTimeout(() => { if (researchState().lastSent !== todayStr()) researchSend(); }, 5000); // 研究に協力中なら、1日1回まで統計を新しくする
 if (hasSavedLogin()) setTimeout(initCloud, 0); // 以前ログインしていた場合だけ、ログイン状態を確認する
 document.title = `${SERVICE}｜最小限で最大限を`;
