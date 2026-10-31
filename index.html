@@ -657,6 +657,9 @@ details.acc-cmp{margin-top:14px}
 .fp-steps{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
 .fp-steps .btn{min-height:40px;justify-content:center}
 .fp-steps .btn:disabled{opacity:.4}
+.lifeacc-sum{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;list-style:none;padding:4px 0;border:0!important;background:none!important;border-radius:0;min-height:0;-webkit-tap-highlight-color:transparent}
+.lifeacc-sum::-webkit-details-marker{display:none}
+.life-acc[open] .meal-chev{transform:rotate(90deg)}
 .meal-acc{padding:0}
 .meal-acc > *:not(summary){margin-left:12px;margin-right:12px}
 .meal-acc > .food-list,.meal-acc > .food-ac,.meal-acc > .food-pick{margin-left:12px;margin-right:12px}
@@ -4025,16 +4028,15 @@ function viewLife() {
   html += list.map(l => {
     const ph = FOOD_MEALS.filter(m => l.mealPhotos[m.k]);
     const eaten = FOOD_MEALS.map(m => { const a = l.foods.filter(x => x.meal === m.k); return a.length ? `${m.l}：${a.map(x => x.name.replace(/（.*?）/g, '') + (x.qty !== 1 ? '×' + qtyLabel(x.qty) : '')).join('・')}` : ''; }).filter(Boolean).join('／');
-    return `<div class="log-item"><div class="log-top"><span class="log-date">${fmtMD(l.date)}${l.demo ? ' <span class="badge-sample">デモ</span>' : ''}</span>
-      <div class="log-actions"><button class="btn btn-ghost btn-sm" data-action="edit-life" data-id="${esc(l.id)}">編集</button><button class="btn btn-danger-ghost btn-sm" data-action="delete-life" data-id="${esc(l.id)}">削除</button></div></div>
+    // 日付だけを出して、押すと中身が開く（アコーディオン）
+    return `<details class="log-item life-acc"><summary class="lifeacc-sum"><span class="log-date">${fmtMD(l.date)}${l.demo ? ' <span class="badge-sample">デモ</span>' : ''}</span><i class="meal-chev" aria-hidden="true">›</i></summary>
+      <div class="log-actions" style="margin:4px 0 6px"><button class="btn btn-ghost btn-sm" data-action="edit-life" data-id="${esc(l.id)}">編集</button><button class="btn btn-danger-ghost btn-sm" data-action="delete-life" data-id="${esc(l.id)}">削除</button></div>
       <p class="sub-line"><b>睡眠</b>${l.bed && l.wake ? `${esc(l.bed)} 〜 ${esc(l.wake)}（${esc(fmtHM(sleepMin(l)))}）` : '記録なし'}</p>
       <p class="sub-line"><b>運動</b>${l.exercise.length ? esc(l.exercise.map(e => `${e.type} ${e.minutes}分`).join('、')) : l.exRecorded ? 'なし' : '記録なし'}${l.steps != null ? `／${l.steps.toLocaleString()}歩` : ''}</p>
       <p class="sub-line"><b>食事</b>${MEALS.map(m => `${m.l}${l.meals[m.k].ate ? (l.meals[m.k].time ? ` ${esc(l.meals[m.k].time)}` : ' ○') : ' —'}`).join('　')}</p>
       ${l.foods.length ? `<p class="sub-line"><b>食べたもの</b>${esc(eaten)}</p><p class="sub-line"><b>栄養の目安</b>${esc(nutLine(nutTotals(l.foods)))}</p>` : ''}
       ${ph.length ? `<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">${ph.map(m => `<figure style="margin:0;text-align:center"><img class="meal-thumb" src="${safeImg(l.mealPhotos[m.k])}" alt="${m.l}の写真"><figcaption class="small muted">${m.l}</figcaption></figure>`).join('')}</div>` : ''}
-      <p class="sub-line"><b>内容</b>野菜：${esc(l.veg || '記録なし')}／タンパク質：${esc(l.protein || '記録なし')}／甘いもの・間食：${esc(l.sweets || '記録なし')}／水分：${esc(l.water || '記録なし')}</p>
-      ${l.tags.length ? `<div class="chips" style="margin-top:6px">${l.tags.map(x => `<span class="chip beige">${esc(x)}</span>`).join('')}</div>` : ''}
-      ${l.memo ? `<div class="log-memo">${esc(l.memo)}</div>` : ''}</div>`;
+      ${l.memo ? `<div class="log-memo">${esc(l.memo)}</div>` : ''}</details>`;
   }).join('');
   return html;
 }
@@ -4501,8 +4503,8 @@ function openLifeForm(id, part) {
     ${field('歩数', `<input class="input" id="f_steps" name="steps" inputmode="numeric" value="${d.steps == null ? '' : esc(d.steps)}" placeholder="例：6500">`, {name:'steps', hint:'iPhoneの「ヘルスケア」アプリなどで確認した歩数を入力できます'})}</div>
     <div class="form-grid" data-part="meal" ${show('meal')}><div class="section-title">MEAL 食事</div>
     <div class="meal-photo-top">${isPremium()
-      ? `<label class="btn btn-primary mpt-btn mpt-one">${icon('camera')}写真で記録（選ぶ・撮る）<input type="file" accept="image/*" data-mphoto="auto" class="vh"></label>`
-      : `<button type="button" class="btn btn-soft mpt-btn mpt-locked mpt-one" data-mcam="1"><span class="mpt-l">${icon('camera')}写真で記録（選ぶ・撮る）</span><span class="badge-premium">${PREMIUM_NAME}</span></button>`}</div>
+      ? `<label class="btn btn-soft mpt-btn">${icon('image')}写真を選ぶ<input type="file" accept="image/*" data-mphoto="auto" class="vh"></label><label class="btn btn-primary mpt-btn">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="auto" class="vh"></label>`
+      : `<button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('image')}写真を選ぶ</span><span class="badge-premium">${PREMIUM_NAME}</span></button><button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('camera')}撮る</span><span class="badge-premium">${PREMIUM_NAME}</span></button>`}</div>
     <div id="mpt-info"></div>
     ${(part === 'meal' ? [FOOD_MEALS.find(x => x.k === slot0)].concat(FOOD_MEALS.filter(x => x.k !== slot0)) : FOOD_MEALS).map(mealBlock).join('')}
     <div class="nut-card" id="nut-total"></div>
