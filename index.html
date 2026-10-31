@@ -642,7 +642,24 @@ details.acc-cmp{margin-top:14px}
 .fp-chip.on{background:var(--green);border-color:var(--green);color:#fff}
 .fp-sum{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .fp-sum .chip{white-space:normal;text-align:left;cursor:pointer;font-family:inherit}
-@media(max-width:420px){.fp-wrap{grid-template-columns:1fr}.fp-stage{max-width:240px;margin:0 auto}}
+@media(max-width:560px){.fp-wrap{grid-template-columns:1fr}.fp-stage{max-width:none;margin:0}}
+.fp-hidden{display:none}
+.fp-mode{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin:2px 0 10px;background:var(--surface2);border-radius:999px}
+.fp-mode button{border:0;background:transparent;border-radius:999px;padding:8px 6px;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink2);cursor:pointer;transition:background .2s,color .2s}
+.fp-mode button.on{background:var(--surface);color:var(--green-d);box-shadow:var(--shadow)}
+.used-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px}
+.used-tile{position:relative;display:flex;flex-direction:column;gap:3px;cursor:pointer;min-width:0;-webkit-tap-highlight-color:transparent}
+.used-tile input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+.used-tile .thumb{border-radius:14px;border:2px solid transparent;transition:border-color .18s,transform .18s}
+.used-tile .thumb .ph{font-size:0}
+.used-tile .thumb img{filter:saturate(.85)}
+.used-ck{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.9);border:1px solid var(--line2);color:transparent;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background .18s,color .18s}
+.used-nm{font-size:12px;font-weight:600;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.used-sub{font-size:10.5px;color:var(--muted);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.used-tile input:checked ~ .thumb,.used-tile:has(input:checked) .thumb{border-color:var(--green)}
+.used-tile:has(input:checked) .thumb img{filter:none}
+.used-tile input:checked ~ .used-ck{background:var(--green);border-color:var(--green);color:#fff}
+.used-tile input:focus-visible ~ .thumb{outline:2px solid var(--green-d);outline-offset:2px}
 .fp-zoom{position:absolute;right:6px;bottom:6px;display:flex;flex-direction:column;gap:6px;z-index:2}
 .fp-zoom .icon-btn{width:32px;height:32px;font-size:16px;background:var(--surface);box-shadow:var(--shadow)}
 .fp-h b small{display:block;font-size:11.5px;font-weight:500;color:var(--muted)}
@@ -3745,9 +3762,11 @@ function openLogForm(id) {
     ${field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint: !ex && map[t] ? '今日の記録はすでにあります。別の日付を選ぶか、一覧から今日の記録を編集してください。' : ''})}
     ${field('肌の調子', seg('condition', [5,4,3,2,1].map(v => ({v, label:COND_LABELS[v]})), d.condition), {name:'condition', required:true})}
     <div class="field fp-field"><span class="lbl">顔を押して記録<span class="opt">押した場所のニキビ・赤み・乾燥などを選べます</span></span>
+      <div class="fp-mode" role="group" aria-label="選び方"><button type="button" class="on" data-fp-mode="tap" aria-pressed="true">1マスずつ</button><button type="button" data-fp-mode="range" aria-pressed="false">範囲でまとめて</button></div>
       <div class="fp-wrap"><div class="f3-stage fp-stage"><canvas id="face3d-form" aria-label="押して部位を選ぶ3Dの顔"></canvas><div class="fp-zoom"><button type="button" class="icon-btn" data-fp-zoom="in" aria-label="拡大">＋</button><button type="button" class="icon-btn" data-fp-zoom="out" aria-label="縮小">−</button></div><div class="f3-load" id="fp-load"><span class="skel skel-face"></span></div></div>
       <div class="fp-panel" id="fp-panel"></div></div>
-      <p class="hint">押したマス目は緑の枠で光ります。もう一度押すと選択が外れます。顔を横になぞると回せます。「＋」や2本の指で拡大できます。入れた強さは、下の赤み・乾燥・皮脂などの項目にも自動で入ります。</p></div>
+      <p class="hint" id="fp-hint">「1マスずつ」：押したマスが緑の枠で光ります（もう一度押すと外れます）。顔を横になぞると回せます。「＋」や2本の指で拡大できます。</p></div>
+    <div class="fp-hidden" aria-hidden="true">
     <div class="field" data-field="acneCount"><span class="lbl">ニキビ<span class="opt">数と状態</span></span>
       <div class="counter"><button type="button" class="icon-btn" data-step="-1" aria-label="1つ減らす">−</button><input class="input" id="f_acneCount" name="acneCount" inputmode="numeric" value="${d.acneCount}" aria-label="ニキビの数"><button type="button" class="icon-btn" data-step="1" aria-label="1つ増やす">＋</button><span class="small muted">個</span></div>
       <div class="field-error" data-err="acneCount"></div>
@@ -3762,14 +3781,15 @@ function openLogForm(id) {
     ${field('乾燥', seg('dryness', lv, d.dryness) + '<div class="scale-cap"><span>0 なし</span><span>5 強い</span></div>', {name:'dryness', required:true})}
     ${field('皮脂', seg('oil', lv, d.oil) + '<div class="scale-cap"><span>0 気にならない</span><span>5 とても多い</span></div>', {name:'oil', required:true})}
     ${field('その他の気になる状態', checksHtml('otherConcerns', OTHER_CONCERNS, d.otherConcerns), {name:'otherConcerns', optLabel:'任意・複数選択可'})}
+    </div>
     <div class="field" style="display:none" aria-hidden="true"><span class="lbl">気になる部位</span>
       <div class="face-wrap">${faceSvg()}<div><div class="checks">${AREAS.map(a => `<label class="check"><input type="checkbox" name="areas" value="${a.id}" ${d.areas.includes(a.id) ? 'checked' : ''}>${esc(a.name)}</label>`).join('')}</div>
       <p class="hint">イラストを${DEV.tap}しても選べます。イラストは正面から見た顔です（向かって左があなたの右頬）。</p></div></div>
     </div>
     <div class="field"><span class="lbl">今日使った化粧品<span class="opt">任意</span></span>
-      ${usable.length ? `<div class="used-list">${usable.map(p => `<label class="check"><input type="checkbox" name="usedProducts" value="${esc(p.id)}" ${d.usedProducts.includes(p.id) ? 'checked' : ''}>${esc(truncate(p.name, 30))} <span class="chip">${esc(p.timing)}</span></label>`).join('')}</div>
+      ${usable.length ? `<div class="used-grid">${usable.map(p => `<label class="used-tile"><input type="checkbox" name="usedProducts" value="${esc(p.id)}" ${d.usedProducts.includes(p.id) ? 'checked' : ''}>${thumbHtml(Object.assign({}, getCat(p.catalogId) || {category:p.category}, {name:p.name, isSample:false}), false)}<span class="used-ck" aria-hidden="true">✓</span><span class="used-nm">${esc(truncate(p.name.replace(/^【[^】]*】\s*/, ''), 10))}</span><span class="used-sub">${esc(p.category || '')}</span></label>`).join('')}</div>
         <div class="page-actions" style="margin-top:8px"><button type="button" class="btn btn-ghost btn-sm" id="use-all">使用中をすべて選ぶ</button><label class="check"><input type="checkbox" name="noneUsed" ${d.usageRecorded && !d.usedProducts.length ? 'checked' : ''}> 今日は何も使っていない</label></div>
-        <p class="hint">チェックすると、予定の使用頻度と実際の使用を比べられます。</p>`
+        <p class="hint">使ったものの写真を押してください。予定の使用頻度と実際の使用を比べられます。</p>`
       : '<p class="small muted">使用中の化粧品が登録されていません。</p>'}
     </div>
     ${field('自由メモ', `<textarea class="textarea" id="f_memo" name="memo" maxlength="500" placeholder="例：生理前、新しい美容液を使い始めた、マスクで擦れた など">${esc(d.memo)}</textarea>`, {name:'memo', hint:'食事・睡眠は「食事・睡眠」から別に記録できます'})}
@@ -3791,7 +3811,7 @@ function openLogForm(id) {
   $$('input[name="areas"]', form).forEach(cb => cb.onchange = syncFace);
   syncFace();
   // ---- 3Dの顔を押して、マス目ごとに記録する（複数のマス目を選んで、状態と強さ1〜5を入れる）----
-  const fpMarks = JSON.parse(JSON.stringify(d.cellMarks || {})); const fpSel = new Set();
+  const fpMarks = JSON.parse(JSON.stringify(d.cellMarks || {})); const fpSel = new Set(); let fpRange = false, fpBase = null;
   const grid = () => (FACE3D.st && FACE3D.st.canvasId === 'face3d-form' && FACE3D.st.gridInfo) || null;
   const cellArea = k => { const g = grid(); if (!g) return null; const [c, r] = k.split(',').map(Number); return g.cellArea[r * g.cols + c] || null; };
   const selAreas = () => [...new Set([...fpSel].map(cellArea).filter(Boolean))];
@@ -3802,11 +3822,9 @@ function openLogForm(id) {
   const selLevel = c => Math.max(0, ...[...fpSel].map(k => (fpMarks[k] || {})[c] || 0));
   // 全体の項目（赤み・乾燥・皮脂の強さ、その他の状態、気になる部位）にも反映する
   const fpGlobal = () => {
-    const r = maxLevel('赤み'), dr = maxLevel('乾燥'), oi = maxLevel('テカリ');
-    if (r) setSeg('redness', Math.max(r, Number(form.elements.redness.value) || 0));
-    if (dr) setSeg('dryness', Math.max(dr, Number(form.elements.dryness.value) || 0));
-    if (oi) setSeg('oil', Math.max(oi, Number(form.elements.oil.value) || 0));
-    OTHER_CONCERNS.forEach(c => { if (maxLevel(c)) { const oc = $(`input[name="otherConcerns"][value="${c}"]`, form); if (oc) oc.checked = true; } });
+    // 下の0〜5のボタンはなくしたので、顔で入れた強さをそのまま使う
+    setSeg('redness', maxLevel('赤み')); setSeg('dryness', maxLevel('乾燥')); setSeg('oil', maxLevel('テカリ'));
+    OTHER_CONCERNS.forEach(c => { if (AREA_CONCERNS.includes(c)) { const oc = $(`input[name="otherConcerns"][value="${c}"]`, form); if (oc) oc.checked = maxLevel(c) > 0; } });
     Object.keys(fpMarks).map(cellArea).filter(Boolean).forEach(a => { const cb = $(`input[name="areas"][value="${a}"]`, form); if (cb && !cb.checked) { cb.checked = true; syncFace(); } });
   };
   const fpPaint = () => { const st = FACE3D.st; if (st && st.canvasId === 'face3d-form') {
@@ -3819,9 +3837,9 @@ function openLogForm(id) {
     const pn = $('#fp-panel', form); if (!pn) return;
     if (!fpSel.size) {
       const used = AREA_CONCERNS.filter(c => maxLevel(c));
-      pn.innerHTML = `<p class="small muted" style="margin:0">顔のマス目を押して選んでください（何マスでも選べます）。2本の指で広げると拡大できます。</p>
+      pn.innerHTML = `<p class="small muted" style="margin:0">${fpRange ? '顔の上を指でなぞると、なぞった範囲のマスをまとめて選べます。' : '顔のマス目を押して選んでください（何マスでも選べます）。'}</p>
         ${used.length ? `<div class="fp-legend">${used.map(c => `<span><i style="background:${CONCERN_COLORS[c]}"></i>${esc(c)} ${maxLevel(c)}</span>`).join('')}</div>` : ''}
-        ${$$('.spot-row', form).length ? `<p class="small" style="margin:8px 0 0">ニキビ：${AREAS.filter(a => fpCount(a.id)).map(a => `${esc(a.name)} ${fpCount(a.id)}個`).join('・')}</p>` : ''}`;
+        ${$$('.spot-row', form).length ? `<p class="small" style="margin:8px 0 0">ニキビ（合計 ${form.elements.acneCount.value}個）：${AREAS.filter(a => fpCount(a.id)).map(a => `${esc(a.name)} ${fpCount(a.id)}個`).join('・')}</p>` : ''}`;
       return;
     }
     const areas = selAreas(), a0 = areas[0], n = a0 ? fpCount(a0) : 0;
@@ -3835,7 +3853,14 @@ function openLogForm(id) {
   };
   const fpSync = () => { fpPaint(); fpPanel(); };
   form.addEventListener('click', e => {
-    const b = e.target.closest('[data-fp-acne],[data-fp-note],[data-fp-close],[data-fp-zoom]'); if (!b) return;
+    const b = e.target.closest('[data-fp-acne],[data-fp-note],[data-fp-close],[data-fp-zoom],[data-fp-mode]'); if (!b) return;
+    if (b.dataset.fpMode) {
+      fpRange = b.dataset.fpMode === 'range';
+      $$('[data-fp-mode]', form).forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
+      const st = FACE3D.st; if (st && st.setRange) st.setRange(fpRange);
+      const h = $('#fp-hint', form); if (h) h.textContent = fpRange ? '「範囲でまとめて」：顔の上を指でなぞると、なぞった四角い範囲のマスをまとめて選べます（この間は顔は回りません）。「＋」や2本の指で拡大できます。' : '「1マスずつ」：押したマスが緑の枠で光ります（もう一度押すと外れます）。顔を横になぞると回せます。「＋」や2本の指で拡大できます。';
+      fpPanel(); return;
+    }
     if (b.dataset.fpZoom) { const st = FACE3D.st; if (st) { st.zoomT = clamp((st.zoomT || st.cam.position.z) + (b.dataset.fpZoom === 'in' ? -7 : 7), st.minZ, st.maxZ); st.dirty = true; } return; }
     if ('fpClose' in b.dataset) { fpSel.clear(); fpSync(); return; }
     if (b.dataset.fpAcne) {
@@ -3855,7 +3880,7 @@ function openLogForm(id) {
     if (b.dataset.fpNote) {
       const c = b.dataset.fpNote, on = selLevel(c) > 0;
       fpSel.forEach(k => { const m = fpMarks[k] = fpMarks[k] || {}; if (on) delete m[c]; else m[c] = 3; if (!Object.keys(m).length) delete fpMarks[k]; });
-      if (!on) fpGlobal();
+      fpGlobal();
       $('#modal-root').dataset.dirty = '1'; fpSync();
     }
   });
@@ -3870,9 +3895,20 @@ function openLogForm(id) {
   });
   form._fpData = () => { const g = grid(); const ca = {}; if (g) Object.keys(fpMarks).forEach(k => { ca[k] = cellArea(k); }); return {cellMarks:fpMarks, areaNotes:Object.assign({}, d.areaNotes && !g ? d.areaNotes : {}, marksToAreaNotes(fpMarks, ca))}; };
   fpPanel();
-  setTimeout(() => drawFace3d({canvas:'face3d-form', load:'fp-load', tip:'', camZ:52, minZ:14, yawOnly:true, auto:false, grid:true, ready:st => {
+  setTimeout(() => drawFace3d({canvas:'face3d-form', load:'fp-load', tip:'', camZ:44, minZ:12, yawOnly:true, auto:false, grid:true, panY:true, panAt:40, ready:st => {
     st.canvasId = 'face3d-form';
     st.onTapCell = key => { if (fpSel.has(key)) fpSel.delete(key); else fpSel.add(key); fpSync(); };
+    // 範囲選択：なぞり始めのマスと今のマスを角にした四角の中（顔の上のマスだけ）をまとめて選ぶ
+    st.onRange = (a, b, phase) => {
+      if (phase === 'cancel') { if (fpBase) { fpSel.clear(); fpBase.forEach(k => fpSel.add(k)); fpBase = null; fpSync(); } return; }
+      if (!fpBase) fpBase = new Set(fpSel);
+      const [c1, r1] = a.split(',').map(Number), [c2, r2] = b.split(',').map(Number);
+      fpSel.clear(); fpBase.forEach(k => fpSel.add(k));
+      if (a === b && phase === 'end' && fpBase.has(a)) fpSel.delete(a);
+      else for (let c = Math.min(c1, c2); c <= Math.max(c1, c2); c++) for (let r = Math.min(r1, r2); r <= Math.max(r1, r2); r++) { const k = c + ',' + r; if (cellArea(k)) fpSel.add(k); }
+      if (phase === 'end') { fpBase = null; fpSync(); } else fpPaint();
+    };
+    st.rangeMode = fpRange;
     fpSync();
   }}), 60);
   const sumSpots = () => {
@@ -4460,21 +4496,31 @@ async function drawFace3d(opts) {
   cv.addEventListener('pointerdown', e => {
     pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); st.target = null; st.user = true; st.idle = 0; if (DEV.touch) st.auto = false;
     if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = {d:Math.hypot(a.x - b.x, a.y - b.y), z:st.zoomT || cam.position.z}; st.drag = null; return; }
-    st.drag = {x:e.clientX, y:e.clientY, yaw:st.yaw, pitch:st.pitch, moved:false}; cv.setPointerCapture(e.pointerId);
+    st.drag = {x:e.clientX, y:e.clientY, yaw:st.yaw, pitch:st.pitch, cy:cam.position.y, moved:false}; cv.setPointerCapture(e.pointerId);
+    // 範囲選択モード：なぞった始まりと終わりのマス目で四角く選ぶ（回さない）
+    if (st.rangeMode && st.onRange) { const k = face3dGridCell(st, e); st.range = k ? {a:k, b:k} : null; if (k) st.onRange(k, k, 'move'); }
   });
   const ptUp = e => { pts.delete(e.pointerId); if (pts.size < 2) pinch = null; };
   cv.addEventListener('pointerup', ptUp); cv.addEventListener('pointercancel', ptUp);
   if (opts.full) cv.addEventListener('wheel', e => { e.preventDefault(); st.zoomT = clamp((st.zoomT || cam.position.z) + e.deltaY * 0.03, minZ, maxZ); st.dirty = true; }, {passive:false});
   st.minZ = minZ; st.maxZ = maxZ;
+  st.panY = !!opts.panY; st.panAt = opts.panAt || 40;
+  // 範囲選択中・拡大中は、顔の上で画面がスクロールしないようにする
+  st.touchFix = () => { const want = (st.rangeMode || (st.panY && (st.zoomT || cam.position.z) < st.panAt)) ? 'none' : (st.yawOnly ? 'pan-y' : 'none'); if (cv.style.touchAction !== want) cv.style.touchAction = want; };
+  st.setRange = on => { st.rangeMode = !!on; st.range = null; st.touchFix(); };
   cv.addEventListener('pointermove', e => {
     if (pts.has(e.pointerId)) pts.set(e.pointerId, {x:e.clientX, y:e.clientY});
-    if (pinch && pts.size === 2) { const [a, b] = [...pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y); st.zoomT = clamp(pinch.z * pinch.d / Math.max(10, d), minZ, maxZ); st.dirty = true; return; }
+    if (pinch && pts.size === 2) { const [a, b] = [...pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y); st.zoomT = clamp(pinch.z * pinch.d / Math.max(10, d), minZ, maxZ); if (st.range) { st.range = null; if (st.onRange) st.onRange(null, null, 'cancel'); } st.dirty = true; return; }
     if (!st.drag) return;
     const dx = e.clientX - st.drag.x, dy = e.clientY - st.drag.y;
     if (Math.abs(dx) + Math.abs(dy) > 4) st.drag.moved = true;
+    if (st.rangeMode && st.onRange) { if (st.range) { const k = face3dGridCell(st, e); if (k && k !== st.range.b) { st.range.b = k; st.onRange(st.range.a, k, 'move'); } } return; }
+    // 拡大しているときは、上下になぞると顔の上下（おでこ・あご）へ動かせる
+    if (st.panY && (st.zoomT || cam.position.z) < st.panAt) { cam.position.y = clamp(st.drag.cy + dy * 0.004 * (st.zoomT || cam.position.z), -8, 9); }
     st.yaw = st.drag.yaw + dx * 0.012; if (!st.yawOnly) st.pitch = clamp(st.drag.pitch + dy * 0.01, -1.35, 1.35); st.idle = 0; st.user = true; st.target = null; st.dirty = true;
   });
   const up = e => {
+    if (st.rangeMode && st.onRange) { if (st.range) st.onRange(st.range.a, st.range.b, 'end'); st.range = null; st.drag = null; return; }
     // 動かさずに押したときは、押した部位を知らせる（肌の記録の画面で使う）
     if (st.onTapCell && st.drag && !st.drag.moved) { const k = face3dGridCell(st, e); if (k) st.onTapCell(k); }
     else if (st.onTap && st.drag && !st.drag.moved) { const a = st.gridInfo ? face3dGridArea(st, e) : face3dAreaAt(e); if (a) st.onTap(a); }
@@ -4497,7 +4543,7 @@ async function drawFace3d(opts) {
       st.dirty = true;
     }
     if (st.target && !st.drag) { st.yaw += (st.target.yaw - st.yaw) * 0.14; st.pitch += (st.target.pitch - st.pitch) * 0.14; if (Math.abs(st.target.yaw - st.yaw) < 0.002 && Math.abs(st.target.pitch - st.pitch) < 0.002) st.target = null; st.dirty = true; } // ボタンで選んだ向きへ回る
-    if (st.zoomT && Math.abs(st.zoomT - cam.position.z) > 0.05) { cam.position.z += (st.zoomT - cam.position.z) * 0.18; st.dirty = true; }
+    if (st.zoomT && Math.abs(st.zoomT - cam.position.z) > 0.05) { cam.position.z += (st.zoomT - cam.position.z) * 0.18; if (st.panY && cam.position.z >= st.panAt && Math.abs(cam.position.y - 0.6) > 0.01) cam.position.y += (0.6 - cam.position.y) * 0.25; if (st.touchFix) st.touchFix(); st.dirty = true; }
     if (st.dirty && !(DEV.touch && performance.now() - lastScrollAt < 200 && !st.drag)) { group.rotation.y = st.yaw; group.rotation.x = st.pitch; renderer.render(scene, cam); st.dirty = false; }
     requestAnimationFrame(loop);
   };
