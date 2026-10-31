@@ -654,6 +654,11 @@ details.acc-cmp{margin-top:14px}
 .fp-sum .chip{white-space:normal;text-align:left;cursor:pointer;font-family:inherit}
 @media(max-width:560px){.fp-wrap{grid-template-columns:1fr}.fp-stage{max-width:none;margin:0}}
 .fp-hidden{display:none}
+.rs-list{display:flex;flex-direction:column;gap:6px}
+.rs-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 12px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;font-size:12px}
+.rs-row b{grid-column:1/-1;font-size:13px;display:flex;justify-content:space-between;gap:8px}
+.rs-row b small{font-weight:400;color:var(--muted);font-size:11px;white-space:nowrap}
+.rs-row span{white-space:nowrap;color:var(--ink2)}
 .name-auto{color:var(--green-d)}
 .name-auto:empty{display:none}
 .fp-legend .link{background:none;border:0;color:var(--green-d);font-family:inherit;cursor:pointer;text-decoration:underline;padding:0;margin-left:auto}
@@ -994,6 +999,8 @@ const TIMINGS = ['朝','夜','朝・夜','必要なときだけ'];
 const FREQS = ['毎日','週4〜6回','週2〜3回','週1回','不定期'];
 const FREQ_RANGE = {'毎日':[7,7],'週4〜6回':[4,6],'週2〜3回':[2,3],'週1回':[1,1],'不定期':null};
 const STOCK = 'ストック（未開封）';
+const SKIN_TYPES = ['乾燥肌','脂性肌','混合肌','普通肌'];
+const AGE_BANDS = ['18〜19歳','20代','30代','40代','50代','60代以上'];
 const STATUSES = ['使用中','一時停止',STOCK,'使用終了'];
 const AREAS = [{id:'forehead',name:'額'},{id:'nose',name:'鼻'},{id:'rcheek',name:'右頬'},{id:'lcheek',name:'左頬'},{id:'mouth',name:'口まわり'},{id:'chin',name:'顎'}];
 const ACNE_TYPES = ['白ニキビ','黒ニキビ','赤ニキビ','黄ニキビ（膿あり）','しこり・硬い','ニキビ跡'];
@@ -1538,6 +1545,11 @@ function normalize(d) {
   out.settings.height = clamp(Math.round((num(ds.height) || 0) * 10) / 10, 0, 250); // 身長（cm）。0は未設定
   out.settings.shortcuts = Array.isArray(ds.shortcuts) ? ds.shortcuts.filter(k => typeof k === 'string').slice(0, 6) : [];
   out.settings.proteinGoal = clamp(Math.round(num(ds.proteinGoal) || 0), 0, 300); // たんぱく質の目標（g）。0は自動
+  out.settings.skinType = SKIN_TYPES.includes(ds.skinType) ? ds.skinType : ''; // 肌質
+  out.settings.sensitive = !!ds.sensitive; // 敏感肌かどうか
+  out.settings.ageBand = AGE_BANDS.includes(ds.ageBand) ? ds.ageBand : ''; // 年代（任意）
+  const rs = ds.research || {}; // 研究への協力（任意・初めはオフ）
+  out.settings.research = {on:!!rs.on && !!rs.adult, adult:!!rs.adult, cid:/^[0-9a-f-]{36}$/.test(rs.cid || '') ? rs.cid : '', lastSent:isValidYmd(rs.lastSent) ? rs.lastSent : '', lastHash:String(rs.lastHash || '').slice(0, 20)};
   out.favorites = Array.isArray(d.favorites) ? Array.from(new Set(d.favorites.map(String))).filter(id => out.catalog.some(p => p.id === id)) : [];
   out.customFoods = Array.isArray(d.customFoods) ? d.customFoods.filter(x => x && x.name).map(x => { const n = normFood(Object.assign({meal:'snack', qty:1}, x)); return {id:n.id, name:n.name, kcal:n.kcal, p:n.p, f:n.f, c:n.c, veg:n.veg}; }) : [];
   return out;
@@ -5605,7 +5617,7 @@ function viewPrivacy() {
   return legalWrap('プライバシーポリシー', `
 <p>${C}（以下「運営者」）は、「${S}」（以下「本サービス」）における利用者の情報の取り扱いについて、次のとおり定めます。</p>
 <h3>1. 基本の考え方</h3>
-<p>本サービスは、<b>肌の記録・写真・食事・生活習慣などのデータを、利用者の端末のブラウザ内（localStorage）だけに保存</b>します。これらのデータを運営者のサーバーに送信・保存することはありません。</p>
+<p>本サービスは、<b>肌の記録・写真・食事・生活習慣などのデータを、利用者の端末のブラウザ内（localStorage）だけに保存</b>します。これらのデータを運営者のサーバーに送信・保存することはありません。ただし、利用者が設定で「研究への協力」に同意した場合に限り、記録から計算した統計（下の「4-2」）だけを送信します。</p>
 <h3>2. 取得する情報</h3>
 <ol><li><b>アカウント情報</b>：有料プランを申し込むためにアカウントを作成した場合、メールアドレス、パスワード（暗号化された形）、契約状況（プランの状態・次回更新日など）。</li>
 <li><b>決済情報</b>：支払いは決済代行会社Stripeの画面で行います。クレジットカード番号は運営者のサーバーに送られず、運営者は取得しません。運営者が受け取るのは、Stripe上の顧客番号・契約番号・支払いの状態です。</li>
@@ -5620,6 +5632,9 @@ function viewPrivacy() {
 <li>不正利用の防止、障害への対応、サービスの改善</li></ol>
 <h3>4. 第三者への提供</h3>
 <p>運営者は、法令に基づく場合を除き、本人の同意なく個人情報を第三者に提供しません。ただし、次の「5. 外部に送信される情報」に記載した、サービスの提供に必要な委託先への送信は除きます。</p>
+<h3>4-2. 研究への協力（任意）</h3>
+<p>設定の「研究への協力」に同意した18歳以上の利用者から、肌質・敏感肌かどうか・年代（答えた場合）と、記録から計算した統計（記録の日数、肌の状態の平均、成分ごとに使った日と使わなかった日の肌の状態の差、使い始める前後の差）を受け取ります。日付・メモ・写真・商品名・食事の内容・メールアドレス・位置は受け取りません。端末ごとのランダムな番号で区別し、アカウントの情報とは結びつけません。</p>
+<p>受け取った統計は、スキンケアの研究と本サービスの改善に使い、<b>5人以上をまとめた集計結果</b>の形で、化粧品会社などの研究開発のために第三者に提供（有償の場合を含む）することがあります。特定の個人の記録が分かる形では提供しません。利用者は設定からいつでも協力をやめることができ、やめた時点で、受け取った統計を削除します。</p>
 <h3>5. 外部に送信される情報（電気通信事業法に基づく公表）</h3>
 <p>本サービスでは、機能の提供のために、利用者の端末から次の外部サービスに情報が送信されます。</p>
 <div class="table-wrap"><table class="legal-table"><thead><tr><th>送信先</th><th>送信される情報</th><th>目的・タイミング</th></tr></thead><tbody>
@@ -5633,6 +5648,7 @@ ${row('cdnjs（Cloudflare）・unpkg', 'IPアドレス、ブラウザの情報',
 ${row('OpenStreetMap', '検索する場所の座標、IPアドレス', 'Geoapifyが使えないときの予備の店舗検索')}
 ${row('楽天グループ（楽天ウェブサービス）・LINEヤフー（Yahoo!デベロッパーネットワーク）', '商品名・JANコード（運営者のサーバーを通して送信。利用者のIPアドレスなどは送りません）', '価格比較。「価格を調べる」を押したときだけ')}
 ${row('Google（Gemini API）', '「写真から読み取る」を押した写真（食事・化粧品のパッケージ）', '写真読み取り（プレミアム）。押したときだけ。運営者は写真を保存しません。Googleの無料枠を使う場合、送った内容がGoogleのサービス改善に使われることがあります')}
+${row('Supabase（運営者のデータベース・東京）', '肌質・敏感肌かどうか・年代（答えた場合）、記録の日数、肌の状態の平均、成分ごとの肌の変化の平均、端末ごとのランダムな番号', '研究への協力（任意）。設定で「協力する」を選んだ場合だけ、1日1回まで')}
 ${row('GitHub（GitHub, Inc.）', 'IPアドレス、ブラウザの情報', '本サービスのページの配信')}
 </tbody></table></div>
 <p class="small muted">広告（無料プラン）を配信する場合は、広告配信事業者に送られる情報（Cookie等）と、その無効化の方法をこの表に追加し、事前にお知らせします。現在は広告を配信していません。</p>
@@ -5761,6 +5777,8 @@ function settingsEmbedHtml() {
   const sub = (title, c) => c ? `<div class="set-sub"><h3>${esc(title)}</h3>${inner(c)}</div>` : '';
   const out = [];
   if (cards['身長・体重']) out.push(cards['身長・体重'].outerHTML);
+  if (cards['肌質・年代']) out.push(cards['肌質・年代'].outerHTML);
+  if (cards['研究への協力']) out.push(cards['研究への協力'].outerHTML);
   if (cards['画面の表示']) out.push(cards['画面の表示'].outerHTML);
   if (cards['記録のリマインダー']) out.push(cards['記録のリマインダー'].outerHTML);
   out.push(`<div class="card"><div class="card-h"><h2>データ</h2></div>${sub('保存状況', cards['データの保存状況'])}${sub('バックアップ', cards['バックアップ'])}${sub('動作確認用データ', cards['動作確認用データ'])}${sub('すべてのデータを削除', cards['すべてのデータを削除'])}</div>`);
@@ -5771,6 +5789,98 @@ function settingsEmbedHtml() {
 }
 // 開いている枠だけ、中身を作り直す（ログイン状態が変わったときなど）
 function refreshAccPanel(k) { const pn = document.getElementById('acc-panel-' + k); if (pn && !pn.hidden) pn.innerHTML = ACC_SECTIONS[k].body(); const sec = document.getElementById('acc-sec-' + k); if (sec) { const sm = sec.querySelector('.acc-toggle small'); if (sm) sm.innerHTML = ACC_SECTIONS[k].d(); } }
+// ---------- 研究への協力（任意）：肌質ごとに「どの成分を使って、肌がどう変わったか」を統計にする ----------
+// 送るのは、肌質・年代と「成分ごとの肌の変化の平均」だけ。日付・メモ・写真・商品名・メールアドレス・位置は送らない
+const RESEARCH_MIN_LOGS = 14;
+const researchState = () => state.settings.research || (state.settings.research = {on:false, adult:false, cid:'', lastSent:'', lastHash:''});
+const R_METRICS = [['condition','cond'],['acneCount','acne'],['redness','red'],['dryness','dry'],['oil','oil']];
+const r2 = v => v == null || !isFinite(v) ? null : Math.round(v * 100) / 100;
+function researchSummary() {
+  const logs = state.skinLogs.filter(l => !l.demo).slice().sort((a, b) => a.date.localeCompare(b.date));
+  const st = state.settings, prods = state.myProducts.filter(p => !p.demo);
+  const recorded = logs.some(l => l.usageRecorded);
+  const prodIngs = new Map(prods.map(p => [p.id, knownIngs(ingsOfMy(p)).map(k => k.entry)]));
+  // その日に使った化粧品：「今日使った化粧品」を記録していればそれを使い、なければ使用期間から考える
+  const usedOn = l => recorded ? (l.usageRecorded ? l.usedProducts : null)
+    : prods.filter(p => p.status !== STOCK && p.startDate <= l.date && (!p.endDate || p.endDate >= l.date)).map(p => p.id);
+  const vec = arr => Object.fromEntries(R_METRICS.map(([m, k]) => [k, arr.length ? r2(arr.reduce((a, l) => a + (Number(l[m]) || 0), 0) / arr.length) : null]));
+  const sub = (a, b) => Object.fromEntries(R_METRICS.map(([, k]) => [k, a[k] == null || b[k] == null ? null : r2(a[k] - b[k])]));
+  const days = logs.map(l => ({l, used:usedOn(l)})).filter(x => x.used);
+  const ing = new Map();
+  days.forEach(({l, used}) => {
+    const ks = new Map(); used.forEach(id => (prodIngs.get(id) || []).forEach(e => ks.set(e.key, e.name)));
+    ks.forEach((name, k) => { const x = ing.get(k) || {name, used:[], first:l.date}; x.used.push(l); ing.set(k, x); });
+  });
+  const ings = [];
+  ing.forEach((x, k) => {
+    const usedSet = new Set(x.used), not = days.filter(d => !usedSet.has(d.l)).map(d => d.l);
+    if (x.used.length < 3 || not.length < 3) return;
+    const before = logs.filter(l => l.date >= addDays(x.first, -14) && l.date < x.first), after = logs.filter(l => l.date >= addDays(x.first, 14) && l.date <= addDays(x.first, 42));
+    ings.push({k, name:x.name, du:x.used.length, dn:not.length, d:sub(vec(x.used), vec(not)), ba:before.length >= 3 && after.length >= 3 ? sub(vec(after), vec(before)) : null});
+  });
+  ings.sort((a, b) => b.du - a.du);
+  const conc = {}; logs.forEach(l => (l.otherConcerns || []).forEach(c => { conc[c] = (conc[c] || 0) + 1; }));
+  return {v:1, skin:{type:st.skinType || null, sensitive:!!st.sensitive, age:st.ageBand || null},
+    n:{logs:logs.length, span:logs.length ? diffDays(logs[0].date, logs[logs.length - 1].date) + 1 : 0, usage:recorded ? 'recorded' : 'period'},
+    base:vec(logs), concerns:Object.fromEntries(Object.entries(conc).map(([c, n]) => [c, r2(n / Math.max(1, logs.length))])), ings:ings.slice(0, 80)};
+}
+const strHash = t => { let h = 2166136261; for (let i = 0; i < t.length; i++) { h ^= t.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36); };
+async function researchSend(force) {
+  const r = researchState(); if (!r.on) return false;
+  const sm = researchSummary(); if (sm.n.logs < RESEARCH_MIN_LOGS) return false;
+  const body = JSON.stringify(sm), h = strHash(body);
+  if (!force && r.lastHash === h) return true;
+  if (!r.cid) r.cid = (crypto.randomUUID ? crypto.randomUUID() : 'xxxxxxxx-xxxx-4xxx-8xxx-xxxxxxxxxxxx'.replace(/x/g, () => Math.floor(Math.random() * 16).toString(16)));
+  try {
+    const res = await fetch(`${CLOUD.url}/rest/v1/rpc/research_submit`, {method:'POST', headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify({cid:r.cid, payload:sm})});
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    r.lastHash = h; r.lastSent = todayStr(); save(); return true;
+  } catch (e) { return false; }
+}
+async function researchWithdraw() {
+  const r = researchState(), cid = r.cid;
+  r.on = false; r.lastHash = ''; r.lastSent = ''; save();
+  if (!cid) return true;
+  try { const res = await fetch(`${CLOUD.url}/rest/v1/rpc/research_withdraw`, {method:'POST', headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify({cid})}); if (!res.ok) throw new Error(); r.cid = ''; save(); return true; }
+  catch (e) { return false; }
+}
+function researchPreviewHtml() {
+  const sm = researchSummary(), arrow = (v, good) => v == null ? '—' : `<span style="color:${(good === 'up' ? v > 0 : v < 0) ? 'var(--green-d)' : v === 0 ? 'var(--muted)' : '#C0503C'}">${v > 0 ? '+' : ''}${v.toFixed(2)}</span>`;
+  if (!sm.ings.length) return `<p class="small muted" style="margin:0">まだ成分ごとの比較ができる記録がありません。マイ化粧品に全成分を入れ、肌の記録で「今日使った化粧品」を選ぶと、ここに出ます（使った日・使わなかった日がそれぞれ3日以上必要です）。</p>`;
+  return `<p class="small muted" style="margin:0 0 6px">その成分を使った日と使わなかった日の差（あなたの記録）。肌の調子は＋が良い、ほかは−が良い変化です。</p>
+    <div class="rs-list">${sm.ings.slice(0, 12).map(x => `<div class="rs-row"><b>${esc(truncate(x.name.replace(/（.*?）/g, ''), 16))}<small>使った日 ${x.du}日</small></b><span>調子 ${arrow(x.d.cond, 'up')}</span><span>ニキビ ${arrow(x.d.acne, 'down')}</span><span>赤み ${arrow(x.d.red, 'down')}</span><span>乾燥 ${arrow(x.d.dry, 'down')}</span></div>`).join('')}</div>`;
+}
+function skinProfileCardHtml() {
+  const st = state.settings;
+  return `<div class="card"><div class="card-h"><h2>肌質・年代</h2></div>
+    <div class="form-grid two" style="gap:12px">
+      <div class="field"><label class="lbl" for="f_skinType">肌質</label><select class="select" id="f_skinType"><option value="">未設定</option>${SKIN_TYPES.map(x => `<option ${st.skinType === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+      <div class="field"><label class="lbl" for="f_ageBand">年代<span class="opt">任意</span></label><select class="select" id="f_ageBand"><option value="">答えない</option>${AGE_BANDS.map(x => `<option ${st.ageBand === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
+    </div>
+    <label class="check" style="margin-top:10px"><input type="checkbox" id="f_sensitive" ${st.sensitive ? 'checked' : ''}> 敏感肌（刺激を感じやすい）</label>
+    <p class="small muted" style="margin:8px 0 0">このブラウザ内にだけ保存されます。「研究への協力」をオンにした場合だけ、統計のために送られます。</p></div>`;
+}
+function researchCardHtml() {
+  const r = researchState(), n = state.skinLogs.filter(l => !l.demo).length;
+  return `<div class="card"><div class="card-h"><h2>研究への協力</h2><span class="chip ${r.on ? 'green' : ''}">${r.on ? '協力中' : 'オフ'}</span></div>
+    <p class="small" style="margin:0 0 8px">「どんな肌質の人が、どの成分を使って、肌がどう変わったか」を、たくさんの人の記録から統計にして、スキンケアの研究・商品開発に役立てます。協力は任意で、いつでもやめられます。</p>
+    <details class="fold"><summary>送る内容・送らない内容</summary>
+      <ul class="small" style="margin:8px 0;padding-left:1.2em;line-height:1.7">
+        <li><b>送るもの</b>：肌質・敏感肌かどうか・年代（答えた場合）、記録の日数、肌の状態の平均、<b>成分ごとに「使った日と使わなかった日の肌の差」</b>、使い始める前と後の差</li>
+        <li><b>送らないもの</b>：日付、メモ、写真、商品名・ブランド名、食事の内容、メールアドレス、名前、位置</li>
+        <li>送る先は運営者のデータベース（Supabase・東京）です。端末ごとのランダムな番号で区別し、アカウントとはつなげません。</li>
+        <li>集めたデータは、<b>5人以上の集計にした統計</b>の形で、化粧品会社などの研究開発に提供することがあります。一人ひとりの記録が分かる形では提供しません。</li>
+        <li>やめると、送ったデータも削除されます。</li>
+      </ul>
+      <div class="set-sub"><h3>送る内容のプレビュー（あなたの記録）</h3>${researchPreviewHtml()}</div>
+    </details>
+    ${r.on ? `<p class="small muted" style="margin:10px 0 0">${n < RESEARCH_MIN_LOGS ? `記録が${RESEARCH_MIN_LOGS}日分たまると送られます（今：${n}日分）。` : r.lastSent ? `最後に送った日：${fmtMD(r.lastSent)}（記録が増えると、1日1回まで新しい統計に置きかえます）` : 'まだ送っていません。次にアプリを開いたときに送ります。'}</p>
+      <button class="btn btn-ghost btn-sm" style="margin-top:10px" data-action="research-off">協力をやめて、送ったデータを削除する</button>`
+    : `<label class="check" style="margin-top:10px"><input type="checkbox" id="f_adult"> 18歳以上です</label>
+      <button class="btn btn-primary btn-sm" style="margin-top:10px;display:flex" data-action="research-on">内容に同意して協力する</button>
+      ${state.settings.skinType ? '' : '<p class="hint">先に「肌質・年代」で肌質を選ぶと、肌質ごとの統計に入ります。</p>'}`}
+  </div>`;
+}
 function viewSettings() {
   let size = 0;
   try { size = (localStorage.getItem(STORE_KEY) || '').length; } catch (e) {}
@@ -5789,6 +5899,8 @@ function viewSettings() {
         return `<p style="margin:0">身長 <b>${st.height ? esc(String(st.height)) + 'cm' : '未設定'}</b>　体重 <b>${st.weight ? esc(String(st.weight)) + 'kg' : '未設定'}</b>${bmi ? `　<span class="small muted">BMI ${bmi.toFixed(1)}</span>` : ''}</p>`; })()}
       <p class="small muted" style="margin:6px 0 0">運動の消費カロリーや、たんぱく質の目安の計算に使います。このブラウザ内にだけ保存されます。</p>
       <button class="btn btn-soft btn-sm" style="margin-top:10px" data-action="life-goal">身長・体重を設定する</button></div>
+    ${skinProfileCardHtml()}
+    ${researchCardHtml()}
     <div class="card"><div class="card-h"><h2>画面の表示</h2></div>
       <p class="small muted" style="margin-bottom:10px">暗い場所でも見やすい「ダーク」表示に切り替えられます。「自動」は、スマホ・パソコンの設定（ダークモード）に合わせます。</p>
       <div class="chips">${[['auto','自動'],['light','ライト'],['dark','ダーク']].map(([k, l]) => `<button class="tab ${themePref() === k ? 'active' : ''}" data-action="theme" data-id="${k}">${l}</button>`).join('')}</div></div>
@@ -6006,6 +6118,17 @@ const actions = {
   'fav': (id, el) => toggleFav(id, el),
   'net-add': i => netAdd(i),
   'flt-sheet': () => openFilterSheet(),
+  'research-on': async () => {
+    const ad = document.getElementById('f_adult');
+    if (!ad || !ad.checked) { toast('協力できるのは18歳以上の方です。「18歳以上です」にチェックしてください。', 'error'); return; }
+    const r = researchState(); r.adult = true; r.on = true; r.lastHash = ''; save(); haptic(35); refreshAccPanel('settings'); render();
+    await researchSend(true); refreshAccPanel('settings');
+  },
+  'research-off': async () => {
+    if (!(await confirmDialog('研究への協力をやめて、これまでに送った統計データを削除します。よろしいですか？', {ok:'やめて削除する', title:'研究への協力'}))) return;
+    const ok = await researchWithdraw(); if (!ok) toast('削除の通信ができませんでした。電波のよい所で、もう一度協力をオンにしてからやめてください。', 'error');
+    refreshAccPanel('settings'); render();
+  },
   'flt-done': () => { closeModal(); render(); },
   'flt-clear': k => { if (k === 'ing') ui.ing = false; else if (k === 'sort') ui.sort = 'std'; else ui[k] = ''; render(); },
   'add-sheet': kind => openAddSheet(kind),
@@ -6365,6 +6488,13 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'Escape') { acClose(); }
 });
 // 入力欄（フォーカスを保つため、結果部分だけを更新）
+// 肌質・年代・敏感肌
+document.addEventListener('change', e => {
+  const id = e.target.id; if (!['f_skinType', 'f_ageBand', 'f_sensitive'].includes(id)) return;
+  const st = state.settings;
+  if (id === 'f_skinType') st.skinType = e.target.value; else if (id === 'f_ageBand') st.ageBand = e.target.value; else st.sensitive = e.target.checked;
+  save(); haptic(20); if (researchState().on) researchSend();
+});
 document.addEventListener('input', e => {
   const id = e.target.id;
   if (e.target.name === 'flt-sort-r') { ui.sort = e.target.value; const box = $('#search-results'); if (box) box.innerHTML = searchResults(); const fd = document.getElementById('flt-done'); if (fd) fd.textContent = `${searchCount()}件を見る`; return; }
@@ -6557,6 +6687,7 @@ window.addEventListener('hashchange', () => { if ($('#modal-root').innerHTML) cl
 let resizeTimer;
 window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(drawCharts, 150); });
 $('#top-menu').innerHTML = '<span class="hb" aria-hidden="true"><i></i><i></i><i></i></span>'; $('#top-menu').setAttribute('aria-expanded', 'false');
+if (researchState() && researchState().on) setTimeout(() => { if (researchState().lastSent !== todayStr()) researchSend(); }, 5000); // 研究に協力中なら、1日1回まで統計を新しくする
 if (hasSavedLogin()) setTimeout(initCloud, 0); // 以前ログインしていた場合だけ、ログイン状態を確認する
 document.title = `${SERVICE}｜最小限で最大限を`;
 render();
