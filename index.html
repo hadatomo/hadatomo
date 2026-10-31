@@ -48,7 +48,7 @@
 :root[data-theme="dark"] .tab.active{color:var(--bg)}
 :root[data-theme="dark"] .toast{background:#2A302C;color:#EEF1EE}
 :root[data-theme="dark"] .toast-btn{color:var(--green-d)}
-:root[data-theme="dark"] .hero{background:linear-gradient(135deg,#1C2620 0%,#262219 100%)}
+:root[data-theme="dark"] .hero{background:linear-gradient(135deg,#1C2620 0%,#262219 50%,#1C2620 100%);background-size:220% 220%}
 :root[data-theme="dark"] .lock-card{background:linear-gradient(135deg,#221F18,#1E1C16)}
 :root[data-theme="dark"] .offer.shop-card.selected{background:#3A3120;border-color:#C99B2E}
 :root[data-theme="dark"] .ing-list a{border-color:#2F4535}
@@ -78,7 +78,7 @@
 :root:not([data-theme="light"]) .tab.active{color:var(--bg)}
 :root:not([data-theme="light"]) .toast{background:#2A302C;color:#EEF1EE}
 :root:not([data-theme="light"]) .toast-btn{color:var(--green-d)}
-:root:not([data-theme="light"]) .hero{background:linear-gradient(135deg,#1C2620 0%,#262219 100%)}
+:root:not([data-theme="light"]) .hero{background:linear-gradient(135deg,#1C2620 0%,#262219 50%,#1C2620 100%);background-size:220% 220%}
 :root:not([data-theme="light"]) .lock-card{background:linear-gradient(135deg,#221F18,#1E1C16)}
 :root:not([data-theme="light"]) .offer.shop-card.selected{background:#3A3120;border-color:#C99B2E}
 :root:not([data-theme="light"]) .ing-list a{border-color:#2F4535}
@@ -124,9 +124,10 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area
 .bn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 0 7px;font-size:10.5px;color:var(--muted);text-decoration:none;background:none;border:0;cursor:pointer;min-width:0;white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .bn-item span{max-width:100%;overflow:hidden;text-overflow:clip}
 .bn-item svg{width:23px;height:23px}
-.bn-item.active{color:#E8781E;font-weight:700} /* 選んでいる項目はオレンジ（光はなし） */
+.bn-item{font-weight:600}
+.bn-item.active{color:#E8781E} /* 選んでいる項目はオレンジ（光・太さ・大きさの変化はなし） */
 .bn-item svg,.bn-item span{transition:transform .2s ease}
-.bn-item.active svg{transform:scale(1.18) translateY(-1px)}
+.bn-item.active svg{transform:none}
 .bn-item.active span{transform:none} /* 文字は大きくしない（押したときに横にずれて見えないように） */
 .bn-item svg{transform-origin:50% 50%}
 .acc-list{padding:4px 0}
@@ -239,7 +240,9 @@ label.btn{position:relative}
 .tab.active{background:var(--ink);color:#fff;border-color:var(--ink)}
 
 /* ---------- Home ---------- */
-.hero{position:relative;overflow:hidden;border-radius:22px;padding:14px 16px 16px;background:linear-gradient(135deg,#F3F7F2 0%,#F7F1E7 100%);border:1px solid var(--line);margin-bottom:18px}
+.hero{position:relative;overflow:hidden;border-radius:22px;padding:14px 16px 16px;background:linear-gradient(135deg,#F3F7F2 0%,#F7F1E7 50%,#F3F7F2 100%);background-size:220% 220%;animation:heroFlow 14s ease-in-out infinite alternate;border:1px solid var(--line);margin-bottom:18px}
+@keyframes heroFlow{from{background-position:0% 0%}to{background-position:100% 100%}}
+@media (prefers-reduced-motion:reduce){.hero{animation:none}}
 .hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(90,138,105,.16),transparent 70%)}
 .hero-brand{font-family:var(--serif);font-size:34px;letter-spacing:.26em;font-weight:500;line-height:1.1}
 .hero-copy{margin-top:10px;font-size:15px;color:var(--ink2);letter-spacing:.06em}
@@ -783,7 +786,7 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .cond-seg .seg-opt span svg{color:var(--cc)}
 .cond-seg .seg-opt input:checked + span{background:var(--cc);border-color:var(--cc);color:var(--cf)}
 .cond-seg .seg-opt input:checked + span svg{color:var(--cf)}
-.cond-seg .seg-opt input:checked + span svg{animation:condPop .28s cubic-bezier(.3,1.6,.5,1)}
+.cond-seg .seg-opt span{font-weight:600;transition:background-color .12s,border-color .12s,color .12s} /* 選んでも文字の太さ・大きさは変えない */
 @keyframes condPop{from{transform:scale(.7)}to{transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){.cond-seg .seg-opt input:checked + span svg{animation:none}}
 .home-used{grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px}
@@ -852,7 +855,7 @@ a.used-tile{color:inherit;text-decoration:none}
 .btn,.bn-item,.ls-main,.acc-row,.ac-item,.tab{transition:transform .15s ease,background-color .2s ease,color .2s ease}
 .btn:active,.ls-main:active,.acc-row:active,.tab:active{transform:scale(.97)}
 .bn-item:active svg{transform:scale(.88)}
-.bn-item.active svg{animation:navPop .45s cubic-bezier(.2,.9,.3,1.5)}
+.bn-item.active svg{animation:none}
 @keyframes navPop{0%{transform:scale(.85)}60%{transform:scale(1.28) translateY(-2px)}100%{transform:scale(1.18) translateY(-1px)}}
 @media (prefers-reduced-motion:reduce){#main.pg-in,.fade-once,.kt,.rv,.rv.in,.rv.in *,.chart.play *,.bn-item.active svg{animation:none!important;transition:none!important;opacity:1!important;transform:none!important;filter:none!important}}
 @media print{.rv,.kt{opacity:1!important;transform:none!important;filter:none!important}}
@@ -877,11 +880,10 @@ a.used-tile{color:inherit;text-decoration:none}
 .diag small{display:block;color:var(--muted);font-size:12px;overflow-wrap:anywhere}
 .diag em{display:block;font-style:normal;color:#C0563B;font-size:12.5px;margin-top:2px}
 .advice h3{margin:0 0 4px;font-size:14.5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-.advice .ai-badge{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;color:#fff}
 /* AI分析：ピンク〜青紫のグラデーションがゆっくり流れる */
+.advice .ai-badge{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;color:#fff}
 .advice .ai-badge,.ai-btn{background:linear-gradient(90deg,#FF6FB1,#B26CFF,#5B7CFF,#B26CFF,#FF6FB1);background-size:300% 100%;animation:aiFlow 4s linear infinite}
 .ai-btn{color:#fff!important;border:0!important}
-.ai-btn:hover{filter:brightness(1.05)}
 .ai-text{background:linear-gradient(90deg,#E8559E,#9B5CF0,#4C6EF5,#9B5CF0,#E8559E);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent!important;animation:aiFlow 4s linear infinite}
 @keyframes aiFlow{from{background-position:0% 50%}to{background-position:300% 50%}}
 @media (prefers-reduced-motion:reduce){.advice .ai-badge,.ai-btn,.ai-text{animation:none}}
@@ -4281,8 +4283,8 @@ function openLogForm(id) {
     const b = e.target.closest('[data-fp-note],[data-fp-close],[data-fp-clear],[data-fp-acne-clear],[data-fp-zoom],[data-fp-mode],[data-fp-undo],[data-fp-next],[data-fp-open],[data-fp-done]'); if (!b) return;
     // 最初は小さい顔。押すと画面いっぱいに大きくなって記録できる。「完了」で小さく戻る
     // 大きくするときは、下から出る画面（ボトムシート）の外に出して、普通の全画面にする（シートの中だと動きがおかしくなるため）
-    if ('fpOpen' in b.dataset) { const f = fpEl(); fpPh = document.createComment('fp'); f.parentNode.insertBefore(fpPh, f); document.body.appendChild(f); f.classList.add('fp-big'); fpLines(true); haptic(8); fpSync(); return; }
-    if ('fpDone' in b.dataset) { const f = fpEl(); f.classList.remove('fp-big'); if (fpPh && fpPh.parentNode) { fpPh.parentNode.replaceChild(f, fpPh); } fpPh = null; fpSel.clear(); fpLast = null; fpBlink(false); const st = FACE3D.st; if (st) { st.zoomT = null; st.cam.position.z = 44; st.cam.position.y = 0.6; st.yaw = 0; st.dirty = true; } fpLines(false); fpSync(); return; }
+    if ('fpOpen' in b.dataset) { { const st = FACE3D.st; if (st) { st.zoomT = null; st.cam.position.z = 44; st.dirty = true; } } const f = fpEl(); fpPh = document.createComment('fp'); f.parentNode.insertBefore(fpPh, f); document.body.appendChild(f); f.classList.add('fp-big'); fpLines(true); haptic(8); fpSync(); return; }
+    if ('fpDone' in b.dataset) { const f = fpEl(); f.classList.remove('fp-big'); if (fpPh && fpPh.parentNode) { fpPh.parentNode.replaceChild(f, fpPh); } fpPh = null; fpSel.clear(); fpLast = null; fpBlink(false); const st = FACE3D.st; if (st) { st.zoomT = null; st.cam.position.z = 63; st.cam.position.y = 0.6; st.yaw = 0; st.dirty = true; } /* 小さい顔は頭から首まで全部見える距離 */ fpLines(false); fpSync(); return; }
     if ('fpUndo' in b.dataset) { const k = fpHist.pop(); if (k) { fpTouched = true; fpToggleAcne(k); fpLast = fpHist[fpHist.length - 1] || null; syncAcne(); condAuto(); haptic(8); fpSync(); fpBlink(true); } return; }
     if ('fpNext' in b.dataset) { fpLast = null; fpBlink(false); fpPanel(); haptic(8); return; }
     if (b.dataset.fpMode) {
@@ -4329,7 +4331,7 @@ function openLogForm(id) {
     return out;
   };
   fpPanel();
-  setTimeout(() => drawFace3d({canvas:'face3d-form', load:'fp-load', tip:'', camZ:44, minZ:12, yawOnly:true, auto:false, grid:true, panY:true, panAt:40, ready:st => {
+  setTimeout(() => drawFace3d({canvas:'face3d-form', load:'fp-load', tip:'', camZ:63, minZ:12, yawOnly:true, auto:false, grid:true, panY:true, panAt:40, ready:st => {
     st.canvasId = 'face3d-form';
     placeOldSpots(); fpLines(false);
     // 1マス選択：押したマスにニキビを付ける／消す
