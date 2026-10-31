@@ -585,6 +585,7 @@ details.acc-cmp{margin-top:14px}
 .xim{display:block;overflow:hidden;background:#fff;position:relative}
 .xim img{width:100%;height:100%;object-fit:contain;display:block;transform:scale(1.24)}
 .thumb .xim{position:absolute;inset:0}
+.xim.clean img{transform:scale(.92)}
 .net-noimg{display:flex;align-items:center;justify-content:center;color:var(--muted)}
 .net-noimg svg{width:22px;height:22px}
 .net-t{display:flex;flex-direction:column;min-width:0}
@@ -605,6 +606,12 @@ details.acc-cmp{margin-top:14px}
 .sbig .input::placeholder{color:var(--muted);opacity:.55;font-weight:400}
 .sbar-top .sbar-f{min-height:54px;width:54px;padding:0;border-radius:50%;justify-content:center}
 .top-actions{display:flex;gap:8px;margin:0 0 12px}
+.my-add{width:100%;justify-content:center;min-height:52px;font-size:16px}
+.my-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 14px}
+.my-f{justify-content:center;gap:6px;padding-left:6px;padding-right:6px;white-space:nowrap}
+.my-f span{font-size:11.5px;font-weight:700;color:var(--muted)}
+.my-f.active{background:var(--green-d);border-color:var(--green-d);color:#fff}
+.my-f.active span{color:rgba(255,255,255,.85)}
 .sbar .input{min-height:46px}
 .sbar-f{min-height:46px;padding:0 14px;position:relative;gap:6px}
 .sbar-f svg{width:18px;height:18px}
@@ -888,6 +895,8 @@ a.used-tile{color:inherit;text-decoration:none}
 .bn-item.active svg{animation:none}
 @keyframes navPop{0%{transform:scale(.85)}60%{transform:scale(1.28) translateY(-2px)}100%{transform:scale(1.18) translateY(-1px)}}
 @media (prefers-reduced-motion:reduce){#main.pg-in,.fade-once,.kt,.rv,.rv.in,.rv.in *,.chart.play *,.bn-item.active svg{animation:none!important;transition:none!important;opacity:1!important;transform:none!important;filter:none!important}}
+/* 画面を切り替えたときの動き（ふわっと出る・順番に出る・グラフが伸びる）は、毎回だとうるさいので出さない */
+#main.pg-in,.fade-once,.kt,.rv,.rv.in,.rv.in .ls-row,.rv.in .advice li,.rv.in .acc-row,.rv.in .life-btns>*,.rv.in .ld-nums>span,.rv.in .pgrid>*,.rv.in .mlist>*,.rv.in .shortcuts>*,.rv.in .stat-row>*,.rv.in.mrows>.mrow,.rv.in .bar i,.rv.in .budget-bar i,.chart.play *{animation:none!important;transition:none!important;opacity:1!important;transform:none!important;filter:none!important}
 @media print{.rv,.kt{opacity:1!important;transform:none!important;filter:none!important}}
 /* 待っている間の仮の表示（スケルトン） */
 .skel{display:block;border-radius:8px;height:12px;background:linear-gradient(90deg,rgba(120,105,80,.10) 25%,rgba(120,105,80,.22) 45%,rgba(120,105,80,.10) 65%);background-size:300% 100%;animation:skel 1.3s ease-in-out infinite}
@@ -1700,7 +1709,7 @@ function normalize(d) {
     if (p.isSample && samples[p.id] && !Array.isArray(p.purposes)) p = Object.assign({}, samples[p.id], {image:p.image});
     const verify = p.isSample ? 'sample' : (p.verify === 'verified' ? 'verified' : 'unverified');
     return {id:String(p.id), isSample:!!p.isSample, verify, name:String(p.name), brand:String(p.brand||''), category:CATEGORIES.includes(p.category) ? p.category : 'その他',
-      origin:ORIGINS.includes(p.origin) ? p.origin : 'その他', price:Math.max(0, num(p.price)), volume:String(p.volume||''), image:safeImg(p.image), imageUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.imageUrl || '')) ? String(p.imageUrl) : '', shopUrl:safeUrl(p.shopUrl),
+      origin:ORIGINS.includes(p.origin) ? p.origin : 'その他', price:Math.max(0, num(p.price)), volume:String(p.volume||''), image:safeImg(p.image), imageUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.imageUrl || '')) ? String(p.imageUrl) : '', shopUrl:safeUrl(p.shopUrl), imgClean:!!p.imgClean,
       purposes:strArr(p.purposes, PURPOSES), ingredients:String(p.ingredients||''), features:String(p.features||''), usage:String(p.usage||''), caution:String(p.caution||''),
       jan:/^(\d{8}|\d{13})$/.test(String(p.jan||'')) ? String(p.jan) : '',
       source:String(p.source||''), checkedAt:isValidYmd(p.checkedAt) ? p.checkedAt : '', offers:Array.isArray(p.offers) ? p.offers.filter(o => o && o.shop && !o.isSample).map(normOffer) : []};
@@ -1944,6 +1953,13 @@ function haptic(ms=30) {
     tick(); if (n > 1) setTimeout(tick, 120);
   } catch (e) { /* 対応していない端末では何もしない */ }
 }
+// 保存したときの、強めのバイブ（Android：長めに2回／iPhone：「コツッ」を3回続けて鳴らす）
+function switchTick() { try { const lb = document.createElement('label'); lb.setAttribute('aria-hidden', 'true'); lb.style.display = 'none'; const ip = document.createElement('input'); ip.type = 'checkbox'; ip.setAttribute('switch', ''); lb.appendChild(ip); document.head.appendChild(lb); lb.click(); lb.remove(); } catch (e) { /* 何もしない */ } }
+function hapticStrong(skipFirst) {
+  hapticAt = Date.now();
+  try { if (typeof navigator.vibrate === 'function' && navigator.vibrate([80, 60, 80])) return; } catch (e) { /* 次の方法へ */ }
+  [0, 110, 220].forEach((t, i) => { if (!(skipFirst && i === 0)) setTimeout(switchTick, t); });
+}
 function toast(msg, type='') {
   // 保存・記録・追加できたときはブルッと知らせる
   if (type !== 'error' && /保存しました|記録しました|追加しました|登録しました/.test(msg)) haptic(type === 'undo' ? 20 : 35);
@@ -1980,7 +1996,7 @@ function hapticize(btn) {
   const ip = document.createElement('input'); ip.type = 'checkbox'; ip.setAttribute('switch', ''); ip.tabIndex = -1;
   lb.appendChild(ip); wrap.appendChild(lb);
   lb.addEventListener('click', e => e.stopPropagation());
-  ip.addEventListener('change', () => { if (btn.disabled) return; hapticAt = Date.now(); if (typeof navigator.vibrate === 'function') { try { navigator.vibrate([35, 50, 35]); } catch (er) { /* 何もしない */ } } btn.click(); });
+  ip.addEventListener('change', () => { if (btn.disabled) return; hapticStrong(true); btn.click(); }); // 指で押した1回目に続けて、さらに2回鳴らして強めにする
 }
 // 画面を開いている間、後ろのページが動かないように固定する（閉じたら元の位置に戻す）
 let lockedY = null;
@@ -2053,7 +2069,7 @@ function extImgHtml(u, cls) { const src = hiResImg(u); return src ? `<span class
 function thumbHtml(p, showSample=true) {
   const own = safeImg(p && p.image), img = own || (p && p.imageUrl) || '';
   const cat = (p && p.category) || 'その他';
-  const inner = own ? `<img src="${own}" alt="${esc(p.name)}の画像" loading="lazy">` : img ? extImgHtml(img, 'thumb-x')
+  const inner = own ? `<img src="${own}" alt="${esc(p.name)}の画像" loading="lazy">` : img ? extImgHtml(img, 'thumb-x' + (p.imgClean ? ' clean' : ''))
     : `<div class="ph" style="background:${CAT_BG[cat] || '#F2F1EE'}"><div class="bottle"></div>${esc(CAT_EN[cat] || 'SKIN CARE')}</div>`;
   return `<div class="thumb">${inner}${showSample && p && p.isSample ? '<span class="tag badge-sample">サンプル</span>' : ''}</div>`;
 }
@@ -2521,7 +2537,7 @@ function findPaint() {
 }
 function findPick(i) {
   const fs = findState, x = fs && fs.items && fs.items[Number(i)]; if (!x) return;
-  const p = netToCat(x); if (!p) return;
+  const p = netToCat(x, fs.items); if (!p) return;
   const kind = fs.kind; findState = null; closeModal();
   if (kind === 'my') setTimeout(() => openMyForm(null, p.id), 200);
   else { location.hash = '#/product/' + encodeURIComponent(p.id); render(); }
@@ -2675,7 +2691,7 @@ function netHtml() {
   }).join('')}</div><p class="small muted" style="margin-top:8px">価格は検索した時点のものです。「追加」すると、この商品を商品一覧に登録して、お気に入りやマイ化粧品に使えます。${n.items.some(x => x.ad) ? '一部のリンクは広告（アフィリエイト）です。' : ''}</p>
     <p class="credit small muted">Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p>`;
 }
-function netToCat(x) {
+function netToCat(x, others) {
   const old = state.catalog.find(c => c.shopUrl && c.shopUrl === x.url); if (old) return old;
   const vol = (x.name.match(/(\d+(?:\.\d+)?)\s*(ml|mL|ML|g|G)(?![a-z])/) || [])[0] || '';
   const p = {id:uid(), isSample:false, verify:'unverified', name:x.name.replace(/[【\[].*?[】\]]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80) || x.name.slice(0, 80), brand:'', category:guessCat(x.name), origin:'日本',
@@ -2684,11 +2700,30 @@ function netToCat(x) {
   const g = guessFromName(p.name); if (g && g.brand) p.brand = g.brand; if (g && g.purposes && g.purposes.length) p.purposes = g.purposes.filter(v => PURPOSES.includes(v));
   state.catalog.push(p);
   if (!save()) { state.catalog.pop(); return null; }
+  pickCleanImage(p, x, others || []);
   return p;
+}
+// 同じ商品の画像（そのお店の別の画像＋ほかのお店の同じ商品の画像）を集めて、文字やバッジのない「商品だけ」の画像をAIに選んでもらう
+async function pickCleanImage(p, x, others) {
+  const key = s0 => normIng(String(s0 || '').replace(/[【\[].*?[】\]]/g, '').replace(/送料無料|公式|正規品|ポイント\d+倍|あす楽|\d+%OFF/gi, ''));
+  const urls = [];
+  const add = u => { const v = hiResImg(u); if (v && !urls.includes(v)) urls.push(v); };
+  (x.images && x.images.length ? x.images : [x.image]).forEach(add);
+  others.filter(o => o !== x && similarity(key(o.name), key(x.name)) >= 0.55).forEach(o => (o.images && o.images.length ? o.images : [o.image]).forEach(add));
+  if (urls.length < 2) return;
+  try {
+    const res = await fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify({mode:'pickimg', urls:urls.slice(0, 8)})});
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok || !(j.best >= 0) || !urls[j.best]) return;
+    const cur = getCat(p.id); if (!cur) return;
+    cur.imageUrl = urls[j.best]; cur.imgClean = !!j.clean; save();
+    // 表示中の画面の画像を差し替える
+    if (['product', 'search', 'favorites', 'my', 'mydetail'].includes(parseRoute().name) && !$('#modal-root').innerHTML) render();
+  } catch (e) { /* 選べなかったときは、最初の画像のまま */ }
 }
 function netAdd(i) {
   const x = ui.net && ui.net.items && ui.net.items[Number(i)]; if (!x) return;
-  if (!netToCat(x)) return;
+  if (!netToCat(x, ui.net.items)) return;
   toast('商品を追加しました。ブランドや成分は、商品の画面の「編集」で入力できます');
   netPaint(); const box = document.getElementById('search-results'); if (box) box.innerHTML = searchResults();
 }
@@ -3789,8 +3824,8 @@ function viewMy() {
   const useN = {}; state.skinLogs.forEach(l => (l.usedProducts || []).forEach(id => { useN[id] = (useN[id] || 0) + 1; }));
   const list = state.myProducts.filter(p => ui.myFilter === 'すべて' || p.status === ui.myFilter)
     .sort((a,b) => (useN[b.id] || 0) - (useN[a.id] || 0) || FREQS.indexOf(a.frequency) - FREQS.indexOf(b.frequency) || b.startDate.localeCompare(a.startDate));
-  let html = `<div class="top-actions"><button class="btn btn-primary" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button></div>`;
-  html += `<div class="tabs" role="tablist">${filters.map(f => `<button class="tab ${ui.myFilter === f ? 'active' : ''}" data-action="my-filter" data-id="${esc(f)}">${esc(label(f))}（${f === 'すべて' ? state.myProducts.length : counts[f]}）</button>`).join('')}</div>`;
+  let html = `<button class="btn btn-primary my-add" data-action="add-sheet" data-id="my">${icon('plus')}マイ化粧品を追加</button>`;
+  html += `<div class="my-filters" role="tablist">${filters.map(f => `<button class="btn btn-ghost btn-sm my-f ${ui.myFilter === f ? 'active' : ''}" role="tab" aria-selected="${ui.myFilter === f}" data-action="my-filter" data-id="${esc(f)}">${esc(label(f))}<span>${f === 'すべて' ? state.myProducts.length : counts[f]}</span></button>`).join('')}</div>`;
   const tools = state.myProducts.length ? `<div class="mtools"><a href="#/compare">${icon('compare')}商品と肌状態の比較<i>›</i></a><a href="#/combo">${icon('flask')}成分の組み合わせ<i>›</i></a></div>` : '';
   if (!state.myProducts.length) {
     html += `<div class="card">${emptyBox('bottle', 'まだ化粧品が登録されていません', '使っている化粧品を登録すると、使用期間・成分・支出をまとめて管理できます。商品検索から選んで登録することもできます。', '<div class="page-actions" style="justify-content:center"><button class="btn btn-primary btn-sm" data-action="new-my">直接登録する</button><a class="btn btn-ghost btn-sm" href="#/search">商品検索から選ぶ</a></div>')}</div>`;
@@ -5495,7 +5530,7 @@ async function drawFace3d(opts) {
   cv.addEventListener('pointerdown', e => {
     pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); st.target = null; st.user = true; st.idle = 0; if (DEV.touch) st.auto = false;
     if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = {d:Math.hypot(a.x - b.x, a.y - b.y), z:st.zoomT || cam.position.z}; st.drag = null; return; }
-    st.drag = {x:e.clientX, y:e.clientY, yaw:st.yaw, pitch:st.pitch, cy:cam.position.y, moved:false}; cv.setPointerCapture(e.pointerId);
+    st.drag = {x:e.clientX, y:e.clientY, yaw:st.yaw, pitch:st.pitch, cy:cam.position.y, moved:false, dir:null, id:e.pointerId}; if (!st.yawOnly) cv.setPointerCapture(e.pointerId);
     // 範囲選択モード：なぞった始まりと終わりのマス目で四角く選ぶ（回さない）
     if (st.rangeMode && st.onRange) { const k = face3dGridCell(st, e); st.range = k ? {a:k, b:k} : null; if (k) st.onRange(k, k, 'move'); }
   });
@@ -5513,6 +5548,11 @@ async function drawFace3d(opts) {
     if (!st.drag) return;
     const dx = e.clientX - st.drag.x, dy = e.clientY - st.drag.y;
     if (Math.abs(dx) + Math.abs(dy) > 4) st.drag.moved = true;
+    // スマホ：最初に動かした向きで決める。縦なら画面のスクロールを優先して顔は回さない。横なら顔を左右に回す
+    if (st.yawOnly && !st.rangeMode && !(st.panY && (st.zoomT || cam.position.z) < st.panAt)) {
+      if (!st.drag.dir && Math.abs(dx) + Math.abs(dy) > 6) { st.drag.dir = Math.abs(dy) > Math.abs(dx) ? 'v' : 'h'; if (st.drag.dir === 'h') { try { cv.setPointerCapture(st.drag.id); } catch (er) { /* 何もしない */ } } }
+      if (st.drag.dir !== 'h') return;
+    }
     if (st.rangeMode && st.onRange) { if (st.range) { const k = face3dGridCell(st, e); if (k && k !== st.range.b) { st.range.b = k; st.onRange(st.range.a, k, 'move'); } } return; }
     // 拡大しているときは、上下になぞると顔の上下（おでこ・あご）へ動かせる
     if (st.panY && (st.zoomT || cam.position.z) < st.panAt) { cam.position.y = clamp(st.drag.cy + dy * 0.004 * (st.zoomT || cam.position.z), -8, 9); }
