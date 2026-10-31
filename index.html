@@ -286,6 +286,12 @@ label.btn{position:relative}
 .ac-l{display:block;font-size:14px;color:var(--ink);overflow-wrap:anywhere}
 .ac-l b{color:var(--green-d)}
 .ac-item small{display:block;font-size:11.5px;color:var(--muted)}
+.ac-head{display:flex;justify-content:space-between;align-items:center;padding:8px 14px 4px;font-size:12px;color:var(--muted)}
+.ac-head button{border:0;background:none;color:var(--green-d);font-family:inherit;font-size:12px;cursor:pointer;text-decoration:underline}
+.ac-item.hist{grid-template-columns:20px 1fr 28px}
+.ac-item.hist svg{color:var(--muted)}
+.ac-del{width:28px;height:28px;border:0;border-radius:50%;background:none;color:var(--muted);font-size:16px;cursor:pointer}
+.ac-del:active{background:var(--surface2)}
 @media(min-width:720px){.filters .row{grid-template-columns:2fr 1fr 1fr 1fr}.filters .row.r2{grid-template-columns:1fr 1fr 1fr}}
 .pgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 @media(min-width:720px){.pgrid{grid-template-columns:repeat(3,1fr);gap:16px}}
@@ -1160,6 +1166,7 @@ const ICONS = {
   pin:'<path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>',
   tag:'<path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"/><circle cx="8" cy="8" r="1.5"/>',
   filter:'<path d="M4 6h16M7 12h10M10 18h4"/>',
+  clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   heart:'<path d="M12 20s-7.5-4.6-9.2-9.2C1.6 7.4 3.9 4.5 7 4.5c2 0 3.4 1.1 5 3 1.6-1.9 3-3 5-3 3.1 0 5.4 2.9 4.2 6.3C19.5 15.4 12 20 12 20z"/>',
   image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-10 9"/>',
   moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
@@ -1957,7 +1964,7 @@ function viewHome() {
   const lifeLine = lifeSumHtml(todayLife);
   // 今日の肌記録：3Dの顔を大きく、記録の数値を横に小さく
   const L = todayLog;
-  const side = L ? `<div class="t3-side"><div class="t3-tags"><span class="t-cond" style="background:${COND_COLORS[L.condition] || '#999'}">${esc(COND_LABELS[L.condition] || '—')}</span>${L.areas.map(a => `<span>${esc(areaName(a))}</span>`).join('')}${L.acneTypes.map(a => `<span><i class="sw" style="background:${ACNE_SWATCH(a)}"></i>${esc(a.replace(/（.*）/, ''))}</span>`).join('')}</div><p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
+  const side = L ? `<div class="t3-side"><div class="t3-tags"><span class="t-cond" style="background:${COND_COLORS[L.condition] || '#999'}">${esc(COND_LABELS[L.condition] || '—')}</span>${L.areas.map(a => `<span>${esc(areaName(a))}</span>`).join('')}${L.acneTypes.map(a => `<span>${esc(a.replace(/（.*）/, ''))}</span>`).join('')}</div><p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
       ${['赤み','乾燥','皮脂'].map((lab, i) => { const v = [L.redness, L.dryness, L.oil][i]; return `<div class="t3-m"><span>${lab}</span><span class="bar"><i style="width:${v / 5 * 100}%"></i></span><b>${v}</b></div>`; }).join('')}</div>`
     : `<div class="t3-side"><p class="small muted" style="margin:0 0 8px">まだ今日の記録がありません。1分ほどで記録できます。</p><button class="btn btn-primary btn-sm" data-action="new-log">${icon('plus')}記録する</button></div>`;
   const todayCard = `<div class="card"><div class="card-h"><h2>今日の肌記録</h2>${L ? `<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(L.id)}">編集</button>` : ''}</div>
@@ -3628,11 +3635,11 @@ function openLogForm(id) {
       <div class="counter"><button type="button" class="icon-btn" data-step="-1" aria-label="1つ減らす">−</button><input class="input" id="f_acneCount" name="acneCount" inputmode="numeric" value="${d.acneCount}" aria-label="ニキビの数"><button type="button" class="icon-btn" data-step="1" aria-label="1つ増やす">＋</button><span class="small muted">個</span></div>
       <div class="field-error" data-err="acneCount"></div>
       <p class="small muted" style="margin:10px 0 4px">ニキビの種類<span class="opt">複数選択可</span></p>
-      <div class="checks">${ACNE_TYPES.map(a => `<label class="check"><input type="checkbox" name="acneTypes" value="${esc(a)}" ${d.acneTypes.includes(a) ? 'checked' : ''}><i class="sw" style="background:${ACNE_SWATCH(a)}"></i>${esc(a)}</label>`).join('')}</div>
+      <div class="checks">${ACNE_TYPES.map(a => `<label class="check"><input type="checkbox" name="acneTypes" value="${esc(a)}" ${d.acneTypes.includes(a) ? 'checked' : ''}>${esc(a)}</label>`).join('')}</div>
       <details class="fold" style="margin-top:12px" ${d.acneSpots.length ? 'open' : ''}><summary>ニキビの詳細（部位・大きさ・経過）<span class="opt">任意</span></summary>
         <div id="spots">${d.acneSpots.map(spotRow).join('')}</div>
         <button type="button" class="btn btn-soft btn-sm" id="add-spot" style="margin-top:10px">${icon('plus')}ニキビの詳細を追加</button>
-        <p class="hint">詳細を入力すると、合計がニキビの数に自動で反映されます。<b>部位ごとに種類を入れると、3Dの顔のニキビの粒が種類の色（白ニキビ＝白、黄ニキビ＝黄色など）になります。</b></p>
+        <p class="hint">詳細を入力すると、合計がニキビの数に自動で反映されます。</p>
       </details>
     </div>
     ${field('赤み', seg('redness', lv, d.redness) + '<div class="scale-cap"><span>0 なし</span><span>5 強い</span></div>', {name:'redness', required:true})}
@@ -4062,7 +4069,7 @@ function face3dDots(st, counts, mode, types) {
       const vi = cand[Math.floor(((k * 9301 + ri * 49297) % 233280) / 233280 * cand.length)];
       const t = types && types[id];
       st.dotMats = st.dotMats || {};
-      const mat = t && ACNE_COLORS[t] ? (st.dotMats[t] = st.dotMats[t] || new T.MeshStandardMaterial({color:new T.Color(...ACNE_COLORS[t]).convertSRGBToLinear(), roughness:0.45})) : st.dotMat;
+      const mat = st.dotMat; // ニキビの種類ごとの色分けは、今は使わない
       const dot = new T.Mesh(st.dotGeo, mat);
       dot.position.set(pos[vi * 3] + nrm[vi * 3] * 0.12, pos[vi * 3 + 1] + nrm[vi * 3 + 1] * 0.12, pos[vi * 3 + 2] + nrm[vi * 3 + 2] * 0.12);
       st.group.add(dot); st.dots.push(dot);
@@ -5633,6 +5640,11 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.g
 // ---------- 商品検索の入力候補（オートコンプリート） ----------
 const kanaNorm = v => toHalf(String(v || '')).toLowerCase().replace(/[ぁ-ゖ]/g, c => String.fromCharCode(c.charCodeAt(0) + 0x60)).replace(/\s+/g, '');
 let acItems = [], acIdx = -1;
+// 検索の履歴（この端末のブラウザの中だけに保存。読めなくてもアプリは動く）
+const HIST_KEY = 'skinwise_search_hist';
+function searchHist() { try { const a = JSON.parse(localStorage.getItem(HIST_KEY) || '[]'); return Array.isArray(a) ? a.filter(x => typeof x === 'string').slice(0, 8) : []; } catch (e) { return []; } }
+function saveHist(a) { try { localStorage.setItem(HIST_KEY, JSON.stringify(a.slice(0, 8))); } catch (e) { /* 保存できなくても何もしない */ } }
+function addHist(q) { q = String(q || '').trim(); if (!q || q.length > 60) return; saveHist([q].concat(searchHist().filter(x => x !== q))); }
 function acSuggest(q) {
   const k = kanaNorm(q); if (!k) return [];
   const hit = v => kanaNorm(v).includes(k), starts = v => kanaNorm(v).startsWith(k);
@@ -5658,9 +5670,13 @@ const AC_ICON = {product:'bottle', brand:'tag', ing:'flask'};
 function acRender() {
   const box = document.getElementById('ac-list'), inp = document.getElementById('flt-q'); if (!box || !inp) return;
   const q = inp.value.trim();
-  acItems = q ? acSuggest(q) : []; if (acIdx >= acItems.length) acIdx = acItems.length - 1;
+  // 何も入れていないときは、最近の検索（履歴）を出す
+  acItems = q ? acSuggest(q) : searchHist().map(h => ({type:'hist', id:h, label:h, sub:''})); if (acIdx >= acItems.length) acIdx = acItems.length - 1;
   box.hidden = !acItems.length || document.activeElement !== inp; inp.setAttribute('aria-expanded', String(!box.hidden));
-  box.innerHTML = acItems.map((x, i) => `<div class="ac-item ${i === acIdx ? 'on' : ''}" role="option" id="ac-${i}" data-ac="${i}" aria-selected="${i === acIdx}">${icon(AC_ICON[x.type] || 'search')}<span><span class="ac-l">${acMark(x.label, q)}</span><small>${esc(x.sub)}</small></span></div>`).join('');
+  box.innerHTML = (!q && acItems.length ? `<div class="ac-head"><span>最近の検索</span><button type="button" data-hist-clear>すべて消す</button></div>` : '') +
+    acItems.map((x, i) => x.type === 'hist'
+      ? `<div class="ac-item hist ${i === acIdx ? 'on' : ''}" role="option" id="ac-${i}" data-ac="${i}" aria-selected="${i === acIdx}">${icon('clock')}<span><span class="ac-l">${esc(x.label)}</span></span><button type="button" class="ac-del" data-hist-del="${esc(x.id)}" aria-label="「${esc(x.label)}」を履歴から消す">×</button></div>`
+      : `<div class="ac-item ${i === acIdx ? 'on' : ''}" role="option" id="ac-${i}" data-ac="${i}" aria-selected="${i === acIdx}">${icon(AC_ICON[x.type] || 'search')}<span><span class="ac-l">${acMark(x.label, q)}</span><small>${esc(x.sub)}</small></span></div>`).join('');
   if (acIdx >= 0) inp.setAttribute('aria-activedescendant', 'ac-' + acIdx); else inp.removeAttribute('aria-activedescendant');
 }
 function acClose() { acIdx = -1; const box = document.getElementById('ac-list'); if (box) box.hidden = true; const inp = document.getElementById('flt-q'); if (inp) inp.setAttribute('aria-expanded', 'false'); }
@@ -5668,20 +5684,27 @@ let acPicking = false, renderingNow = false;
 function acPick(i) {
   const x = acItems[i]; if (!x) return; acClose();
   acPicking = true; setTimeout(() => { acPicking = false; }, 0);
+  if (x.type === 'hist') { ui.q = x.id; addHist(x.id); render(); return; }
+  const inp = document.getElementById('flt-q'); if (inp && inp.value.trim()) addHist(inp.value.trim()); else addHist(x.label);
   if (x.type === 'product') { location.hash = '#/product/' + encodeURIComponent(x.id); return; }
   if (x.type === 'brand') { ui.brand = x.id; ui.q = ''; }
   if (x.type === 'ing') { ui.q = x.id; ui.ing = true; }
   render();
 }
 document.addEventListener('focusin', e => { if (e.target.id === 'flt-q') acRender(); });
-document.addEventListener('focusout', e => { if (e.target.id === 'flt-q') setTimeout(() => { if (document.activeElement && document.activeElement.id === 'flt-q') return; acClose(); }, 120); });
-document.addEventListener('pointerdown', e => { const it = e.target.closest('[data-ac]'); if (!it) return; e.preventDefault(); acPick(Number(it.dataset.ac)); });
+document.addEventListener('focusout', e => { if (e.target.id === 'flt-q' && e.target.value.trim().length >= 2 && !acPicking) addHist(e.target.value); if (e.target.id === 'flt-q') setTimeout(() => { if (document.activeElement && document.activeElement.id === 'flt-q') return; acClose(); }, 120); });
+document.addEventListener('pointerdown', e => {
+  const del = e.target.closest('[data-hist-del]'); if (del) { e.preventDefault(); saveHist(searchHist().filter(x => x !== del.dataset.histDel)); acRender(); return; }
+  if (e.target.closest('[data-hist-clear]')) { e.preventDefault(); saveHist([]); acRender(); return; }
+  const it = e.target.closest('[data-ac]'); if (!it) return; e.preventDefault(); acPick(Number(it.dataset.ac));
+});
 document.addEventListener('keydown', e => {
   if (e.target.id !== 'flt-q' || e.isComposing) return;
-  const box = document.getElementById('ac-list'); if (!box || box.hidden) { if (e.key === 'ArrowDown') { acIdx = 0; acRender(); e.preventDefault(); } return; }
+  const box = document.getElementById('ac-list'); if (!box || box.hidden) { if (e.key === 'ArrowDown') { acIdx = 0; acRender(); e.preventDefault(); } else if (e.key === 'Enter') { addHist(e.target.value); e.target.blur(); } return; }
   if (e.key === 'ArrowDown') { acIdx = (acIdx + 1) % acItems.length; acRender(); e.preventDefault(); }
   else if (e.key === 'ArrowUp') { acIdx = acIdx <= 0 ? acItems.length - 1 : acIdx - 1; acRender(); e.preventDefault(); }
   else if (e.key === 'Enter' && acIdx >= 0) { e.preventDefault(); acPick(acIdx); }
+  else if (e.key === 'Enter') { addHist(e.target.value); acClose(); e.target.blur(); }
   else if (e.key === 'Escape') { acClose(); }
 });
 // 入力欄（フォーカスを保つため、結果部分だけを更新）
