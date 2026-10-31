@@ -643,6 +643,23 @@ details.acc-cmp{margin-top:14px}
 .fp-sum{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .fp-sum .chip{white-space:normal;text-align:left;cursor:pointer;font-family:inherit}
 @media(max-width:420px){.fp-wrap{grid-template-columns:1fr}.fp-stage{max-width:240px;margin:0 auto}}
+.fp-zoom{position:absolute;right:6px;bottom:6px;display:flex;flex-direction:column;gap:6px;z-index:2}
+.fp-zoom .icon-btn{width:32px;height:32px;font-size:16px;background:var(--surface);box-shadow:var(--shadow)}
+.fp-h b small{display:block;font-size:11.5px;font-weight:500;color:var(--muted)}
+.fp-row span small{font-size:11px;color:var(--muted);margin-left:2px}
+.fp-chip{display:inline-flex;align-items:center;gap:5px}
+.fp-chip i{width:9px;height:9px;border-radius:50%;background:var(--cc);display:inline-block}
+.fp-chip.on{background:var(--cc)!important;border-color:var(--cc)!important;color:#fff}
+.fp-chip.on i{background:#fff}
+.fp-sliders{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+.fp-slider{display:block;padding:8px 10px 6px;border-radius:12px;background:var(--surface2)}
+.fp-slider>span:first-child{display:flex;justify-content:space-between;font-size:12.5px;font-weight:600}
+.fp-slider>span:first-child b{color:var(--cc);font-size:15px}
+.fp-slider input[type=range]{width:100%;margin:6px 0 0;accent-color:var(--cc);height:28px}
+.fp-ticks{display:flex;justify-content:space-between;padding:0 6px;font-size:10.5px;color:var(--muted)}
+.fp-ticks i{font-style:normal;width:12px;text-align:center}
+.fp-legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;font-size:12px}
+.fp-legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
 /* ===== 動き（モーション） ===== */
 @keyframes pgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 #main.pg-in{animation:pgIn .38s cubic-bezier(.2,.8,.2,1) both}
@@ -947,6 +964,13 @@ const ACNE_SIZES = ['小（〜2mm）','中（2〜5mm）','大（5mm〜）'];
 const ACNE_STATUS = ['新しくできた','変化なし','改善傾向','悪化傾向'];
 const OTHER_CONCERNS = ['くすみ','ざらつき','毛穴の目立ち','かゆみ','ヒリヒリ感','つっぱり','肌あれ'];
 const AREA_CONCERNS = ['赤み','乾燥','テカリ','くすみ','ざらつき','毛穴の目立ち','かゆみ','ヒリヒリ感','肌あれ']; // 顔を押して選べる、部位ごとの状態
+// 状態ごとの色（3Dの顔のマス目と、ボタンの色）
+const CONCERN_COLORS = {'赤み':'#E2523C', '乾燥':'#E9B949', 'テカリ':'#F08A24', 'くすみ':'#8C8C8C', 'ざらつき':'#A0724F', '毛穴の目立ち':'#7E57C2', 'かゆみ':'#E46FA0', 'ヒリヒリ感':'#D84315', '肌あれ':'#3E92CC'};
+// マス目ごとの記録 → 部位ごとの状態（一覧の表示用）
+function marksToAreaNotes(marks, cellArea) {
+  const o = {}; Object.entries(marks || {}).forEach(([k, m]) => { const a = cellArea ? cellArea[k] : null; if (!a) return; Object.keys(m).forEach(c => { if (!AREA_CONCERNS.includes(c)) return; o[a] = o[a] || []; if (!o[a].includes(c)) o[a].push(c); }); });
+  return o;
+}
 const COND_LABELS = ['','とても悪い','やや悪い','ふつう','やや良い','とても良い'];
 const COND_COLORS = ['','#C9785F','#D6A06A','#BDAE84','#86AE90','#4F8360'];
 const MEALS = [{k:'breakfast',l:'朝食'},{k:'lunch',l:'昼食'},{k:'dinner',l:'夕食'}];
@@ -1414,6 +1438,7 @@ function normalize(d) {
       type:ACNE_TYPES.includes(s.type) ? s.type : '赤ニキビ', size:ACNE_SIZES.includes(s.size) ? s.size : ACNE_SIZES[0], status:ACNE_STATUS.includes(s.status) ? s.status : ACNE_STATUS[0], onset:isValidYmd(s.onset) ? s.onset : ''})) : [],
     redness:clamp(Math.round(num(l.redness)),0,5), dryness:clamp(Math.round(num(l.dryness)),0,5), oil:clamp(Math.round(num(l.oil)),0,5),
     otherConcerns:strArr(l.otherConcerns, OTHER_CONCERNS),
+    cellMarks:(() => { const o = {}; if (l.cellMarks && typeof l.cellMarks === 'object') Object.entries(l.cellMarks).forEach(([k, m]) => { if (!/^\d{1,3},\d{1,3}$/.test(k) || !m || typeof m !== 'object') return; const v = {}; AREA_CONCERNS.forEach(c => { const n = Math.round(Number(m[c])); if (n >= 1 && n <= 5) v[c] = n; }); if (Object.keys(v).length) o[k] = v; }); return o; })(),
     areaNotes:(() => { const o = {}; if (l.areaNotes && typeof l.areaNotes === 'object') AREAS.forEach(a => { const v = strArr(l.areaNotes[a.id], AREA_CONCERNS); if (v.length) o[a.id] = v; }); return o; })(),
     areas:strArr(l.areas, AREAS.map(a => a.id)), usedProducts:strArr(l.usedProducts), usageRecorded:!!l.usageRecorded,
     memo:String(l.memo||''), photo:safeImg(l.photo), demo:!!l.demo
@@ -3720,9 +3745,9 @@ function openLogForm(id) {
     ${field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint: !ex && map[t] ? '今日の記録はすでにあります。別の日付を選ぶか、一覧から今日の記録を編集してください。' : ''})}
     ${field('肌の調子', seg('condition', [5,4,3,2,1].map(v => ({v, label:COND_LABELS[v]})), d.condition), {name:'condition', required:true})}
     <div class="field fp-field"><span class="lbl">顔を押して記録<span class="opt">押した場所のニキビ・赤み・乾燥などを選べます</span></span>
-      <div class="fp-wrap"><div class="f3-stage fp-stage"><canvas id="face3d-form" aria-label="押して部位を選ぶ3Dの顔"></canvas><div class="f3-load" id="fp-load"><span class="skel skel-face"></span></div></div>
+      <div class="fp-wrap"><div class="f3-stage fp-stage"><canvas id="face3d-form" aria-label="押して部位を選ぶ3Dの顔"></canvas><div class="fp-zoom"><button type="button" class="icon-btn" data-fp-zoom="in" aria-label="拡大">＋</button><button type="button" class="icon-btn" data-fp-zoom="out" aria-label="縮小">−</button></div><div class="f3-load" id="fp-load"><span class="skel skel-face"></span></div></div>
       <div class="fp-panel" id="fp-panel"></div></div>
-      <p class="hint">押した部位は緑に光ります。顔を横になぞると回せます。選んだ内容は、ニキビの数や赤み・乾燥などの項目にも自動で入ります。</p></div>
+      <p class="hint">押したマス目は緑の枠で光ります。もう一度押すと選択が外れます。顔を横になぞると回せます。「＋」や2本の指で拡大できます。入れた強さは、下の赤み・乾燥・皮脂などの項目にも自動で入ります。</p></div>
     <div class="field" data-field="acneCount"><span class="lbl">ニキビ<span class="opt">数と状態</span></span>
       <div class="counter"><button type="button" class="icon-btn" data-step="-1" aria-label="1つ減らす">−</button><input class="input" id="f_acneCount" name="acneCount" inputmode="numeric" value="${d.acneCount}" aria-label="ニキビの数"><button type="button" class="icon-btn" data-step="1" aria-label="1つ増やす">＋</button><span class="small muted">個</span></div>
       <div class="field-error" data-err="acneCount"></div>
@@ -3765,38 +3790,61 @@ function openLogForm(id) {
   }));
   $$('input[name="areas"]', form).forEach(cb => cb.onchange = syncFace);
   syncFace();
-  // ---- 3Dの顔を押して、部位ごとに記録する ----
-  const fpNotes = JSON.parse(JSON.stringify(d.areaNotes || {})); let fpArea = null;
+  // ---- 3Dの顔を押して、マス目ごとに記録する（複数のマス目を選んで、状態と強さ1〜5を入れる）----
+  const fpMarks = JSON.parse(JSON.stringify(d.cellMarks || {})); const fpSel = new Set();
+  const grid = () => (FACE3D.st && FACE3D.st.canvasId === 'face3d-form' && FACE3D.st.gridInfo) || null;
+  const cellArea = k => { const g = grid(); if (!g) return null; const [c, r] = k.split(',').map(Number); return g.cellArea[r * g.cols + c] || null; };
+  const selAreas = () => [...new Set([...fpSel].map(cellArea).filter(Boolean))];
   const fpSpotRow = a => $$('.spot-row', form).find(r => $('[name="sp_area"]', r).value === a);
   const fpCount = a => $$('.spot-row', form).filter(r => $('[name="sp_area"]', r).value === a).reduce((x, r) => x + (parseInt(toHalf($('[name="sp_count"]', r).value), 10) || 0), 0);
-  const fpRaise = (name, min) => { const cur = Number(form.elements[name].value) || 0; if (cur < min) { const r = $(`input[name="${name}"][value="${min}"]`, form); if (r) { r.checked = true; r.dispatchEvent(new Event('change', {bubbles:true})); } } };
+  const setSeg = (name, v) => { const r = $(`input[name="${name}"][value="${v}"]`, form); if (r && !r.checked) { r.checked = true; r.dispatchEvent(new Event('change', {bubbles:true})); } };
+  const maxLevel = c => Math.max(0, ...Object.values(fpMarks).map(m => m[c] || 0));
+  const selLevel = c => Math.max(0, ...[...fpSel].map(k => (fpMarks[k] || {})[c] || 0));
+  // 全体の項目（赤み・乾燥・皮脂の強さ、その他の状態、気になる部位）にも反映する
+  const fpGlobal = () => {
+    const r = maxLevel('赤み'), dr = maxLevel('乾燥'), oi = maxLevel('テカリ');
+    if (r) setSeg('redness', Math.max(r, Number(form.elements.redness.value) || 0));
+    if (dr) setSeg('dryness', Math.max(dr, Number(form.elements.dryness.value) || 0));
+    if (oi) setSeg('oil', Math.max(oi, Number(form.elements.oil.value) || 0));
+    OTHER_CONCERNS.forEach(c => { if (maxLevel(c)) { const oc = $(`input[name="otherConcerns"][value="${c}"]`, form); if (oc) oc.checked = true; } });
+    Object.keys(fpMarks).map(cellArea).filter(Boolean).forEach(a => { const cb = $(`input[name="areas"][value="${a}"]`, form); if (cb && !cb.checked) { cb.checked = true; syncFace(); } });
+  };
+  const fpPaint = () => { const st = FACE3D.st; if (st && st.canvasId === 'face3d-form') {
+    // 肌の色（ニキビの数は赤い粒）＋ マス目の状態の色・選択の印
+    const c = {}; AREAS.forEach(x => { const v = fpCount(x.id); if (v) c[x.id] = v; });
+    face3dApply(st, c, Math.max(3, ...Object.values(c), 1), Object.keys(c).length ? 'spots' : 'areas');
+    face3dGridPaint(st, fpMarks, fpSel);
+  } };
   const fpPanel = () => {
     const pn = $('#fp-panel', form); if (!pn) return;
-    if (!fpArea) { pn.innerHTML = `<p class="small muted" style="margin:0">気になるところを押してください。</p>${Object.keys(fpNotes).length || $$('.spot-row', form).length ? `<div class="fp-sum">${AREAS.filter(a => fpCount(a.id) || (fpNotes[a.id] || []).length).map(a => `<button type="button" class="chip" data-fp-area="${a.id}">${esc(a.name)}${fpCount(a.id) ? ` ニキビ${fpCount(a.id)}` : ''}${(fpNotes[a.id] || []).length ? '・' + esc(fpNotes[a.id].join('・')) : ''}</button>`).join('')}</div>` : ''}`; return; }
-    const n = fpCount(fpArea), row = fpSpotRow(fpArea), type = row ? $('[name="sp_type"]', row).value : '赤ニキビ', notes = fpNotes[fpArea] || [];
-    pn.innerHTML = `<div class="fp-h"><b>${esc(areaName(fpArea))}</b><button type="button" class="link small" data-fp-close>閉じる</button></div>
-      <div class="fp-row"><span>ニキビ</span><div class="counter sm"><button type="button" class="icon-btn" data-fp-acne="-1" aria-label="減らす">−</button><b>${n}</b><button type="button" class="icon-btn" data-fp-acne="1" aria-label="増やす">＋</button></div></div>
-      <div class="fp-chips">${AREA_CONCERNS.map(c => `<button type="button" class="fp-chip ${notes.includes(c) ? 'on' : ''}" data-fp-note="${esc(c)}" aria-pressed="${notes.includes(c)}">${esc(c)}</button>`).join('')}</div>`;
-  };
-  const fpSync = () => {
-    // 3Dの顔の色も、その場で変える
-    const st = FACE3D.st; if (st && st.canvasId === 'face3d-form') {
-      const c = {}; AREAS.forEach(a => { const v = fpCount(a.id) + ((fpNotes[a.id] || []).length ? 1 : 0); if (v) c[a.id] = v; });
-      face3dGridSelect(st, fpArea); // 押した部位を、マス目でくっきり緑に光らせる
-      face3dApply(st, c, Math.max(3, ...Object.values(c), 1), $$('.spot-row', form).length ? 'spots' : 'areas');
+    if (!fpSel.size) {
+      const used = AREA_CONCERNS.filter(c => maxLevel(c));
+      pn.innerHTML = `<p class="small muted" style="margin:0">顔のマス目を押して選んでください（何マスでも選べます）。2本の指で広げると拡大できます。</p>
+        ${used.length ? `<div class="fp-legend">${used.map(c => `<span><i style="background:${CONCERN_COLORS[c]}"></i>${esc(c)} ${maxLevel(c)}</span>`).join('')}</div>` : ''}
+        ${$$('.spot-row', form).length ? `<p class="small" style="margin:8px 0 0">ニキビ：${AREAS.filter(a => fpCount(a.id)).map(a => `${esc(a.name)} ${fpCount(a.id)}個`).join('・')}</p>` : ''}`;
+      return;
     }
-    fpPanel();
+    const areas = selAreas(), a0 = areas[0], n = a0 ? fpCount(a0) : 0;
+    pn.innerHTML = `<div class="fp-h"><b>${fpSel.size}マス選択中<small>${esc(areas.map(areaName).join('・'))}</small></b><button type="button" class="link small" data-fp-close>選択をやめる</button></div>
+      ${a0 ? `<div class="fp-row"><span>ニキビ<small>（${esc(areaName(a0))}）</small></span><div class="counter sm"><button type="button" class="icon-btn" data-fp-acne="-1" aria-label="減らす">−</button><b>${n}</b><button type="button" class="icon-btn" data-fp-acne="1" aria-label="増やす">＋</button></div></div>` : ''}
+      <p class="small muted" style="margin:6px 0 6px">ある状態を押して、強さを選んでください</p>
+      <div class="fp-chips">${AREA_CONCERNS.map(c => { const lv = selLevel(c); return `<button type="button" class="fp-chip ${lv ? 'on' : ''}" style="--cc:${CONCERN_COLORS[c]}" data-fp-note="${esc(c)}" aria-pressed="${!!lv}"><i></i>${esc(c)}${lv ? ` ${lv}` : ''}</button>`; }).join('')}</div>
+      <div class="fp-sliders">${AREA_CONCERNS.filter(c => selLevel(c)).map(c => `<label class="fp-slider" style="--cc:${CONCERN_COLORS[c]}"><span>${esc(c)}<b>${selLevel(c)}</b></span>
+        <input type="range" min="1" max="5" step="1" value="${selLevel(c)}" data-fp-level="${esc(c)}" aria-label="${esc(c)}の強さ（1〜5）">
+        <span class="fp-ticks"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i></span></label>`).join('')}</div>`;
   };
-  const fpMark = a => { const cb = $(`input[name="areas"][value="${a}"]`, form); if (cb && !cb.checked) { cb.checked = true; syncFace(); } };
+  const fpSync = () => { fpPaint(); fpPanel(); };
   form.addEventListener('click', e => {
-    const b = e.target.closest('[data-fp-acne],[data-fp-note],[data-fp-close],[data-fp-area]'); if (!b) return;
-    if (b.dataset.fpArea) { fpArea = b.dataset.fpArea; fpSync(); return; }
-    if ('fpClose' in b.dataset) { fpArea = null; fpSync(); return; }
+    const b = e.target.closest('[data-fp-acne],[data-fp-note],[data-fp-close],[data-fp-zoom]'); if (!b) return;
+    if (b.dataset.fpZoom) { const st = FACE3D.st; if (st) { st.zoomT = clamp((st.zoomT || st.cam.position.z) + (b.dataset.fpZoom === 'in' ? -7 : 7), st.minZ, st.maxZ); st.dirty = true; } return; }
+    if ('fpClose' in b.dataset) { fpSel.clear(); fpSync(); return; }
     if (b.dataset.fpAcne) {
-      const step = Number(b.dataset.fpAcne); let row = fpSpotRow(fpArea);
+      const a0 = selAreas()[0]; if (!a0) return;
+      const step = Number(b.dataset.fpAcne); let row = fpSpotRow(a0);
       if (step > 0) {
-        if (!row) { $('#spots', form).insertAdjacentHTML('beforeend', spotRow({id:uid(), area:fpArea, count:0, type:'赤ニキビ', size:ACNE_SIZES[0], status:'新しくできた', onset:''})); row = fpSpotRow(fpArea); }
-        const ci = $('[name="sp_count"]', row); ci.value = (parseInt(toHalf(ci.value), 10) || 0) + 1; fpMark(fpArea);
+        if (!row) { $('#spots', form).insertAdjacentHTML('beforeend', spotRow({id:uid(), area:a0, count:0, type:'赤ニキビ', size:ACNE_SIZES[0], status:'新しくできた', onset:''})); row = fpSpotRow(a0); }
+        const ci = $('[name="sp_count"]', row); ci.value = (parseInt(toHalf(ci.value), 10) || 0) + 1;
+        const cb = $(`input[name="areas"][value="${a0}"]`, form); if (cb && !cb.checked) { cb.checked = true; syncFace(); }
       } else if (row) {
         const ci = $('[name="sp_count"]', row), v = (parseInt(toHalf(ci.value), 10) || 0) - 1;
         if (v <= 0) row.remove(); else ci.value = v;
@@ -3805,21 +3853,28 @@ function openLogForm(id) {
       sumSpots(); $('#modal-root').dataset.dirty = '1'; fpSync(); return;
     }
     if (b.dataset.fpNote) {
-      const c = b.dataset.fpNote, arr = fpNotes[fpArea] = fpNotes[fpArea] || [];
-      const i = arr.indexOf(c); if (i >= 0) arr.splice(i, 1); else {
-        arr.push(c); fpMark(fpArea);
-        // 全体の項目にも反映する（下げることはしない）
-        if (c === '赤み') fpRaise('redness', 2); else if (c === '乾燥') fpRaise('dryness', 2); else if (c === 'テカリ') fpRaise('oil', 3);
-        else { const oc = $(`input[name="otherConcerns"][value="${c}"]`, form); if (oc) oc.checked = true; }
-      }
-      if (!arr.length) delete fpNotes[fpArea];
+      const c = b.dataset.fpNote, on = selLevel(c) > 0;
+      fpSel.forEach(k => { const m = fpMarks[k] = fpMarks[k] || {}; if (on) delete m[c]; else m[c] = 3; if (!Object.keys(m).length) delete fpMarks[k]; });
+      if (!on) fpGlobal();
       $('#modal-root').dataset.dirty = '1'; fpSync();
     }
   });
-  form.addEventListener('change', e => { if (e.target.matches('[data-fp-type]') && fpArea) { const row = fpSpotRow(fpArea); if (row) $('[name="sp_type"]', row).value = e.target.value; $('#modal-root').dataset.dirty = '1'; } });
-  form._fpNotes = () => fpNotes;
+  // 強さのつまみ：左右に動かすと 1・2・3・4・5 でカチッと止まる
+  form.addEventListener('input', e => {
+    const r = e.target.closest('[data-fp-level]'); if (!r) return;
+    const c = r.dataset.fpLevel, v = Number(r.value);
+    fpSel.forEach(k => { (fpMarks[k] = fpMarks[k] || {})[c] = v; });
+    const lab = r.closest('.fp-slider').querySelector('b'); if (lab && lab.textContent !== String(v)) { lab.textContent = v; try { if (navigator.vibrate) navigator.vibrate(6); } catch (er) { /* 何もしない */ } }
+    const chip = $(`[data-fp-note="${CSS.escape(c)}"]`, form); if (chip) chip.lastChild.textContent = `${c} ${v}`;
+    fpGlobal(); $('#modal-root').dataset.dirty = '1'; fpPaint();
+  });
+  form._fpData = () => { const g = grid(); const ca = {}; if (g) Object.keys(fpMarks).forEach(k => { ca[k] = cellArea(k); }); return {cellMarks:fpMarks, areaNotes:Object.assign({}, d.areaNotes && !g ? d.areaNotes : {}, marksToAreaNotes(fpMarks, ca))}; };
   fpPanel();
-  setTimeout(() => drawFace3d({canvas:'face3d-form', load:'fp-load', tip:'', camZ:55, yawOnly:true, auto:false, grid:true, ready:st => { st.canvasId = 'face3d-form'; st.onTap = a => { fpArea = a; fpSync(); }; fpSync(); }}), 60);
+  setTimeout(() => drawFace3d({canvas:'face3d-form', load:'fp-load', tip:'', camZ:52, minZ:14, yawOnly:true, auto:false, grid:true, ready:st => {
+    st.canvasId = 'face3d-form';
+    st.onTapCell = key => { if (fpSel.has(key)) fpSel.delete(key); else fpSel.add(key); fpSync(); };
+    fpSync();
+  }}), 60);
   const sumSpots = () => {
     const rows = $$('.spot-row', form);
     if (!rows.length) return;
@@ -3887,7 +3942,7 @@ function openLogForm(id) {
       acneTypes:$$('input[name="acneTypes"]:checked', form).map(i => i.value), acneSpots:spots,
       redness:Number(fe.redness.value), dryness:Number(fe.dryness.value), oil:Number(fe.oil.value),
       otherConcerns:$$('input[name="otherConcerns"]:checked', form).map(i => i.value),
-      areas:$$('input[name="areas"]:checked', form).map(i => i.value), areaNotes:form._fpNotes ? form._fpNotes() : {}, usedProducts:used, usageRecorded:used.length > 0 || noneUsed,
+      areas:$$('input[name="areas"]:checked', form).map(i => i.value), ...(form._fpData ? form._fpData() : {}), usedProducts:used, usageRecorded:used.length > 0 || noneUsed,
       memo:fe.memo.value.trim(), photo:(pendingPhoto && saveChk && saveChk.checked ? pendingPhoto : photo) || null};
     let backup = null;
     if (ex) { backup = Object.assign({}, ex); Object.assign(ex, data); }
@@ -4401,7 +4456,7 @@ async function drawFace3d(opts) {
   if ('IntersectionObserver' in window) { const io = new IntersectionObserver(es => { st.visible = es[0].isIntersecting; if (st.visible) st.dirty = true; }); io.observe(cv); st.io = io; }
   // 2本の指で広げる・つまむと拡大・縮小（大きく見る画面では、マウスのホイールでも）
   const pts = new Map(); let pinch = null;
-  const minZ = opts.full ? 20 : 34, maxZ = opts.full ? 90 : 84;
+  const minZ = opts.minZ || (opts.full ? 20 : 34), maxZ = opts.full ? 90 : 84;
   cv.addEventListener('pointerdown', e => {
     pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); st.target = null; st.user = true; st.idle = 0; if (DEV.touch) st.auto = false;
     if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = {d:Math.hypot(a.x - b.x, a.y - b.y), z:st.zoomT || cam.position.z}; st.drag = null; return; }
@@ -4421,7 +4476,8 @@ async function drawFace3d(opts) {
   });
   const up = e => {
     // 動かさずに押したときは、押した部位を知らせる（肌の記録の画面で使う）
-    if (st.onTap && st.drag && !st.drag.moved) { const a = st.gridInfo ? face3dGridArea(st, e) : face3dAreaAt(e); if (a) st.onTap(a); }
+    if (st.onTapCell && st.drag && !st.drag.moved) { const k = face3dGridCell(st, e); if (k) st.onTapCell(k); }
+    else if (st.onTap && st.drag && !st.drag.moved) { const a = st.gridInfo ? face3dGridArea(st, e) : face3dAreaAt(e); if (a) st.onTap(a); }
     st.drag = null;
   };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', () => { st.drag = null; });
@@ -4474,21 +4530,54 @@ function face3dGrid(T, m, mat) {
         if (vObjNrm.z > 0.2) {
           vec2 g = (vObjPos.xy - uGridOrigin) / uGridSize;
           vec2 cell = floor(g);
-          float sel = texture2D(uGridMask, (cell + 0.5) / uGridDim).r;
+          vec4 mk = texture2D(uGridMask, (cell + 0.5) / uGridDim);
+          float a255 = floor(mk.a * 255.0 + 0.5);
+          float sel = mod(a255, 2.0);
+          float amt = (a255 - sel) / 200.0;
           vec2 f = abs(fract(g) - 0.5);
-          float edge = smoothstep(0.43, 0.49, max(f.x, f.y));
-          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.30, 0.78, 0.46), sel * 0.55);
-          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.82, edge * (1.0 - sel) * 0.55);
-          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.12, 0.55, 0.30), edge * sel);
+          float edge = smoothstep(0.42, 0.49, max(f.x, f.y));
+          vec3 mc = pow(max(mk.rgb, vec3(0.002)), vec3(2.2)); // 0のときに計算が壊れないように
+          if (amt > 0.001) diffuseColor.rgb = mix(diffuseColor.rgb, mc, clamp(amt, 0.0, 0.85));
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.30, 0.78, 0.46), sel * 0.30);
+          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.84, edge * (1.0 - sel) * 0.5);
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.10, 0.60, 0.32), edge * sel);
         }`);
   };
   return {x0, y0, size, cols, rows, cellArea, data, tex};
 }
+// 押した点のマス目（"列,行"）を返す。部位のないマス目は、いちばん近い部位のマス目にする
+function face3dGridCell(st, e) {
+  const T = FACE3D.three, g = st && st.gridInfo; if (!g) return null;
+  const cv = st.renderer.domElement, rc = cv.getBoundingClientRect();
+  const p = new T.Vector2(((e.clientX - rc.left) / rc.width) * 2 - 1, -((e.clientY - rc.top) / rc.height) * 2 + 1);
+  const ray = new T.Raycaster(); ray.setFromCamera(p, st.cam);
+  const hit = ray.intersectObject(st.face)[0]; if (!hit) return null;
+  const lp = st.face.worldToLocal(hit.point.clone()), c = Math.floor((lp.x - g.x0) / g.size), r = Math.floor((lp.y - g.y0) / g.size);
+  const ok = (cc, rr) => cc >= 0 && rr >= 0 && cc < g.cols && rr < g.rows && g.cellArea[rr * g.cols + cc];
+  if (ok(c, r)) return `${c},${r}`;
+  for (let d = 1; d <= 2; d++) for (let dr = -d; dr <= d; dr++) for (let dc = -d; dc <= d; dc++) if (Math.max(Math.abs(dr), Math.abs(dc)) === d && ok(c + dc, r + dr)) return `${c + dc},${r + dr}`;
+  return null;
+}
+// マス目に、記録した状態の色（いちばん強い状態）と、選択中の印を塗る
+function face3dGridPaint(st, marks, sel) {
+  const g = st && st.gridInfo; if (!g) return;
+  const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+  g.data.fill(0);
+  Object.entries(marks || {}).forEach(([k, m]) => {
+    const [c, r] = k.split(',').map(Number); if (c >= g.cols || r >= g.rows) return;
+    const top = AREA_CONCERNS.filter(x => m[x]).sort((a, b) => m[b] - m[a])[0]; if (!top) return;
+    const [R, G, B] = hex(CONCERN_COLORS[top]), i = (r * g.cols + c) * 4;
+    g.data[i] = R; g.data[i + 1] = G; g.data[i + 2] = B; g.data[i + 3] = Math.round((0.25 + m[top] * 0.11) * 200) & 254; // 偶数＝色の濃さ
+  });
+  // 選択中のマス目は、透明度を奇数にして印にする（色の濃さはそのまま）
+  if (sel) sel.forEach(k => { const [c, r] = k.split(',').map(Number); if (c >= g.cols || r >= g.rows) return; const i = (r * g.cols + c) * 4; g.data[i + 3] = g.data[i + 3] | 1; });
+  g.tex.needsUpdate = true; st.dirty = true;
+}
 // 押した点のマス目から部位を決め、その部位のマス目を光らせる
 function face3dGridSelect(st, area) {
   const g = st && st.gridInfo; if (!g) return;
-  for (let k = 0; k < g.cellArea.length; k++) { const on = area && g.cellArea[k] === area ? 255 : 0; g.data[k * 4] = on; g.data[k * 4 + 3] = 255; }
-  g.tex.needsUpdate = true; st.dirty = true;
+  const sel = new Set(); for (let k = 0; k < g.cellArea.length; k++) if (area && g.cellArea[k] === area) sel.add(`${k % g.cols},${Math.floor(k / g.cols)}`);
+  face3dGridPaint(st, {}, sel);
 }
 function face3dGridArea(st, e) {
   const T = FACE3D.three, g = st && st.gridInfo; if (!g) return null;
