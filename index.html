@@ -2183,8 +2183,13 @@ function openLifeGoal() {
     ${field('必要な睡眠時間', `<select class="select" name="sleepNeed">${opts.map(m => `<option value="${m}" ${m === (st.sleepNeed || 420) ? 'selected' : ''}>${fmtDur(m)}</option>`).join('')}</select>`, {name:'sleepNeed', hint:'大人はおよそ7時間前後が目安です（厚生労働省「健康づくりのための睡眠ガイド2023」）'})}
     ${field('身長（cm）', `<input class="input" name="height" inputmode="decimal" value="${st.height || ''}" placeholder="例：160">`, {name:'height', hint:'このブラウザ内にだけ保存されます'})}
     ${field('体重（kg）', `<input class="input" name="weight" inputmode="decimal" value="${st.weight || ''}" placeholder="例：55">`, {name:'weight', hint:'運動の消費カロリーの計算に使います。空欄なら55kgとして計算します。このブラウザ内にだけ保存されます'})}
-    ${field('1日のたんぱく質の目標（g）', `<input class="input" name="proteinGoal" inputmode="numeric" value="${st.proteinGoal || ''}" placeholder="空欄なら体重×1g">`, {name:'proteinGoal', hint:'たんぱく質は肌をつくる材料です。空欄なら「体重×1g」を目安にします'})}
+    ${field('1日のたんぱく質の目標（g）', `<input class="input" name="proteinGoal" inputmode="numeric" value="${st.proteinGoal || Math.round(st.weight || 55)}">`, {name:'proteinGoal', hint:'たんぱく質は肌をつくる材料です。体重を入れると「体重×1g」が自動で入ります（自分で変えることもできます）'})}
   </div></form>`, footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="submit" form="goal-form" class="btn btn-primary">保存する</button>`});
+  // 体重を入れると、たんぱく質の目標に「体重×1g」を自動で入れる（自分で変えたあとは変えない）
+  const f = $('#goal-form'), pg = f.elements.proteinGoal, auto = () => Math.round(num(toHalf(f.elements.weight.value)) || 55);
+  let touched = !!st.proteinGoal && st.proteinGoal !== Math.round(st.weight || 55);
+  pg.addEventListener('input', () => { touched = pg.value.trim() !== '' && Number(toHalf(pg.value)) !== auto(); });
+  f.elements.weight.addEventListener('input', () => { if (!touched) pg.value = auto(); });
 }
 // ---------- ショートカット（ホーム）：好きな6つを選べる ----------
 const SHORTCUTS = [
@@ -3878,8 +3883,20 @@ function viewLog() {
   return html;
 }
 // ---------- 肌の記録：日付を左右にスワイプして、3Dの顔で日々の変化を見る ----------
+// 記録した顔の表示：マス目の記録（ニキビのマス・状態の色）があれば、入力したとおりに見せる。古い記録は部位ごとの色
+function face3dShowLog(st, d) {
+  if (!st) return;
+  if (d && d.marks && st.gridInfo) {
+    // 範囲選択で入れた状態は区切り（額・頬など）ごとの色、1マス選択のニキビは赤いマスで、入力した画面と同じように見せる
+    face3dApply(st, {}, 1, 'areas'); st.gridInfo.uni.uZoneMode.value = 1;
+    face3dGridPaint(st, d.marks, null, 'acne'); face3dZonePaint(st, d.marks, new Set()); return;
+  }
+  if (st.gridInfo) { st.gridInfo.uni.uZoneMode.value = 0; face3dGridPaint(st, {}, null, 'both'); }
+  face3dApply(st, d.counts, d.max, d.mode, d.types);
+}
 function logFaceData(l) {
   if (!l) return {counts:{}, max:1, mode:'areas', types:{}};
+  if (l.cellMarks && Object.keys(l.cellMarks).length) return {counts:{}, max:1, mode:'areas', types:{}, marks:l.cellMarks};
   const types = acneTypeMap([l]);
   if (l.acneSpots.length) { const c = areaCounts([l], 'spots'); return {counts:c, max:Math.max(3, ...Object.values(c)), mode:'spots', types}; }
   const c = {}; l.areas.forEach(a => c[a] = 1); return {counts:c, max:1.4, mode:'areas', types};
@@ -3933,7 +3950,7 @@ function logDaySet(date) {
   // 一番古い記録では「‹」、最新の記録では「›」を出さない
   const pv = document.getElementById('ld-prev'), nx = document.getElementById('ld-next');
   if (pv) pv.hidden = i <= 0; if (nx) nx.hidden = i >= list.length - 1;
-  const st = FACE3D.st; if (st && st.canvasId === 'face3d-log') { const d = logFaceData(l); face3dApply(st, d.counts, d.max, d.mode, d.types); }
+  const st = FACE3D.st; if (st && st.canvasId === 'face3d-log') face3dShowLog(st, logFaceData(l));
 }
 function logDayStep(n) { const list = logDayList(); const i = logDayIdx(list) + n; if (i >= 0 && i < list.length) logDaySet(list[i].date); }
 // 左右のスワイプ（3Dの顔の上以外）：左へ払う＝次の日、右へ払う＝前の日
@@ -4123,8 +4140,9 @@ function openLogForm(id) {
   form.elements.date.addEventListener('change', condAuto);
   const fpPaint = () => { const st = FACE3D.st; if (st && st.canvasId === 'face3d-form') {
     face3dApply(st, {}, 1, 'areas'); // 肌の色を元に戻す（色はマス目と区切りで見せる）
-    if (fpRange) { face3dGridPaint(st, fpMarks, fpSel); face3dZonePaint(st, fpMarks, fpSel); }
-    else face3dGridPaint(st, fpMarks, null, true);
+    // どちらの選び方でも、ニキビ（1マス選択）と赤み・乾燥など（範囲選択）の両方を見せる
+    if (fpRange) { face3dGridPaint(st, fpMarks, fpSel, 'acne'); face3dZonePaint(st, fpMarks, fpSel); }
+    else face3dGridPaint(st, fpMarks, null, 'both');
   } };
   const fpPanel = () => {
     const pn = $('#fp-panel', form); if (!pn) return;
@@ -4791,9 +4809,9 @@ function openFace3dFull(src) {
     <div class="f3-views" style="padding:8px 12px calc(12px + env(safe-area-inset-bottom))">${[['front','正面'],['right','右から'],['left','左から'],['back','後ろ'],['top','上から'],['bottom','下から']].map(([k, l]) => `<button class="tab" data-action="f3-view" data-id="${k}">${l}</button>`).join('')}<button class="tab" data-action="f3-zoom" data-id="in" aria-label="大きくする">＋</button><button class="tab" data-action="f3-zoom" data-id="out" aria-label="小さくする">－</button></div>`;
   document.body.appendChild(box); lockScroll();
   let data;
-  if (src === 'home') { const hd = homeFaceData(); data = {counts:hd.counts, max:hd.max, mode:hd.mode, types:hd.types, unit:hd.mode === 'spots' ? '個' : 'flag'}; }
+  if (src === 'home') { const hd = homeFaceData(); data = {counts:hd.counts, max:hd.max, mode:hd.mode, types:hd.types, marks:hd.marks, unit:hd.mode === 'spots' ? '個' : 'flag'}; }
   else { const d = face3dWeeks(8), w = d.weeks[ui.f3Week == null ? 7 : ui.f3Week]; data = {counts:w.c, max:d.max, mode:d.mode, types:w.types, unit:null}; }
-  drawFace3d({canvas:'face3d-full', load:'f3full-load', tip:'f3full-tip', camZ:46, full:true, auto:false, unit:data.unit, ready:st => { face3dApply(st, data.counts, data.max, data.mode, data.types); st.yaw = 0; st.user = true; }});
+  drawFace3d({canvas:'face3d-full', load:'f3full-load', tip:'f3full-tip', camZ:46, full:true, auto:false, grid:!!data.marks, gridLines:false, unit:data.unit, ready:st => { face3dShowLog(st, data); st.yaw = 0; st.user = true; }});
 }
 function closeFace3dFull() {
   const box = $('#f3-full'); if (!box) return;
@@ -4922,7 +4940,7 @@ async function drawFace3d(opts) {
   const mat = new T.MeshStandardMaterial({vertexColors:true, roughness:0.68, metalness:0, side:T.DoubleSide});
   // 肌の記録の画面：顔にうすい格子を入れ、押した部位をマス目でくっきり仕切って光らせる
   let gridInfo = null;
-  if (opts.grid) gridInfo = face3dGrid(T, m, mat);
+  if (opts.grid) gridInfo = face3dGrid(T, m, mat, opts.gridLines !== false);
   const face = new T.Mesh(geo, mat), group = new T.Group();
   group.add(face);
   // 首（頭の後ろは顔の形のデータに含めてある。マネキンのような胸像にして、立体だとわかりやすくする）
@@ -5005,7 +5023,7 @@ async function drawFace3d(opts) {
   loop();
 }
 // 顔の正面を、うすい格子（マス目）で区切る。マス目ごとに、どの部位（額・鼻…）かを決めておく
-function face3dGrid(T, m, mat) {
+function face3dGrid(T, m, mat, lines = true) {
   const v = m.v, n = v.length / 3; let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
   for (let i = 0; i < n; i++) { const x = v[i * 3], y = v[i * 3 + 1]; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
   const size = 1.15, cols = Math.ceil((x1 - x0) / size) + 1, rows = Math.ceil((y1 - y0) / size) + 1;
@@ -5033,13 +5051,13 @@ function face3dGrid(T, m, mat) {
   for (let k = 0; k < cellArea.length; k++) { if (!cellZone[k]) { cellArea[k] = null; continue; } if (!cellArea[k]) cellArea[k] = FACE3D_ZONE_AREA[cellZone[k]]; }
   const data = new Uint8Array(cols * rows * 4);
   const tex = new T.DataTexture(data, cols, rows, T.RGBAFormat); tex.magFilter = T.NearestFilter; tex.minFilter = T.NearestFilter; tex.needsUpdate = true;
-  const uni = {uGridOrigin:{value:new T.Vector2(x0, y0)}, uGridSize:{value:size}, uGridDim:{value:new T.Vector2(cols, rows)}, uGridMask:{value:tex}, uZoneMode:{value:0},
+  const uni = {uGridOrigin:{value:new T.Vector2(x0, y0)}, uGridSize:{value:size}, uGridDim:{value:new T.Vector2(cols, rows)}, uGridMask:{value:tex}, uZoneMode:{value:0}, uGridLines:{value:lines ? 1 : 0},
     uZoneSel:{value:new Array(9).fill(0)}, uZoneCol:{value:Array.from({length:9}, () => new T.Vector4(0, 0, 0, 0))}};
   mat.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, uni);
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vObjPos;\nvarying vec3 vObjNrm;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvObjPos = position;\nvObjNrm = normal;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vObjPos;\nvarying vec3 vObjNrm;\nuniform vec2 uGridOrigin;\nuniform float uGridSize;\nuniform vec2 uGridDim;\nuniform sampler2D uGridMask;\nuniform float uZoneMode;\nuniform float uZoneSel[9];\nuniform vec4 uZoneCol[9];\n' + FACE3D_ZONE_GLSL)
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vObjPos;\nvarying vec3 vObjNrm;\nuniform vec2 uGridOrigin;\nuniform float uGridSize;\nuniform vec2 uGridDim;\nuniform sampler2D uGridMask;\nuniform float uZoneMode;\nuniform float uGridLines;\nuniform float uZoneSel[9];\nuniform vec4 uZoneCol[9];\n' + FACE3D_ZONE_GLSL)
       .replace('#include <color_fragment>', `#include <color_fragment>
         if (vObjNrm.z > 0.2) {
           vec2 g = (vObjPos.xy - uGridOrigin) / uGridSize;
@@ -5061,12 +5079,14 @@ function face3dGrid(T, m, mat) {
               for (int i = 1; i < 9; i++) { if (abs(float(i) - z0) < 0.5) { zs = uZoneSel[i]; zc = uZoneCol[i]; } }
               if (zc.a > 0.001) diffuseColor.rgb = mix(diffuseColor.rgb, pow(max(zc.rgb, vec3(0.002)), vec3(2.2)), clamp(zc.a, 0.0, 0.85));
               diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.30, 0.78, 0.46), zs * 0.32);
-              diffuseColor.rgb = mix(diffuseColor.rgb, zs > 0.5 ? vec3(0.10, 0.60, 0.32) : diffuseColor.rgb * 0.78, b * 0.95);
+              diffuseColor.rgb = mix(diffuseColor.rgb, zs > 0.5 ? vec3(0.10, 0.60, 0.32) : diffuseColor.rgb * 0.78, b * 0.95 * max(uGridLines, zs));
             }
+            // 1マス選択で付けたニキビのマスも、範囲選択の画面で見えるようにする
+            if (amt > 0.001) diffuseColor.rgb = mix(diffuseColor.rgb, mc, clamp(amt, 0.0, 0.85));
           } else {
             if (amt > 0.001) diffuseColor.rgb = mix(diffuseColor.rgb, mc, clamp(amt, 0.0, 0.85));
             diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.30, 0.78, 0.46), sel * 0.30);
-            diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.84, edge * (1.0 - sel) * 0.5);
+            diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.84, edge * (1.0 - sel) * 0.5 * uGridLines);
             diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.10, 0.60, 0.32), edge * sel);
           }
         }`);
@@ -5087,14 +5107,16 @@ function face3dGridCell(st, e) {
   return null;
 }
 // マス目に、記録した状態の色（いちばん強い状態）と、選択中の印を塗る
-function face3dGridPaint(st, marks, sel, acneOnly) {
+// mode：'both'＝状態の色＋ニキビ（ニキビを優先）、'acne'＝ニキビだけ、なし＝状態の色だけ
+function face3dGridPaint(st, marks, sel, mode) {
   const g = st && st.gridInfo; if (!g) return;
   const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
   g.data.fill(0);
   Object.entries(marks || {}).forEach(([k, m]) => {
     const [c, r] = k.split(',').map(Number); if (c >= g.cols || r >= g.rows) return;
-    // 1マス選択：ニキビのマスだけを赤くする
-    if (acneOnly) { if (m['ニキビ']) { const i = (r * g.cols + c) * 4; g.data[i] = 0xD2; g.data[i + 1] = 0x2F; g.data[i + 2] = 0x3C; g.data[i + 3] = 160; } return; }
+    // ニキビのマスは赤くする
+    if ((mode === 'acne' || mode === 'both') && m['ニキビ']) { const i = (r * g.cols + c) * 4; g.data[i] = 0xD2; g.data[i + 1] = 0x2F; g.data[i + 2] = 0x3C; g.data[i + 3] = 160; return; }
+    if (mode === 'acne') return;
     const top = AREA_CONCERNS.filter(x => m[x]).sort((a, b) => m[b] - m[a])[0]; if (!top) return;
     const [R, G, B] = hex(CONCERN_COLORS[top]), i = (r * g.cols + c) * 4;
     g.data[i] = R; g.data[i + 1] = G; g.data[i + 2] = B; g.data[i + 3] = Math.round((0.25 + m[top] * 0.11) * 200) & 254; // 偶数＝色の濃さ
@@ -6750,7 +6772,7 @@ document.addEventListener('submit', e => {
     if (Object.keys(er).length) { showErrors(f, er); return; }
     const ht = f.elements.height.value.trim() === '' ? 0 : Number(toHalf(f.elements.height.value));
     if (!(ht === 0 || (ht >= 80 && ht <= 250))) { showErrors(f, Object.assign(er, {height:'80〜250の数字で入力してください（空欄でも大丈夫です）。'})); return; }
-    state.settings.sleepNeed = Number(f.elements.sleepNeed.value) || 420; state.settings.weight = Math.round(w * 10) / 10; state.settings.height = Math.round(ht * 10) / 10; state.settings.proteinGoal = Math.round(pg);
+    state.settings.sleepNeed = Number(f.elements.sleepNeed.value) || 420; state.settings.weight = Math.round(w * 10) / 10; state.settings.height = Math.round(ht * 10) / 10; state.settings.proteinGoal = Math.round(pg) === Math.round(w || 55) ? 0 : Math.round(pg); // 体重×1gのままなら「自動」（体重を変えると目標も変わる）
     if (save()) { closeModal(); toast('保存しました'); render(); }
     return;
   }
@@ -6841,8 +6863,8 @@ function render() {
   if (routeChanged) motionIn(r.name + (r.id ? '/' + r.id : '')); // 画面を移ったときだけ、動きのある表示にする
   fillAds();
   if (r.name === 'charts') drawFace3d();
-  else if (r.name === 'log' && document.getElementById('face3d-log')) { const list = logDayList(), d = logFaceData(list[logDayIdx(list)]); bindLogDaySwipe(); drawFace3d({canvas:'face3d-log', load:'ld-load', tip:'', camZ:55, yawOnly:true, ready:st => { st.canvasId = 'face3d-log'; face3dApply(st, d.counts, d.max, d.mode, d.types); }}); }
-  else if (r.name === 'home' && document.getElementById('face3d-home')) { const hd = homeFaceData(); drawFace3d({canvas:'face3d-home', load:'t3-load', tip:'t3-tip', camZ:55, yawOnly:true, unit:hd.mode === 'spots' ? '個' : 'flag', ready:st => face3dApply(st, hd.counts, hd.max, hd.mode, hd.types)}); if (isPremium()) runAdvice(false); }
+  else if (r.name === 'log' && document.getElementById('face3d-log')) { const list = logDayList(), d = logFaceData(list[logDayIdx(list)]); bindLogDaySwipe(); drawFace3d({canvas:'face3d-log', load:'ld-load', tip:'', camZ:55, yawOnly:true, grid:true, gridLines:false, ready:st => { st.canvasId = 'face3d-log'; face3dShowLog(st, d); }}); }
+  else if (r.name === 'home' && document.getElementById('face3d-home')) { const hd = homeFaceData(); drawFace3d({canvas:'face3d-home', load:'t3-load', tip:'t3-tip', camZ:55, yawOnly:true, grid:true, gridLines:false, unit:hd.mode === 'spots' ? '個' : 'flag', ready:st => face3dShowLog(st, hd)}); if (isPremium()) runAdvice(false); }
   else if (FACE3D.st) { FACE3D.st.stop = true; FACE3D.st = null; }
   if (r.name === 'stores') drawStoreMap(); else if (storeMap) { try { storeMap.remove(); } catch (e) {} storeMap = null; }
 }
