@@ -120,13 +120,15 @@ button{font-family:inherit}
 @media (prefers-reduced-motion:reduce){.tt-in{animation:none}}
 .wordmark small{display:block;font-family:var(--font);font-size:10px;letter-spacing:.08em;color:var(--muted);margin-top:2px}
 main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area-inset-bottom))}
-.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
-.bn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 0 7px;font-size:10.5px;color:var(--muted);text-decoration:none;background:none;border:0;cursor:pointer}
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.bn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 0 7px;font-size:10.5px;color:var(--muted);text-decoration:none;background:none;border:0;cursor:pointer;min-width:0;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.bn-item span{max-width:100%;overflow:hidden;text-overflow:clip}
 .bn-item svg{width:23px;height:23px}
 .bn-item.active{color:#E8781E;font-weight:700} /* 選んでいる項目はオレンジ（光はなし） */
 .bn-item svg,.bn-item span{transition:transform .2s ease}
 .bn-item.active svg{transform:scale(1.18) translateY(-1px)}
-.bn-item.active span{transform:scale(1.08)}
+.bn-item.active span{transform:none} /* 文字は大きくしない（押したときに横にずれて見えないように） */
+.bn-item svg{transform-origin:50% 50%}
 .acc-list{padding:4px 0}
 .acc-row{display:grid;grid-template-columns:22px 1fr 12px;align-items:center;gap:12px;padding:14px 18px;color:var(--ink);text-decoration:none}
 .acc-row+.acc-row{border-top:1px solid var(--line)}
@@ -654,6 +656,10 @@ details.acc-cmp{margin-top:14px}
 .fp-sum .chip{white-space:normal;text-align:left;cursor:pointer;font-family:inherit}
 @media(max-width:560px){.fp-wrap{grid-template-columns:1fr}.fp-stage{max-width:none;margin:0}}
 .fp-hidden{display:none}
+/* ボタンを押すと、少し凹む（小さくなる） */
+button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:active,a.btn:active,.tab:active,.seg-opt:active span,.used-tile:active .thumb,.mrow:active,.pcard:active,.sc-opt:active,.ls-main:active,.acc-row:active,.fchip:active{transform:scale(.96)}
+.hap-wrap:active > .btn{transform:scale(.96)}
+.sbar-in:active{transform:translateY(-50%) scale(.92)}
 /* 閉じる（×）ボタン：文字ではなく線で描いて、丸の真ん中にぴったり置く */
 .xi{position:relative;display:block;width:16px;height:16px;margin:auto}
 .xi::before,.xi::after{content:"";position:absolute;left:50%;top:50%;width:18px;height:2px;border-radius:2px;background:currentColor;transform:translate(-50%,-50%) rotate(45deg)}
@@ -929,12 +935,12 @@ details.fold[open] summary{margin-bottom:10px}
 
 /* ---------- Modal ---------- */
 .modal-backdrop{position:fixed;inset:0;z-index:100;background:rgba(30,36,32,.38);display:flex;align-items:flex-end;justify-content:center;animation:bgIn .15s}
-.modal{background:var(--surface);width:100%;max-height:92vh;max-height:92dvh;border-radius:22px 22px 0 0;display:flex;flex-direction:column;animation:sheetUp .34s cubic-bezier(.22,1,.36,1);box-shadow:0 -10px 40px rgba(0,0,0,.12);will-change:transform;position:relative}
+.modal{background:var(--surface);width:100%;max-height:92vh;max-height:92dvh;border-radius:22px 22px 0 0;display:flex;flex-direction:column;animation:sheetUp .26s cubic-bezier(.22,1,.36,1);box-shadow:0 -10px 40px rgba(0,0,0,.12);will-change:transform;position:relative}
 /* 下から出てくるときに、シートの下にすき間（暗い色）が見えないように、シートの色を下へのばしておく */
 .modal::after{content:"";position:absolute;left:0;right:0;top:100%;height:120px;background:var(--surface);pointer-events:none}
 @keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
 /* 閉じるときは、後ろの暗い色だけを薄くする（シート自体はフェードさせず、下にすべらせるだけ） */
-.modal-backdrop.closing{background:transparent!important;transition:background-color .22s ease}
+.modal-backdrop.closing{background:transparent!important;transition:background-color .17s ease}
 @keyframes bgIn{from{background-color:transparent}}
 .sheet-grab{display:flex;justify-content:center;padding:8px 0 0;cursor:grab;touch-action:none}
 .sheet-grab i{width:40px;height:5px;border-radius:99px;background:var(--line2)}
@@ -1896,9 +1902,9 @@ async function dismissModal(fromDrag) {
   const r = $('#modal-root'), m = r.querySelector('.modal'); if (!m) return;
   if (r.dataset.dirty && !(await confirmDialog('入力した内容は保存されません。閉じますか？', {ok:'閉じる', title:'入力内容の破棄'}))) { if (fromDrag) { m.style.transition = ''; m.style.transform = ''; } return; }
   const bg = r.querySelector('.modal-backdrop');
-  m.style.transition = 'transform .22s cubic-bezier(.4,0,1,1)'; m.style.transform = 'translateY(105%)';
+  m.style.transition = 'transform .17s cubic-bezier(.4,0,1,1)'; m.style.transform = 'translateY(105%)';
   if (bg) bg.classList.add('closing');
-  setTimeout(() => { if (r.querySelector('.modal') === m) closeModal(); }, 220);
+  setTimeout(() => { if (r.querySelector('.modal') === m) closeModal(); }, 170);
 }
 // 入力したら「途中」の印を付ける
 document.addEventListener('input', e => { if (e.target.closest && e.target.closest('#modal-root form')) $('#modal-root').dataset.dirty = '1'; });
@@ -5161,7 +5167,7 @@ async function drawFace3d(opts) {
     const scrolling = DEV.touch && performance.now() - lastScrollAt < 200;
     if (st.auto && !scrolling && !st.drag && !st.target && pts.size === 0 && st.idle > (st.user ? 150 : 0)) {
       if (Math.abs(st.yaw) > Math.PI) st.yaw = ((st.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; // 何周も回したあとは、近い向きに戻す
-      st.phase += DEV.touch ? 0.011 : 0.0075; const want = Math.sin(st.phase) * 0.95;
+      st.phase += DEV.touch ? 0.0075 : 0.0055; /* 自動で回る速さ（少しゆっくり） */ const want = Math.sin(st.phase) * 0.95;
       st.yaw += (want - st.yaw) * (st.user ? 0.03 : 0.12); st.pitch += (0.05 - st.pitch) * 0.03;
       if (DEV.touch && st.phase >= 2 * Math.PI) { st.auto = false; st.target = {yaw:0, pitch:0.05}; }
       st.dirty = true;
