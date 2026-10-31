@@ -654,6 +654,11 @@ details.acc-cmp{margin-top:14px}
 .fp-sum .chip{white-space:normal;text-align:left;cursor:pointer;font-family:inherit}
 @media(max-width:560px){.fp-wrap{grid-template-columns:1fr}.fp-stage{max-width:none;margin:0}}
 .fp-hidden{display:none}
+/* 閉じる（×）ボタン：文字ではなく線で描いて、丸の真ん中にぴったり置く */
+.xi{position:relative;display:block;width:16px;height:16px;margin:auto}
+.xi::before,.xi::after{content:"";position:absolute;left:50%;top:50%;width:18px;height:2px;border-radius:2px;background:currentColor;transform:translate(-50%,-50%) rotate(45deg)}
+.xi::after{transform:translate(-50%,-50%) rotate(-45deg)}
+.f3v3{flex:1;justify-content:center;max-width:140px}
 /* 肌の記録：最初は小さい顔、押すと画面いっぱいで記録 */
 .fp-field:not(.fp-big) .fp-mode,.fp-field:not(.fp-big) .fp-panel,.fp-field:not(.fp-big) .fp-zoom,.fp-field:not(.fp-big) #fp-hint,.fp-bighead{display:none}
 .fp-field:not(.fp-big) .fp-wrap{grid-template-columns:1fr}
@@ -1851,7 +1856,7 @@ function openModal({title, body, footer='', size='', dismissable=false}) {
   root.innerHTML = `<div class="modal-backdrop" ${dismissable ? 'data-action="close-modal-bg"' : ''}>
     <div class="modal ${size}" role="dialog" aria-modal="true" aria-labelledby="modal-title">
       <div class="sheet-grab" aria-hidden="true"><i></i></div>
-      <div class="modal-head"><h2 id="modal-title">${esc(title)}</h2><button type="button" class="icon-btn" data-action="close-modal" aria-label="閉じる">×</button></div>
+      <div class="modal-head"><h2 id="modal-title">${esc(title)}</h2><button type="button" class="icon-btn" data-action="close-modal" aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button></div>
       <div class="modal-body">${body}</div>
       ${footer ? `<div class="modal-foot">${footer}</div>` : ''}
     </div></div>`;
@@ -4934,10 +4939,13 @@ function face3dShowWeek(i) {
 // 3Dの顔を画面いっぱいに大きく表示して、細かく見る
 function openFace3dFull(src) {
   const box = document.createElement('div'); box.className = 'f3-full'; box.id = 'f3-full';
-  box.innerHTML = `<div class="f3-full-head"><b>${src === 'home' ? '今日の肌記録' : '肌の変化（' + esc(($('#f3-label') || {}).textContent || '') + '）'}</b><button class="icon-btn" data-action="f3-full-close" aria-label="閉じる">×</button></div>
+  box.innerHTML = `<div class="f3-full-head"><b>${src === 'home' ? '今日の肌記録' : '肌の変化（' + esc(($('#f3-label') || {}).textContent || '') + '）'}</b><button class="icon-btn" data-action="f3-full-close" aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button></div>
     <div class="f3-full-stage"><canvas id="face3d-full" aria-label="3Dの顔（大きく表示）"></canvas><div class="f3-tip" id="f3full-tip" hidden></div><div class="f3-load" id="f3full-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>
     <p class="small muted" style="text-align:center;margin:6px 12px 0">${DEV.touch ? '1本の指で回す／2本の指で広げると拡大' : 'ドラッグで回す／ホイールで拡大・縮小'}。</p>
-    <div class="f3-views" style="padding:8px 12px calc(12px + env(safe-area-inset-bottom))">${[['front','正面'],['right','右から'],['left','左から'],['back','後ろ'],['top','上から'],['bottom','下から']].map(([k, l]) => `<button class="tab" data-action="f3-view" data-id="${k}">${l}</button>`).join('')}<button class="tab" data-action="f3-zoom" data-id="in" aria-label="大きくする">＋</button><button class="tab" data-action="f3-zoom" data-id="out" aria-label="小さくする">－</button></div>`;
+    <div class="f3-views" style="padding:8px 12px calc(12px + env(safe-area-inset-bottom))">${src === 'home'
+      // 今日の肌記録は「右から・正面・左から」の3つだけ
+      ? [['right','右から'],['front','正面'],['left','左から']].map(([k, l]) => `<button class="tab f3v3" data-action="f3-view" data-id="${k}">${l}</button>`).join('')
+      : [['front','正面'],['right','右から'],['left','左から'],['back','後ろ'],['top','上から'],['bottom','下から']].map(([k, l]) => `<button class="tab" data-action="f3-view" data-id="${k}">${l}</button>`).join('') + '<button class="tab" data-action="f3-zoom" data-id="in" aria-label="大きくする">＋</button><button class="tab" data-action="f3-zoom" data-id="out" aria-label="小さくする">－</button>'}</div>`;
   document.body.appendChild(box); lockScroll();
   let data;
   if (src === 'home') { const hd = homeFaceData(); data = {counts:hd.counts, max:hd.max, mode:hd.mode, types:hd.types, marks:hd.marks, unit:hd.mode === 'spots' ? '個' : 'flag'}; }
