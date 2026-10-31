@@ -3889,7 +3889,7 @@ function logDayIdx(list) { let i = list.findIndex(l => l.date === ui.logDay); if
 function logDayInfoHtml(list, i) {
   const l = list[i]; if (!l) return '';
   const y = parseYmd(l.date).getFullYear();
-  return `<div class="ld-date"><span class="small muted">${y}年・${i + 1} / ${list.length}</span><b>${fmtMD(l.date)}</b></div>
+  return `<div class="ld-date"><b>${fmtMD(l.date)}</b></div>
     <div class="t3-tags" style="justify-content:center;margin-top:4px"><span class="t-cond" style="background:${COND_COLORS[l.condition] || '#999'}">${esc(COND_LABELS[l.condition] || '—')}</span>${l.areas.map(a => `<span>${esc(areaName(a))}</span>`).join('')}${l.demo ? '<span class="badge-sample">デモ</span>' : ''}</div>`;
 }
 // その日の記録の詳しい内容（記録一覧にあった情報を、ここにまとめて表示）
