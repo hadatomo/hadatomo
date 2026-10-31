@@ -510,6 +510,8 @@ label.btn{position:relative}
 .acc-toggle i{transition:transform .25s ease}
 .acc-toggle[aria-expanded="true"] i{transform:rotate(90deg)}
 .acc-sec{padding:0;overflow:hidden;margin-bottom:12px}
+.t3-tags .sw{width:9px;height:9px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.2);margin-right:4px;vertical-align:0}
+.check .sw{width:12px;height:12px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.18);flex:none}
 .sc-edit{display:inline-flex;align-items:center;gap:4px;background:none;border:0;color:var(--green-d);font-family:inherit;cursor:pointer;text-decoration:underline}
 .sc-edit svg{width:14px;height:14px}
 .sc-pick{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
@@ -538,6 +540,13 @@ details.acc-cmp{margin-top:14px}
 .acc-panel.open{animation:itemIn .35s ease both}
 /* 商品検索：検索バーと絞り込み */
 .sbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin-bottom:10px}
+.sbar-top{margin-bottom:12px}
+.sbig{position:relative}
+.sbig>svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:20px;height:20px;color:var(--muted);pointer-events:none;z-index:1}
+.sbig .input{min-height:54px;padding-left:46px;font-size:17px;border-radius:999px;background:var(--surface);box-shadow:var(--shadow)}
+.sbig .input::placeholder{color:var(--muted);opacity:.55;font-weight:400}
+.sbar-top .sbar-f{min-height:54px;width:54px;padding:0;border-radius:50%;justify-content:center}
+.top-actions{display:flex;gap:8px;margin:0 0 12px}
 .sbar .input{min-height:46px}
 .sbar-f{min-height:46px;padding:0 14px;position:relative;gap:6px}
 .sbar-f svg{width:18px;height:18px}
@@ -876,7 +885,21 @@ const FREQ_RANGE = {'毎日':[7,7],'週4〜6回':[4,6],'週2〜3回':[2,3],'週1
 const STOCK = 'ストック（未開封）';
 const STATUSES = ['使用中','一時停止',STOCK,'使用終了'];
 const AREAS = [{id:'forehead',name:'額'},{id:'nose',name:'鼻'},{id:'rcheek',name:'右頬'},{id:'lcheek',name:'左頬'},{id:'mouth',name:'口まわり'},{id:'chin',name:'顎'}];
-const ACNE_TYPES = ['白ニキビ','赤ニキビ','黄ニキビ（膿あり）','しこり・硬い','ニキビ跡'];
+const ACNE_TYPES = ['白ニキビ','黒ニキビ','赤ニキビ','黄ニキビ（膿あり）','しこり・硬い','ニキビ跡'];
+// 3Dの顔で使う、ニキビの種類ごとの色（白ニキビ＝白、黒ニキビ＝黒、黄ニキビ＝黄色…）
+const ACNE_COLORS = {'白ニキビ':[0.98,0.97,0.93], '黒ニキビ':[0.16,0.13,0.12], '赤ニキビ':[0.82,0.30,0.24], '黄ニキビ（膿あり）':[0.95,0.80,0.20], 'しこり・硬い':[0.58,0.20,0.36], 'ニキビ跡':[0.60,0.38,0.27]};
+const ACNE_SWATCH = t => { const c = ACNE_COLORS[t]; return c ? `rgb(${c.map(x => Math.round(x * 255)).join(',')})` : '#C0392B'; };
+// 部位ごとに、いちばん多いニキビの種類を決める
+function acneTypeMap(logs) {
+  const tally = {};
+  const add = (a, t, n) => { if (!a || !t) return; tally[a] = tally[a] || {}; tally[a][t] = (tally[a][t] || 0) + n; };
+  logs.forEach(l => {
+    if (l.acneSpots.length) l.acneSpots.forEach(sp => add(sp.area, sp.type, sp.count || 1));
+    else if (l.acneTypes.length) l.areas.forEach(a => add(a, l.acneTypes[0], 1));
+  });
+  const out = {}; Object.entries(tally).forEach(([a, m]) => { out[a] = Object.entries(m).sort((x, y) => y[1] - x[1])[0][0]; });
+  return out;
+}
 const ACNE_SIZES = ['小（〜2mm）','中（2〜5mm）','大（5mm〜）'];
 const ACNE_STATUS = ['新しくできた','変化なし','改善傾向','悪化傾向'];
 const OTHER_CONCERNS = ['くすみ','ざらつき','毛穴の目立ち','かゆみ','ヒリヒリ感','つっぱり','肌あれ'];
@@ -1343,7 +1366,7 @@ function normalize(d) {
     id:String(l.id), date:l.date, condition:clamp(Math.round(num(l.condition,3)),1,5), acneCount:clamp(Math.round(num(l.acneCount)),0,99),
     acneTypes:strArr(l.acneTypes, ACNE_TYPES),
     acneSpots:Array.isArray(l.acneSpots) ? l.acneSpots.filter(s => s && AREAS.some(a => a.id === s.area)).map(s => ({id:String(s.id||uid()), area:s.area, count:clamp(Math.round(num(s.count,1)),1,99),
-      type:ACNE_TYPES.includes(s.type) ? s.type : ACNE_TYPES[1], size:ACNE_SIZES.includes(s.size) ? s.size : ACNE_SIZES[0], status:ACNE_STATUS.includes(s.status) ? s.status : ACNE_STATUS[0], onset:isValidYmd(s.onset) ? s.onset : ''})) : [],
+      type:ACNE_TYPES.includes(s.type) ? s.type : '赤ニキビ', size:ACNE_SIZES.includes(s.size) ? s.size : ACNE_SIZES[0], status:ACNE_STATUS.includes(s.status) ? s.status : ACNE_STATUS[0], onset:isValidYmd(s.onset) ? s.onset : ''})) : [],
     redness:clamp(Math.round(num(l.redness)),0,5), dryness:clamp(Math.round(num(l.dryness)),0,5), oil:clamp(Math.round(num(l.oil)),0,5),
     otherConcerns:strArr(l.otherConcerns, OTHER_CONCERNS),
     areas:strArr(l.areas, AREAS.map(a => a.id)), usedProducts:strArr(l.usedProducts), usageRecorded:!!l.usageRecorded,
@@ -1933,7 +1956,7 @@ function viewHome() {
   const lifeLine = lifeSumHtml(todayLife);
   // 今日の肌記録：3Dの顔を大きく、記録の数値を横に小さく
   const L = todayLog;
-  const side = L ? `<div class="t3-side"><div class="t3-tags"><span class="t-cond" style="background:${COND_COLORS[L.condition] || '#999'}">${esc(COND_LABELS[L.condition] || '—')}</span>${L.areas.map(a => `<span>${esc(areaName(a))}</span>`).join('')}</div><p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
+  const side = L ? `<div class="t3-side"><div class="t3-tags"><span class="t-cond" style="background:${COND_COLORS[L.condition] || '#999'}">${esc(COND_LABELS[L.condition] || '—')}</span>${L.areas.map(a => `<span>${esc(areaName(a))}</span>`).join('')}${L.acneTypes.map(a => `<span><i class="sw" style="background:${ACNE_SWATCH(a)}"></i>${esc(a.replace(/（.*）/, ''))}</span>`).join('')}</div><p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
       ${['赤み','乾燥','皮脂'].map((lab, i) => { const v = [L.redness, L.dryness, L.oil][i]; return `<div class="t3-m"><span>${lab}</span><span class="bar"><i style="width:${v / 5 * 100}%"></i></span><b>${v}</b></div>`; }).join('')}</div>`
     : `<div class="t3-side"><p class="small muted" style="margin:0 0 8px">まだ今日の記録がありません。1分ほどで記録できます。</p><button class="btn btn-primary btn-sm" data-action="new-log">${icon('plus')}記録する</button></div>`;
   const todayCard = `<div class="card"><div class="card-h"><h2>今日の肌記録</h2>${L ? `<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(L.id)}">編集</button>` : ''}</div>
@@ -2035,18 +2058,18 @@ function toggleFav(id, el) {
 }
 function viewFavorites() {
   const list = (state.favorites || []).map(getCat).filter(Boolean).reverse();
-  return pageHead('商品検索', '化粧品と、それを買えるお店を探せます。') + searchTabs('favorites') +
+  return searchTabs('favorites') +
     (list.length ? `<p class="small muted" style="margin-bottom:10px">${list.length}件（新しく追加した順）</p><div class="pgrid">${list.map(pcardHtml).join('')}</div>`
       : `<div class="card">${emptyBox('heart', 'お気に入りはまだありません', '商品検索で気になる商品のハート（♡）を押すと、ここにまとめて表示されます。', '<a class="btn btn-primary btn-sm" href="#/search">商品を探す</a>')}</div>`);
 }
 function viewSearch() {
   const active = searchActiveFilters();
-  return pageHead('商品検索', '化粧品と、それを買えるお店を探せます。', `<button class="btn btn-primary" data-action="add-sheet" data-id="cat">${icon('plus')}商品を追加</button>`) + searchTabs('search') +
-    `<div class="sbar">
-      <div class="ac-wrap"><input type="search" id="flt-q" class="input" placeholder="商品名・ブランド・JANコード" value="${esc(ui.q)}" aria-label="キーワード" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="ac-list"><div class="ac-list" id="ac-list" role="listbox" hidden></div></div>
-      <button class="btn btn-ghost sbar-f ${active.length ? 'on' : ''}" data-action="flt-sheet" aria-label="絞り込み">${icon('filter')}<span>絞り込み</span>${active.length ? `<b>${active.length}</b>` : ''}</button>
-    </div>
-    ${active.length ? `<div class="fchips">${active.map(a => `<button class="fchip" data-action="flt-clear" data-id="${a.k}" aria-label="${esc(a.l)}の条件を外す">${esc(a.l)}<i>×</i></button>`).join('')}<button class="fchip clear" data-action="clear-filter">すべて外す</button></div>` : ''}
+  // 一番上に大きな検索バー（見出しはなし）
+  return `<div class="sbar sbar-top">
+      <div class="ac-wrap sbig">${icon('search')}<input type="search" id="flt-q" class="input" placeholder="検索する" value="${esc(ui.q)}" aria-label="商品名・ブランド・JANコードで検索" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="ac-list"><div class="ac-list" id="ac-list" role="listbox" hidden></div></div>
+      <button class="btn btn-ghost sbar-f ${active.length ? 'on' : ''}" data-action="flt-sheet" aria-label="絞り込み">${icon('filter')}${active.length ? `<b>${active.length}</b>` : ''}</button>
+    </div>` + searchTabs('search') +
+    `${active.length ? `<div class="fchips">${active.map(a => `<button class="fchip" data-action="flt-clear" data-id="${a.k}" aria-label="${esc(a.l)}の条件を外す">${esc(a.l)}<i>×</i></button>`).join('')}<button class="fchip clear" data-action="clear-filter">すべて外す</button></div>` : ''}
     <div id="search-results">${searchResults()}</div>${adSlot('search')}`;
 }
 // 今かかっている絞り込み条件
@@ -2924,7 +2947,7 @@ function viewStores() {
   state.catalog.forEach(p => p.offers.filter(o => o.kind === 'store' && !o.isSample).forEach(o => myStores.push({o, p}))); // サンプル（架空）の店舗は出さない
   myStores.sort((a, b) => (a.o.distance == null ? 999 : a.o.distance) - (b.o.distance == null ? 999 : b.o.distance));
   const links = storeLinks(), busy = ui.storeBusy;
-  return pageHead('商品検索', '化粧品と、それを買えるお店を探せます。') + searchTabs('stores') +
+  return searchTabs('stores') +
     `<div class="notice">店舗の情報は、誰でも編集できる地図データ「OpenStreetMap」から、店舗検索サービスGeoapifyを通して取得します。場所の検索には、Geoapifyと国土地理院の地名検索を使います。場所・営業時間は実際と異なることがあり、<b>在庫は取得できません（在庫未確認）</b>。来店前に、店舗の公式サイトや電話で確認してください。</div>
     <div class="card"><div class="card-h"><h2>近くの店舗を検索</h2></div>
       <button class="btn btn-primary btn-block" style="width:100%" data-action="use-geo" ${busy ? 'disabled' : ''}>${icon('pin')}現在地の近くの店舗を探す</button>
@@ -3138,7 +3161,7 @@ function viewMy() {
   const filters = ['使用中','一時停止',STOCK,'使用終了','すべて'];
   const label = f => f === '使用終了' ? '過去の商品' : f === STOCK ? 'ストック' : f;
   const list = state.myProducts.filter(p => ui.myFilter === 'すべて' || p.status === ui.myFilter).sort((a,b) => b.startDate.localeCompare(a.startDate));
-  let html = pageHead('マイ化粧品', '使っている化粧品とストックをまとめて管理します。', `<button class="btn btn-primary" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button>`);
+  let html = `<div class="top-actions"><button class="btn btn-primary" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button></div>`;
   html += `<div class="tabs" role="tablist">${filters.map(f => `<button class="tab ${ui.myFilter === f ? 'active' : ''}" data-action="my-filter" data-id="${esc(f)}">${esc(label(f))}（${f === 'すべて' ? state.myProducts.length : counts[f]}）</button>`).join('')}</div>`;
   const tools = state.myProducts.length ? `<div class="mtools"><a href="#/compare">${icon('compare')}商品と肌状態の比較<i>›</i></a><a href="#/combo">${icon('flask')}成分の組み合わせ<i>›</i></a></div>` : '';
   if (!state.myProducts.length) {
@@ -3450,7 +3473,7 @@ function comboMap(r) {
    ========================================================= */
 function viewLog() {
   const tabs = [['list','記録一覧'],['photos','肌写真'],['life','食事・運動・睡眠']];
-  let html = pageHead('肌の記録', '3Dの顔で、日々の肌の変化を振り返ります。');
+  let html = '';
   html += `<div class="tabs">${tabs.map(([k, l]) => `<button class="tab ${ui.logTab === k ? 'active' : ''}" data-action="log-tab" data-id="${k}">${l}</button>`).join('')}</div>`;
   if (ui.logTab === 'photos') return html + viewPhotos();
   if (ui.logTab === 'life') return html + viewLife();
@@ -3463,9 +3486,10 @@ function viewLog() {
 }
 // ---------- 肌の記録：日付を左右にスワイプして、3Dの顔で日々の変化を見る ----------
 function logFaceData(l) {
-  if (!l) return {counts:{}, max:1, mode:'areas'};
-  if (l.acneSpots.length) { const c = areaCounts([l], 'spots'); return {counts:c, max:Math.max(3, ...Object.values(c)), mode:'spots'}; }
-  const c = {}; l.areas.forEach(a => c[a] = 1); return {counts:c, max:1.4, mode:'areas'};
+  if (!l) return {counts:{}, max:1, mode:'areas', types:{}};
+  const types = acneTypeMap([l]);
+  if (l.acneSpots.length) { const c = areaCounts([l], 'spots'); return {counts:c, max:Math.max(3, ...Object.values(c)), mode:'spots', types}; }
+  const c = {}; l.areas.forEach(a => c[a] = 1); return {counts:c, max:1.4, mode:'areas', types};
 }
 function logDayList() { return logsDesc().slice().reverse(); } // 古い順
 function logDayIdx(list) { let i = list.findIndex(l => l.date === ui.logDay); if (i < 0) i = list.length - 1; return i; }
@@ -3515,7 +3539,7 @@ function logDaySet(date) {
   // 一番古い記録では「‹」、最新の記録では「›」を出さない
   const pv = document.getElementById('ld-prev'), nx = document.getElementById('ld-next');
   if (pv) pv.hidden = i <= 0; if (nx) nx.hidden = i >= list.length - 1;
-  const st = FACE3D.st; if (st && st.canvasId === 'face3d-log') { const d = logFaceData(l); face3dApply(st, d.counts, d.max, d.mode); }
+  const st = FACE3D.st; if (st && st.canvasId === 'face3d-log') { const d = logFaceData(l); face3dApply(st, d.counts, d.max, d.mode, d.types); }
 }
 function logDayStep(n) { const list = logDayList(); const i = logDayIdx(list) + n; if (i >= 0 && i < list.length) logDaySet(list[i].date); }
 // 左右のスワイプ（3Dの顔の上以外）：左へ払う＝次の日、右へ払う＝前の日
@@ -3602,7 +3626,8 @@ function openLogForm(id) {
     <div class="field" data-field="acneCount"><span class="lbl">ニキビ<span class="opt">数と状態</span></span>
       <div class="counter"><button type="button" class="icon-btn" data-step="-1" aria-label="1つ減らす">−</button><input class="input" id="f_acneCount" name="acneCount" inputmode="numeric" value="${d.acneCount}" aria-label="ニキビの数"><button type="button" class="icon-btn" data-step="1" aria-label="1つ増やす">＋</button><span class="small muted">個</span></div>
       <div class="field-error" data-err="acneCount"></div>
-      <div class="checks" style="margin-top:10px">${ACNE_TYPES.map(a => `<label class="check"><input type="checkbox" name="acneTypes" value="${esc(a)}" ${d.acneTypes.includes(a) ? 'checked' : ''}>${esc(a)}</label>`).join('')}</div>
+      <p class="small muted" style="margin:10px 0 4px">ニキビの種類<span class="opt">複数選択可・3Dの顔がこの色になります</span></p>
+      <div class="checks">${ACNE_TYPES.map(a => `<label class="check"><input type="checkbox" name="acneTypes" value="${esc(a)}" ${d.acneTypes.includes(a) ? 'checked' : ''}><i class="sw" style="background:${ACNE_SWATCH(a)}"></i>${esc(a)}</label>`).join('')}</div>
       <details class="fold" style="margin-top:12px" ${d.acneSpots.length ? 'open' : ''}><summary>ニキビの詳細（部位・大きさ・経過）<span class="opt">任意</span></summary>
         <div id="spots">${d.acneSpots.map(spotRow).join('')}</div>
         <button type="button" class="btn btn-soft btn-sm" id="add-spot" style="margin-top:10px">${icon('plus')}ニキビの詳細を追加</button>
@@ -3952,7 +3977,7 @@ function face3dWeeks(n) {
   const end = todayStr(), ws = weekStart(end), weeks = [];
   for (let i = n - 1; i >= 0; i--) { const s = addDays(ws, -7 * i), e = addDays(s, 6); weeks.push({s, e, logs:logsInRange(s, e > end ? end : e)}); }
   const all = weeks.flatMap(w => w.logs), mode = all.some(l => l.acneSpots.length) ? 'spots' : 'areas';
-  weeks.forEach(w => { w.c = areaCounts(w.logs, mode); });
+  weeks.forEach(w => { w.c = areaCounts(w.logs, mode); w.types = acneTypeMap(w.logs); });
   const max = Math.max(1, ...weeks.flatMap(w => Object.values(w.c)));
   return {weeks, mode, max};
 }
@@ -4006,20 +4031,23 @@ function face3dPrep() {
   }
   return (m._prep = {base, nb});
 }
-function face3dColors(geo, counts, max) {
+function face3dColors(geo, counts, max, types) {
   const {base, nb} = face3dPrep(), r = FACE3D.mesh.r, col = geo.attributes.color.array, lin = c => Math.pow(c, 2.2);
-  const mid = [0.93, 0.64, 0.54].map(lin), hi = [0.82, 0.36, 0.28].map(lin);
+  const defHi = [0.82, 0.36, 0.28].map(lin);
+  const hiOf = id => { const t = types && types[id]; return t && ACNE_COLORS[t] ? ACNE_COLORS[t].map(lin) : defHi; };
   const lv = new Float32Array(r.length);
   for (let i = 0; i < r.length; i++) { const id = FACE3D_REGIONS[r[i]]; lv[i] = id ? Math.min(1, (counts[id] || 0) / max) : 0; }
   for (let i = 0; i < r.length; i++) {
     let s = 0; for (const j of nb[i]) s += lv[j]; const t = nb[i].length ? s / nb[i].length : lv[i]; // 部位の境目をなめらかにする
     const b = [base[i * 3], base[i * 3 + 1], base[i * 3 + 2]];
+    // その部位のニキビの種類の色に向かって、多いほど濃くする（赤ニキビ＝赤、黄ニキビ＝黄色、白ニキビ＝白、黒ニキビ＝黒…）
+    const hi = hiOf(FACE3D_REGIONS[r[i]]), mid = b.map((x, k) => x + (hi[k] - x) * 0.5);
     const c = t <= 0 ? b : t < 0.5 ? b.map((x, k) => x + (mid[k] - x) * t * 2) : mid.map((x, k) => x + (hi[k] - x) * (t - 0.5) * 2);
     col[i * 3] = c[0]; col[i * 3 + 1] = c[1]; col[i * 3 + 2] = c[2];
   }
   geo.attributes.color.needsUpdate = true;
 }
-function face3dDots(st, counts, mode) {
+function face3dDots(st, counts, mode, types) {
   const T = FACE3D.three, m = FACE3D.mesh;
   st.dots.forEach(d => st.group.remove(d)); st.dots = [];
   if (mode !== 'spots') return;
@@ -4031,7 +4059,10 @@ function face3dDots(st, counts, mode) {
     if (!cand.length) return;
     for (let k = 0; k < n; k++) {
       const vi = cand[Math.floor(((k * 9301 + ri * 49297) % 233280) / 233280 * cand.length)];
-      const dot = new T.Mesh(st.dotGeo, st.dotMat);
+      const t = types && types[id];
+      st.dotMats = st.dotMats || {};
+      const mat = t && ACNE_COLORS[t] ? (st.dotMats[t] = st.dotMats[t] || new T.MeshStandardMaterial({color:new T.Color(...ACNE_COLORS[t]).convertSRGBToLinear(), roughness:0.45})) : st.dotMat;
+      const dot = new T.Mesh(st.dotGeo, mat);
       dot.position.set(pos[vi * 3] + nrm[vi * 3] * 0.12, pos[vi * 3 + 1] + nrm[vi * 3 + 1] * 0.12, pos[vi * 3 + 2] + nrm[vi * 3 + 2] * 0.12);
       st.group.add(dot); st.dots.push(dot);
     }
@@ -4047,7 +4078,7 @@ function face3dShowWeek(i) {
   const first = d.weeks.find(x => x.logs.length), diff = first && first !== w ? AREAS.map(a => ({n:a.name, v:(w.c[a.id] || 0) - (first.c[a.id] || 0)})).filter(x => x.v) : [];
   if (df) df.textContent = diff.length ? `最初の記録の週と比べて：${diff.map(x => `${x.n} ${x.v > 0 ? '+' : ''}${x.v}`).join('／')}` : '';
   if (!st) return;
-  st.counts = w.c; face3dColors(st.geo, w.c, d.max); face3dDots(st, w.c, d.mode); st.dirty = true;
+  face3dApply(st, w.c, d.max, d.mode, w.types);
 }
 // 3Dの顔を画面いっぱいに大きく表示して、細かく見る
 function openFace3dFull(src) {
@@ -4058,21 +4089,16 @@ function openFace3dFull(src) {
     <div class="f3-views" style="padding:8px 12px calc(12px + env(safe-area-inset-bottom))">${[['front','正面'],['right','右から'],['left','左から'],['back','後ろ'],['top','上から'],['bottom','下から']].map(([k, l]) => `<button class="tab" data-action="f3-view" data-id="${k}">${l}</button>`).join('')}<button class="tab" data-action="f3-zoom" data-id="in" aria-label="大きくする">＋</button><button class="tab" data-action="f3-zoom" data-id="out" aria-label="小さくする">－</button></div>`;
   document.body.appendChild(box); lockScroll();
   let data;
-  if (src === 'home') { const hd = homeFaceData(); data = {counts:hd.counts, max:hd.max, mode:hd.mode, unit:hd.mode === 'spots' ? '個' : 'flag'}; }
-  else { const d = face3dWeeks(8), w = d.weeks[ui.f3Week == null ? 7 : ui.f3Week]; data = {counts:w.c, max:d.max, mode:d.mode, unit:null}; }
-  drawFace3d({canvas:'face3d-full', load:'f3full-load', tip:'f3full-tip', camZ:46, full:true, auto:false, unit:data.unit, ready:st => { face3dApply(st, data.counts, data.max, data.mode); st.yaw = 0; st.user = true; }});
+  if (src === 'home') { const hd = homeFaceData(); data = {counts:hd.counts, max:hd.max, mode:hd.mode, types:hd.types, unit:hd.mode === 'spots' ? '個' : 'flag'}; }
+  else { const d = face3dWeeks(8), w = d.weeks[ui.f3Week == null ? 7 : ui.f3Week]; data = {counts:w.c, max:d.max, mode:d.mode, types:w.types, unit:null}; }
+  drawFace3d({canvas:'face3d-full', load:'f3full-load', tip:'f3full-tip', camZ:46, full:true, auto:false, unit:data.unit, ready:st => { face3dApply(st, data.counts, data.max, data.mode, data.types); st.yaw = 0; st.user = true; }});
 }
 function closeFace3dFull() {
   const box = $('#f3-full'); if (!box) return;
   if (FACE3D.st) { FACE3D.st.stop = true; FACE3D.st = null; }
   box.remove(); unlockScroll(); render(); // 元の画面の3Dを描き直す
 }
-function homeFaceData() {
-  const L = logMap()[todayStr()];
-  if (!L) return {counts:{}, max:1, mode:'areas'};
-  if (L.acneSpots.length) { const c = areaCounts([L], 'spots'); return {counts:c, max:Math.max(3, ...Object.values(c)), mode:'spots'}; }
-  const c = {}; L.areas.forEach(a => c[a] = 1); return {counts:c, max:1.4, mode:'areas'};
-}
+function homeFaceData() { return logFaceData(logMap()[todayStr()]); }
 // ---------- 改善ポイント（ホームの「今日の肌記録」の下） ----------
 // 直近7日の記録をまとめる（AIに送るのも、この数値のまとめだけ。メモや写真は送らない）
 function adviceInput() {
@@ -4159,7 +4185,7 @@ async function runAdvice(force) {
   }
   adviceBusy = false; box();
 }
-function face3dApply(st, counts, max, mode) { st.counts = counts; face3dColors(st.geo, counts, max); face3dDots(st, counts, mode); st.dirty = true; }
+function face3dApply(st, counts, max, mode, types) { st.counts = counts; st.types = types || {}; face3dColors(st.geo, counts, max, st.types); face3dDots(st, counts, mode, st.types); st.dirty = true; }
 // iPhoneでは、これがないと押した瞬間の見た目（:active）が出ない
 document.addEventListener('touchstart', () => {}, {passive:true});
 // 下のバーで、今いる画面をもう一度押したら一番上に戻る（「押しても反応しない」と感じないように）
@@ -5060,7 +5086,7 @@ function accSectionHtml(k) {
 function viewAccount() {
   ui.budgetEdit = false; ui.accOpen = ui.accOpen || {};
   if (ui.accOpen.plan && acct.status === 'idle') setTimeout(initCloud, 0);
-  return pageHead('アカウント', 'お金・プラン・設定をまとめています。') + ['spend', 'plan', 'settings'].map(accSectionHtml).join('');
+  return ['spend', 'plan', 'settings'].map(accSectionHtml).join('');
 }
 // 設定・プライバシー（アカウントの中）：並びを整え、データ関係を1つにまとめ、プライバシーは押すと開く形にする
 function settingsEmbedHtml() {
@@ -5800,8 +5826,8 @@ function render() {
   if (routeChanged) motionIn(r.name + (r.id ? '/' + r.id : '')); // 画面を移ったときだけ、動きのある表示にする
   fillAds();
   if (r.name === 'charts') drawFace3d();
-  else if (r.name === 'log' && document.getElementById('face3d-log')) { const list = logDayList(), d = logFaceData(list[logDayIdx(list)]); bindLogDaySwipe(); drawFace3d({canvas:'face3d-log', load:'ld-load', tip:'', camZ:55, yawOnly:true, ready:st => { st.canvasId = 'face3d-log'; face3dApply(st, d.counts, d.max, d.mode); }}); }
-  else if (r.name === 'home' && document.getElementById('face3d-home')) { const hd = homeFaceData(); drawFace3d({canvas:'face3d-home', load:'t3-load', tip:'t3-tip', camZ:55, yawOnly:true, unit:hd.mode === 'spots' ? '個' : 'flag', ready:st => face3dApply(st, hd.counts, hd.max, hd.mode)}); if (isPremium()) runAdvice(false); }
+  else if (r.name === 'log' && document.getElementById('face3d-log')) { const list = logDayList(), d = logFaceData(list[logDayIdx(list)]); bindLogDaySwipe(); drawFace3d({canvas:'face3d-log', load:'ld-load', tip:'', camZ:55, yawOnly:true, ready:st => { st.canvasId = 'face3d-log'; face3dApply(st, d.counts, d.max, d.mode, d.types); }}); }
+  else if (r.name === 'home' && document.getElementById('face3d-home')) { const hd = homeFaceData(); drawFace3d({canvas:'face3d-home', load:'t3-load', tip:'t3-tip', camZ:55, yawOnly:true, unit:hd.mode === 'spots' ? '個' : 'flag', ready:st => face3dApply(st, hd.counts, hd.max, hd.mode, hd.types)}); if (isPremium()) runAdvice(false); }
   else if (FACE3D.st) { FACE3D.st.stop = true; FACE3D.st = null; }
   if (r.name === 'stores') drawStoreMap(); else if (storeMap) { try { storeMap.remove(); } catch (e) {} storeMap = null; }
 }
