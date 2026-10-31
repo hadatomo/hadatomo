@@ -644,6 +644,16 @@ details.acc-cmp{margin-top:14px}
 .fp-sum .chip{white-space:normal;text-align:left;cursor:pointer;font-family:inherit}
 @media(max-width:560px){.fp-wrap{grid-template-columns:1fr}.fp-stage{max-width:none;margin:0}}
 .fp-hidden{display:none}
+.cond-seg{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
+.cond-seg .seg-opt{min-width:0}
+.cond-seg .seg-opt span{min-height:52px;padding:6px 0;color:var(--ink2)}
+.cond-seg .seg-opt:first-child span{color:#D9473A}
+.cond-seg .seg-opt input:checked + span{color:#fff}
+.cond-seg .seg-opt input:checked + span svg{animation:condPop .28s cubic-bezier(.3,1.6,.5,1)}
+@keyframes condPop{from{transform:scale(.7)}to{transform:scale(1)}}
+@media (prefers-reduced-motion:reduce){.cond-seg .seg-opt input:checked + span svg{animation:none}}
+.used-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.used-head .lbl{margin:0}
 .fp-mode{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin:2px 0 10px;background:var(--surface2);border-radius:999px}
 .fp-mode button{border:0;background:transparent;border-radius:999px;padding:8px 6px;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink2);cursor:pointer;transition:background .2s,color .2s}
 .fp-mode button.on{background:var(--surface);color:var(--green-d);box-shadow:var(--shadow)}
@@ -989,6 +999,21 @@ function marksToAreaNotes(marks, cellArea) {
   return o;
 }
 const COND_LABELS = ['','とても悪い','やや悪い','ふつう','やや良い','とても良い'];
+// 肌の調子のしるし（5=はなまる、4=二重丸、3=まる、2=三角、1=ばつ）
+const COND_MARK_NAMES = ['','ばつ','三角','まる','二重丸','はなまる'];
+const condMarkSvg = v => {
+  const a = 'fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"';
+  if (v === 5) {
+    // 花びら（外側のぎざぎざ）＋ うずまき
+    let d = ''; const n = 9;
+    for (let i = 0; i <= n; i++) { const t = i / n * Math.PI * 2, x = 16 + 12.5 * Math.cos(t), y = 16 + 12.5 * Math.sin(t);
+      if (!i) d += `M${x.toFixed(1)} ${y.toFixed(1)}`; else d += `A3.6 3.6 0 0 1 ${x.toFixed(1)} ${y.toFixed(1)}`; }
+    return `<svg viewBox="0 0 32 32" width="34" height="34" aria-hidden="true"><path d="${d}" ${a} stroke-width="1.9"/><path d="M16 16.2a1.6 1.6 0 1 1 1.6-1.6 3.4 3.4 0 1 1-3.4-3.4 5.4 5.4 0 1 1-5.2 6.9" ${a} stroke-width="1.9"/></svg>`;
+  }
+  const g = {4:'<circle cx="16" cy="16" r="10.5"/><circle cx="16" cy="16" r="5.6"/>', 3:'<circle cx="16" cy="16" r="10"/>', 2:'<path d="M16 5.5 27 25.5H5z"/>', 1:'<path d="M7.5 7.5l17 17M24.5 7.5l-17 17"/>'}[v] || '';
+  return `<svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><g ${a}>${g}</g></svg>`;
+};
+const condSeg = value => `<div class="seg cond-seg" role="radiogroup" aria-label="肌の調子">${[5,4,3,2,1].map(v => `<label class="seg-opt"><input type="radio" name="condition" value="${v}" ${Number(value) === v ? 'checked' : ''}><span title="${COND_MARK_NAMES[v]}（${COND_LABELS[v]}）">${condMarkSvg(v)}<i class="vh">${COND_MARK_NAMES[v]}（${COND_LABELS[v]}）</i></span></label>`).join('')}</div>`;
 const COND_COLORS = ['','#C9785F','#D6A06A','#BDAE84','#86AE90','#4F8360'];
 const MEALS = [{k:'breakfast',l:'朝食'},{k:'lunch',l:'昼食'},{k:'dinner',l:'夕食'}];
 const AMOUNT3 = ['しっかり','少し','ほぼなし'];
@@ -1615,7 +1640,21 @@ function comboReport(products) {
 }
 
 /* ---------- 共通UI ---------- */
+// ブルッと鳴らす：Androidは振動、iPhone（iOS 18以降）はスイッチの手ごたえ（触覚）を使う
+let hapticEl = null;
+function haptic(ms=30) {
+  try {
+    if (navigator.vibrate) { navigator.vibrate(ms); return; }
+    if (!hapticEl) {
+      hapticEl = document.createElement('label'); hapticEl.setAttribute('aria-hidden', 'true'); hapticEl.className = 'vh';
+      hapticEl.innerHTML = '<input type="checkbox" switch tabindex="-1">'; document.body.appendChild(hapticEl);
+    }
+    hapticEl.click();
+  } catch (e) { /* 対応していない端末では何もしない */ }
+}
 function toast(msg, type='') {
+  // 保存・記録・追加できたときはブルッと知らせる
+  if (type !== 'error' && /保存しました|記録しました|追加しました|登録しました/.test(msg)) haptic(type === 'undo' ? 20 : 35);
   const el = document.createElement('div');
   el.className = 'toast ' + type;
   el.textContent = msg;
@@ -3760,7 +3799,7 @@ function openLogForm(id) {
   const usable = state.myProducts.filter(p => p.status === '使用中' || p.status === '一時停止' || d.usedProducts.includes(p.id));
   openModal({title: ex ? '肌の記録を編集' : '肌の記録', body: `<form id="log-form" novalidate><div class="form-grid">
     ${field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint: !ex && map[t] ? '今日の記録はすでにあります。別の日付を選ぶか、一覧から今日の記録を編集してください。' : ''})}
-    ${field('肌の調子', seg('condition', [5,4,3,2,1].map(v => ({v, label:COND_LABELS[v]})), d.condition), {name:'condition', required:true})}
+    ${field('肌の調子', condSeg(d.condition) + '<div class="scale-cap"><span>はなまる＝とても良い</span><span>ばつ＝とても悪い</span></div>', {name:'condition', required:true})}
     <div class="field fp-field"><span class="lbl">顔を押して記録<span class="opt">押した場所のニキビ・赤み・乾燥などを選べます</span></span>
       <div class="fp-mode" role="group" aria-label="選び方"><button type="button" class="on" data-fp-mode="tap" aria-pressed="true">1マスずつ</button><button type="button" data-fp-mode="range" aria-pressed="false">範囲でまとめて</button></div>
       <div class="fp-wrap"><div class="f3-stage fp-stage"><canvas id="face3d-form" aria-label="押して部位を選ぶ3Dの顔"></canvas><div class="fp-zoom"><button type="button" class="icon-btn" data-fp-zoom="in" aria-label="拡大">＋</button><button type="button" class="icon-btn" data-fp-zoom="out" aria-label="縮小">−</button></div><div class="f3-load" id="fp-load"><span class="skel skel-face"></span></div></div>
@@ -3786,9 +3825,8 @@ function openLogForm(id) {
       <div class="face-wrap">${faceSvg()}<div><div class="checks">${AREAS.map(a => `<label class="check"><input type="checkbox" name="areas" value="${a.id}" ${d.areas.includes(a.id) ? 'checked' : ''}>${esc(a.name)}</label>`).join('')}</div>
       <p class="hint">イラストを${DEV.tap}しても選べます。イラストは正面から見た顔です（向かって左があなたの右頬）。</p></div></div>
     </div>
-    <div class="field"><span class="lbl">今日使った化粧品<span class="opt">任意</span></span>
+    <div class="field"><div class="used-head"><span class="lbl">今日使った化粧品<span class="opt">任意</span></span>${usable.length ? '<button type="button" class="btn btn-soft btn-sm" id="use-all" aria-pressed="false">すべて選ぶ</button>' : ''}</div>
       ${usable.length ? `<div class="used-grid">${usable.map(p => `<label class="used-tile"><input type="checkbox" name="usedProducts" value="${esc(p.id)}" ${d.usedProducts.includes(p.id) ? 'checked' : ''}>${thumbHtml(Object.assign({}, getCat(p.catalogId) || {category:p.category}, {name:p.name, isSample:false}), false)}<span class="used-ck" aria-hidden="true">✓</span><span class="used-nm">${esc(truncate(p.name.replace(/^【[^】]*】\s*/, ''), 10))}</span><span class="used-sub">${esc(p.category || '')}</span></label>`).join('')}</div>
-        <div class="page-actions" style="margin-top:8px"><button type="button" class="btn btn-ghost btn-sm" id="use-all">使用中をすべて選ぶ</button><label class="check"><input type="checkbox" name="noneUsed" ${d.usageRecorded && !d.usedProducts.length ? 'checked' : ''}> 今日は何も使っていない</label></div>
         <p class="hint">使ったものの写真を押してください。予定の使用頻度と実際の使用を比べられます。</p>`
       : '<p class="small muted">使用中の化粧品が登録されていません。</p>'}
     </div>
@@ -3889,7 +3927,7 @@ function openLogForm(id) {
     const r = e.target.closest('[data-fp-level]'); if (!r) return;
     const c = r.dataset.fpLevel, v = Number(r.value);
     fpSel.forEach(k => { (fpMarks[k] = fpMarks[k] || {})[c] = v; });
-    const lab = r.closest('.fp-slider').querySelector('b'); if (lab && lab.textContent !== String(v)) { lab.textContent = v; try { if (navigator.vibrate) navigator.vibrate(6); } catch (er) { /* 何もしない */ } }
+    const lab = r.closest('.fp-slider').querySelector('b'); if (lab && lab.textContent !== String(v)) { lab.textContent = v; haptic(6); }
     const chip = $(`[data-fp-note="${CSS.escape(c)}"]`, form); if (chip) chip.lastChild.textContent = `${c} ${v}`;
     fpGlobal(); $('#modal-root').dataset.dirty = '1'; fpPaint();
   });
@@ -3931,13 +3969,12 @@ function openLogForm(id) {
   $('#spots').addEventListener('change', e => {
     if (e.target.name === 'sp_area') { const cb = $(`input[name="areas"][value="${e.target.value}"]`, form); if (cb) { cb.checked = true; syncFace(); } }
   });
+  // 「すべて選ぶ」⇔「すべてクリア」：全部選ばれているときに押すと、全部外す
   const useAll = $('#use-all');
-  if (useAll) useAll.onclick = () => {
-    $$('input[name="usedProducts"]', form).forEach(i => { const p = getMy(i.value); i.checked = !!p && p.status === '使用中'; });
-    form.elements.noneUsed.checked = false;
-  };
-  if (form.elements.noneUsed) form.elements.noneUsed.onchange = e => { if (e.target.checked) $$('input[name="usedProducts"]', form).forEach(i => i.checked = false); };
-  $$('input[name="usedProducts"]', form).forEach(i => i.addEventListener('change', () => { if (i.checked && form.elements.noneUsed) form.elements.noneUsed.checked = false; }));
+  const usedBoxes = () => $$('input[name="usedProducts"]', form);
+  const syncUseAll = () => { if (!useAll) return; const all = usedBoxes().length && usedBoxes().every(i => i.checked); useAll.textContent = all ? 'すべてクリア' : 'すべて選ぶ'; useAll.setAttribute('aria-pressed', all); };
+  if (useAll) useAll.onclick = () => { const all = usedBoxes().every(i => i.checked); usedBoxes().forEach(i => { i.checked = !all; }); $('#modal-root').dataset.dirty = '1'; syncUseAll(); };
+  usedBoxes().forEach(i => i.addEventListener('change', syncUseAll)); syncUseAll();
   let pendingPhoto = null;
   const renderPhoto = () => {
     const area = $('#photo-area');
