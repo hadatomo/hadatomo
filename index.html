@@ -4943,8 +4943,8 @@ function openFace3dFull(src) {
     <div class="f3-full-stage"><canvas id="face3d-full" aria-label="3Dの顔（大きく表示）"></canvas><div class="f3-tip" id="f3full-tip" hidden></div><div class="f3-load" id="f3full-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>
     <p class="small muted" style="text-align:center;margin:6px 12px 0">${DEV.touch ? '1本の指で回す／2本の指で広げると拡大' : 'ドラッグで回す／ホイールで拡大・縮小'}。</p>
     <div class="f3-views" style="padding:8px 12px calc(12px + env(safe-area-inset-bottom))">${src === 'home'
-      // 今日の肌記録は「右から・正面・左から」の3つだけ
-      ? [['right','右から'],['front','正面'],['left','左から']].map(([k, l]) => `<button class="tab f3v3" data-action="f3-view" data-id="${k}">${l}</button>`).join('')
+      // 今日の肌記録は「←・正面・→」の3つだけ（←で顔が左を向く）
+      ? [['left','←','左に向ける'],['front','正面','正面に向ける'],['right','→','右に向ける']].map(([k, l, al]) => `<button class="tab f3v3" data-action="f3-view" data-id="${k}" aria-label="${al}">${l}</button>`).join('')
       : [['front','正面'],['right','右から'],['left','左から'],['back','後ろ'],['top','上から'],['bottom','下から']].map(([k, l]) => `<button class="tab" data-action="f3-view" data-id="${k}">${l}</button>`).join('') + '<button class="tab" data-action="f3-zoom" data-id="in" aria-label="大きくする">＋</button><button class="tab" data-action="f3-zoom" data-id="out" aria-label="小さくする">－</button>'}</div>`;
   document.body.appendChild(box); lockScroll();
   let data;
