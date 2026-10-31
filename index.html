@@ -7504,12 +7504,14 @@ window.addEventListener('hashchange', () => { if ($('#modal-root').innerHTML) cl
 (function pullToRefresh() {
   const page = document.getElementById('page'), ptr = document.getElementById('ptr'); if (!page || !ptr) return;
   const arc = ptr.querySelector('.ptr-arc'), svg = ptr.querySelector('svg');
-  const MAX = 110, GO = 70; let y0 = null, d = 0, busy = false;
+  const MAX = 110, GO = 70; let y0 = null, d = 0, busy = false, armed = false;
   const set = v => { d = v; page.style.transform = v ? `translateY(${v}px)` : ''; ptr.style.opacity = String(Math.min(1, v / GO));
     // 引っぱる量に合わせて輪が伸びながら回る（くるくる）
-    if (!busy) { const k = Math.min(1, v / GO); arc.setAttribute('stroke-dashoffset', String(56.5 * (1 - k * 0.8))); svg.style.transform = `rotate(${v * 3}deg)`; } };
+    if (!busy) { const k = Math.min(1, v / GO); arc.setAttribute('stroke-dashoffset', String(56.5 * (1 - k * 0.8))); svg.style.transform = `rotate(${v * 3}deg)`;
+      // Safariと同じように、離せば更新される所まで引っぱった瞬間に「コツッ」と鳴らす（戻してもう一度引っぱると、また鳴る）
+      if (v >= GO && !armed) { armed = true; hapticAt = 0; haptic(6); } else if (v < GO - 10) armed = false; } };
   const blocked = t => $('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big') || (t && t.closest && t.closest('canvas,input,textarea,select,.f3-stage'));
-  window.addEventListener('touchstart', e => { if (busy || e.touches.length !== 1 || window.scrollY > 0 || blocked(e.target)) { y0 = null; return; } y0 = e.touches[0].clientY; page.classList.remove('ptr-back'); }, {passive:true});
+  window.addEventListener('touchstart', e => { if (busy || e.touches.length !== 1 || window.scrollY > 0 || blocked(e.target)) { y0 = null; return; } y0 = e.touches[0].clientY; armed = false; page.classList.remove('ptr-back'); }, {passive:true});
   window.addEventListener('touchmove', e => {
     if (y0 == null) return;
     const dy = e.touches[0].clientY - y0;
@@ -7519,7 +7521,7 @@ window.addEventListener('hashchange', () => { if ($('#modal-root').innerHTML) cl
   const end = () => {
     if (y0 == null) return; y0 = null;
     page.classList.add('ptr-back');
-    if (d >= GO) { busy = true; set(56); ptr.style.opacity = '1'; arc.setAttribute('stroke-dashoffset', '40'); svg.style.transform = ''; ptr.classList.add('spin'); haptic(8); setTimeout(() => location.reload(), 700); }
+    if (d >= GO) { busy = true; set(56); ptr.style.opacity = '1'; arc.setAttribute('stroke-dashoffset', '40'); svg.style.transform = ''; ptr.classList.add('spin'); setTimeout(() => location.reload(), 700); }
     else set(0);
   };
   window.addEventListener('touchend', end); window.addEventListener('touchcancel', end);
