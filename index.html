@@ -7560,7 +7560,7 @@ window.addEventListener('hashchange', () => { if ($('#modal-root').innerHTML) cl
   const end = () => {
     if (y0 == null) return; y0 = null;
     page.classList.add('ptr-back');
-    if (d >= GO) { busy = true; set(56); ptr.style.opacity = '1'; arc.setAttribute('stroke-dashoffset', '40'); svg.style.transform = ''; ptr.classList.add('spin'); setTimeout(() => location.reload(), 700); }
+    if (d >= GO) { busy = true; set(56); ptr.style.opacity = '1'; arc.setAttribute('stroke-dashoffset', '40'); svg.style.transform = ''; ptr.classList.add('spin'); hapticStrong(false); setTimeout(() => location.reload(), 700); } // 離して更新が決まったときは、引っぱったときの「カチッ」より強く
     else set(0);
   };
   window.addEventListener('touchend', end); window.addEventListener('touchcancel', end);
