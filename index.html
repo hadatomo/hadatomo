@@ -655,12 +655,21 @@ details.acc-cmp{margin-top:14px}
 .hap-ov input{position:absolute;left:50%;top:50%;width:1px;height:1px;margin:0;opacity:0.01;pointer-events:none}
 .cond-seg{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
 .cond-seg .seg-opt{min-width:0}
-.cond-seg .seg-opt span{min-height:52px;padding:6px 0;color:var(--ink2)}
+.cond-seg .seg-opt span{min-height:64px;padding:6px 0;color:var(--ink2);flex-direction:column;gap:2px}
+.cond-seg .seg-opt span em{font-style:normal;font-size:10.5px;line-height:1.2;white-space:nowrap;letter-spacing:-.02em}
+.cond-ai{font-size:12px;color:var(--green-d);margin:6px 0 0;line-height:1.5}
+.cond-ai:empty{display:none}
 .cond-seg .seg-opt:first-child span{color:#D9473A}
+.cond-seg .seg-opt:first-child span em{color:var(--ink2)}
+.cond-seg .seg-opt input:checked + span em{color:#fff}
 .cond-seg .seg-opt input:checked + span{color:#fff}
 .cond-seg .seg-opt input:checked + span svg{animation:condPop .28s cubic-bezier(.3,1.6,.5,1)}
 @keyframes condPop{from{transform:scale(.7)}to{transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){.cond-seg .seg-opt input:checked + span svg{animation:none}}
+.home-used{grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px}
+a.used-tile{color:inherit;text-decoration:none}
+.routine .home-used{margin-top:2px}
+.routine:has(.home-used){grid-template-columns:1fr;gap:14px}
 .used-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
 .used-head .lbl{margin:0}
 .fp-mode{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin:2px 0 10px;background:var(--surface2);border-radius:999px}
@@ -1007,7 +1016,7 @@ function marksToAreaNotes(marks, cellArea) {
   const o = {}; Object.entries(marks || {}).forEach(([k, m]) => { const a = cellArea ? cellArea[k] : null; if (!a) return; Object.keys(m).forEach(c => { if (!AREA_CONCERNS.includes(c)) return; o[a] = o[a] || []; if (!o[a].includes(c)) o[a].push(c); }); });
   return o;
 }
-const COND_LABELS = ['','とても悪い','やや悪い','ふつう','やや良い','とても良い'];
+const COND_LABELS = ['','とても悪い','悪い','普通','良い','とても良い'];
 // 肌の調子のしるし（5=はなまる、4=二重丸、3=まる、2=三角、1=ばつ）
 const COND_MARK_NAMES = ['','ばつ','三角','まる','二重丸','はなまる'];
 const condMarkSvg = v => {
@@ -1022,7 +1031,7 @@ const condMarkSvg = v => {
   const g = {4:'<circle cx="16" cy="16" r="10.5"/><circle cx="16" cy="16" r="5.6"/>', 3:'<circle cx="16" cy="16" r="10"/>', 2:'<path d="M16 5.5 27 25.5H5z"/>', 1:'<path d="M7.5 7.5l17 17M24.5 7.5l-17 17"/>'}[v] || '';
   return `<svg viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><g ${a}>${g}</g></svg>`;
 };
-const condSeg = value => `<div class="seg cond-seg" role="radiogroup" aria-label="肌の調子">${[5,4,3,2,1].map(v => `<label class="seg-opt"><input type="radio" name="condition" value="${v}" ${Number(value) === v ? 'checked' : ''}><span title="${COND_MARK_NAMES[v]}（${COND_LABELS[v]}）">${condMarkSvg(v)}<i class="vh">${COND_MARK_NAMES[v]}（${COND_LABELS[v]}）</i></span></label>`).join('')}</div>`;
+const condSeg = value => `<div class="seg cond-seg" role="radiogroup" aria-label="肌の調子">${[5,4,3,2,1].map(v => `<label class="seg-opt"><input type="radio" name="condition" value="${v}" ${Number(value) === v ? 'checked' : ''}><span title="${COND_LABELS[v]}">${condMarkSvg(v)}<em>${COND_LABELS[v]}</em></span></label>`).join('')}</div>`;
 const COND_COLORS = ['','#C9785F','#D6A06A','#BDAE84','#86AE90','#4F8360'];
 const MEALS = [{k:'breakfast',l:'朝食'},{k:'lunch',l:'昼食'},{k:'dinner',l:'夕食'}];
 const AMOUNT3 = ['しっかり','少し','ほぼなし'];
@@ -1567,6 +1576,47 @@ function stats(logs) {
     acneAvg:avg(logs.map(l => l.acneCount||0)), red:avg(logs.map(l => l.redness)), dry:avg(logs.map(l => l.dryness)), oil:avg(logs.map(l => l.oil))
   };
 }
+// ---- 肌の調子のAI学習（この端末の中だけで計算）----
+// 過去の記録から「ニキビ・赤み・乾燥・皮脂・気になる状態・睡眠・運動・前の日の調子」と「肌の調子」の関係を学び、
+// 1か月分（28日分）ほど記録がたまったら、新しい記録の「肌の調子」を自動で選ぶ
+const COND_AI_MIN = 28;
+function condFeatures(x) {
+  const life = getLife(x.date), sl = life ? sleepMin(life) : null;
+  const prev = state.skinLogs.find(l => l.date === addDays(x.date, -1));
+  return [1, Math.min(10, x.acneCount || 0) / 10, (x.redness || 0) / 5, (x.dryness || 0) / 5, (x.oil || 0) / 5,
+    Math.min(4, (x.otherConcerns || []).length) / 4, sl == null ? 0 : clamp((sl / 60 - 7) / 2, -1.5, 1.5),
+    life ? Math.min(90, exTotal(life)) / 60 : 0, prev ? (prev.condition - 3) / 2 : 0];
+}
+const condTrainLogs = () => state.skinLogs.filter(l => !l.demo && l.condition >= 1 && l.condition <= 5);
+let condModelCache = null;
+function condModel() {
+  const logs = condTrainLogs();
+  const key = logs.length + ':' + logs.reduce((a, l) => a + l.condition + (l.acneCount || 0) + (l.redness || 0) * 3, 0);
+  if (condModelCache && condModelCache.key === key) return condModelCache.m;
+  let m = null;
+  if (logs.length >= COND_AI_MIN) {
+    // リッジ回帰（正規方程式をガウスの消去法で解く）
+    const X = logs.map(condFeatures), y = logs.map(l => l.condition), k = X[0].length;
+    const A = Array.from({length:k}, (_, i) => Array.from({length:k}, (_, j) => X.reduce((a, r) => a + r[i] * r[j], 0) + (i === j && i ? 1 : 0)));
+    const b = Array.from({length:k}, (_, i) => X.reduce((a, r, n) => a + r[i] * y[n], 0));
+    for (let c = 0; c < k; c++) {
+      let pv = c; for (let r = c + 1; r < k; r++) if (Math.abs(A[r][c]) > Math.abs(A[pv][c])) pv = r;
+      [A[c], A[pv]] = [A[pv], A[c]]; [b[c], b[pv]] = [b[pv], b[c]];
+      if (Math.abs(A[c][c]) < 1e-9) continue;
+      for (let r = 0; r < k; r++) if (r !== c) { const f = A[r][c] / A[c][c]; for (let j = c; j < k; j++) A[r][j] -= f * A[c][j]; b[r] -= f * b[c]; }
+    }
+    const w = b.map((v, i) => Math.abs(A[i][i]) < 1e-9 ? 0 : v / A[i][i]);
+    m = {w, n:logs.length};
+  }
+  condModelCache = {key, m};
+  return m;
+}
+function condPredict(x) { const m = condModel(); if (!m) return null; const f = condFeatures(x); return clamp(Math.round(f.reduce((a, v, i) => a + v * m.w[i], 0)), 1, 5); }
+function condAiNote(pred) {
+  const n = condTrainLogs().length;
+  if (n < COND_AI_MIN) return `AIがあなたの記録から肌の調子の傾向を学習中です。あと${COND_AI_MIN - n}日分記録すると、自動で選ぶようになります。`;
+  return pred ? `AIが過去${n}日分の記録から「${COND_LABELS[pred]}」を選びました。違うときは押して直してください。` : '';
+}
 function sleepMin(l) {
   if (!l || !l.bed || !l.wake) return null;
   const [bh,bm] = l.bed.split(':').map(Number), [wh,wm] = l.wake.split(':').map(Number);
@@ -1757,6 +1807,9 @@ function pageHead(title, desc, actions='') {
 function emptyBox(iconName, title, text, btnHtml='') {
   return `<div class="empty"><div class="em-icon">${icon(iconName)}</div><h3>${esc(title)}</h3><p>${esc(text)}</p>${btnHtml}</div>`;
 }
+// マイ化粧品を「写真＋短い名前」のタイルで見せる（ホームの使用中の化粧品）
+const shortName = n => String(n || '').replace(/^【[^】]*】\s*/, '');
+const myTileHtml = p => `<a class="used-tile" href="#/my/${encodeURIComponent(p.id)}">${thumbHtml(Object.assign({}, getCat(p.catalogId) || {category:p.category}, {name:p.name, isSample:false}), false)}<span class="used-nm">${esc(truncate(shortName(p.name), 10))}</span><span class="used-sub">${esc(p.category || '')}</span></a>`;
 function thumbHtml(p, showSample=true) {
   const img = safeImg(p && p.image) || (p && p.imageUrl) || '';
   const cat = (p && p.category) || 'その他';
@@ -2123,10 +2176,10 @@ function viewHome() {
     const morning = active.filter(p => p.timing === '朝' || p.timing === '朝・夜');
     const night = active.filter(p => p.timing === '夜' || p.timing === '朝・夜');
     const other = active.filter(p => p.timing === '必要なときだけ');
-    const ol = arr => arr.length ? `<ol>${arr.map(p => `<li><a href="#/my/${encodeURIComponent(p.id)}" style="color:inherit;text-decoration:none">${esc(truncate(p.name, 28))}</a></li>`).join('')}</ol>` : '<p class="small muted">なし</p>';
+    const ol = arr => arr.length ? `<div class="used-grid home-used">${arr.map(myTileHtml).join('')}</div>` : '<p class="small muted">なし</p>';
     activeCard = `<div class="card"><div class="card-h"><h2>現在使用している化粧品</h2><a class="link" href="#/my">すべて見る →</a></div>
       <div class="routine"><div><h4>MORNING 朝</h4>${ol(morning)}</div><div><h4>NIGHT 夜</h4>${ol(night)}</div></div>
-      ${other.length ? `<div style="margin-top:10px"><h4 style="margin:0 0 6px;font-size:12px;color:var(--muted)">必要なときだけ</h4><div class="chips">${other.map(p => `<span class="chip">${esc(truncate(p.name, 20))}</span>`).join('')}</div></div>` : ''}
+      ${other.length ? `<div style="margin-top:12px"><h4 style="margin:0 0 8px;font-size:12px;color:var(--muted)">必要なときだけ</h4><div class="used-grid home-used">${other.map(myTileHtml).join('')}</div></div>` : ''}
       <div class="divider"></div><a class="link small" href="#/combo">成分の組み合わせを確認する →</a></div>`;
   } else {
     activeCard = `<div class="card"><div class="card-h"><h2>現在使用している化粧品</h2></div>${emptyBox('bottle', '使用中の商品が登録されていません', '使っている化粧品を登録すると、朝・夜のルーティンとして表示されます。', '<button class="btn btn-primary btn-sm" data-action="new-my">化粧品を登録する</button>')}</div>`;
@@ -3825,7 +3878,7 @@ function openLogForm(id) {
   const usable = state.myProducts.filter(p => p.status === '使用中' || p.status === '一時停止' || d.usedProducts.includes(p.id));
   openModal({title: ex ? '肌の記録を編集' : '肌の記録', body: `<form id="log-form" novalidate><div class="form-grid">
     ${field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint: !ex && map[t] ? '今日の記録はすでにあります。別の日付を選ぶか、一覧から今日の記録を編集してください。' : ''})}
-    ${field('肌の調子', condSeg(d.condition) + '<div class="scale-cap"><span>はなまる＝とても良い</span><span>ばつ＝とても悪い</span></div>', {name:'condition', required:true})}
+    ${field('肌の調子', condSeg(d.condition) + `<p class="cond-ai" id="cond-ai">${ex ? '' : condAiNote(null)}</p>`, {name:'condition', required:true})}
     <div class="field fp-field"><span class="lbl">顔を押して記録<span class="opt">押した場所のニキビ・赤み・乾燥などを選べます</span></span>
       <div class="fp-mode" role="group" aria-label="選び方"><button type="button" class="on" data-fp-mode="tap" aria-pressed="true">1マスずつ</button><button type="button" data-fp-mode="range" aria-pressed="false">範囲でまとめて</button></div>
       <div class="fp-wrap"><div class="f3-stage fp-stage"><canvas id="face3d-form" aria-label="押して部位を選ぶ3Dの顔"></canvas><div class="fp-zoom"><button type="button" class="icon-btn" data-fp-zoom="in" aria-label="拡大">＋</button><button type="button" class="icon-btn" data-fp-zoom="out" aria-label="縮小">−</button></div><div class="f3-load" id="fp-load"><span class="skel skel-face"></span></div></div>
@@ -3890,7 +3943,22 @@ function openLogForm(id) {
     setSeg('redness', maxLevel('赤み')); setSeg('dryness', maxLevel('乾燥')); setSeg('oil', maxLevel('テカリ'));
     OTHER_CONCERNS.forEach(c => { if (AREA_CONCERNS.includes(c)) { const oc = $(`input[name="otherConcerns"][value="${c}"]`, form); if (oc) oc.checked = maxLevel(c) > 0; } });
     Object.keys(fpMarks).map(cellArea).filter(Boolean).forEach(a => { const cb = $(`input[name="areas"][value="${a}"]`, form); if (cb && !cb.checked) { cb.checked = true; syncFace(); } });
+    condAuto();
   };
+  // AIで肌の調子を自動で選ぶ（新しい記録で、まだ自分で選んでいないときだけ）
+  let condTouched = !!ex;
+  const condAuto = () => {
+    if (condTouched) return;
+    const fe = form.elements, date = fe.date.value || t;
+    const acn = parseInt(toHalf(fe.acneCount.value), 10) || 0;
+    const pred = condPredict({date, acneCount:acn, redness:Number(fe.redness.value) || 0, dryness:Number(fe.dryness.value) || 0, oil:Number(fe.oil.value) || 0,
+      otherConcerns:$$('input[name="otherConcerns"]:checked', form).map(i => i.value)});
+    const note = $('#cond-ai', form);
+    if (pred) { const r = $(`input[name="condition"][value="${pred}"]`, form); if (r) r.checked = true; }
+    if (note) note.textContent = condAiNote(pred);
+  };
+  $$('input[name="condition"]', form).forEach(r => r.addEventListener('change', () => { condTouched = true; const note = $('#cond-ai', form); if (note && condModel()) note.textContent = ''; }));
+  form.elements.date.addEventListener('change', condAuto);
   const fpPaint = () => { const st = FACE3D.st; if (st && st.canvasId === 'face3d-form') {
     // 肌の色（ニキビの数は赤い粒）＋ マス目の状態の色・選択の印
     const c = {}; AREAS.forEach(x => { const v = fpCount(x.id); if (v) c[x.id] = v; });
@@ -3957,6 +4025,7 @@ function openLogForm(id) {
     const chip = $(`[data-fp-note="${CSS.escape(c)}"]`, form); if (chip) chip.lastChild.textContent = `${c} ${v}`;
     fpGlobal(); $('#modal-root').dataset.dirty = '1'; fpPaint();
   });
+  condAuto();
   form._fpData = () => { const g = grid(); const ca = {}; if (g) Object.keys(fpMarks).forEach(k => { ca[k] = cellArea(k); }); return {cellMarks:fpMarks, areaNotes:Object.assign({}, d.areaNotes && !g ? d.areaNotes : {}, marksToAreaNotes(fpMarks, ca))}; };
   fpPanel();
   setTimeout(() => drawFace3d({canvas:'face3d-form', load:'fp-load', tip:'', camZ:44, minZ:12, yawOnly:true, auto:false, grid:true, panY:true, panAt:40, ready:st => {
