@@ -654,6 +654,21 @@ details.acc-cmp{margin-top:14px}
 .fp-sum .chip{white-space:normal;text-align:left;cursor:pointer;font-family:inherit}
 @media(max-width:560px){.fp-wrap{grid-template-columns:1fr}.fp-stage{max-width:none;margin:0}}
 .fp-hidden{display:none}
+/* 肌の記録：最初は小さい顔、押すと画面いっぱいで記録 */
+.fp-field:not(.fp-big) .fp-mode,.fp-field:not(.fp-big) .fp-panel,.fp-field:not(.fp-big) .fp-zoom,.fp-field:not(.fp-big) #fp-hint,.fp-bighead{display:none}
+.fp-field:not(.fp-big) .fp-wrap{grid-template-columns:1fr}
+.fp-field:not(.fp-big) .fp-stage{width:180px;max-width:180px;margin:4px auto 0}
+.fp-open{position:absolute;inset:0;z-index:3;border:0;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.fp-open i{position:absolute;top:6px;right:6px;width:32px;height:32px;border-radius:50%;background:var(--surface);box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;font-style:normal;font-size:15px;color:var(--ink2)}
+.fp-sumline{text-align:center;font-size:13px;color:var(--ink2);margin:8px 0 0}
+.fp-openbtn{display:flex;margin:10px auto 0;justify-content:center;min-width:220px}
+.fp-field.fp-big{position:fixed;inset:0;z-index:300;margin:0;background:var(--bg);overflow-y:auto;overscroll-behavior:contain;padding:calc(10px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom))}
+.fp-big .fp-bighead{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.fp-big .fp-bighead b{font-size:17px}
+.fp-big .fp-lbl,.fp-big .fp-open,.fp-big .fp-sumline,.fp-big .fp-openbtn{display:none}
+.fp-big .fp-stage{max-width:520px;margin:0 auto}
+#modal-root.fp-open .modal{will-change:auto;animation:none;transform:none!important}
+#modal-root.fp-open{z-index:400!important}
 .fp-lbl{display:block}
 .fp-lbl .opt{display:block;margin:4px 0 0;font-size:12px}
 .fp-hl{display:inline-flex;align-items:center;gap:8px}
@@ -4078,10 +4093,12 @@ function openLogForm(id) {
   openModal({title: ex ? '肌の記録を編集' : '肌の記録', body: `<form id="log-form" novalidate><div class="form-grid">
     ${d.date ? `<input type="hidden" id="f_date" name="date" value="${esc(d.date)}">` : field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint: !ex && map[t] ? '今日の記録はすでにあります。別の日付を選ぶか、一覧から今日の記録を編集してください。' : ''})}
     ${field('肌の調子', condSeg(d.condition) + `<p class="cond-ai" id="cond-ai">${ex ? '' : condAiNote(null)}</p>`, {name:'condition', required:true})}
-    <div class="field fp-field"><span class="lbl fp-lbl">顔を押して記録<span class="opt">ニキビ選択＝ニキビ、肌質選択＝乾燥・テカリなどの状態</span></span>
+    <div class="field fp-field" id="fp-field"><div class="fp-bighead"><b>顔を押して記録</b><button type="button" class="btn btn-primary btn-sm" data-fp-done>完了</button></div><span class="lbl fp-lbl">顔を押して記録<span class="opt">ニキビ選択＝ニキビ、肌質選択＝乾燥・テカリなどの状態</span></span>
       <div class="fp-mode" role="group" aria-label="選び方"><button type="button" class="on" data-fp-mode="tap" aria-pressed="true">ニキビ選択</button><button type="button" data-fp-mode="range" aria-pressed="false">肌質選択</button></div>
-      <div class="fp-wrap"><div class="f3-stage fp-stage"><canvas id="face3d-form" aria-label="押して部位を選ぶ3Dの顔"></canvas><div class="fp-zoom"><button type="button" class="icon-btn" data-fp-zoom="in" aria-label="拡大">＋</button><button type="button" class="icon-btn" data-fp-zoom="out" aria-label="縮小">−</button></div><div class="f3-load" id="fp-load"><span class="skel skel-face"></span></div></div>
+      <div class="fp-wrap"><div class="f3-stage fp-stage"><canvas id="face3d-form" aria-label="押して部位を選ぶ3Dの顔"></canvas><button type="button" class="fp-open" data-fp-open aria-label="顔を大きくして記録する"><i>⤢</i></button><div class="fp-zoom"><button type="button" class="icon-btn" data-fp-zoom="in" aria-label="拡大">＋</button><button type="button" class="icon-btn" data-fp-zoom="out" aria-label="縮小">−</button></div><div class="f3-load" id="fp-load"><span class="skel skel-face"></span></div></div>
       <div class="fp-panel" id="fp-panel"></div></div>
+      <p class="fp-sumline" id="fp-sumline"></p>
+      <button type="button" class="btn btn-soft fp-openbtn" data-fp-open>顔を大きくして記録する</button>
       <p class="hint" id="fp-hint">${FP_HINT_TAP}</p></div>
     <div class="fp-hidden" aria-hidden="true">
     <div class="field" data-field="acneCount"><span class="lbl">ニキビ<span class="opt">数と状態</span></span>
@@ -4199,6 +4216,9 @@ function openLogForm(id) {
   } };
   const fpPanel = () => {
     const pn = $('#fp-panel', form); if (!pn) return;
+    const sl = $('#fp-sumline', form);
+    if (sl) { const n = acneCells().length || Object.values(oldSpots).reduce((x, v) => x + v, 0), cs = RANGE_CONCERNS.filter(c => maxLevel(c));
+      sl.textContent = n || cs.length ? [n ? `ニキビ ${n}個` : '', ...cs.map(c => `${c} ${maxLevel(c)}`)].filter(Boolean).join('・') : 'まだ何も入れていません'; }
     if (!fpRange) {
       // 1マス選択：ニキビだけ
       const by = acneByArea(), total = Object.values(by).reduce((x, n) => x + n, 0);
@@ -4220,8 +4240,13 @@ function openLogForm(id) {
         <span class="fp-ticks"><i>1</i><i>2</i><i>3</i><i>4</i><i>5</i></span></label>`).join('')}</div>`;
   };
   const fpSync = () => { fpPaint(); fpPanel(); };
+  // 小さい顔のときは、マス目や区切りの線を出さない（記録したものだけを見せる）
+  const fpLines = on => { const st = FACE3D.st; if (!st || !st.gridInfo) return; st.gridInfo.uni.uGridLines.value = on ? 1 : 0; st.gridInfo.uni.uZoneMode.value = on && fpRange ? 1 : 0; st.zoneMode = on && fpRange; st.dirty = true; };
   form.addEventListener('click', e => {
-    const b = e.target.closest('[data-fp-note],[data-fp-close],[data-fp-clear],[data-fp-acne-clear],[data-fp-zoom],[data-fp-mode],[data-fp-undo],[data-fp-next]'); if (!b) return;
+    const b = e.target.closest('[data-fp-note],[data-fp-close],[data-fp-clear],[data-fp-acne-clear],[data-fp-zoom],[data-fp-mode],[data-fp-undo],[data-fp-next],[data-fp-open],[data-fp-done]'); if (!b) return;
+    // 最初は小さい顔。押すと画面いっぱいに大きくなって記録できる。「完了」で小さく戻る
+    if ('fpOpen' in b.dataset) { $('#fp-field', form).classList.add('fp-big'); $('#modal-root').classList.add('fp-open'); fpLines(true); haptic(8); fpSync(); return; }
+    if ('fpDone' in b.dataset) { $('#fp-field', form).classList.remove('fp-big'); $('#modal-root').classList.remove('fp-open'); fpSel.clear(); fpLast = null; fpBlink(false); const st = FACE3D.st; if (st) { st.zoomT = null; st.cam.position.z = 44; st.cam.position.y = 0.6; st.yaw = 0; st.dirty = true; } fpLines(false); fpSync(); return; }
     if ('fpUndo' in b.dataset) { const k = fpHist.pop(); if (k) { fpTouched = true; fpToggleAcne(k); fpLast = fpHist[fpHist.length - 1] || null; syncAcne(); condAuto(); haptic(8); fpSync(); fpBlink(true); } return; }
     if ('fpNext' in b.dataset) { fpLast = null; fpBlink(false); fpPanel(); haptic(8); return; }
     if (b.dataset.fpMode) {
@@ -4266,7 +4291,7 @@ function openLogForm(id) {
   fpPanel();
   setTimeout(() => drawFace3d({canvas:'face3d-form', load:'fp-load', tip:'', camZ:44, minZ:12, yawOnly:true, auto:false, grid:true, panY:true, panAt:40, ready:st => {
     st.canvasId = 'face3d-form';
-    placeOldSpots();
+    placeOldSpots(); fpLines(false);
     // 1マス選択：押したマスにニキビを付ける／消す
     st.onTapCell = key => {
       fpToggleAcne(key); fpHist.push(key); fpLast = key;
@@ -5110,6 +5135,8 @@ async function drawFace3d(opts) {
     if (st.stop || !document.body.contains(cv)) { st.stop = true; if (st.io) st.io.disconnect(); if (!st.lost) { st.lost = true; try { renderer.dispose(); renderer.forceContextLoss(); } catch (e) { /* 何もしない */ } } return; }
     if (!st.visible || document.hidden) { requestAnimationFrame(loop); return; }
     st.idle++;
+    // 表示する大きさが変わったら（小さい顔→大きくして記録など）、描く大きさも合わせる
+    { const cw = cv.clientWidth, ch = cv.clientHeight; if (cw && ch && (cw !== st.cw || ch !== st.ch)) { if (st.cw) { renderer.setSize(cw, ch, false); cam.aspect = cw / ch; cam.updateProjectionMatrix(); } st.cw = cw; st.ch = ch; st.dirty = true; } }
     // 最初からゆっくり左右に回って、両方の頬が見えるようにする
     // ・パソコン：触っている間は止まり、離して少しすると再開
     // ・スマホ：画面の揺れを防ぐため、最初に左右へ1往復だけ回って正面で止まる。スクロール中は回さない
