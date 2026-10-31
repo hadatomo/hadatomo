@@ -654,6 +654,8 @@ details.acc-cmp{margin-top:14px}
 .fp-sum .chip{white-space:normal;text-align:left;cursor:pointer;font-family:inherit}
 @media(max-width:560px){.fp-wrap{grid-template-columns:1fr}.fp-stage{max-width:none;margin:0}}
 .fp-hidden{display:none}
+.name-auto{color:var(--green-d)}
+.name-auto:empty{display:none}
 .fp-legend .link{background:none;border:0;color:var(--green-d);font-family:inherit;cursor:pointer;text-decoration:underline;padding:0;margin-left:auto}
 .hap-wrap{position:relative;display:flex;flex:1;min-width:0}
 .hap-wrap > .btn{flex:1;width:100%}
@@ -2237,7 +2239,7 @@ function viewHome() {
   const shortcuts = `<div class="card" id="sc-card"><div class="card-h"><h2>ショートカット</h2><button class="link small sc-edit" data-action="sc-edit">${icon('gear')}変更</button></div><div class="shortcuts">${myShortcuts().map(x => `<a class="shortcut" href="${x.h}">${icon(x.ic)}${esc(x.l)}</a>`).join('')}</div></div>`;
 
   const onboard = !state.settings.concerns.length ? `<div class="notice green" style="margin-bottom:16px"><b>はじめに：あなたの肌悩みを教えてください。</b>手持ちの化粧品と予算をふまえて、ケアの考え方と候補を整理します。<br><a class="btn btn-primary btn-sm" style="margin-top:10px" href="#/suggest">肌悩みを設定する</a></div>` : '';
-  html += onboard + `<div class="grid g2">${todayCard}${activeCard}${recentCard}${shortcuts}</div>`;
+  html += onboard + `<div class="grid g2">${todayCard}${recentCard}${shortcuts}</div>`;
   html += adSlot('home');
   html += `<p class="small muted" style="margin-top:20px;text-align:center">肌トモは、肌の状態やスキンケアを記録・管理し、自分に合ったケアを効率よく選ぶための肌サポートアプリです。病気の診断や、化粧品の効果の保証は行いません。</p>`;
   return html;
@@ -3436,7 +3438,10 @@ function viewMy() {
   STATUSES.forEach(s => counts[s] = state.myProducts.filter(p => p.status === s).length);
   const filters = ['使用中','一時停止',STOCK,'使用終了','すべて'];
   const label = f => f === '使用終了' ? '過去の商品' : f === STOCK ? 'ストック' : f;
-  const list = state.myProducts.filter(p => ui.myFilter === 'すべて' || p.status === ui.myFilter).sort((a,b) => b.startDate.localeCompare(a.startDate));
+  // 使った回数（肌の記録の「今日使った化粧品」）が多い順。同じなら予定の使用頻度が多い順、そのあと新しい順
+  const useN = {}; state.skinLogs.forEach(l => (l.usedProducts || []).forEach(id => { useN[id] = (useN[id] || 0) + 1; }));
+  const list = state.myProducts.filter(p => ui.myFilter === 'すべて' || p.status === ui.myFilter)
+    .sort((a,b) => (useN[b.id] || 0) - (useN[a.id] || 0) || FREQS.indexOf(a.frequency) - FREQS.indexOf(b.frequency) || b.startDate.localeCompare(a.startDate));
   let html = `<div class="top-actions"><button class="btn btn-primary" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button></div>`;
   html += `<div class="tabs" role="tablist">${filters.map(f => `<button class="tab ${ui.myFilter === f ? 'active' : ''}" data-action="my-filter" data-id="${esc(f)}">${esc(label(f))}（${f === 'すべて' ? state.myProducts.length : counts[f]}）</button>`).join('')}</div>`;
   const tools = state.myProducts.length ? `<div class="mtools"><a href="#/compare">${icon('compare')}商品と肌状態の比較<i>›</i></a><a href="#/combo">${icon('flask')}成分の組み合わせ<i>›</i></a></div>` : '';
@@ -3449,7 +3454,7 @@ function viewMy() {
       const cat = getCat(p.catalogId) || {category:p.category};
       const days = diffDays(p.startDate, productEnd(p)) + 1;
       const period = p.status === '使用終了' ? `${fmtShort(p.startDate)}〜${fmtShort(p.endDate)}（${days}日）` : p.status === STOCK ? `${fmtShort(p.startDate)} 購入` : (days > 0 ? `${days}日目` : `${fmtShort(p.startDate)}から`);
-      const meta = [p.status !== STOCK ? p.timing : '', p.status !== STOCK ? p.frequency : '', period].filter(Boolean).join('・');
+      const meta = [useN[p.id] ? `使用${useN[p.id]}回` : '', p.status !== STOCK ? p.timing : '', p.status !== STOCK ? p.frequency : '', period].filter(Boolean).join('・');
       return `<a class="mrow" href="#/my/${encodeURIComponent(p.id)}">${thumbHtml(Object.assign({}, cat, {isSample:false}), false)}
         <span class="mrow-t"><span class="mrow-b">${esc(p.brand)}${cat.category ? '・' + esc(cat.category) : ''}</span><b>${esc(p.name)}</b><small><i class="sdot s-${STATUSES.indexOf(p.status)}"></i>${esc(p.status === '使用終了' ? '過去' : p.status)}・${esc(meta)}</small></span><span class="mrow-go">›</span></a>`;
     }).join('')}</div>`;
@@ -3522,6 +3527,32 @@ function viewMyDetail(id) {
 }
 
 /* マイ化粧品 登録・編集フォーム */
+// 商品名から、ブランド名・使用目的・カテゴリを推測する（商品データベースにあればその情報を使う）
+const PURPOSE_WORDS = [
+  ['洗浄', /洗顔|クレンジング|フォーム|ソープ|メイク落とし|ウォッシュ|cleans/i],
+  ['保湿', /保湿|ヒアルロン|セラミド|モイスト|うるおい|潤い|化粧水|乳液|クリーム|ローション|トナー|hydra|moist/i],
+  ['鎮静・肌あれ対策', /鎮静|CICA|シカ|ツボクサ|ドクダミ|肌あれ|肌荒れ|敏感|カーミング|アズレン|グリチルリチン|ヘアリーフ|calm/i],
+  ['皮脂・毛穴ケア', /毛穴|皮脂|テカリ|ポア|クレイ|セバム|pore|BHA/i],
+  ['角質ケア', /角質|ピーリング|AHA|BHA|PHA|ゴマージュ|拭き取り|ふきとり|peel/i],
+  ['ニキビ対策', /ニキビ|にきび|アクネ|サリチル|ティーツリー|acne|ACNES/i],
+  ['くすみ対策', /くすみ|美白|ブライト|ビタミンC|ナイアシンアミド|トーンアップ|透明感|ホワイト|white|vita/i],
+  ['ハリ・エイジングケア', /エイジング|ハリ|レチノール|シワ|しわ|リンクル|ペプチド|コラーゲン|バクチオール|retinol|aging/i],
+  ['紫外線対策', /日焼け止め|UV|SPF|PA\+|サンスクリーン|サンミルク|sun/i]];
+// よく見かけるブランド名（商品名から見つけるため）
+const BRAND_GUESS_EXTRA = ['ラロッシュポゼ','La Roche-Posay','アベンヌ','ビオデルマ','セタフィル','オルビス','ファンケル','資生堂','エリクシール','アネッサ','ビオレ','ニベア','メラノCC','ハトムギ','ナチュリエ','dプログラム','SK-II','クリニーク','キールズ','innisfree','イニスフリー','Dr.Jart+','ドクタージャルト','ETUDE','エチュード','LANEIGE','ラネージュ','Klairs','クレアス','Isntree','イズントリー','Beauty of Joseon','MISSHA','ミシャ','CNP','ma:nyo','魔女工場','APLIN','アプリン','ちふれ','セザンヌ','キャンメイク','ポーラ','コスメデコルテ','雪肌精','DHC','メンソレータム','ルルルン','クオリティファースト','イプサ','アクアレーベル','コーセー','ロート','オバジ','ディセンシア','ドクターシーラボ','ハダラボ','ケアセラ','IHADA','NOV','ノブ','dermaB','ダーマB','Mediheal','メディヒール','ANESSA','KOSE','Biore','NIVEA'];
+function guessFromName(name) {
+  const n = String(name || '').trim(); if (n.length < 2) return null;
+  const low = toHalf(n).toLowerCase();
+  // 商品データベースに同じ（または含む）名前があれば、その情報を使う
+  const cat = state.catalog.find(c => toHalf(c.name).toLowerCase() === low) || (n.length >= 4 ? state.catalog.find(c => { const cn = toHalf(c.name).toLowerCase(); return cn.includes(low) || low.includes(cn); }) : null);
+  if (cat) return {catalogId:cat.id, brand:cat.brand, purposes:cat.purposes.slice(), category:cat.category};
+  const brands = Array.from(new Set(BRAND_SUGGEST.concat(BRAND_GUESS_EXTRA, state.catalog.map(c => c.brand)).filter(Boolean))).sort((a, b) => b.length - a.length);
+  const sq = x => toHalf(x).toLowerCase().replace(/[\s・･\-‐ー_.]/g, ''); // 空白や「・」「ー」の違いは気にしない
+  const lowSq = sq(n), brand = brands.find(b => sq(b).length >= 2 && lowSq.includes(sq(b))) || '';
+  const purposes = PURPOSE_WORDS.filter(([, re]) => re.test(n)).map(([p]) => p);
+  const g = guessCat(n);
+  return {brand, purposes, category:g === 'その他' ? '' : g};
+}
 function openMyForm(id, fromCatId) {
   const ex = id ? getMy(id) : null;
   const src = fromCatId ? getCat(fromCatId) : null;
@@ -3532,7 +3563,7 @@ function openMyForm(id, fromCatId) {
   const linkedIngs = p.catalogId && getCat(p.catalogId) ? getCat(p.catalogId).ingredients : '';
   openModal({title: ex ? 'マイ化粧品を編集' : 'マイ化粧品に登録', body: `<form id="my-form" novalidate><div class="form-grid two">
     ${field('商品データベースから選ぶ', selectHtml('catalogId', catOpts, p.catalogId, '選ばずに直接入力する'), {name:'catalogId', cls:'span2', hint:'選ぶと商品名・ブランド・カテゴリ・使用目的が自動入力されます'})}
-    ${field('商品名', `<input class="input" id="f_name" name="name" maxlength="80" value="${esc(p.name)}">`, {name:'name', required:true, cls:'span2'})}
+    ${field('商品名', `<input class="input" id="f_name" name="name" maxlength="80" value="${esc(p.name)}" autocomplete="off"><div class="hint name-auto" id="name-auto"></div>`, {name:'name', required:true, cls:'span2'})}
     ${field('ブランド名', `<input class="input" id="f_brand" name="brand" maxlength="40" list="brand-list2" value="${esc(p.brand)}"><datalist id="brand-list2">${BRAND_SUGGEST.map(b => `<option value="${esc(b)}">`).join('')}</datalist>`, {name:'brand', required:true})}
     ${field('カテゴリ', selectHtml('category', CATEGORIES, p.category), {name:'category', required:true})}
     ${field('使用目的', checksHtml('purposes', PURPOSES, p.purposes), {name:'purposes', cls:'span2', optLabel:'任意・複数選択可'})}
@@ -3567,6 +3598,29 @@ function openMyForm(id, fromCatId) {
     if (form.elements.price && c.price && !form.elements.price.value) form.elements.price.value = c.price;
     form.elements.ingredients.placeholder = c.ingredients ? '空欄の場合は、商品データベースの全成分を使います' : '読点（、）で区切って入力';
   };
+  // 商品名を入れると、ブランド名と使用目的に自動で印をつける（自分で直した項目は変えない）
+  let brandTouched = !!p.brand, purTouched = !!(ex && p.purposes.length), catTouched = !!ex || !!src; const autoPur = new Set();
+  form.elements.brand.addEventListener('input', () => { brandTouched = !!form.elements.brand.value.trim(); });
+  $$('input[name="purposes"]', form).forEach(i => i.addEventListener('change', () => { purTouched = true; }));
+  form.elements.category.addEventListener('change', () => { catTouched = true; });
+  let gTimer = null;
+  const applyGuess = () => {
+    const g = guessFromName(form.elements.name.value); if (!g) return;
+    let did = false;
+    if (g.catalogId && !form.elements.catalogId.value) { form.elements.catalogId.value = g.catalogId; did = true; }
+    if (g.brand && !brandTouched && form.elements.brand.value !== g.brand) { form.elements.brand.value = g.brand; did = true; }
+    if (g.category && !catTouched && form.elements.category.value !== g.category) { form.elements.category.value = g.category; did = true; }
+    if (!purTouched) {
+      $$('input[name="purposes"]', form).forEach(i => {
+        const want = g.purposes.includes(i.value);
+        if (want && !i.checked) { i.checked = true; autoPur.add(i.value); did = true; }
+        else if (!want && i.checked && autoPur.has(i.value)) { i.checked = false; autoPur.delete(i.value); }
+      });
+    }
+    const h = $('#name-auto', form); if (h) h.textContent = did || autoPur.size || (g.brand && !brandTouched) ? '商品名から、ブランド名・カテゴリ・使用目的を自動で入れました。違うところは直してください。' : '';
+  };
+  form.elements.name.addEventListener('input', () => { clearTimeout(gTimer); gTimer = setTimeout(applyGuess, 350); });
+  form.elements.name.addEventListener('change', applyGuess);
   form.onsubmit = e => {
     e.preventDefault();
     const v = n => (form.elements[n] ? String(form.elements[n].value).trim() : '');
