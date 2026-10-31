@@ -655,6 +655,20 @@ details.acc-cmp{margin-top:14px}
 @media(max-width:560px){.fp-wrap{grid-template-columns:1fr}.fp-stage{max-width:none;margin:0}}
 .fp-hidden{display:none}
 .meal-photo-top{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.health-btn{justify-self:start;margin-top:-4px}
+.health-note{font-size:12px;color:var(--muted);margin:-6px 0 0;padding:8px 12px;background:var(--surface2);border-radius:12px}
+.mpt-col{display:flex;flex-direction:column;align-items:center;gap:4px}
+.mpt-col .mpt-btn{width:100%;opacity:.75}
+.mpt-prem{font-size:11px;font-weight:700;color:#9A7B3E;letter-spacing:.04em}
+.meal-now{display:none;margin-left:6px;font-size:11px;font-weight:600;color:#fff;background:var(--green-d);border-radius:999px;padding:2px 8px}
+.meal-block.now{border-color:var(--green);box-shadow:0 0 0 2px rgba(90,138,105,.15)}
+.meal-block.now .meal-now{display:inline-block}
+.food-ac{position:relative;margin-top:8px}
+.food-sug{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:5;background:var(--surface);border:1px solid var(--line2);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;max-height:300px;overflow-y:auto}
+.food-sug-i{display:flex;justify-content:space-between;gap:8px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line);background:none;padding:11px 12px;font-family:inherit;font-size:14px;color:var(--ink);cursor:pointer}
+.food-sug-i span{color:var(--muted);font-size:12px;white-space:nowrap}
+.food-sug-i.custom{color:var(--green-d);font-weight:600}
+.food-sug-i:last-child{border-bottom:0}
 .mpt-btn{min-height:52px;justify-content:center;gap:6px;flex-wrap:wrap;position:relative}
 .mpt-btn .badge-premium{font-size:10px}
 .nut-card{background:var(--surface2);border-radius:16px;padding:14px}
@@ -4066,7 +4080,19 @@ function openLogForm(id) {
   // ---- ニキビ（1マス選択）：ニキビのマスの数を、部位ごとのニキビの数にする ----
   const acneCells = () => Object.keys(fpMarks).filter(k => fpMarks[k]['ニキビ']);
   const hadCellAcne = acneCells().length > 0;
-  const oldSpots = hadCellAcne ? {} : d.acneSpots.reduce((o, x) => { o[x.area] = (o[x.area] || 0) + x.count; return o; }, {}); // 前の形式の記録（部位ごとの数）
+  let oldSpots = hadCellAcne ? {} : d.acneSpots.reduce((o, x) => { o[x.area] = (o[x.area] || 0) + x.count; return o; }, {}); // 前の形式の記録（部位ごとの数）
+  // 前の形式のニキビ（部位ごとの数だけ）は、その部位の真ん中あたりのマスに置いて、顔の上で見えて消せるようにする
+  const placeOldSpots = () => {
+    const g = grid(); if (!g || !Object.keys(oldSpots).length) return;
+    Object.entries(oldSpots).forEach(([a, n]) => {
+      const ks = []; for (let k = 0; k < g.cellArea.length; k++) if (g.cellArea[k] === a) ks.push([k % g.cols, Math.floor(k / g.cols)]);
+      if (!ks.length) return;
+      const cx = ks.reduce((x, c) => x + c[0], 0) / ks.length, cy = ks.reduce((x, c) => x + c[1], 0) / ks.length;
+      ks.sort((p, q) => Math.hypot(p[0] - cx, p[1] - cy) - Math.hypot(q[0] - cx, q[1] - cy));
+      ks.slice(0, Math.min(n, ks.length)).forEach(([c, r]) => { const key = `${c},${r}`; (fpMarks[key] = fpMarks[key] || {})['ニキビ'] = 1; });
+    });
+    oldSpots = {};
+  };
   const acneByArea = () => { const o = {}; acneCells().forEach(k => { const a = cellArea(k); if (a) o[a] = (o[a] || 0) + 1; }); AREAS.forEach(a => { if (!o[a.id] && oldSpots[a.id]) o[a.id] = oldSpots[a.id]; }); return o; };
   const syncAcne = () => {
     const by = acneByArea(), box = $('#spots', form); box.innerHTML = '';
@@ -4158,6 +4184,7 @@ function openLogForm(id) {
   fpPanel();
   setTimeout(() => drawFace3d({canvas:'face3d-form', load:'fp-load', tip:'', camZ:44, minZ:12, yawOnly:true, auto:false, grid:true, panY:true, panAt:40, ready:st => {
     st.canvasId = 'face3d-form';
+    placeOldSpots();
     // 1マス選択：押したマスにニキビを付ける／消す
     st.onTapCell = key => {
       const m = fpMarks[key] = fpMarks[key] || {};
@@ -4279,6 +4306,21 @@ async function photoTime(file) {
   if (file.lastModified) { const d = new Date(file.lastModified); if (Date.now() - d < 3 * 86400000) return hm(d); }
   return '';
 }
+// ---------- 睡眠・運動：アプリ版でスマホのヘルスケアと連携する入口 ----------
+// アプリ版（iPhone＝ヘルスケア／Android＝ヘルスコネクト）では、アプリ側が window.HadatomoNative.health を用意する。
+//   health.day('YYYY-MM-DD') → Promise<{sleep:{bed:'HH:MM', wake:'HH:MM'}|null, steps:number|null, workouts:[{type:'walking'|'running'|..., minutes:number}]}>
+// Web版にはないので、そのときは「アプリ版で自動で取り込みます」と案内だけ出す。
+const HEALTH_TYPE = {walking:'ウォーキング', running:'ランニング', strength:'筋トレ', yoga:'ヨガ・ストレッチ', stretching:'ヨガ・ストレッチ', cycling:'自転車', swimming:'水泳', sports:'球技・スポーツ', dance:'ダンス'};
+const healthOK = () => !!(window.HadatomoNative && window.HadatomoNative.health && typeof window.HadatomoNative.health.day === 'function');
+async function healthDay(date) {
+  if (!healthOK()) return null;
+  try {
+    const r = await window.HadatomoNative.health.day(date) || {};
+    const hm = v => isValidHM(v) ? v : '';
+    return {sleep:r.sleep ? {bed:hm(r.sleep.bed), wake:hm(r.sleep.wake)} : null, steps:Number.isFinite(r.steps) ? Math.round(r.steps) : null,
+      workouts:(Array.isArray(r.workouts) ? r.workouts : []).map(w => ({type:HEALTH_TYPE[w.type] || 'その他', minutes:clamp(Math.round(num(w.minutes)), 1, 600)})).filter(w => w.minutes > 0)};
+  } catch (e) { return null; }
+}
 // ---------- 食事：写真を撮るだけで記録（朝食・昼食・夕食・間食は、撮った時刻で自動で決める） ----------
 function mealByTime(hm) {
   const [h, m] = String(hm || '').split(':').map(Number); const x = (h || 0) * 60 + (m || 0);
@@ -4351,12 +4393,13 @@ function openLifeForm(id, part) {
   const nowHM = () => { const n = new Date(); return `${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}`; };
   const slot0 = mealByTime(nowHM());
   const mealBlock = m => `<div class="meal-block" data-meal="${m.k}">
-    <div class="meal-head">${m.k === 'snack' ? `<b class="small">${m.l}</b>` : `<label class="check"><input type="checkbox" name="ate_${m.k}" ${d.meals[m.k].ate ? 'checked' : ''}><b>${m.l}</b></label><input type="time" class="input" style="width:130px;min-height:40px;font-size:16px;padding:6px 10px" name="time_${m.k}" value="${esc(d.meals[m.k].time)}" aria-label="${m.l}の時刻">`}
+    <div class="meal-head">${m.k === 'snack' ? `<b class="small">${m.l}</b>` : `<label class="check"><input type="checkbox" name="ate_${m.k}" ${d.meals[m.k].ate ? 'checked' : ''}><b>${m.l}</b><span class="meal-now">今の食事</span></label><input type="time" class="input" style="width:130px;min-height:40px;font-size:16px;padding:6px 10px" name="time_${m.k}" value="${esc(d.meals[m.k].time)}" aria-label="${m.l}の時刻">`}
 </div>
     <div data-mprev="${m.k}"></div>
     <div data-pinfo="${m.k}"></div>
     <div class="chips" data-mfoods="${m.k}" style="margin-top:8px"></div>
-    <div class="food-pick"><select class="select" data-fsel="${m.k}" aria-label="${m.l}に食べたもの">${foodOptions()}</select><select class="select" data-fqty="${m.k}" aria-label="量">${QTYS.map(q => `<option value="${q.v}" ${q.v === 1 ? 'selected' : ''}>${q.l}</option>`).join('')}</select><button type="button" class="btn btn-soft btn-sm" data-fadd="${m.k}">追加</button></div>
+    <div class="food-ac"><input class="input" data-fq="${m.k}" placeholder="食べたものを入力（例：ごはん、サラダ）" autocomplete="off" enterkeyhint="done" aria-label="${m.l}に食べたもの"><div class="food-sug" data-fsug="${m.k}" hidden></div></div>
+    <div class="food-pick"><select class="select vh" data-fsel="${m.k}" aria-hidden="true" tabindex="-1">${foodOptions()}</select><select class="select" data-fqty="${m.k}" aria-label="量">${QTYS.map(q => `<option value="${q.v}" ${q.v === 1 ? 'selected' : ''}>${q.l}</option>`).join('')}</select><button type="button" class="btn btn-soft btn-sm" data-fadd="${m.k}">追加</button></div>
     <div class="spot-row" data-fcustom="${m.k}" hidden>
       <label class="mini" style="grid-column:1/-1">食品名<input class="input" data-cf="name" maxlength="30" placeholder="例：〇〇のサラダチキン"></label>
       <label class="mini">エネルギー（kcal）<input class="input" data-cf="kcal" inputmode="decimal"></label>
@@ -4374,12 +4417,14 @@ function openLifeForm(id, part) {
     ${d.date ? `<input type="hidden" id="f_date" name="date" value="${esc(d.date)}">` : field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint:'睡眠は「この日の朝に起きた睡眠」を記録します'})}
     <div class="form-grid" data-part="sleep" ${show('sleep')}><div class="section-title">SLEEP 睡眠</div>
     <p class="hint" style="margin-top:-6px">今朝起きたときの睡眠を記録します。</p>
+    ${healthOK() ? `<button type="button" class="btn btn-soft btn-sm health-btn" data-health="sleep">${icon('moon')}ヘルスケアから読み込む</button>` : '<p class="health-note">アプリ版では、スマホのヘルスケアから睡眠を自動で取り込みます。</p>'}
     <div class="form-grid two" style="gap:12px">
       ${field('起床時刻', `<input type="time" class="input" id="f_wake" name="wake" value="${esc(d.wake)}">`, {name:'wake'})}
       ${field('就寝時刻', `<input type="time" class="input" id="f_bed" name="bed" value="${esc(d.bed)}">`, {name:'bed'})}
     </div>
     <p class="small" id="sleep-calc" style="margin-top:-6px"></p></div>
     <div class="form-grid" data-part="exercise" ${show('exercise')}><div class="section-title">EXERCISE 運動</div>
+    ${healthOK() ? `<button type="button" class="btn btn-soft btn-sm health-btn" data-health="exercise">${icon('chart')}ヘルスケアから読み込む</button>` : '<p class="health-note">アプリ版では、スマホのヘルスケアから運動と歩数を自動で取り込みます。</p>'}
     <div class="field" data-field="exercise"><span class="lbl">運動の種類と時間<span class="opt">任意</span></span>
       <div id="ex-list"></div>
       <div class="food-pick" style="margin-top:6px"><select class="select" id="ex-type" aria-label="運動の種類">${EX_TYPES.map(x => `<option>${esc(x)}</option>`).join('')}</select><input class="input" id="ex-min" inputmode="numeric" placeholder="分" aria-label="運動の時間（分）"><button type="button" class="btn btn-soft btn-sm" id="ex-add">追加</button></div>
@@ -4389,11 +4434,9 @@ function openLifeForm(id, part) {
     <div class="form-grid" data-part="meal" ${show('meal')}><div class="section-title">MEAL 食事</div>
     <div class="meal-photo-top">${isPremium()
       ? `<label class="btn btn-soft mpt-btn">${icon('image')}写真を選ぶ<input type="file" accept="image/*" data-mphoto="auto" class="vh"></label><label class="btn btn-primary mpt-btn">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="auto" class="vh"></label>`
-      : `<button type="button" class="btn btn-soft mpt-btn" data-mcam="1">${icon('image')}写真を選ぶ<span class="badge-premium">${PREMIUM_NAME}</span></button><button type="button" class="btn btn-soft mpt-btn" data-mcam="1">${icon('camera')}撮る<span class="badge-premium">${PREMIUM_NAME}</span></button>`}</div>
+      : `<div class="mpt-col"><button type="button" class="btn btn-soft mpt-btn" data-mcam="1">${icon('image')}写真を選ぶ</button><span class="mpt-prem">${PREMIUM_NAME}</span></div><div class="mpt-col"><button type="button" class="btn btn-soft mpt-btn" data-mcam="1">${icon('camera')}撮る</button><span class="mpt-prem">${PREMIUM_NAME}</span></div>`}</div>
     <div id="mpt-info"></div>
-    <p class="hint" style="margin-top:-6px">${PREMIUM_NAME}プランでは、写真を選ぶか撮ると、撮った時刻で朝食・昼食・夕食を決めて、AIが料理と栄養の目安を読み取ります（そのときだけ写真をGoogleのAI（Gemini）に送ります。保存はしません）。無料プランでは、食べたものをリストから選んでください。</p>
-    ${part === 'meal' ? `<div class="field"><span class="lbl">どの食事？<span class="opt">今の時刻で自動で選んでいます</span></span><div class="seg meal-slot" role="radiogroup">${FOOD_MEALS.map(x => `<label class="seg-opt"><input type="radio" name="meal-slot" value="${x.k}" ${x.k === slot0 ? 'checked' : ''}><span>${x.l}</span></label>`).join('')}</div></div>` : ''}
-    ${FOOD_MEALS.map(mealBlock).join('')}
+    ${(part === 'meal' ? [FOOD_MEALS.find(x => x.k === slot0)].concat(FOOD_MEALS.filter(x => x.k !== slot0)) : FOOD_MEALS).map(mealBlock).join('')}
     <div class="nut-card" id="nut-total"></div>
     <p class="hint" style="margin-top:-8px">${esc(NUT_NOTE)}</p>
     ${field('食事の内容（当てはまるもの）', checksHtml('tags', FOOD_TAGS, d.tags || []), {name:'tags', optLabel:'任意・複数選択可'})}</div>
@@ -4420,20 +4463,48 @@ function openLifeForm(id, part) {
     else box.innerHTML = '';
   };
   FOOD_MEALS.forEach(m => renderPhoto(m.k)); renderFoods(); renderExercise();
+  // 今の時刻（写真のときは撮った時刻）の食事に「今の食事」の印を付ける
   const showSlot = (k, prefill) => {
-    if (part !== 'meal') return;
-    $$('.meal-block', form).forEach(b => { b.hidden = b.dataset.meal !== k; });
-    const r = $(`input[name="meal-slot"][value="${k}"]`, form); if (r) r.checked = true;
+    $$('.meal-block', form).forEach(b => b.classList.toggle('now', part === 'meal' && b.dataset.meal === k));
     const te = form.elements['time_' + k]; if (prefill && te && !te.value) te.value = nowHM(); // 自動で選んだ食事は、今の時刻を入れておく（食べたものを入れると記録される）
   };
   showSlot(slot0, true);
   const numIn = (v, max) => { const x = toHalf(v).trim(); if (x === '') return 0; const n = Number(x); return isFinite(n) && n >= 0 && n <= max ? Math.round(n * 10) / 10 : NaN; };
+  // ---- 食べたものの入力予測（ひらがな・カタカナの違いは気にしない。よく食べるものを先に出す）----
+  const kana = x => toHalf(String(x || '')).toLowerCase().replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0) - 0x60)).replace(/\s/g, '');
+  const freq = {}; state.lifeLogs.forEach(l => (l.foods || []).forEach(f => { freq[f.name] = (freq[f.name] || 0) + 1; }));
+  const foodItems = () => FOOD_DB.map(f => ({v:'db:' + f.k, n:f.n, kcal:f.kcal})).concat(state.customFoods.map(f => ({v:'cu:' + f.id, n:f.name, kcal:Math.round(f.kcal)})));
+  const sugFor = q => {
+    const qq = kana(q), items = foodItems();
+    const hit = qq ? items.filter(x => kana(x.n).includes(qq)) : items.filter(x => freq[x.n]);
+    return hit.sort((a, b) => (qq ? (kana(b.n).startsWith(qq) - kana(a.n).startsWith(qq)) : 0) || (freq[b.n] || 0) - (freq[a.n] || 0)).slice(0, 7);
+  };
+  const sugShow = k => {
+    const inp = $(`[data-fq="${k}"]`, form), box = $(`[data-fsug="${k}"]`, form), q = inp.value.trim(), list = sugFor(q);
+    box.innerHTML = list.map(x => `<button type="button" class="food-sug-i" data-fpick="${k}" data-v="${esc(x.v)}">${esc(x.n)}<span>${x.kcal}kcal</span></button>`).join('')
+      + (q ? `<button type="button" class="food-sug-i custom" data-fcust="${k}">「${esc(q)}」を自分で入力する</button>` : '')
+      + (!q && !list.length ? '<p class="small muted" style="margin:6px 10px">食べたものの名前を入れると、候補が出ます。</p>' : '');
+    box.hidden = !box.innerHTML;
+  };
+  const sugHide = k => { const box = $(`[data-fsug="${k}"]`, form); if (box) box.hidden = true; };
+  form.addEventListener('input', e => { const k = e.target.dataset && e.target.dataset.fq; if (k) sugShow(k); });
+  form.addEventListener('focusin', e => { const k = e.target.dataset && e.target.dataset.fq; if (k) sugShow(k); });
+  form.addEventListener('focusout', e => { const k = e.target.dataset && e.target.dataset.fq; if (k) setTimeout(() => { if (!(document.activeElement && document.activeElement.closest && document.activeElement.closest(`[data-fsug="${k}"]`))) sugHide(k); }, 150); });
+  form.addEventListener('keydown', e => { const k = e.target.dataset && e.target.dataset.fq; if (k && e.key === 'Enter' && !e.isComposing) { e.preventDefault(); const f = $(`[data-fsug="${k}"] [data-fpick]`, form); if (f) f.click(); else { const c = $(`[data-fsug="${k}"] [data-fcust]`, form); if (c) c.click(); } } });
   form.addEventListener('click', async e => {
     const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.fpick) { const k = b.dataset.fpick, sel = $(`[data-fsel="${k}"]`, form); sel.value = b.dataset.v; $(`[data-fadd="${k}"]`, form).click(); $(`[data-fq="${k}"]`, form).value = ''; sugHide(k); haptic(8); return; }
+    if (b.dataset.fcust) { const k = b.dataset.fcust, q = $(`[data-fq="${k}"]`, form).value.trim(), box = $(`[data-fcustom="${k}"]`, form); box.hidden = false; $('[data-cf="name"]', box).value = q; $('[data-cf="kcal"]', box).focus(); sugHide(k); return; }
+    if (b.dataset.fadd && !$(`[data-fsel="${b.dataset.fadd}"]`, form).value) {
+      // 入力欄の文字から選ぶ（候補の一番上）。候補がなければ自分で入力
+      const k = b.dataset.fadd, q = $(`[data-fq="${k}"]`, form).value.trim();
+      if (q) { const top = sugFor(q)[0]; if (top) { $(`[data-fsel="${k}"]`, form).value = top.v; $(`[data-fq="${k}"]`, form).value = ''; sugHide(k); }
+        else { const box = $(`[data-fcustom="${k}"]`, form); box.hidden = false; $('[data-cf="name"]', box).value = q; return; } }
+    }
     if (b.dataset.fadd) {
       const k = b.dataset.fadd, sel = $(`[data-fsel="${k}"]`, form), qty = Number($(`[data-fqty="${k}"]`, form).value) || 1;
       setErr('food_' + k, '');
-      if (!sel.value) { setErr('food_' + k, '食べたものを選んでください。'); return; }
+      if (!sel.value) { setErr('food_' + k, '食べたものを入力してください。'); return; }
       if (sel.value === '__custom') { $(`[data-fcustom="${k}"]`, form).hidden = false; return; }
       let src = null;
       if (sel.value.startsWith('db:')) { const f = FOOD_DB.find(x => x.k === sel.value.slice(3)); if (f) src = {name:f.n, kcal:f.kcal, p:f.p, f:f.f, c:f.c, veg:f.veg}; }
@@ -4465,6 +4536,7 @@ function openLifeForm(id, part) {
       if (!/^\d{1,3}$/.test(mins) || Number(mins) < 1 || Number(mins) > 600) { setErr('exercise', '運動の時間は1〜600分の整数（半角数字）で入力してください。'); return; }
       exercise.push({type:$('#ex-type', form).value, minutes:Number(mins)}); $('#ex-min', form).value = ''; renderExercise(); return;
     }
+    if (b.dataset.health) { await applyHealth(b.dataset.health, true); return; }
     if (b.dataset.mcam) {
       $('#mpt-info', form).innerHTML = `<div class="notice" style="margin:8px 0 0">写真で食事を記録する機能は、<b>${PREMIUM_NAME}プラン</b>の機能です。写真から料理と栄養の目安をAIが読み取り、撮った時刻で朝食・昼食・夕食も自動で決めます。<br>無料プランでは、下のリストから食べたものを選んでください。<br><a href="#/plan">プランの詳細を見る</a></div>`;
       return;
@@ -4509,7 +4581,7 @@ function openLifeForm(id, part) {
         let img = await readImage(file, 480, 0.7), kk = k;
         // 写真を撮った時刻（なければ今の時刻）で、朝食・昼食・夕食・間食を自動で決める
         const tm = await photoTime(file);
-        if (k === 'auto') { kk = mealByTime(tm || nowHM()); showSlot(kk); const blk = $(`.meal-block[data-meal="${kk}"]`, form); if (blk && part !== 'meal') blk.scrollIntoView({block:'center', behavior:'smooth'}); }
+        if (k === 'auto') { kk = mealByTime(tm || nowHM()); showSlot(kk); const blk = $(`.meal-block[data-meal="${kk}"]`, form); if (blk) blk.scrollIntoView({block:'center', behavior:'smooth'}); }
         pending[kk] = img; markAte(kk); renderPhoto(kk);
         const te = form.elements['time_' + kk]; if (tm && te) te.value = tm;
         // プレミアムは、そのままAIで料理と栄養の目安を読み取る
@@ -4520,6 +4592,17 @@ function openLifeForm(id, part) {
     if (el.name === 'noEx' && el.checked && exercise.length) { exercise = []; renderExercise(); el.checked = true; }
   });
   const calc = () => { const m = sleepMin({bed:form.elements.bed.value, wake:form.elements.wake.value}); $('#sleep-calc').textContent = m == null ? '' : `睡眠時間：${fmtHM(m)}`; };
+  // ヘルスケア（アプリ版）から睡眠・運動・歩数を入れる。空いている欄だけ（ボタンを押したときは上書き）
+  const applyHealth = async (what, force) => {
+    const h = await healthDay(form.elements.date.value || t); if (!h) return;
+    if ((what === 'sleep' || what === 'all') && h.sleep && h.sleep.bed && h.sleep.wake && (force || (!form.elements.bed.value && !form.elements.wake.value))) { form.elements.bed.value = h.sleep.bed; form.elements.wake.value = h.sleep.wake; calc(); }
+    if (what === 'exercise' || what === 'all') {
+      if (h.workouts.length && (force || !exercise.length)) { exercise = h.workouts.slice(); renderExercise(); }
+      if (h.steps != null && (force || !form.elements.steps.value)) form.elements.steps.value = h.steps;
+    }
+    haptic(15);
+  };
+  if (healthOK() && part !== 'meal') setTimeout(() => applyHealth('all', false), 0);
   form.elements.bed.oninput = calc; form.elements.wake.oninput = calc; calc();
   MEALS.forEach(m => { form.elements['time_' + m.k].addEventListener('input', e => { if (e.target.value) form.elements['ate_' + m.k].checked = true; }); });
   form.onsubmit = e => {
