@@ -1896,6 +1896,7 @@ let lockedY = null;
 function lockScroll() { if (lockedY != null) return; lockedY = window.scrollY; document.body.style.top = `-${lockedY}px`; document.body.classList.add('no-scroll'); }
 function unlockScroll() { if (lockedY == null) return; const y = lockedY; lockedY = null; document.body.classList.remove('no-scroll'); document.body.style.top = ''; window.scrollTo(0, y); }
 function closeModal() { const r = $('#modal-root'); r.innerHTML = ''; delete r.dataset.dirty; unlockScroll();
+  const ff = document.body.querySelector(':scope > #fp-field'); if (ff) ff.remove(); // 全画面にした顔の編集が残っていたら消す
   if (FACE3D.st && FACE3D.st.canvasId === 'face3d-form') { FACE3D.st.stop = true; FACE3D.st = null; setTimeout(() => { if (!document.getElementById('face3d-form')) render(); }, 0); } } // 記録画面の3Dの顔を閉じたら、元の画面の3Dの顔を戻す
 // ボトムシート：下にすべらせて閉じる（入力途中なら確認してから）
 async function dismissModal(fromDrag) {
@@ -4166,7 +4167,8 @@ function openLogForm(id) {
   // ---- 3Dの顔を押して、マス目ごとに記録する（複数のマス目を選んで、状態と強さ1〜5を入れる）----
   const fpMarks = JSON.parse(JSON.stringify(d.cellMarks || {})); const fpSel = new Set(); let fpRange = false;
   // 1マス選択：押した順を覚えて「戻る」で1つずつ取り消せる。押したマスは「次へ」を押すまで四角い枠で点滅させる
-  const fpHist = []; let fpLast = null, fpBlinkOn = true, fpBlinkT = null, fpTouched = false;
+  const fpHist = []; let fpLast = null, fpBlinkOn = true, fpBlinkT = null, fpTouched = false, fpPh = null;
+  const fpEl = () => document.getElementById('fp-field') || form;
   const fpBlinkPaint = () => { const st = FACE3D.st; if (st && st.canvasId === 'face3d-form' && !fpRange) face3dGridPaint(st, fpMarks, fpLast && fpBlinkOn ? new Set([fpLast]) : null, 'acne'); };
   const fpBlink = on => {
     clearInterval(fpBlinkT); fpBlinkT = null; fpBlinkOn = true;
@@ -4235,8 +4237,8 @@ function openLogForm(id) {
     face3dAcneDots(st, fpMarks); // ニキビは、どちらの選び方でも赤い点で見せる
   } };
   const fpPanel = () => {
-    const pn = $('#fp-panel', form); if (!pn) return;
-    const sl = $('#fp-sumline', form);
+    const pn = $('#fp-panel', fpEl()); if (!pn) return;
+    const sl = $('#fp-sumline', fpEl());
     if (sl) { const n = acneCells().length || Object.values(oldSpots).reduce((x, v) => x + v, 0), cs = RANGE_CONCERNS.filter(c => maxLevel(c));
       sl.textContent = n || cs.length ? [n ? `ニキビ ${n}個` : '', ...cs.map(c => `${c} ${maxLevel(c)}`)].filter(Boolean).join('・') : 'まだ何も入れていません'; }
     if (!fpRange) {
@@ -4263,19 +4265,21 @@ function openLogForm(id) {
   const fpSync = () => { fpPaint(); fpPanel(); };
   // 小さい顔のときは、マス目や区切りの線を出さない（記録したものだけを見せる）
   const fpLines = on => { const st = FACE3D.st; if (!st || !st.gridInfo) return; st.gridInfo.uni.uGridLines.value = on ? 1 : 0; st.gridInfo.uni.uZoneMode.value = on && fpRange ? 1 : 0; st.zoneMode = on && fpRange; st.dirty = true; };
-  form.addEventListener('click', e => {
+  const fpClick = e => {
+    if (e._fp) return; e._fp = true;
     const b = e.target.closest('[data-fp-note],[data-fp-close],[data-fp-clear],[data-fp-acne-clear],[data-fp-zoom],[data-fp-mode],[data-fp-undo],[data-fp-next],[data-fp-open],[data-fp-done]'); if (!b) return;
     // 最初は小さい顔。押すと画面いっぱいに大きくなって記録できる。「完了」で小さく戻る
-    if ('fpOpen' in b.dataset) { $('#fp-field', form).classList.add('fp-big'); $('#modal-root').classList.add('fp-open'); fpLines(true); haptic(8); fpSync(); return; }
-    if ('fpDone' in b.dataset) { $('#fp-field', form).classList.remove('fp-big'); $('#modal-root').classList.remove('fp-open'); fpSel.clear(); fpLast = null; fpBlink(false); const st = FACE3D.st; if (st) { st.zoomT = null; st.cam.position.z = 44; st.cam.position.y = 0.6; st.yaw = 0; st.dirty = true; } fpLines(false); fpSync(); return; }
+    // 大きくするときは、下から出る画面（ボトムシート）の外に出して、普通の全画面にする（シートの中だと動きがおかしくなるため）
+    if ('fpOpen' in b.dataset) { const f = fpEl(); fpPh = document.createComment('fp'); f.parentNode.insertBefore(fpPh, f); document.body.appendChild(f); f.classList.add('fp-big'); fpLines(true); haptic(8); fpSync(); return; }
+    if ('fpDone' in b.dataset) { const f = fpEl(); f.classList.remove('fp-big'); if (fpPh && fpPh.parentNode) { fpPh.parentNode.replaceChild(f, fpPh); } fpPh = null; fpSel.clear(); fpLast = null; fpBlink(false); const st = FACE3D.st; if (st) { st.zoomT = null; st.cam.position.z = 44; st.cam.position.y = 0.6; st.yaw = 0; st.dirty = true; } fpLines(false); fpSync(); return; }
     if ('fpUndo' in b.dataset) { const k = fpHist.pop(); if (k) { fpTouched = true; fpToggleAcne(k); fpLast = fpHist[fpHist.length - 1] || null; syncAcne(); condAuto(); haptic(8); fpSync(); fpBlink(true); } return; }
     if ('fpNext' in b.dataset) { fpLast = null; fpBlink(false); fpPanel(); haptic(8); return; }
     if (b.dataset.fpMode) {
       fpRange = b.dataset.fpMode === 'range';
-      $$('[data-fp-mode]', form).forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
+      $$('[data-fp-mode]', fpEl()).forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
       const st = FACE3D.st; if (st && st.gridInfo) { st.gridInfo.uni.uZoneMode.value = fpRange ? 1 : 0; st.zoneMode = fpRange; st.dirty = true; }
       fpSel.clear(); fpLast = null; fpBlink(false); fpSync();
-      const h = $('#fp-hint', form); if (h) h.textContent = fpRange ? FP_HINT_ZONE : FP_HINT_TAP;
+      const h = $('#fp-hint', fpEl()); if (h) h.textContent = fpRange ? FP_HINT_ZONE : FP_HINT_TAP;
       return;
     }
     if (b.dataset.fpZoom) { const st = FACE3D.st; if (st) { st.zoomT = clamp((st.zoomT || st.cam.position.z) + (b.dataset.fpZoom === 'in' ? -7 : 7), st.minZ, st.maxZ); st.dirty = true; } return; }
@@ -4288,16 +4292,20 @@ function openLogForm(id) {
       fpGlobal();
       $('#modal-root').dataset.dirty = '1'; fpSync();
     }
-  });
+  };
   // 強さのつまみ：左右に動かすと 1・2・3・4・5 でカチッと止まる
-  form.addEventListener('input', e => {
+  const fpInput = e => {
+    if (e._fp) return; e._fp = true;
     const r = e.target.closest('[data-fp-level]'); if (!r) return;
     const c = r.dataset.fpLevel, v = Number(r.value);
     fpSel.forEach(k => { (fpMarks[k] = fpMarks[k] || {})[c] = v; }); fpTouched = true;
     const lab = r.closest('.fp-slider').querySelector('b'); if (lab && lab.textContent !== String(v)) { lab.textContent = v; haptic(6); }
-    const chip = $(`[data-fp-note="${CSS.escape(c)}"]`, form); if (chip) chip.lastChild.textContent = `${c} ${v}`;
+    const chip = $(`[data-fp-note="${CSS.escape(c)}"]`, fpEl()); if (chip) chip.lastChild.textContent = `${c} ${v}`;
     fpGlobal(); $('#modal-root').dataset.dirty = '1'; fpPaint();
-  });
+  };
+  // 編集用の顔はシートの外へ出ることがあるので、フォームと顔の両方で押した操作を受け取る（同じ操作は1回だけ）
+  form.addEventListener('click', fpClick); form.addEventListener('input', fpInput);
+  { const f = fpEl(); if (f) { f.addEventListener('click', fpClick); f.addEventListener('input', fpInput); } }
   condAuto();
   form._fpData = () => {
     const g = grid(); const ca = {}; if (g) Object.keys(fpMarks).forEach(k => { ca[k] = cellArea(k); });
