@@ -812,6 +812,9 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .name-auto:empty{display:none}
 .fp-legend .link{background:none;border:0;color:var(--green-d);font-family:inherit;cursor:pointer;text-decoration:underline;padding:0;margin-left:auto}
 .hap-wrap{position:relative;display:flex;flex:1;min-width:0}
+.hap-keep{position:relative;display:inline-flex;min-width:0;max-width:100%;vertical-align:middle}
+.hap-keep > .btn{flex:1}
+.hap-keep:active > .btn{transform:scale(.96)}
 .hap-wrap > .btn{flex:1;width:100%}
 @media(min-width:640px){.hap-wrap{flex:none}.hap-wrap > .btn{width:auto}}
 .hap-ov{position:absolute;inset:0;z-index:2;cursor:pointer;-webkit-tap-highlight-color:transparent;border-radius:inherit}
@@ -1153,8 +1156,7 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 .btn.has-prem,.mpt-locked,.tab:has(.prem-sub){flex-direction:column;gap:0;line-height:1.25}
 .add-opt b .prem-sub{display:table;margin-top:3px}
 .badge-premium,.prem-sub{display:inline-block;padding:1px 8px;border-radius:7px;font-size:11px;font-weight:700;letter-spacing:.04em;white-space:nowrap;
-  background:linear-gradient(135deg,#FFF1B8 0%,#F2CF5B 28%,#D9A92E 52%,#F7DC7A 74%,#C99526 100%);color:#5C3D00;border:1px solid #C5952B;
-  text-shadow:0 1px 0 rgba(255,246,200,.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 1px 2px rgba(120,80,0,.18)}
+  background:linear-gradient(135deg,#F3E7CF,#E9D6B0);color:#7A5A22;border:1px solid #E2CDA2}
 .prem-sub{font-size:10px;line-height:1.35;padding:0 7px;margin-top:3px}
 .tab .prem-sub{display:table;margin:2px auto 0}
 .plan-table td,.plan-table th{text-align:center}.plan-table td:first-child,.plan-table th:first-child{text-align:left}
@@ -2017,6 +2019,26 @@ function hapticize(btn) {
   lb.addEventListener('click', e => e.stopPropagation());
   ip.addEventListener('change', () => { if (btn.disabled) return; hapticStrong(true); btn.click(); }); // 指で押した1回目に続けて、さらに2回鳴らして強めにする
 }
+// 大事なボタン（濃い緑のボタン）にも、保存と同じバイブを付ける。
+// まわりの並び方がくずれないように、ボタンの置き場所・幅をそのまま包む箱に写す
+function hapticizeKeep(btn) {
+  if (!btn || !btn.parentNode || btn.closest('.hap-wrap,.hap-keep') || btn.tagName === 'LABEL' || btn.disabled) return;
+  const cs = getComputedStyle(btn), ps = getComputedStyle(btn.parentNode), pw = btn.parentNode.clientWidth - parseFloat(ps.paddingLeft) - parseFloat(ps.paddingRight), full = pw > 0 && btn.offsetWidth >= pw - 2;
+  const wrap = document.createElement('span'); wrap.className = 'hap-keep';
+  wrap.style.gridColumn = cs.gridColumn; wrap.style.gridRow = cs.gridRow;
+  if (full) wrap.style.width = '100%';
+  if (cs.flexGrow !== '0') wrap.style.flexGrow = cs.flexGrow;
+  if (btn.style.marginTop) { wrap.style.marginTop = btn.style.marginTop; btn.style.marginTop = '0'; }
+  btn.parentNode.insertBefore(wrap, btn); wrap.appendChild(btn);
+  if (full) btn.style.width = '100%';
+  const lb = document.createElement('label'); lb.className = 'hap-ov'; lb.setAttribute('aria-hidden', 'true');
+  const ip = document.createElement('input'); ip.type = 'checkbox'; ip.setAttribute('switch', ''); ip.tabIndex = -1;
+  lb.appendChild(ip); wrap.appendChild(lb);
+  lb.addEventListener('click', e => e.stopPropagation());
+  ip.addEventListener('change', () => { if (btn.disabled) return; hapticStrong(true); btn.click(); });
+}
+const hapticizeAll = root => (root || document).querySelectorAll('.btn-primary').forEach(b => { if (b.offsetParent) hapticizeKeep(b); });
+{ let hz = 0; new MutationObserver(() => { cancelAnimationFrame(hz); hz = requestAnimationFrame(() => hapticizeAll()); }).observe(document.body, {childList:true, subtree:true}); }
 // 画面を開いている間、後ろのページが動かないように固定する（閉じたら元の位置に戻す）
 let lockedY = null;
 function lockScroll() { if (lockedY != null) return; lockedY = window.scrollY; document.body.style.top = `-${lockedY}px`; document.body.classList.add('no-scroll'); }
