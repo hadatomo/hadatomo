@@ -94,10 +94,12 @@ html{-webkit-text-size-adjust:100%;background:var(--bg)}
 /* 下に引っぱって更新：ふつうのバウンドは止めて、上に出る部分は「肌トモ」の帯と同じ色にする */
 html,body{overscroll-behavior-y:none}
 #page{position:relative}
-#page.ptr-back{transition:transform .22s ease}
-.ptr{position:absolute;left:50%;bottom:calc(100% + 14px);width:30px;height:30px;margin-left:-15px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--green-d);opacity:0;pointer-events:none}
+#page.ptr-back{transition:transform .34s cubic-bezier(.22,.9,.3,1)}
+.ptr{position:absolute;left:50%;bottom:calc(100% + 16px);width:30px;height:30px;margin-left:-15px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--green-d);opacity:0;pointer-events:none;transform-origin:50% 50%}
+.ptr.fade{transition:opacity .22s ease,transform .22s ease;opacity:0!important;transform:scale(.5)}
 .ptr svg{width:24px;height:24px}
 .ptr.spin svg{animation:ptrSpin .7s linear infinite}
+.ptr-arc{transition:none}
 @keyframes ptrSpin{to{transform:rotate(360deg)}}
 /* いちばん後ろの背景：おだやかな色のグラデーション（画面に固定して、スクロールしても動かない） */
 body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:linear-gradient(160deg,#F4F0E6 0%,#E9F0E6 45%,#F3E8DE 100%)}
@@ -1974,11 +1976,11 @@ function hapticStrong(skipFirst) {
   try { if (typeof navigator.vibrate === 'function' && navigator.vibrate([80, 60, 80])) return; } catch (e) { /* 次の方法へ */ }
   [0, 110, 220].forEach((t, i) => { if (!(skipFirst && i === 0)) setTimeout(switchTick, t); });
 }
-// 下に引っぱって更新：ぐるぐるが始まったときのバイブ（Androidは長めに2回／iPhoneは「コツッ」1回）
+// 軽い「カチッ」1回（下に引っぱって更新が始まったとき）。Androidは短い振動、iPhoneはスイッチの触覚
 // iPhoneは、指を離した操作の中ですぐ（待たずに）鳴らさないと鳴らない
-function hapticSpin() {
+function hapticTick() {
   hapticAt = Date.now();
-  try { if (typeof navigator.vibrate === 'function' && navigator.vibrate([130, 60, 130])) return; } catch (e) { /* 次の方法へ */ }
+  try { if (typeof navigator.vibrate === 'function' && navigator.vibrate(12)) return; } catch (e) { /* 次の方法へ */ }
   switchTick();
 }
 function toast(msg, type='') {
@@ -7578,27 +7580,65 @@ document.addEventListener('click', e => {
 });
 window.addEventListener('hashchange', () => { if ($('#modal-root').innerHTML) closeModal(); render(); });
 // 下に引っぱって更新（ページのいちばん上で下へ引っぱって離すと読み込み直す）
+// ---------- 下に引っぱって更新（Pull-to-Refresh）----------
+// 引っぱって離すと、データを読み直して今の画面を描き直す（ページは移動しない）
+async function ptrRefresh() {
+  const tasks = [];
+  // ① 保存してある記録を読み直す（ほかのタブで入力した分・ヘルスケア連携で入った分など）
+  try { state = load(); } catch (e) { /* 読めなくても今のデータのまま */ }
+  // ② ログインしていれば、プラン（プレミアム）の状態をサーバーから取り直す
+  if (acct.client && acct.user) tasks.push(refreshSub()); else if (hasSavedLogin()) tasks.push(initCloud());
+  // ③ アプリの新しい版が出ていないか確かめる（あれば、次に開いたときに新しくなる）
+  try { if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) tasks.push(navigator.serviceWorker.getRegistration().then(r => r && r.update()).catch(() => {})); } catch (e) { /* 何もしない */ }
+  // ④ 商品検索の画面なら、ネットの商品を検索し直す（価格が変わっていることがあるため）
+  if (ui.net && ui.net.q && parseRoute().name === 'search') { const q = ui.net.q; ui.net = null; tasks.push(netSearch(q)); }
+  await Promise.race([Promise.allSettled(tasks), new Promise(r => setTimeout(r, 8000))]); // 電波が悪くても8秒で終える
+  render();
+  if (isPremium()) setTimeout(() => runAdvice(false), 0); // プレミアム：記録が変わっていれば、AIのケアポイントも新しくする
+}
 (function pullToRefresh() {
   const page = document.getElementById('page'), ptr = document.getElementById('ptr'); if (!page || !ptr) return;
   const arc = ptr.querySelector('.ptr-arc'), svg = ptr.querySelector('svg');
-  const MAX = 110, GO = 70; let y0 = null, d = 0, busy = false, armed = false;
-  const set = v => { d = v; page.style.transform = v ? `translateY(${v}px)` : ''; ptr.style.opacity = String(Math.min(1, v / GO));
-    // 引っぱる量に合わせて輪が伸びながら回る（くるくる）
-    if (!busy) { const k = Math.min(1, v / GO); arc.setAttribute('stroke-dashoffset', String(56.5 * (1 - k * 0.8))); svg.style.transform = `rotate(${v * 3}deg)`;
-    } };
-  const blocked = t => $('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big') || (t && t.closest && t.closest('canvas,input,textarea,select,.f3-stage'));
-  window.addEventListener('touchstart', e => { if (busy || e.touches.length !== 1 || window.scrollY > 0 || blocked(e.target)) { y0 = null; return; } y0 = e.touches[0].clientY; armed = false; page.classList.remove('ptr-back'); }, {passive:true});
+  const MAX = 120, GO = 72, HOLD = 58; // 引っぱれる最大・更新が決まる距離・更新中に止めておく位置（px）
+  let y0 = null, d = 0, busy = false, pulling = false;
+  const show = v => {
+    d = v; page.style.transform = v ? `translateY(${v.toFixed(1)}px)` : '';
+    if (busy) return;
+    const k = Math.min(1, v / GO);
+    ptr.style.opacity = String(Math.min(1, v / (GO * 0.6)));
+    arc.setAttribute('stroke-dashoffset', String(56.5 * (1 - k * 0.82))); // 引っぱるほど輪が伸びる
+    svg.style.transform = `rotate(${(v * 2.6).toFixed(1)}deg)`;               // 引っぱるほど回る
+  };
+  // 一番上にいて、ほかの画面（下から出る画面など）が開いていないときだけ反応する
+  const blocked = t => busy || $('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full') || (t && t.closest && t.closest('canvas,input,textarea,select,.f3-stage,.ld-cal'));
+  window.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1 || window.scrollY > 0 || blocked(e.target)) { y0 = null; return; }
+    y0 = e.touches[0].clientY; pulling = false; page.classList.remove('ptr-back'); ptr.classList.remove('fade');
+  }, {passive:true});
   window.addEventListener('touchmove', e => {
-    if (y0 == null) return;
+    if (y0 == null || busy) return;
     const dy = e.touches[0].clientY - y0;
-    if (dy <= 0 || window.scrollY > 0) { if (d) set(0); return; }
-    e.preventDefault(); set(Math.min(MAX, dy * 0.5));
+    if (!pulling) { if (dy < 6 || window.scrollY > 0) { if (dy < 0) y0 = null; return; } pulling = true; } // 下向きに動かし始めたときだけ
+    if (dy <= 0) { show(0); return; }
+    e.preventDefault();
+    show(MAX * (1 - Math.exp(-dy / 190))); // ゴムのように、引っぱるほど重くなる
   }, {passive:false});
+  const finish = () => {
+    // 更新が終わったら：くるくるを小さく消しながら、画面を元の位置へ戻す
+    ptr.classList.add('fade'); page.classList.add('ptr-back'); show(0);
+    setTimeout(() => { ptr.classList.remove('spin', 'fade'); ptr.style.opacity = '0'; svg.style.transform = ''; busy = false; }, 380);
+  };
   const end = () => {
     if (y0 == null) return; y0 = null;
+    if (!pulling) return; pulling = false;
     page.classList.add('ptr-back');
-    if (d >= GO) { hapticSpin(); busy = true; set(56); ptr.style.opacity = '1'; arc.setAttribute('stroke-dashoffset', '40'); svg.style.transform = ''; ptr.classList.add('spin'); setTimeout(() => location.reload(), 700); } // ぐるぐるが始まったときにバイブ（上で鳴らしている）
-    else set(0);
+    if (d >= GO && !busy) {
+      hapticTick(); // 更新が始まった瞬間に、軽く「カチッ」（iPhoneは指を離したこの瞬間に鳴らす必要がある）
+      busy = true; show(HOLD);
+      ptr.style.opacity = '1'; arc.setAttribute('stroke-dashoffset', String(56.5 * 0.72)); svg.style.transform = ''; ptr.classList.add('spin');
+      const t0 = performance.now();
+      ptrRefresh().catch(() => {}).finally(() => setTimeout(finish, Math.max(0, 650 - (performance.now() - t0)))); // 一瞬で終わっても、くるくるが見えるだけの時間は出す
+    } else show(0);
   };
   window.addEventListener('touchend', end); window.addEventListener('touchcancel', end);
 })();
