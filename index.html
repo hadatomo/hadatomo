@@ -757,7 +757,7 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .ai-basis.b-l,.ai-basis.b-p{background:#E3F0E6;color:var(--green-d)}
 .ai-basis.b-e{background:var(--surface2);color:var(--muted)}
 .meal-photo-top.mpt-even{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
-.meal-photo-top>.mpt-locked{flex-direction:row;min-height:52px;border-radius:999px;padding:0 12px;gap:8px}
+.meal-photo-top>.mpt-locked{flex-direction:column;min-height:52px;border-radius:999px;padding:4px 12px;gap:0}
 .mpt-blk.meal-photo-top>.mpt-locked{min-height:44px}
 .meal-photo-top .mpt-one{grid-column:1/-1}
 .mpt-blk{margin-top:8px}
@@ -1147,6 +1147,9 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 .food-pick .select,.food-pick .input{min-height:40px;font-size:16px;padding:6px 10px;min-width:0}
 .food-pick .select{padding-right:30px;background-position:right 10px center}
 @media(max-width:420px){.food-pick{grid-template-columns:1fr 1fr}.food-pick > :first-child{grid-column:1/-1}}
+.prem-sub{display:block;font-size:.76em;font-weight:600;line-height:1.15;letter-spacing:.04em;opacity:.85;margin-top:1px}
+.btn.has-prem,.mpt-locked,.tab:has(.prem-sub){flex-direction:column;gap:0;line-height:1.25}
+.add-opt b .prem-sub{color:#9A7B3E;opacity:1}
 .badge-premium{display:inline-block;padding:1px 8px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.04em;background:linear-gradient(135deg,#F3E7CF,#E9D6B0);color:#7A5A22;border:1px solid #E2CDA2;white-space:nowrap}
 .plan-table td,.plan-table th{text-align:center}.plan-table td:first-child,.plan-table th:first-child{text-align:left}
 .ad-box{margin-top:16px;border:1px dashed var(--line2);border-radius:var(--radius-s);padding:10px 12px;background:var(--surface)}
@@ -2507,7 +2510,7 @@ function openAddSheet(kind) {
   openModal({title:my ? '化粧品を追加' : '商品を追加', size:'small', dismissable:true, body:`<div class="add-opts">
     <button class="add-opt main big" data-action="add-find" data-id="${my ? 'my' : 'cat'}">${icon('search')}<span><b>商品を探して追加</b><small>楽天市場・Yahoo!ショッピングの実際の商品から選ぶ</small></span><i>›</i></button>
     <button class="add-opt small" data-action="add-manual" data-id="${my ? 'my' : 'cat'}">${icon('note')}<span><b>自分で入力する</b><small>見つからないときは、パッケージを見ながら入力</small></span><i>›</i></button>
-    <button class="add-opt small" data-action="add-camera">${icon('camera')}<span><b>カメラで登録${isPremium() ? '' : ` <span class="badge-premium">${PREMIUM_NAME}</span>`}</b><small>パッケージやバーコードを撮る・写真を選ぶ</small></span><i>›</i></button></div>`});
+    <button class="add-opt small" data-action="add-camera">${icon('camera')}<span><b>カメラで登録${isPremium() ? '' : `<span class="prem-sub">${PREMIUM_NAME}</span>`}</b><small>パッケージやバーコードを撮る・写真を選ぶ</small></span><i>›</i></button></div>`});
 }
 // 実際の商品（楽天市場・Yahoo!ショッピング）を名前で探して、そのまま追加する
 let findState = null;
@@ -3656,7 +3659,7 @@ function viewScan() {
     `<div class="notice">カメラは、下のボタンを押したときだけ起動します。撮影した写真は<b>この端末の中だけ</b>で使い、外部には送信しません（商品を登録しなければ保存もしません）。写真から商品そのものを自動で判別するAI機能はまだないため、バーコードの数字やパッケージの文字を手がかりに、登録済みの商品と照合します。</div>
     <div class="card"><div class="card-h"><h2>1. パッケージを撮影</h2><span class="opt">任意</span></div>
       <div class="page-actions"><label class="btn btn-primary btn-sm">${icon('camera')}カメラで撮る<input type="file" accept="image/*" capture="environment" id="scan-photo" class="vh"></label><label class="btn btn-ghost btn-sm">${icon('image')}選ぶ<input type="file" accept="image/*" id="scan-photo-lib" class="vh"></label></div>
-      ${sc.photo ? `<img class="img-prev" src="${sc.photo}" alt="撮影した写真" style="width:150px;height:150px"><div class="page-actions" style="margin-top:6px"><button class="btn btn-primary btn-sm" data-action="scan-ai" ${sc.aiBusy ? 'disabled' : ''}>${sc.aiBusy ? '読み取っています…' : '写真から文字を読み取る'}${isPremium() ? '' : ` <span class="badge-premium">${PREMIUM_NAME}</span>`}</button><button class="btn btn-ghost btn-sm" data-action="scan-clear-photo">写真を外す</button></div>
+      ${sc.photo ? `<img class="img-prev" src="${sc.photo}" alt="撮影した写真" style="width:150px;height:150px"><div class="page-actions" style="margin-top:6px"><button class="btn btn-primary btn-sm has-prem" data-action="scan-ai" ${sc.aiBusy ? 'disabled' : ''}>${sc.aiBusy ? '読み取っています…' : '写真から文字を読み取る'}${isPremium() ? '' : `<span class="prem-sub">${PREMIUM_NAME}</span>`}</button><button class="btn btn-ghost btn-sm" data-action="scan-clear-photo">写真を外す</button></div>
         ${sc.aiBusy ? skelHtml(4, {label:'写真を読み取り中', note:'商品名・成分を読み取っています（10秒ほどかかります）'}) : ''}${sc.aiMsg ? `<p class="small" style="margin-top:6px">${esc(sc.aiMsg)}</p>` : ''}
         <p class="hint">${PREMIUM_NAME}では、商品名・内容量・全成分の文字をAIで読み取って下の欄に入れます（成分表示は裏面を撮ると読み取れます。表と裏で2回読み取ると、成分は後ろに追加されます）。写真は読み取りのためだけにGoogleのAI（Gemini）に送り、保存しません。</p>` : ''}
       <p class="hint">${hasBD ? 'バーコードが写っていれば、数字を自動で読み取ります。' : 'このブラウザは、バーコードの自動読み取りに対応していません（iPhoneのSafariなど）。下の欄に、バーコードの下の数字を入力してください。'}撮影した写真は、新しく登録するときに商品画像として使えます。</p>
@@ -4420,7 +4423,7 @@ function openLogForm(id) {
     ${d.date ? `<input type="hidden" id="f_date" name="date" value="${esc(d.date)}">` : field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint: !ex && map[t] ? '今日の記録はすでにあります。別の日付を選ぶか、一覧から今日の記録を編集してください。' : ''})}
     <div class="field face-ai"><span class="lbl">顔の写真で自動で記録<span class="opt">写真から今日の肌をAIが入れます</span></span><div class="meal-photo-top mpt-even">${isPremium()
       ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="user" id="f_faceai" class="vh"></label>`
-      : `<button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('image')}選ぶ</span><span class="badge-premium">${PREMIUM_NAME}</span></button><button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('camera')}撮る</span></button>`}</div><div id="faceai-info"></div></div>
+      : `<button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('image')}選ぶ</span><span class="prem-sub">${PREMIUM_NAME}</span></button><button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('camera')}撮る</span><span class="prem-sub">${PREMIUM_NAME}</span></button>`}</div><div id="faceai-info"></div></div>
     ${field('肌の調子', condSeg(d.condition) + `<p class="cond-ai ai-text" id="cond-ai">${ex ? '' : condAiNote(null)}</p>`, {name:'condition', required:true})}
     <div class="field fp-field" id="fp-field"><div class="fp-bighead"><b>顔を押して記録</b><button type="button" class="icon-btn" data-fp-done aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button></div><span class="lbl fp-lbl">顔を押して記録<span class="opt">ニキビ選択＝ニキビ、肌質選択＝乾燥・テカリなどの状態</span></span>
       <div class="fp-mode" role="group" aria-label="選び方"><button type="button" class="on" data-fp-mode="tap" aria-pressed="true">ニキビ選択</button><button type="button" data-fp-mode="range" aria-pressed="false">肌質選択</button></div>
@@ -4888,7 +4891,7 @@ function openLifeForm(id, part) {
 </div>
     ${part === 'meal' && m.k === slot0 ? '' : `<div class="meal-photo-top mpt-blk mpt-even">${isPremium()
       ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" data-mphoto="${m.k}" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="${m.k}" class="vh"></label>`
-      : `<button type="button" class="btn mpt-btn mpt-locked" data-mcam="${m.k}"><span class="mpt-l">${icon('image')}選ぶ</span><span class="badge-premium">${PREMIUM_NAME}</span></button><button type="button" class="btn mpt-btn mpt-locked" data-mcam="${m.k}"><span class="mpt-l">${icon('camera')}撮る</span></button>`}</div>`}
+      : `<button type="button" class="btn mpt-btn mpt-locked" data-mcam="${m.k}"><span class="mpt-l">${icon('image')}選ぶ</span><span class="prem-sub">${PREMIUM_NAME}</span></button><button type="button" class="btn mpt-btn mpt-locked" data-mcam="${m.k}"><span class="mpt-l">${icon('camera')}撮る</span><span class="prem-sub">${PREMIUM_NAME}</span></button>`}</div>`}
     <div data-mprev="${m.k}"></div>
     <div data-pinfo="${m.k}"></div>
     <div class="food-list" data-mfoods="${m.k}"></div>
@@ -4928,7 +4931,7 @@ function openLifeForm(id, part) {
     <div class="form-grid" data-part="meal" ${show('meal')}><div class="section-title">MEAL 食事</div>
     <div class="meal-photo-top mpt-even">${isPremium()
       ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" data-mphoto="auto" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" data-mphoto="auto" class="vh"></label>`
-      : `<button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('image')}選ぶ</span><span class="badge-premium">${PREMIUM_NAME}</span></button><button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('camera')}撮る</span></button>`}</div>
+      : `<button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('image')}選ぶ</span><span class="prem-sub">${PREMIUM_NAME}</span></button><button type="button" class="btn btn-soft mpt-btn mpt-locked" data-mcam="1"><span class="mpt-l">${icon('camera')}撮る</span><span class="prem-sub">${PREMIUM_NAME}</span></button>`}</div>
     <div id="mpt-info"></div>
     ${(part === 'meal' ? [FOOD_MEALS.find(x => x.k === slot0)].concat(FOOD_MEALS.filter(x => x.k !== slot0)) : FOOD_MEALS).map(mealBlock).join('')}
     <div class="nut-card" id="nut-total"></div>
@@ -4954,7 +4957,7 @@ function openLifeForm(id, part) {
   };
   const renderPhoto = k => {
     const box = $(`[data-mprev="${k}"]`, form);
-    const pbtn = `<button type="button" class="btn btn-soft btn-sm" data-premium="${k}" style="margin-top:6px">写真から読み取る${isPremium() ? '' : ` <span class="badge-premium">${PREMIUM_NAME}</span>`}</button>`;
+    const pbtn = `<button type="button" class="btn btn-soft btn-sm has-prem" data-premium="${k}" style="margin-top:6px">写真から読み取る${isPremium() ? '' : `<span class="prem-sub">${PREMIUM_NAME}</span>`}</button>`;
     if (pending[k]) box.innerHTML = `<div class="photo-prev"><img class="meal-thumb" src="${pending[k]}" alt="選んだ写真"><div><label class="check"><input type="checkbox" data-mpsave="${k}"> このブラウザ内に保存する</label><div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="btn btn-ghost btn-sm" data-mpcancel="${k}" style="margin-top:6px">取り消す</button>${pbtn}</div></div></div>`;
     else if (saved[k]) box.innerHTML = `<div class="photo-prev"><img class="meal-thumb" src="${saved[k]}" alt="保存済みの写真"><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><button type="button" class="btn btn-danger-ghost btn-sm" data-mpdel="${k}">写真を削除</button>${pbtn}</div></div>`;
     else box.innerHTML = '';
@@ -5837,7 +5840,7 @@ function viewCharts() {
   const map = logMap(), lm = lifeMap();
   const inRange = dates.filter(d => map[d]);
   let html = pageHead('肌の変化・比較', '過去の記録をグラフで確認し、過去と現在を比べます。', `<a class="btn btn-ghost btn-sm" href="#/compare">${icon('compare')}商品と肌状態の比較</a>`) +
-    `<div class="tabs">${[7,14,30,90].map(r => `<button class="tab ${ui.chartRange === r ? 'active' : ''}" data-action="chart-range" data-id="${r}">${r}日間${r === 90 && locked() ? `<span class="badge-premium">${PREMIUM_NAME}</span>` : ''}</button>`).join('')}</div>`;
+    `<div class="tabs">${[7,14,30,90].map(r => `<button class="tab ${ui.chartRange === r ? 'active' : ''}" data-action="chart-range" data-id="${r}">${r}日間${r === 90 && locked() ? `<span class="prem-sub">${PREMIUM_NAME}</span>` : ''}</button>`).join('')}</div>`;
   if (!state.skinLogs.length) return html + `<div class="card">${emptyBox('chart', '記録が増えると変化を確認できます', '肌の記録をつけると、ここに推移がグラフで表示されます。', '<button class="btn btn-primary btn-sm" data-action="new-log">記録する</button>')}</div>`;
   if (inRange.length < 5) html += `<div class="notice">記録が増えると変化を確認できます（この期間の記録：${inRange.length}日）。5日以上の記録があると、傾向を見比べやすくなります。</div>`;
   const vals = k => dates.map(d => map[d] ? map[d][k] : null);
