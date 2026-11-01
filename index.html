@@ -7624,9 +7624,14 @@ async function ptrRefresh() {
     show(MAX * (1 - Math.exp(-dy / 190))); // ゴムのように、引っぱるほど重くなる
   }, {passive:false});
   const finish = () => {
-    // 更新が終わったら：くるくるを小さく消しながら、画面を元の位置へ戻す
-    ptr.classList.add('fade'); page.classList.add('ptr-back'); show(0);
-    setTimeout(() => { ptr.classList.remove('spin', 'fade'); ptr.style.opacity = '0'; svg.style.transform = ''; busy = false; }, 380);
+    // 更新が終わったら：①くるくるを小さくしながら消す → ②少し間をおいて、画面をゆっくり元の位置へすべらせて戻す
+    ptr.classList.add('fade');
+    setTimeout(() => {
+      page.classList.remove('ptr-back');
+      page.style.transition = 'transform .5s cubic-bezier(.22,.8,.24,1)';
+      requestAnimationFrame(() => requestAnimationFrame(() => { d = 0; page.style.transform = 'translateY(0px)'; })); // 描き直したあとで動かす（いきなり戻らないように）
+      setTimeout(() => { page.style.transition = ''; page.style.transform = ''; ptr.classList.remove('spin', 'fade'); ptr.style.opacity = '0'; svg.style.transform = ''; busy = false; }, 560);
+    }, 200);
   };
   const end = () => {
     if (y0 == null) return; y0 = null;
