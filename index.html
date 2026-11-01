@@ -113,6 +113,9 @@ html[data-tod="night"] body::before{background:linear-gradient(160deg,#E4E1F2 0%
 /* スマホ：画面は縦にだけ動かす（横に動かない）。2本指の拡大はできる */
 body{touch-action:pan-y;touch-action:pan-y pinch-zoom}
 a,button,input,select,textarea,label,[data-action]{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+/* アプリのように：文字や画像を長押ししても、選択・コピーのメニューが出ないようにする（入力欄は今までどおり選べる） */
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,[contenteditable="true"],.selectable{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 @media(max-width:959px){
   .topbar{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:var(--bg)!important}
   .bottom-nav{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:var(--surface)!important}
@@ -1147,10 +1150,13 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 .food-pick .select,.food-pick .input{min-height:40px;font-size:16px;padding:6px 10px;min-width:0}
 .food-pick .select{padding-right:30px;background-position:right 10px center}
 @media(max-width:420px){.food-pick{grid-template-columns:1fr 1fr}.food-pick > :first-child{grid-column:1/-1}}
-.prem-sub{display:block;font-size:.76em;font-weight:600;line-height:1.15;letter-spacing:.04em;opacity:.85;margin-top:1px}
 .btn.has-prem,.mpt-locked,.tab:has(.prem-sub){flex-direction:column;gap:0;line-height:1.25}
-.add-opt b .prem-sub{color:#9A7B3E;opacity:1}
-.badge-premium{display:inline-block;padding:1px 8px;border-radius:6px;font-size:11px;font-weight:700;letter-spacing:.04em;background:linear-gradient(135deg,#F3E7CF,#E9D6B0);color:#7A5A22;border:1px solid #E2CDA2;white-space:nowrap}
+.add-opt b .prem-sub{display:table;margin-top:3px}
+.badge-premium,.prem-sub{display:inline-block;padding:1px 8px;border-radius:7px;font-size:11px;font-weight:700;letter-spacing:.04em;white-space:nowrap;
+  background:linear-gradient(135deg,#FFF1B8 0%,#F2CF5B 28%,#D9A92E 52%,#F7DC7A 74%,#C99526 100%);color:#5C3D00;border:1px solid #C5952B;
+  text-shadow:0 1px 0 rgba(255,246,200,.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.55),0 1px 2px rgba(120,80,0,.18)}
+.prem-sub{font-size:10px;line-height:1.35;padding:0 7px;margin-top:3px}
+.tab .prem-sub{display:table;margin:2px auto 0}
 .plan-table td,.plan-table th{text-align:center}.plan-table td:first-child,.plan-table th:first-child{text-align:left}
 .ad-box{margin-top:16px;border:1px dashed var(--line2);border-radius:var(--radius-s);padding:10px 12px;background:var(--surface)}
 .ad-label{font-size:11px;color:var(--muted);letter-spacing:.06em;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
