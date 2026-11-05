@@ -1019,6 +1019,7 @@ a.used-tile{color:inherit;text-decoration:none}
 .mn-noimg svg{width:20px;height:20px}
 .mn-pb{border:1px solid var(--line2);background:var(--surface);color:var(--muted);border-radius:999px;padding:5px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 .mn-pb.on{background:var(--green-d);border-color:var(--green-d);color:#fff}
+.ld-life{margin-top:12px}
 .adv-link{border:0;font:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:3px}
 .adv-link i{font-style:normal;opacity:.6}
 .adv-tap{font-style:normal;font-size:10px;color:var(--green-d);margin-left:6px;font-weight:600}
@@ -2567,9 +2568,10 @@ function nutBarsHtml(t, has) {
 const lifeGoals = () => { const st = state.settings, w = st.weight || 55; return {sleep:st.sleepNeed || 420, weight:w, weightSet:!!st.weight, protein:st.proteinGoal || Math.round(w * 1.0)}; };
 const exKcal = (l, w) => Math.round(l.exercise.reduce((a, e) => a + (EX_METS[e.type] || 4) * w * e.minutes / 60 * 1.05, 0));
 const fmtDur = m => { m = Math.round(m); const h = Math.floor(m / 60), r = m % 60; return h ? `${h}時間${r === 30 ? '半' : r ? r + '分' : ''}` : `${r}分`; };
-function lifeSumHtml(lf) {
+// date を渡すと、その日の分（記録一覧の日付カードで使う）。渡さなければ今日
+function lifeSumHtml(lf, date) {
   const g = lifeGoals();
-  const row = (id, ic, label, main, sub, cls) => `<div class="ls-row"><button class="ls-main" data-action="life-edit" data-id="${id}" aria-label="${label}を編集">${icon(ic)}<span class="ls-l">${label}</span><b class="${main === '未記録' ? 'none' : ''}">${esc(main)}</b><em class="${cls || ''}">${sub}</em><span class="ls-go">›</span></button></div>`;
+  const row = (id, ic, label, main, sub, cls) => `<div class="ls-row"><button class="ls-main" data-action="${date ? 'life-day' : 'life-edit'}" data-id="${date ? date + '|' + id : id}" aria-label="${label}を編集">${icon(ic)}<span class="ls-l">${label}</span><b class="${main === '未記録' ? 'none' : ''}">${esc(main)}</b><em class="${cls || ''}">${sub}</em><span class="ls-go">›</span></button></div>`;
   // 睡眠
   const sm = lf ? sleepMin(lf) : null;
   let sMain = '未記録', sSub = `必要 ${esc(fmtDur(g.sleep))}`, sCls = '';
@@ -2584,7 +2586,7 @@ function lifeSumHtml(lf) {
     fMain = `${Math.round(t.kcal).toLocaleString()}kcal`;
     fSub = lack > 0 ? `＋${lack}g<small>（たんぱく質があと${lack}g・目標${g.protein}g）</small>` : `たんぱく質 ${p}g<small>（目標${g.protein}g クリア）</small>`; fCls = lack > 0 ? 'bad' : 'good';
   } else if (lf && MEALS.some(m => lf.meals[m.k] && lf.meals[m.k].ate)) { fMain = `${MEALS.filter(m => lf.meals[m.k].ate).length}回`; fSub = '食べた物を追加するとkcalを表示'; }
-  return `<div class="life-sum"><div class="ls-head"><b>今日の睡眠・運動・食事</b><button class="link small" data-action="life-goal">目安を変更</button></div>
+  return `<div class="life-sum"><div class="ls-head"><b>${date && date !== todayStr() ? esc(fmtMD(date)) + 'の' : '今日の'}睡眠・運動・食事</b><button class="link small" data-action="life-goal">目安を変更</button></div>
     ${row('sleep', 'moon', '睡眠', sMain, sSub, sCls)}${row('exercise', 'chart', '運動', eMain, eSub, eCls)}${row('meal', 'note', '食事', fMain, fSub, fCls)}</div>`;
 }
 function openLifeGoal() {
@@ -4559,16 +4561,16 @@ function recentCardHtml() {
 // 記録の画面：上のバーの下の中身を .home-pane に入れる（横スワイプで中身だけ動かすため）
 function viewLog() { const h = viewLogInner(), i = h.indexOf('</nav>') + 6; return h.slice(0, i) + '<div class="home-pane">' + h.slice(i) + '</div>'; }
 function viewLogInner() {
-  const tabs = [['list','記録一覧'],['life','食事・運動・睡眠'],['photos','肌写真']];
+  const tabs = [['list','記録一覧'],['recent','最近の肌状態'],['photos','肌写真']];
   let html = '';
   html += `<nav class="home-tabs log-tabs" role="tablist" aria-label="記録の表示">${tabs.map(([k, l]) => `<button type="button" class="ht ${ui.logTab === k ? 'active' : ''}" role="tab" aria-selected="${ui.logTab === k}" data-action="log-tab" data-id="${k}"><span>${l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
   if (ui.logTab === 'photos') return html + viewPhotos();
-  if (ui.logTab === 'life') return html + viewLife();
+  if (ui.logTab === 'life') ui.logTab = 'recent'; // 以前の「食事・運動・睡眠」タブは、記録一覧の中に入れた
+  if (ui.logTab === 'recent') return html + recentCardHtml();
   const logs = logsDesc();
   if (!logs.length) return html + `<div class="card">${emptyBox('note', 'まだ肌の記録がありません', 'ニキビ・赤み・乾燥・皮脂などを、数タップで記録できます。', '<button class="btn btn-primary btn-sm" data-action="new-log">最初の記録をつける</button>')}</div>`;
   const lm = lifeMap();
   html += logDayCardHtml(logs);
-  html += `<div class="mt">${recentCardHtml()}</div>`;
   html += `<p class="small muted" style="margin-top:16px">評価は0（なし）〜5（強い）の自己評価です。症状が強い・長引く場合は皮膚科医に相談してください。</p>`;
   return html;
 }
@@ -4589,6 +4591,13 @@ function logFaceData(l) {
   if (l.faceV === 2 || (l.cellMarks && Object.keys(l.cellMarks).length)) return {counts:{}, max:1, mode:'areas', types:{}, marks:l.cellMarks || {}};
   const types = acneTypeMap([l]);
   if (l.acneSpots.length) { const c = areaCounts([l], 'spots'); return {counts:c, max:Math.max(3, ...Object.values(c)), mode:'spots', types}; }
+  // ニキビの数と「気になる部位」だけがある記録（顔の印がない古い記録・デモ）：数を部位に分けて顔に出す（顔と数字を合わせる）
+  const ar = (l.areas || []).filter(a => AREAS.some(x => x.id === a));
+  if (l.acneCount > 0 && ar.length) {
+    const c = {}, base = Math.floor(l.acneCount / ar.length); let rest = l.acneCount - base * ar.length;
+    ar.forEach(a => { c[a] = base + (rest-- > 0 ? 1 : 0); }); Object.keys(c).forEach(k => { if (!c[k]) delete c[k]; });
+    return {counts:c, max:Math.max(3, ...Object.values(c)), mode:'spots', types};
+  }
   // ニキビの数も顔の印もない記録は、「気になる部位」だけで顔を塗らない（全部消して保存した記録が真っ赤にならないように）
   return {counts:{}, max:1, mode:'areas', types:{}, marks:{}};
 }
@@ -4601,19 +4610,33 @@ function logDayInfoHtml(list, i) {
     <div class="t3-tags" style="justify-content:center;margin-top:4px"><span class="t-cond" style="background:${COND_COLORS[l.condition] || '#999'};color:${COND_FG[l.condition] || '#fff'}">${esc(COND_LABELS[l.condition] || '—')}</span>${l.demo ? '<span class="badge-sample">デモ</span>' : ''}</div>`;
 }
 // その日の記録の詳しい内容（記録一覧にあった情報を、ここにまとめて表示）
+// 3Dの顔に描いているものと同じデータから数字を出す（顔と数字がずれないように）
+function logShownNums(l) {
+  const d = logFaceData(l), lv = c => Math.max(0, ...Object.values(d.marks || {}).map(m => Number(m && m[c]) || 0));
+  if (d.marks && Object.keys(d.marks).length) {
+    const cells = Object.values(d.marks).filter(m => m && m['ニキビ']).length;
+    const spots = (l.acneSpots || []).reduce((a, s) => a + (Number(s.count) || 0), 0);
+    return {acne:cells || spots, red:lv('赤み'), dry:lv('乾燥'), oil:lv('テカリ')};
+  }
+  if (d.mode === 'spots') return {acne:Object.values(d.counts).reduce((a, n) => a + n, 0), red:l.redness, dry:l.dryness, oil:l.oil};
+  if (l.faceV === 2) return {acne:0, red:0, dry:0, oil:0}; // 顔に何も入れていない記録
+  return {acne:l.acneCount, red:l.redness, dry:l.dryness, oil:l.oil};
+}
 function logDayDetailHtml(list, i) {
   const l = list[i]; if (!l) return '';
   const photo = safeImg(l.photo);
   const used = l.usedProducts.map(id => getMy(id)).filter(Boolean);
+  const n = logShownNums(l);
   return `<div class="log-grid">
-      <div class="stat"><div class="lbl">ニキビ</div><div class="val">${l.acneCount}<span class="small muted">個</span></div></div>
-      <div class="stat"><div class="lbl">赤み</div><div class="val">${l.redness}</div></div>
-      <div class="stat"><div class="lbl">乾燥</div><div class="val">${l.dryness}</div></div>
-      <div class="stat"><div class="lbl">皮脂</div><div class="val">${l.oil}</div></div>
+      <div class="stat"><div class="lbl">ニキビ</div><div class="val">${n.acne}<span class="small muted">個</span></div></div>
+      <div class="stat"><div class="lbl">赤み</div><div class="val">${n.red}</div></div>
+      <div class="stat"><div class="lbl">乾燥</div><div class="val">${n.dry}</div></div>
+      <div class="stat"><div class="lbl">皮脂</div><div class="val">${n.oil}</div></div>
     </div>
     ${used.length ? `<div class="used-grid home-used ld-used">${used.map(myTileHtml).join('')}</div>` : ''}
     ${l.memo ? `<div class="log-memo">${esc(l.memo)}</div>` : ''}
     ${photo ? `<img class="log-photo" src="${photo}" alt="${esc(l.date)}の肌写真">` : ''}
+    <div class="ld-life">${lifeSumHtml(lifeMap()[l.date], l.date)}</div>
     <div class="ld-actions"><button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(l.id)}">編集</button><button class="btn btn-danger-ghost btn-sm" data-action="delete-log" data-id="${esc(l.id)}">削除</button></div>`;
 }
 function logDayCardHtml(logs) {
@@ -5216,13 +5239,13 @@ async function quickMealSave(file) {
     redraw();
   }
 }
-function openLifeForm(id, part) {
+function openLifeForm(id, part, forDate) {
   part = LIFE_PARTS[part] ? part : '';
   const show = k => !part || part === k ? '' : 'hidden';
   const ex = id ? state.lifeLogs.find(l => l.id === id) : null;
   const t = todayStr();
   const blankMeals = Object.fromEntries(MEALS.map(m => [m.k, {ate:false, time:''}]));
-  const d = ex || {date:getLife(t) ? '' : t, bed:'', wake:'', meals:blankMeals, veg:'', protein:'', sweets:'', water:'', tags:[], foods:[], mealPhotos:{}, exercise:[], exRecorded:false, steps:null, memo:''};
+  const d = ex || {date:forDate && isValidYmd(forDate) ? forDate : getLife(t) ? '' : t, bed:'', wake:'', meals:blankMeals, veg:'', protein:'', sweets:'', water:'', tags:[], foods:[], mealPhotos:{}, exercise:[], exRecorded:false, steps:null, memo:''};
   let foods = d.foods.map(x => Object.assign({}, x));
   let exercise = d.exercise.map(x => Object.assign({}, x));
   const saved = Object.assign({}, d.mealPhotos);
@@ -7395,6 +7418,7 @@ const actions = {
   'edit-life': id => openLifeForm(id),
   'life-part': v => { const t = getLife(todayStr()); openLifeForm(t ? t.id : null, v); },
   'life-edit': v => { const t = getLife(todayStr()); openLifeForm(t ? t.id : null, v); },
+  'life-day': v => { const [date, part] = String(v).split('|'); const l = getLife(date); openLifeForm(l ? l.id : null, part, date); },
   'meal-edit': () => { const L = getLife(todayStr()); closeModal(); openLifeForm(L ? L.id : null, 'meal'); },
   'delete-life': async id => {
     const l = state.lifeLogs.find(x => x.id === id); if (!l) return;
@@ -7402,7 +7426,7 @@ const actions = {
     state.lifeLogs = state.lifeLogs.filter(x => x.id !== id);
     if (save()) { toast('削除しました'); render(); }
   },
-  'log-tab': v => { if (ui.logTab === v) { window.scrollTo({top:0, behavior:'smooth'}); return; } if (!ui.htSlide) { const o = ['list', 'life', 'photos']; ui.htSlide = o.indexOf(v) > o.indexOf(ui.logTab) ? 1 : -1; } ui.ltFrom = ui.logTab; ui.logTab = v; render(); window.scrollTo(0, 0); },
+  'log-tab': v => { if (ui.logTab === v) { window.scrollTo({top:0, behavior:'smooth'}); return; } if (!ui.htSlide) { const o = ['list', 'recent', 'photos']; ui.htSlide = o.indexOf(v) > o.indexOf(ui.logTab) ? 1 : -1; } ui.ltFrom = ui.logTab; ui.logTab = v; render(); window.scrollTo(0, 0); },
   'log-day-step': v => logDayStep(Number(v)),
   'new-my': () => openMyForm(),
   'new-my-from': id => openMyForm(null, id),
@@ -8004,7 +8028,7 @@ function placeHomeTabInd() {
   // iPhoneで鳴らし損ねないように、指を離したときのもう一つの合図（pointerup）でも鳴らす（ほぼ同時なので1回に感じる）
   window.addEventListener('pointerup', e => { if (e.pointerType === 'touch' && Date.now() - swAt < 400) { swAt = 0; switchTick(); } }, {passive:true});
   // ホームと記録の画面で使う：タブの並びと、今のタブ・切り替える操作
-  const LOG_TABS = [{k:'list'}, {k:'life'}, {k:'photos'}];
+  const LOG_TABS = [{k:'list'}, {k:'recent'}, {k:'photos'}];
   const page = () => parseRoute().name === 'log' ? {tabs:LOG_TABS, cur:ui.logTab, go:k => actions['log-tab'](k)} : {tabs:HOME_TABS, cur:ui.homeTab, go:k => actions['home-tab'](k)};
   const idx = () => { const g = page(); return Math.max(0, g.tabs.findIndex(x => x.k === g.cur)); };
   const scrollsX = el => { for (let n = el; n && n !== document.body; n = n.parentElement) { if (n.scrollWidth > n.clientWidth + 2) { const ox = getComputedStyle(n).overflowX; if (ox === 'auto' || ox === 'scroll') return true; } } return false; };
