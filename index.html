@@ -631,17 +631,16 @@ details.acc-cmp{margin-top:14px}
 .home-pane{will-change:transform;touch-action:pan-y pinch-zoom}
 .home-pane.hp-in{animation:hpIn .46s cubic-bezier(.22,.7,.2,1)}
 @keyframes hpIn{from{transform:translateX(var(--hp-from,0));opacity:.4}to{transform:none;opacity:1}}
-.home-tabs{position:sticky;top:0;z-index:12;display:flex;justify-content:center;gap:2px;margin:-20px -16px 14px;padding:0 8px;background:var(--bg);border-bottom:1px solid var(--line)}
+.home-tabs{position:sticky;top:0;z-index:12;display:flex;justify-content:center;gap:28px;margin:-20px -16px 14px;padding:0 8px;background:var(--bg);border-bottom:1px solid var(--line)}
 .ht-ind{position:absolute;left:0;bottom:-1px;width:48px;height:3px;border-radius:3px;background:var(--green-d);transition:transform .44s cubic-bezier(.3,.8,.25,1);pointer-events:none}
-.ht{display:flex;align-items:center;justify-content:center;gap:5px;min-height:46px;flex:0 1 auto;padding:0 12px!important;border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;position:relative;white-space:nowrap;padding:0 4px}
-.ht svg{width:17px;height:17px;flex:none}
+.ht{display:flex;align-items:center;justify-content:center;gap:5px;min-height:46px;flex:0 1 auto;min-width:64px;padding:0 6px!important;border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;position:relative;white-space:nowrap;padding:0 4px}
+.ht svg{width:23px;height:23px;flex:none}
 .ht.active{color:var(--ink)}
 
-@media (max-width:380px){.ht{padding:0 7px!important;gap:4px}.ht span{font-size:12.5px}.ht svg{width:15px;height:15px}}
-@media (max-width:330px){.ht{padding:0 4px!important;gap:3px}.ht span{font-size:11.5px}.ht svg{width:14px;height:14px}}
+@media (max-width:380px){.home-tabs{gap:18px}.log-tabs .ht{font-size:13px}}
+@media (max-width:330px){.home-tabs{gap:10px}.log-tabs .ht{font-size:12px}}
 /* 記録の画面の上のバー：ホームと同じ形（画面の上にくっつく・緑の線が動く）。文字だけで大きめに */
 .log-tabs .ht{font-size:14px;font-weight:700}
-@media (max-width:360px){.log-tabs .ht{font-size:12.5px}}
 @media (min-width:900px){.home-tabs{margin:0 0 16px;border-radius:14px;border:1px solid var(--line)}}
 @media (prefers-reduced-motion:reduce){.ht-ind{transition:none}}
 .my-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 14px}
@@ -2648,7 +2647,7 @@ function viewHome() {
 
   const onboard = !state.settings.concerns.length ? `<div class="notice green" style="margin-bottom:16px"><b>はじめに：あなたの肌悩みを教えてください。</b>手持ちの化粧品と予算をふまえて、ケアの考え方と候補を整理します。<br><button type="button" class="btn btn-primary btn-sm" style="margin-top:10px" data-action="setup">質問に答える（1分）</button></div>` : '';
   const tab = HOME_TABS.some(x => x.k === ui.homeTab) ? ui.homeTab : 'today';
-  const tabs = `<nav class="home-tabs" role="tablist" aria-label="ホームの表示">${HOME_TABS.map(x => `<button type="button" class="ht ${tab === x.k ? 'active' : ''}" role="tab" aria-selected="${tab === x.k}" data-action="home-tab" data-id="${x.k}">${icon(x.i)}<span>${x.l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
+  const tabs = `<nav class="home-tabs" role="tablist" aria-label="ホームの表示">${HOME_TABS.map(x => `<button type="button" class="ht ${tab === x.k ? 'active' : ''}" role="tab" aria-selected="${tab === x.k}" data-action="home-tab" data-id="${x.k}" aria-label="${x.l}" title="${x.l}">${icon(x.i)}</button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
   // 3つのタブ：画面の上にくっついたまま、押すと中身だけ切り替わる
   // 中身は .home-pane に入れる（横にスワイプしたとき、タブのバーは動かさずに中身だけ動かすため）
   if (tab === 'today') { html = tabs + '<div class="home-pane">' + html + onboard + todayCard + '</div>'; }
@@ -5624,32 +5623,32 @@ function adviceLocal(d) {
   // ① スキンケア（成分のおすすめ・控えたい成分つき）
   let skin;
   const topArea = Object.entries(sk.acneByArea).sort((a, b) => b[1] - a[1])[0];
-  if (!sk.days) skin = {title:'肌の記録から', text:'まずは毎日の肌の状態を記録しましょう。数日分そろうと、乾燥・皮脂・赤みなどに合わせて、おすすめの成分を出せます。', good:['セラミド', '日焼け止め（毎朝）'], avoid:[]};
-  else if (sk.redness != null && sk.redness >= 3.5) skin = {title:'刺激を減らして鎮静', text:`赤みが平均${sk.redness}と強めです。肌が敏感になっているので、こすらず、ツボクサ（CICA）やパンテノールなど肌あれを防ぐ成分で落ち着かせましょう。${warn('fragrance', '香料')}${warn('ethanol', 'エタノール')}${warn('retinoid', 'レチノール')}赤みが続くときは皮膚科に相談を。`, good:['ツボクサ（CICA）', 'パンテノール', 'アラントイン', 'セラミド'], avoid:['香料', 'エタノール', 'AHA・BHA（ピーリング）', 'レチノール']};
-  else if (sk.dryness != null && sk.dryness >= 3) skin = {title:'セラミドでバリアを守る', text:`乾燥が平均${sk.dryness}と高めです。乾燥で肌のバリア機能が下がると、刺激やニキビも起きやすくなります。洗顔後すぐにセラミド入りの保湿で、水分を逃がさないようにしましょう。${use.ceramide ? '' : '今の化粧品にはセラミド入りが見つかりませんでした。'}${warn('ethanol', 'エタノール')}`, good:['セラミド', 'ヒアルロン酸', 'グリセリン', 'パンテノール'], avoid:['エタノール（多く入った物）', 'スクラブ・ピーリングのしすぎ', '熱いお湯での洗顔']};
-  else if (topArea && topArea[1] >= 2) skin = {title:`${topArea[0]}のニキビ対策`, text:`この1週間で${topArea[0]}に${topArea[1]}個。毛穴のつまりと皮脂を整えるナイアシンアミドや、角質をやわらかくするサリチル酸（BHA）が向いています。触らない・枕カバーをこまめに替えるのも大事です。${use.aha && use.retinoid ? '角質ケアとレチノールを同じ夜に重ねると刺激が出やすいので、日を分けましょう。' : ''}`, good:['ナイアシンアミド', 'サリチル酸（BHA）', 'ビタミンC誘導体'], avoid:['油分の多いオイル・クリーム', 'ニキビを触る・つぶす']};
-  else if (sk.oil != null && sk.oil >= 3.5) skin = {title:'皮脂バランスを整える', text:`皮脂が平均${sk.oil}と多めです。皮脂が多いときも、実は乾燥が原因のことがあります。洗顔は朝晩やさしく1回ずつにして、皮脂を整えるナイアシンアミドやビタミンC誘導体を。保湿は軽いジェルや乳液に。`, good:['ナイアシンアミド', 'ビタミンC誘導体', 'ヒアルロン酸'], avoid:['洗浄力の強い洗顔の使いすぎ', '重いオイル']};
-  else skin = {title:'守りのケアを続ける', text:`大きな肌トラブルはありません。${sk.cond != null && sk.condPrevWeek != null && sk.cond > sk.condPrevWeek ? `肌の調子も上向きです（${sk.condPrevWeek}→${sk.cond}）。` : ''}毎朝の日焼け止めと、セラミドでの保湿を続けるのが、いちばんの近道です。`, good:['セラミド', '日焼け止め（毎朝）', 'ビタミンC誘導体'], avoid:[]};
+  if (!sk.days) skin = {title:'肌の記録から', text:'数日分の記録で、肌に合う成分を出せます。', good:['セラミド', '日焼け止め（毎朝）'], avoid:[]};
+  else if (sk.redness != null && sk.redness >= 3.5) skin = {title:'刺激を減らして鎮静', text:`赤みが平均${sk.redness}。こすらず、鎮静成分で落ち着かせましょう。${warn('fragrance', '香料')}${warn('ethanol', 'エタノール')}${warn('retinoid', 'レチノール')}`, good:['ツボクサ（CICA）', 'パンテノール', 'アラントイン', 'セラミド'], avoid:['香料', 'エタノール', 'AHA・BHA（ピーリング）', 'レチノール']};
+  else if (sk.dryness != null && sk.dryness >= 3) skin = {title:'セラミドでバリアを守る', text:`乾燥が平均${sk.dryness}。洗顔後すぐ、セラミドで保湿を。${use.ceramide ? '' : '今の化粧品にはセラミド入りがありません。'}${warn('ethanol', 'エタノール')}`, good:['セラミド', 'ヒアルロン酸', 'グリセリン', 'パンテノール'], avoid:['エタノール（多く入った物）', 'スクラブ・ピーリングのしすぎ', '熱いお湯での洗顔']};
+  else if (topArea && topArea[1] >= 2) skin = {title:`${topArea[0]}のニキビ対策`, text:`1週間で${topArea[0]}に${topArea[1]}個。毛穴と皮脂を整える成分が向いています。${use.aha && use.retinoid ? '角質ケアとレチノールは日を分けて。' : ''}`, good:['ナイアシンアミド', 'サリチル酸（BHA）', 'ビタミンC誘導体'], avoid:['油分の多いオイル・クリーム', 'ニキビを触る・つぶす']};
+  else if (sk.oil != null && sk.oil >= 3.5) skin = {title:'皮脂バランスを整える', text:`皮脂が平均${sk.oil}。洗顔は朝晩1回ずつ、保湿は軽いジェルで。`, good:['ナイアシンアミド', 'ビタミンC誘導体', 'ヒアルロン酸'], avoid:['洗浄力の強い洗顔の使いすぎ', '重いオイル']};
+  else skin = {title:'守りのケアを続ける', text:`${sk.cond != null && sk.condPrevWeek != null && sk.cond > sk.condPrevWeek ? `調子は上向き（${sk.condPrevWeek}→${sk.cond}）。` : '大きなトラブルはありません。'}日焼け止めと保湿を続けましょう。`, good:['セラミド', '日焼け止め（毎朝）', 'ビタミンC誘導体'], avoid:[]};
   // ② 睡眠
   let sleep;
-  if (!sl.days) sleep = {title:'睡眠も記録を', text:'寝た時刻と起きた時刻を記録すると、睡眠と肌の調子の関係がわかります。ヘルスケア連携も使えます。', good:[], avoid:[]};
-  else if (sl.avgHours < need - 0.5) sleep = {title:'睡眠をあと少し', text:`平均${sl.avgHours}時間でした（目安${need}時間）。肌の生まれ変わりは眠っている間に進みます。まずは30分早く布団に入ることから。`, good:['寝る1時間前にお風呂', '毎日同じ時刻に起きる'], avoid:['寝る前のスマホ', '夜のカフェイン']};
-  else if (sl.avgBedtime && /^(1|2|3|4):/.test(sl.avgBedtime)) sleep = {title:'寝る時刻を早めに', text:`寝る時刻の平均が${sl.avgBedtime}ごろです。時間が足りていても、寝る時刻が遅いと体のリズムが乱れやすくなります。0時までに寝る日を増やしてみましょう。`, good:['0時までに寝る', '朝に日光を浴びる'], avoid:['寝る前のスマホ']};
-  else sleep = {title:'睡眠はいい調子', text:`平均${sl.avgHours}時間眠れています。この調子で続けましょう。寝る前のスマホを控えると、眠りの質がさらに上がります。`, good:['今のリズムを続ける'], avoid:['寝る前のスマホ']};
+  if (!sl.days) sleep = {title:'睡眠も記録を', text:'記録すると、睡眠と肌の関係がわかります。', good:[], avoid:[]};
+  else if (sl.avgHours < need - 0.5) sleep = {title:'睡眠をあと少し', text:`平均${sl.avgHours}時間（目安${need}時間）。まず30分早く寝ましょう。`, good:['寝る1時間前にお風呂', '毎日同じ時刻に起きる'], avoid:['寝る前のスマホ', '夜のカフェイン']};
+  else if (sl.avgBedtime && /^(1|2|3|4):/.test(sl.avgBedtime)) sleep = {title:'寝る時刻を早めに', text:`寝る時刻が平均${sl.avgBedtime}ごろ。0時までに寝る日を増やしましょう。`, good:['0時までに寝る', '朝に日光を浴びる'], avoid:['寝る前のスマホ']};
+  else sleep = {title:'睡眠はいい調子', text:`平均${sl.avgHours}時間。この調子で続けましょう。`, good:['今のリズムを続ける'], avoid:['寝る前のスマホ']};
   // ③ 運動
   let move;
-  if (!ex.recordedDays) move = {title:'運動も記録を', text:'運動した日・しなかった日を記録すると、肌との関係がわかります。歩数はヘルスケア連携で自動で入ります。', good:[], avoid:[]};
-  else if (ex.activeDays < 3) move = {title:'体を少し動かす', text:`運動した日は${ex.activeDays}日でした。軽い運動で血のめぐりが良くなると、肌に栄養が届きやすくなります。10分の散歩やストレッチからで大丈夫です。`, good:['10分の散歩', 'ストレッチ', '階段を使う'], avoid:[]};
-  else move = {title:'運動を続けよう', text:`この1週間で${ex.activeDays}日・合計${ex.totalMin}分運動できています。汗をかいたら、そのままにせず早めに洗顔や保湿を。屋外では日焼け止めを忘れずに。`, good:['運動後すぐの洗顔・保湿', '屋外では日焼け止め'], avoid:['汗をそのままにする']};
+  if (!ex.recordedDays) move = {title:'運動も記録を', text:'記録すると、運動と肌の関係がわかります。', good:[], avoid:[]};
+  else if (ex.activeDays < 3) move = {title:'体を少し動かす', text:`運動した日は${ex.activeDays}日。10分の散歩からで大丈夫です。`, good:['10分の散歩', 'ストレッチ', '階段を使う'], avoid:[]};
+  else move = {title:'運動を続けよう', text:`1週間で${ex.activeDays}日・${ex.totalMin}分。汗をかいたら早めに洗顔を。`, good:['運動後すぐの洗顔・保湿', '屋外では日焼け止め'], avoid:['汗をそのままにする']};
   // ④ 食事（足りない栄養と、おすすめの食べ物）
   let meal;
-  if (!ml.days) meal = {title:'食事も記録を', text:'食べたものを記録すると、たんぱく質・野菜などの足りない栄養と、おすすめの食べ物を出せます。', good:[], avoid:[]};
-  else if (ml.avgProtein != null && ml.avgProtein < ml.proteinGoal * 0.8) meal = {title:'たんぱく質が足りません', text:`たんぱく質が1日平均${ml.avgProtein}g（目安${ml.proteinGoal}g）でした。たんぱく質は肌や髪の材料です。毎食、手のひら1枚分の肉・魚・卵・大豆製品を足しましょう。`, good:['卵', '納豆', '鶏むね肉', '鮭', '豆腐', 'ギリシャヨーグルト'], avoid:[]};
-  else if (ml.foodDays >= 3 && ml.vitCDays < 3) meal = {title:'ビタミンCが少なめかも', text:`この1週間、ビタミンCの多い野菜や果物を食べた日が${ml.vitCDays}日でした。ビタミンCは肌のハリのもとになるコラーゲンを作るのに必要で、体にためておけないので毎日少しずつとるのがコツです。`, good:['キウイ', 'ブロッコリー', 'パプリカ', 'いちご', 'みかん'], avoid:[]};
-  else if (ml.avgVeg != null && ml.avgVeg < 250) meal = {title:'野菜をもう一品', text:`野菜が1日平均${ml.avgVeg}gでした（目安350g）。野菜のビタミン・ミネラル・食物繊維は、肌と腸の調子を整えます。みそ汁の具やサラダを1品足すだけでも違います。`, good:['ブロッコリー', 'ほうれん草', 'にんじん', 'トマト', 'きのこ'], avoid:[]};
-  else if (ml.snackDays >= 4) meal = {title:'甘い間食を控えめに', text:`間食した日が${ml.snackDays}日ありました。甘い物が多いと、皮脂が増えたりニキビが出やすくなったりする人がいます。間食はナッツやヨーグルトにすると、肌にうれしい栄養もとれます。`, good:['ナッツ', 'ヨーグルト', 'バナナ'], avoid:['甘いお菓子', 'ジュース・甘い飲み物']};
-  else if (topArea && topArea[1] >= 2) meal = {title:'ビタミンB群でニキビ予防', text:'ニキビが続くときは、皮脂の調子を整えるビタミンB2・B6を意識しましょう。脂っこい物や甘い物が続かないようにするのもポイントです。', good:['納豆', '卵', 'まぐろ', 'バナナ', 'レバー'], avoid:['揚げ物の食べすぎ', '甘いお菓子']};
-  else meal = {title:'食事はいい調子', text:'たんぱく質も野菜もとれています。この調子で、水分もこまめにとりましょう。', good:['水をこまめに'], avoid:[]};
+  if (!ml.days) meal = {title:'食事も記録を', text:'記録すると、足りない栄養がわかります。', good:[], avoid:[]};
+  else if (ml.avgProtein != null && ml.avgProtein < ml.proteinGoal * 0.8) meal = {title:'たんぱく質が足りません', text:`たんぱく質が1日${ml.avgProtein}g（目安${ml.proteinGoal}g）。毎食、手のひら1枚分を足しましょう。`, good:['卵', '納豆', '鶏むね肉', '鮭', '豆腐', 'ギリシャヨーグルト'], avoid:[]};
+  else if (ml.foodDays >= 3 && ml.vitCDays < 3) meal = {title:'ビタミンCが少なめかも', text:`ビタミンCの多い物を食べた日は${ml.vitCDays}日。毎日少しずつとりましょう。`, good:['キウイ', 'ブロッコリー', 'パプリカ', 'いちご', 'みかん'], avoid:[]};
+  else if (ml.avgVeg != null && ml.avgVeg < 250) meal = {title:'野菜をもう一品', text:`野菜が1日${ml.avgVeg}g（目安350g）。あと1品足しましょう。`, good:['ブロッコリー', 'ほうれん草', 'にんじん', 'トマト', 'きのこ'], avoid:[]};
+  else if (ml.snackDays >= 4) meal = {title:'甘い間食を控えめに', text:`間食した日が${ml.snackDays}日。ナッツやヨーグルトに替えましょう。`, good:['ナッツ', 'ヨーグルト', 'バナナ'], avoid:['甘いお菓子', 'ジュース・甘い飲み物']};
+  else if (topArea && topArea[1] >= 2) meal = {title:'ビタミンB群でニキビ予防', text:'皮脂を整えるビタミンB2・B6を意識しましょう。', good:['納豆', '卵', 'まぐろ', 'バナナ', 'レバー'], avoid:['揚げ物の食べすぎ', '甘いお菓子']};
+  else meal = {title:'食事はいい調子', text:'たんぱく質も野菜もとれています。', good:['水をこまめに'], avoid:[]};
   return [skin, sleep, move, meal].map((x, i) => Object.assign({area:ADVICE_AREAS[i]}, x));
 }
 // おすすめ・控えたいもののラベル（角度ごと）
