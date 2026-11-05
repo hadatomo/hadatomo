@@ -584,6 +584,8 @@ details.acc-cmp{margin-top:14px}
 .net-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px}
 .net-h b{display:flex;align-items:center;gap:6px;font-size:15px}
 .net-h svg{width:16px;height:16px;color:var(--green-d)}
+.net-tap{cursor:pointer}
+.net-tap:active{opacity:.7}
 .pr-badge{font-size:10.5px;font-weight:700;color:var(--muted);border:1px solid var(--line2);border-radius:4px;padding:0 5px;line-height:17px}
 .mn-pick.reco-cap{margin:0 0 6px;flex-wrap:wrap;overflow:visible}
 .reco-box .net-btns{grid-column:1/-1;gap:8px;flex-wrap:nowrap}
@@ -3067,9 +3069,9 @@ function netHtml() {
   if (!n.items.length) return head + '<p class="small muted">見つかりませんでした。別の言葉で検索してください。</p>';
   return head + `<div class="net-list">${n.items.map((x, i) => {
     const added = state.catalog.find(c => c.shopUrl && c.shopUrl === x.url);
-    return `<div class="net-item">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
+    return `<div class="net-item net-tap" data-action="net-view" data-id="${i}">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
       <span class="net-t"><b>${esc(truncate(x.name, 60))}</b><small>${esc(x.site)}${x.shop ? '・' + esc(truncate(x.shop, 18)) : ''}</small><em>${yen(x.price)}${x.shipping === 'included' ? '<span class="small muted">（送料込）</span>' : ''}</em></span>
-      <span class="net-btns">${added && state.myProducts.some(m => m.catalogId === added.id) ? `<a class="btn btn-ghost btn-sm" href="#/my">マイ化粧品に登録済み</a>` : `<button class="btn btn-primary btn-sm" data-action="net-add" data-id="${i}">${icon('plus')}マイ化粧品に登録</button>`}<a class="link small" href="${esc(x.url)}" target="_blank" rel="noopener sponsored">サイトで見る</a></span></div>`;
+      <span class="net-btns">${added && state.myProducts.some(m => m.catalogId === added.id) ? `<a class="btn btn-ghost btn-sm" href="#/my">マイ化粧品に登録済み</a>` : `<button class="btn btn-primary btn-sm" data-action="net-add" data-id="${i}">${icon('plus')}マイ化粧品に登録</button>`}<button class="btn btn-ghost btn-sm" data-action="net-view" data-id="${i}">詳しく見る</button></span></div>`;
   }).join('')}</div><p class="small muted" style="margin-top:8px">価格は検索した時点のものです。「追加」すると、この商品を商品一覧に登録して、お気に入りやマイ化粧品に使えます。${n.items.some(x => x.ad) ? '一部のリンクは広告（アフィリエイト）です。' : ''}</p>
     <p class="credit small muted">Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p>`;
 }
@@ -3177,11 +3179,17 @@ function recoHtml() {
   if (RECO.err) return head + `<p class="small muted">${esc(RECO.err)}</p><button class="btn btn-ghost btn-sm" data-action="reco-retry">もう一度探す</button>`;
   const res = RECO.res || recoCache(); if (!res) { setTimeout(() => recoRun(false), 0); return head + skelHtml(3, {dots:true, label:'あなたに合う商品を探し中'}); }
   RECO.res = res;
-  const body = res.map((g, gi) => `<div class="reco-g"><p class="reco-why">${icon('spark')}${esc(g.why)}</p>${g.items.length ? `<div class="net-list">${g.items.map((x, i) => `<div class="net-item">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
+  const body = res.map((g, gi) => `<div class="reco-g"><p class="reco-why">${icon('spark')}${esc(g.why)}</p>${g.items.length ? `<div class="net-list">${g.items.map((x, i) => `<div class="net-item net-tap" data-action="reco-view" data-id="${gi}:${i}">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
       <span class="net-t"><b>${esc(truncate(x.name, 60))}</b><small>${esc(x.site)}${x.shop ? '・' + esc(truncate(x.shop, 18)) : ''}</small><em>${yen(x.price)}${x.shipping === 'included' ? '<span class="small muted">（送料込）</span>' : ''}</em></span>
-      <span class="net-btns"><a class="btn btn-primary btn-sm" href="${esc(x.url)}" target="_blank" rel="noopener sponsored">商品を見る</a><button class="btn btn-ghost btn-sm" data-action="reco-add" data-id="${gi}:${i}">${icon('plus')}マイ化粧品に登録</button></span></div>`).join('')}</div>`
+      <span class="net-btns"><button class="btn btn-primary btn-sm" data-action="reco-view" data-id="${gi}:${i}">詳しく見る</button><button class="btn btn-ghost btn-sm" data-action="reco-add" data-id="${gi}:${i}">${icon('plus')}マイ化粧品に登録</button></span></div>`).join('')}</div>`
     : `<p class="small muted" style="margin:2px 0 0">${cap > 0 ? `${yen(cap)}以内の` : ''}商品が見つかりませんでした。${cap > 0 ? '上限金額を上げると見つかるかもしれません。' : ''}</p>`}</div>`).join('');
   return head + body + foot + '<p class="credit small muted">Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p>';
+}
+// ネットの商品を押したら、外のサイトに飛ばずに、アプリの中の商品詳細（特徴・使用方法・全成分・注意事項）を開く
+function prodOpenFrom(x, others) {
+  const p = netToCat(x, others); if (!p) return;
+  hapticTick(); ui.prodBack = {id:p.id, hash:location.hash || '#/home', label:parseRoute().name === 'home' ? 'ホーム' : '商品検索'};
+  location.hash = '#/product/' + encodeURIComponent(p.id);
 }
 function recoAdd(id) {
   const [gi, i] = String(id).split(':').map(Number), g = RECO.res && RECO.res[gi], x = g && g.items[i]; if (!x) return;
@@ -3339,7 +3347,8 @@ function viewProduct(id) {
   known.forEach(k => k.items.forEach(it => knownMap[it] = k.entry.key));
   const mine = state.myProducts.filter(m => m.catalogId === p.id);
   const unit = perUnitText(p.price, p.volume);
-  return `<a class="back" href="#/search">← 商品検索</a>
+  const bk = ui.prodBack && ui.prodBack.id === p.id ? ui.prodBack : null;
+  return `<a class="back" href="${bk ? esc(bk.hash) : '#/search'}">← ${bk ? esc(bk.label) : '商品検索'}</a>
     ${p.isSample ? '<div class="notice warn">この商品は動作確認用の<b>架空のサンプル</b>です。実在の商品・価格・成分ではありません。</div>' : p.verify !== 'verified' ? '<div class="notice">この商品の情報は<b>未確認</b>です。購入前に、パッケージや公式サイトの表示を確認してください。</div>' : ''}
     <div class="card detail-top">
       ${thumbHtml(p)}
@@ -3354,6 +3363,7 @@ function viewProduct(id) {
         <div class="page-actions" style="margin-top:16px">
           <button class="btn btn-primary" data-action="new-my-from" data-id="${esc(p.id)}">${icon('plus')}マイ化粧品に登録</button>
           <a class="btn btn-soft" href="#/prices/${encodeURIComponent(p.id)}">${icon('tag')}価格・店舗を比較</a>
+          ${/^https:\/\//.test(p.shopUrl || '') ? `<a class="btn btn-ghost" href="${esc(p.shopUrl)}" target="_blank" rel="noopener sponsored">${icon('tag')}お店のページで買う<span class="pr-badge" style="margin-left:6px">PR</span></a>` : ''}
           <button class="btn btn-ghost fav-btn ${isFav(p.id) ? 'on' : ''}" data-action="fav" data-id="${esc(p.id)}" aria-pressed="${isFav(p.id)}">${icon('heart')}<span>${isFav(p.id) ? 'お気に入り済み' : 'お気に入りに追加'}</span></button>
         </div>
         <div class="page-actions" style="margin-top:8px">
@@ -7745,6 +7755,8 @@ const actions = {
   'reco-cap-save': () => { const f = document.getElementById('f_recoCap'), v = Math.round(Number(f && f.value) || 0); if (v < 300 || v > 100000) { toast('300〜100,000円の間で入力してください'); return; } dismissModal(); recoSetCap(v); },
   'reco-retry': () => { RECO.err = ''; recoRun(true); },
   'reco-add': id => recoAdd(id),
+  'reco-view': id => { const [gi, i] = String(id).split(':').map(Number), g = RECO.res && RECO.res[gi], x = g && g.items[i]; if (x) prodOpenFrom(x, g.items); },
+  'net-view': i => { const x = ui.net && ui.net.items && ui.net.items[Number(i)]; if (x) prodOpenFrom(x, ui.net.items); },
   'flt-sheet': () => openFilterSheet(),
   'research-on': async () => {
     const ad = document.getElementById('f_adult');
@@ -8004,6 +8016,7 @@ document.addEventListener('click', e => {
   if (card && !e.target.closest('a,button,input,select,label')) { selectShop(Number(card.dataset.shop), true); return; }
   const el = e.target.closest('[data-action]');
   if (!el) return;
+  { const inner = e.target.closest('a,button'); if (inner && inner !== el && el.contains(inner)) return; } // 押せる行の中のリンク・ボタンは、そのものの動きを優先する
   const fn = actions[el.dataset.action];
   if (!fn) return;
   if (el.tagName === 'A' || el.tagName === 'BUTTON') e.preventDefault();
