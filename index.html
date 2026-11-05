@@ -1007,6 +1007,9 @@ a.used-tile{color:inherit;text-decoration:none}
 .mn-list li{display:flex;align-items:center;gap:8px;font-size:14px}
 .mn-role{flex:none;font-size:10.5px;font-weight:700;border-radius:6px;padding:1px 6px;background:var(--surface2);color:var(--muted)}
 .mn-role.r1{background:#F4EBDA;color:#8A6420}.mn-role.r2{background:#FBE9E4;color:#B04A32}.mn-role.r3{background:#E3F0E6;color:var(--green-d)}.mn-role.r4{background:#E6EEF6;color:#3C6390}.mn-role.r5{background:#F6E8F0;color:#9A4677}
+.mn-pick{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
+.mn-pb{border:1px solid var(--line2);background:var(--surface);color:var(--muted);border-radius:999px;padding:5px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.mn-pb.on{background:var(--green-d);border-color:var(--green-d);color:#fff}
 .mn-point{font-size:12px;color:var(--muted);margin:6px 0 0;line-height:1.55}
 .adv-basis{font-size:11.5px;color:var(--muted);background:var(--surface2);border-radius:10px;padding:6px 9px;margin:6px 0 0;line-height:1.55}
 .adv-basis b{display:inline-block;font-size:10.5px;color:var(--green-d);margin-right:6px}
@@ -2497,7 +2500,7 @@ function timelineChart(w, o) {
 
 /* ---------- UI状態（画面の絞り込みなど） ---------- */
 const scanInit = () => ({photo:null, photoHi:null, jan:'', name:'', brand:'', ings:'', volume:'', category:'', searched:false, msg:'', janErr:'', aiBusy:false, aiMsg:''});
-const ui = {homeTab:(() => { try { return sessionStorage.getItem('hadatomo_homeTab') || 'today'; } catch (e) { return 'today'; } })(), priceRes:{}, priceSet:true, priceVol:true, geoHelp:'', geoConsent:false, visitRange:30, visitPhotos:false, visitNote:'', q:'', brand:'', cat:'', origin:'', ing:false, ingQ:'', purpose:'', maxPrice:'', sort:'std', myFilter:'使用中', chartRange:30, reportOffset:0,
+const ui = {menuPick:{}, homeTab:(() => { try { return sessionStorage.getItem('hadatomo_homeTab') || 'today'; } catch (e) { return 'today'; } })(), priceRes:{}, priceSet:true, priceVol:true, geoHelp:'', geoConsent:false, visitRange:30, visitPhotos:false, visitNote:'', q:'', brand:'', cat:'', origin:'', ing:false, ingQ:'', purpose:'', maxPrice:'', sort:'std', myFilter:'使用中', chartRange:30, reportOffset:0,
   spendMonth:monthKey(todayStr()), logTab:'list', cmpA:'', cmpB:'', checkCat:'', checkPurpose:'', storeArea:'', storeProduct:'', geo:null, ingQ:'', photoA:'', photoB:'', scan:scanInit(), storeTypes:['chemist','cosmetics','variety','pharmacy'], storeRadius:1000, storeShow:40, storeRes:null, storeCands:[], storeBusy:false, storeLast:0, osmConsent:false};
 
 /* =========================================================
@@ -5653,13 +5656,13 @@ function adviceLocal(d) {
   else move = {title:'運動を続けよう', text:`1週間で${ex.activeDays}日・${ex.totalMin}分。汗をかいたら早めに洗顔を。`, good:['運動後すぐの洗顔・保湿', '屋外では日焼け止め'], avoid:['汗をそのままにする']};
   // ④ 食事（足りない栄養と、おすすめの食べ物）
   let meal;
-  if (!ml.days) meal = {title:'食事も記録を', text:'記録すると、足りない栄養がわかります。', good:['納豆', '鮭', 'ブロッコリー'], avoid:['菓子パン', '甘い飲み物']};
-  else if (ml.avgProtein != null && ml.avgProtein < ml.proteinGoal * 0.8) meal = {title:'たんぱく質が足りません', text:`たんぱく質が1日${ml.avgProtein}g（目安${ml.proteinGoal}g）。毎食、手のひら1枚分を足しましょう。`, good:['卵', '納豆', '鶏むね肉', '鮭', '豆腐', 'ギリシャヨーグルト'], avoid:['菓子パンだけの食事', 'カップ麺だけの食事']};
-  else if (ml.foodDays >= 3 && ml.vitCDays < 3) meal = {title:'ビタミンCが少なめかも', text:`ビタミンCの多い物を食べた日は${ml.vitCDays}日。毎日少しずつとりましょう。`, good:['キウイ', 'ブロッコリー', 'パプリカ', 'いちご', 'みかん'], avoid:['果汁の少ないジュース', 'スナック菓子']};
-  else if (ml.avgVeg != null && ml.avgVeg < 250) meal = {title:'野菜をもう一品', text:`野菜が1日${ml.avgVeg}g（目安350g）。あと1品足しましょう。`, good:['ブロッコリー', 'ほうれん草', 'にんじん', 'トマト', 'きのこ'], avoid:['丼もの・麺だけの単品', 'ポテトチップス']};
-  else if (ml.snackDays >= 4) meal = {title:'甘い間食を控えめに', text:`間食した日が${ml.snackDays}日。ナッツやヨーグルトに替えましょう。`, good:['ナッツ', 'ヨーグルト', 'バナナ'], avoid:['チョコ菓子', 'スナック菓子', '甘い缶コーヒー']};
-  else if (topArea && topArea[1] >= 2) meal = {title:'ビタミンB群でニキビ予防', text:'皮脂を整えるビタミンB2・B6を意識しましょう。', good:['納豆', '卵', 'まぐろ', 'バナナ', 'レバー'], avoid:['唐揚げ・フライドポテト', '菓子パン', 'ケーキ']};
-  else meal = {title:'食事はいい調子', text:'たんぱく質も野菜もとれています。', good:['水・お茶', '納豆', '季節の野菜'], avoid:['甘い清涼飲料水']};
+  if (!ml.days) meal = {title:'食事も記録を', text:'記録すると、足りない栄養がわかります。', good:['納豆', '鮭', 'ブロッコリー'], avoid:['菓子パン', '炭酸ジュース']};
+  else if (ml.avgProtein != null && ml.avgProtein < ml.proteinGoal * 0.8) meal = {title:'たんぱく質が足りません', text:`たんぱく質が1日${ml.avgProtein}g（目安${ml.proteinGoal}g）。毎食、手のひら1枚分を足しましょう。`, good:['卵', '納豆', '鶏むね肉', '鮭', '豆腐', 'ギリシャヨーグルト'], avoid:['菓子パン', 'カップ麺']};
+  else if (ml.foodDays >= 3 && ml.vitCDays < 3) meal = {title:'ビタミンCが少なめかも', text:`ビタミンCの多い物を食べた日は${ml.vitCDays}日。毎日少しずつとりましょう。`, good:['キウイ', 'ブロッコリー', 'パプリカ', 'いちご', 'みかん'], avoid:['炭酸ジュース', 'ポテトチップス']};
+  else if (ml.avgVeg != null && ml.avgVeg < 250) meal = {title:'野菜をもう一品', text:`野菜が1日${ml.avgVeg}g（目安350g）。あと1品足しましょう。`, good:['ブロッコリー', 'ほうれん草', 'にんじん', 'トマト', 'きのこ'], avoid:['ラーメン単品', 'ポテトチップス']};
+  else if (ml.snackDays >= 4) meal = {title:'甘い間食を控えめに', text:`間食した日が${ml.snackDays}日。ナッツやヨーグルトに替えましょう。`, good:['ナッツ', 'ヨーグルト', 'バナナ'], avoid:['チョコレート菓子', 'ポテトチップス', '甘い缶コーヒー']};
+  else if (topArea && topArea[1] >= 2) meal = {title:'ビタミンB群でニキビ予防', text:'皮脂を整えるビタミンB2・B6を意識しましょう。', good:['納豆', '卵', 'まぐろ', 'バナナ', 'レバー'], avoid:['唐揚げ', 'フライドポテト', '菓子パン']};
+  else meal = {title:'食事はいい調子', text:'たんぱく質も野菜もとれています。', good:['水・お茶', '納豆', '季節の野菜'], avoid:['炭酸ジュース']};
   return [skin, sleep, move, meal].map((x, i) => Object.assign({area:ADVICE_AREAS[i]}, x));
 }
 // おすすめ・控えたいもののラベル（角度ごと）
@@ -5680,7 +5683,7 @@ function adviceHtml() {
   const pts = ai ? ADVICE_AREAS.map((a, i) => ai.points.find(x => x.area === a) || local[i]) : local; // AIが出さなかった角度は、ルールの結果でうめる
   const prem = isPremium();
   const head = `<h3>おすすめケアポイント</h3>${ai && ai.summary ? `<p class="small muted" style="margin:0">${esc(ai.summary)}</p>` : ''}`;
-  const list = adviceBusy ? skelHtml(4, {dots:true, label:'AIが分析中'}) : `<ol class="adv4">${pts.map((x, i) => `<li><i>${'①②③④'[i] || i + 1}</i><div><em class="adv-area">${esc(x.area || ADVICE_AREAS[i] || '')}</em><b>${esc(x.title)}</b>${prem ? advChips(Object.assign({area:ADVICE_AREAS[i]}, x)) : ''}<span class="adv-text">${esc(x.text)}</span>${ai && x.basis ? `<p class="adv-basis"><b>根拠</b>${esc(x.basis)}</p>` : ''}</div></li>`).join('')}</ol>`;
+  const list = adviceBusy ? skelHtml(4, {dots:true, label:'AIが分析中'}) : `<ol class="adv4">${pts.map((x, i) => `<li><i>${'①②③④'[i] || i + 1}</i><div><em class="adv-area">${esc(x.area || ADVICE_AREAS[i] || '')}</em><b>${esc(x.title)}</b>${prem ? advChips(Object.assign({area:ADVICE_AREAS[i]}, x)) : ''}<span class="adv-text">${esc(x.text)}</span></div></li>`).join('')}</ol>`;
   let foot;
   if (adviceBusy) foot = '<span class="small muted">AIが記録を分析しています…</span>';
   else if (ai) foot = `<span class="small muted">直近7日の記録をAI（Google Gemini）が分析しました。目安としてご覧ください。</span><button class="btn btn-ghost btn-sm" data-action="advice-ai" data-id="again">もう一度分析</button>`;
@@ -5706,11 +5709,14 @@ function menuCache() { try { return JSON.parse(localStorage.getItem(MENU_KEY) ||
 function menuHtml() {
   const head = `<div class="card-h"><h3 style="margin:0">献立の提案</h3>${isPremium() ? '' : '<span class="badge-premium">プレミアム</span>'}</div>`;
   if (!isPremium()) return head + `<p class="small muted" style="margin:0">今日食べたものと肌の状態から、昼・夜（夜まで食べたら明日の朝）の献立をAIが自動で作ります。</p><a class="link small" style="display:inline-block;margin-top:8px" href="#/plan">プランを見る →</a>`;
-  const d = menuInput(), sig = adviceSig(d), c = menuCache(), res = c && c.sig === sig ? c.res : null;
+  const d = menuInput(), sig = adviceSig(d), c = menuCache(), res = c && c.sig === sig && c.res && (c.res.meals || []).every(m => Array.isArray(m.plans)) ? c.res : null; // 前の形（1パターン）の結果は使わない
   if (menuBusy) return head + skelHtml(3, {dots:true, label:'献立を作成中'});
   const eaten = Object.entries(d.eatenToday).map(([k, v]) => `${k}：${v.join('、')}`).join(' ／ ');
   const ROLE_C = {主食:'r1', 主菜:'r2', 副菜:'r3', 汁物:'r4', 果物:'r5', 飲み物:'r5'};
-  const body = res ? res.meals.map(m => `<div class="mn-meal"><b class="mn-h">${esc(m.when)}の${esc(m.meal)}</b><ul class="mn-list">${m.dishes.map(x => `<li>${x.role ? `<span class="mn-role ${ROLE_C[x.role] || ''}">${esc(x.role)}</span>` : ''}${esc(x.name)}</li>`).join('')}</ul>${m.point ? `<p class="mn-point">${esc(m.point)}</p>` : ''}</div>`).join('')
+  // 1食ごとに2〜3パターン。上のボタンで切り替える
+  const plan = pl => `<ul class="mn-list">${pl.dishes.map(x => `<li>${x.role ? `<span class="mn-role ${ROLE_C[x.role] || ''}">${esc(x.role)}</span>` : ''}${esc(x.name)}</li>`).join('')}</ul>${pl.point ? `<p class="mn-point">${esc(pl.point)}</p>` : ''}`;
+  const body = res ? res.meals.map((m, mi) => { const k = Math.min(ui.menuPick[mi] || 0, m.plans.length - 1);
+    return `<div class="mn-meal"><b class="mn-h">${esc(m.when)}の${esc(m.meal)}</b>${m.plans.length > 1 ? `<div class="mn-pick" role="tablist">${m.plans.map((pl, i) => `<button type="button" class="mn-pb ${i === k ? 'on' : ''}" role="tab" aria-selected="${i === k}" data-mpick="${mi}:${i}">${'ABC'[i]}　${esc(pl.label)}</button>`).join('')}</div>` : ''}${plan(m.plans[k])}</div>`; }).join('')
     : `<p class="small muted" style="margin:0">${menuErr ? esc(menuErr) : 'まだ献立がありません。'}</p>`;
   return head + body + `<div class="adv-foot"><span class="small muted">${eaten ? `今日食べたもの（${esc(Object.keys(d.eatenToday).join('・'))}）と肌の状態から作りました。` : '今日の食事の記録がまだないので、肌の状態から作りました。'}カロリーなどの数字は出しません。</span><button class="btn btn-ghost btn-sm" data-action="menu-ai">${res ? '別の献立にする' : '献立を作る'}</button></div>`;
 }
@@ -5718,6 +5724,7 @@ function menuHtml() {
 async function runMenu(force) {
   if (menuBusy || !isPremium()) return;
   const d = menuInput(), sig = adviceSig(d), c = menuCache();
+  if (c && c.res && !(c.res.meals || []).every(m => Array.isArray(m.plans))) force = true; // 前の形の結果は作り直す
   if (!force && c && (c.sig === sig || (c.failSig === sig && Date.now() - (c.failAt || 0) < 10 * 60 * 1000))) return;
   menuBusy = true; menuErr = '';
   const box = () => { const b = document.getElementById('menu-box'); if (b) b.innerHTML = menuHtml(); };
@@ -5731,8 +5738,14 @@ async function runMenu(force) {
     menuErr = /種類が正しくありません/.test(m) ? '献立を作れませんでした。サーバーの関数「vision」が古いままです（5_関数_vision.txt を貼り付けて Deploy してください）。' : '献立を作れませんでした（' + m.slice(0, 80) + '）';
     try { localStorage.setItem(MENU_KEY, JSON.stringify(Object.assign(c || {}, {failSig:sig, failAt:Date.now()}))); } catch (er) { /* 何もしない */ }
   }
-  menuBusy = false; box();
+  menuBusy = false; ui.menuPick = {}; box();
 }
+// 献立のパターン（A・B・C）を切り替える
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-mpick]'); if (!b) return;
+  const [mi, i] = b.dataset.mpick.split(':').map(Number); ui.menuPick[mi] = i; hapticTick();
+  const box = document.getElementById('menu-box'); if (box) box.innerHTML = menuHtml();
+});
 function refreshAdvice() { const b = document.getElementById('advice-box'); if (b) b.innerHTML = adviceHtml(); if (isPremium()) runAdvice(false); }
 // プレミアムの人は、記録が変わったときだけ自動でAIに分析してもらう（同じ記録なら前の結果を使う）
 async function runAdvice(force) {
