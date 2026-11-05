@@ -1214,7 +1214,7 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
   </aside>
   <div id="page">
     <header class="topbar">
-      <a class="wordmark" data-t="SkinRoad" href="#/home">SkinRoad<small>最小限で最大限を</small></a>
+      <a class="wordmark" data-t="SkinRoad" href="#/home">SkinRoad</a>
       <button class="icon-btn" id="top-menu" data-action="open-menu" aria-label="メニュー" title="メニュー"></button><div class="ptr" id="ptr" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".18" stroke-width="2.6"/><circle class="ptr-arc" cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="56.5" stroke-dashoffset="56.5" transform="rotate(-90 12 12)"/></svg></div>
     </header>
     <main id="main" tabindex="-1"></main>
@@ -1406,7 +1406,7 @@ const PLAN_ROWS = [
   ['受診用まとめ（医師に見せる記録の整理）', '○', '○'],
   ['詳細な分析（商品と肌の比較・90日グラフ・生活習慣との比較など）', '—', '○'],
   ['成分相性マップ（より詳しい成分の重なりの表示）', '—', '○'],
-  ['写真から読み取り（食事の料理と栄養の目安・化粧品の成分表示）', '—', '○'],
+  ['写真から読み取り（食事の栄養成分表示・化粧品の成分表示）', '—', '○'],
   ['専門家（皮膚科専門医など）へのチャット相談', '—', '検討中'],
   ['広告の表示', 'あり', 'なし']
 ];
@@ -1744,6 +1744,10 @@ function normFood(x) {
     kcal:r(x.kcal, 5000), p:r(x.p, 500), f:r(x.f, 500), c:r(x.c, 1000), veg:r(x.veg, 2000),
     ...(x.salt != null && x.salt !== '' ? {salt:r(x.salt, 100)} : {}),
     ...(['表示', '公式', '推定'].includes(x.basis) ? {basis:x.basis} : {}),
+    ...(x.maker ? {maker:String(x.maker).slice(0, 30)} : {}),
+    ...(x.series ? {series:String(x.series).slice(0, 30)} : {}),
+    ...(x.size ? {size:String(x.size).slice(0, 20)} : {}),
+    ...(x.diff ? {diff:String(x.diff).slice(0, 160)} : {}),
     ...(x.unit ? {unit:String(x.unit).slice(0, 40)} : {}),
     ...(x.src ? {src:String(x.src).slice(0, 80)} : {}),
     ...(/^https?:\/\//.test(String(x.srcUrl || '')) ? {srcUrl:String(x.srcUrl).slice(0, 300)} : {}),
@@ -1751,11 +1755,14 @@ function normFood(x) {
 }
 // 写真の読み取り結果（1品）を、記録する食べ物の形にする。「確認できません」のもの（数字がない）は null を返す
 function aiFoodToRec(x, meal) {
-  if (x.basis === '確認できません' || x.kcal == null) return null;
-  return {id:uid(), meal, qty:1, name:(x.name + (x.amount && x.basis === '推定' ? `（${x.amount}）` : '')).slice(0, 40), kcal:x.kcal, p:x.p, f:x.f, c:x.c, veg:x.veg || 0, salt:x.salt,
-    basis:x.basis, unit:x.unit || '', src:x.source || '', srcUrl:x.sourceUrl || '', checked:x.checkedAt || ''};
+  // 数字を使えるのは、パッケージの表示を読めたもの・メーカー公式で確認できたものだけ
+  if (!['表示', '公式'].includes(x.basis) || x.kcal == null) return null;
+  return {id:uid(), meal, qty:1, name:String(x.name).slice(0, 40), kcal:x.kcal, p:x.p, f:x.f, c:x.c, veg:x.veg || 0, salt:x.salt,
+    basis:x.basis, unit:x.unit || '', src:x.source || '', srcUrl:x.sourceUrl || '', checked:x.checkedAt || '', maker:x.maker || '', series:x.series || '', size:x.size || '', diff:x.diff || ''};
 }
 const AI_BASIS_LABEL = {表示:'パッケージの表示', 公式:'メーカー公表', 推定:'目安（料理）', '確認できません':'確認できません'};
+// メーカー・シリーズ・内容量（読めたものだけ）
+const aiProdLine = x => [x.maker, x.series, x.size].filter(Boolean).map(esc).join('・');
 const aiBasisTag = x => x.basis ? ` <span class="ai-basis b-${({表示:'l', 公式:'p', 推定:'e', '確認できません':'n'})[x.basis] || 'e'}">${esc(AI_BASIS_LABEL[x.basis] || x.basis)}</span>` : '';
 function normalize(d) {
   const samples = Object.fromEntries(sampleCatalog().map(s => [s.id, s]));
@@ -4651,7 +4658,7 @@ function openLogForm(id) {
     if (pred) { const r = $(`input[name="condition"][value="${pred}"]`, form); if (r) r.checked = true; }
     if (note) note.textContent = condAiNote(pred);
   };
-  $$('input[name="condition"]', form).forEach(r => r.addEventListener('change', () => { condTouched = true; const note = $('#cond-ai', form); if (note && condModel()) note.textContent = ''; }));
+  $$('input[name="condition"]', form).forEach(r => r.addEventListener('change', () => { condTouched = true; hapticTick(); const note = $('#cond-ai', form); if (note && condModel()) note.textContent = ''; }));
   form.elements.date.addEventListener('change', condAuto);
   const fpPaint = () => { const st = FACE3D.st; if (st && st.canvasId === 'face3d-form') {
     face3dApply(st, {}, 1, 'areas'); // 肌の色を元に戻す（色はマス目と区切りで見せる）
@@ -4958,10 +4965,10 @@ async function quickMealSave(file) {
     return `<div class="qm"><img class="qm-img" src="${img}" alt="撮った食事の写真"><div class="qm-t"><b>${esc(m.l)}として記録しました</b><span class="small muted">${esc(tm)} に撮った写真</span></div></div>
       <p class="small muted" style="margin:12px 0 6px">違うときは押して直せます</p>
       <div class="seg qm-slot" role="radiogroup">${FOOD_MEALS.map(x => `<label class="seg-opt"><input type="radio" name="qm-slot" value="${x.k}" ${x.k === q.k ? 'checked' : ''}><span>${x.l}</span></label>`).join('')}</div>
-      <div id="qm-ai" style="margin-top:12px">${q.ai === 'busy' ? skelHtml(2, {dots:true, label:'写真を読み取り中', note:'AIが料理と栄養の目安を読み取っています'})
-        : foods.length ? `<div class="notice green" style="margin:0"><b>AIが読み取った料理（目安）</b><div class="chips" style="margin-top:6px">${foods.map(x => `<span class="chip">${esc(x.name)} <span class="muted">${Math.round(x.kcal)}kcal</span></span>`).join('')}</div><p class="small muted" style="margin:6px 0 0">${esc(nutLine(nutTotals(foods)))}</p></div>`
+      <div id="qm-ai" style="margin-top:12px">${q.ai === 'busy' ? skelHtml(2, {dots:true, label:'写真を読み取り中', note:'AIが商品名と栄養成分表示を読み取っています'})
+        : foods.length ? `<div class="notice green" style="margin:0"><b>AIが読み取った食べ物</b><div class="chips" style="margin-top:6px">${foods.map(x => `<span class="chip">${esc(x.name)} <span class="muted">${Math.round(x.kcal)}kcal</span></span>`).join('')}</div><p class="small muted" style="margin:6px 0 0">${esc(nutLine(nutTotals(foods)))}</p></div>`
         : q.ai === 'err' ? `<div class="notice" style="margin:0">${esc(q.aiMsg)}</div>`
-        : isPremium() ? '' : `<p class="small muted" style="margin:0">${PREMIUM_NAME}プランなら、写真からAIが料理と栄養の目安も自動で入れます。食べたものは「詳しく編集」からリストで選べます。</p>`}</div>`;
+        : isPremium() ? '' : `<p class="small muted" style="margin:0">${PREMIUM_NAME}プランなら、写真からAIが商品名と栄養成分表示を読み取って自動で入れます。食べたものは「詳しく編集」からリストで選べます。</p>`}</div>`;
   };
   openModal({title:'食事の記録', body:`<div id="qm-body">${sheet()}</div>`, footer:`<button type="button" class="btn btn-ghost" data-action="meal-edit">詳しく編集</button><button type="button" class="btn btn-primary" data-action="close-modal">完了</button>`});
   const body = $('#qm-body'), redraw = () => { if (document.body.contains(body)) body.innerHTML = sheet(); };
@@ -4982,7 +4989,7 @@ async function quickMealSave(file) {
       (r.items || []).forEach(x => { const rec = aiFoodToRec(x, q.k); if (!rec) { miss.push(x.name); return; } const f = normFood(rec); L.foods.push(f); q.added.push(f.id); });
       q.ai = q.added.length ? 'done' : 'err';
       // 商品で、栄養成分を確かめられなかったものは、推測の数字を入れずに知らせる
-      q.aiMsg = (!q.added.length ? (r.note || '料理を読み取れませんでした。「詳しく編集」からリストで選べます。') : '') + (miss.length ? `「${miss.join('」「')}」は栄養成分を確認できませんでした（推測の数字は入れていません）。袋や箱の裏の栄養成分表示を撮るか、「詳しく編集」から入力してください。` : '');
+      q.aiMsg = (!q.added.length && !miss.length ? (r.note || '食べ物を読み取れませんでした。「詳しく編集」からリストで選べます。') : '') + (miss.length ? `「${miss.join('」「')}」は栄養成分を確認できません（推測の数字は入れていません）。商品なら袋や箱の裏の栄養成分表示を撮るか、「詳しく編集」から入力してください。` : '');
       save(); render();
     } catch (err) { q.ai = 'err'; q.aiMsg = err.message; }
     redraw();
@@ -5061,7 +5068,7 @@ function openLifeForm(id, part) {
   const renderFoods = () => {
     FOOD_MEALS.forEach(m => {
       const fs = foods.filter(x => x.meal === m.k);
-      $(`[data-mfoods="${m.k}"]`, form).innerHTML = fs.map(x => `<div class="food-row"><span class="fr-n">${esc(x.name)}${x.basis === '表示' || x.basis === '公式' ? `<small class="fr-src">${x.srcUrl ? `<a href="${esc(x.srcUrl)}" target="_blank" rel="noopener noreferrer">${esc(AI_BASIS_LABEL[x.basis])}</a>` : esc(AI_BASIS_LABEL[x.basis])}${x.unit ? `・${esc(x.unit)}` : ''}${x.checked ? `・${esc(fmtShort(x.checked))}確認` : ''}</small>` : ''}</span><select class="select fr-q" data-fqid="${esc(x.id)}" aria-label="${esc(x.name)}の量">${(QTYS.some(q => q.v === x.qty) ? QTYS : QTYS.concat([{v:x.qty, l:qtyLabel(x.qty)}])).map(q => `<option value="${q.v}" ${q.v === x.qty ? 'selected' : ''}>${q.l}</option>`).join('')}</select><span class="fr-k">${Math.round(x.kcal * x.qty)}kcal</span><button type="button" class="chip-x" data-fdel="${esc(x.id)}" aria-label="${esc(x.name)}を削除">×</button></div>`).join('');
+      $(`[data-mfoods="${m.k}"]`, form).innerHTML = fs.map(x => `<div class="food-row"><span class="fr-n">${esc(x.name)}${x.basis === '表示' || x.basis === '公式' ? `<small class="fr-src">${x.srcUrl ? `<a href="${esc(x.srcUrl)}" target="_blank" rel="noopener noreferrer">${esc(AI_BASIS_LABEL[x.basis])}</a>` : esc(AI_BASIS_LABEL[x.basis])}${x.unit ? `・${esc(x.unit)}` : ''}${x.checked ? `・${esc(fmtShort(x.checked))}確認` : ''}${aiProdLine(x) ? `<br>${aiProdLine(x)}` : ''}${x.diff ? `<br><span style="color:#b45309">${esc(x.diff)}</span>` : ''}</small>` : ''}</span><select class="select fr-q" data-fqid="${esc(x.id)}" aria-label="${esc(x.name)}の量">${(QTYS.some(q => q.v === x.qty) ? QTYS : QTYS.concat([{v:x.qty, l:qtyLabel(x.qty)}])).map(q => `<option value="${q.v}" ${q.v === x.qty ? 'selected' : ''}>${q.l}</option>`).join('')}</select><span class="fr-k">${Math.round(x.kcal * x.qty)}kcal</span><button type="button" class="chip-x" data-fdel="${esc(x.id)}" aria-label="${esc(x.name)}を削除">×</button></div>`).join('');
       // 閉じているときも、食べたものがまとめて見えるようにする
       const sm = $(`[data-msum="${m.k}"]`, form), ate = form.elements['ate_' + m.k];
       if (sm) sm.innerHTML = fs.length ? `<span class="ms-n">${esc(fs.map(x => x.name.replace(/（.*?）/g, '')).join('・'))}</span><span class="ms-k">${Math.round(fs.reduce((a, x) => a + x.kcal * x.qty, 0))}kcal</span>` : (ate && ate.checked ? '記録あり' : '未記録');
@@ -5176,7 +5183,7 @@ function openLifeForm(id, part) {
     if (b.dataset.premium) {
       const k = b.dataset.premium, box = $(`[data-pinfo="${k}"]`, form);
       if (!isPremium()) {
-        box.innerHTML = `<div class="notice" style="margin:8px 0 0">写真から料理と栄養の目安を読み取る機能は、有料の<b>${PREMIUM_NAME}プラン</b>の機能です。読み取った結果は、追加する前に確認・選択できます。<br>無料プランでは、写真を見ながら下のリストから食べたものを選んでください。<br><a href="#/plan">プランの詳細を見る</a></div>`;
+        box.innerHTML = `<div class="notice" style="margin:8px 0 0">写真から商品名と栄養成分表示を読み取る機能は、有料の<b>${PREMIUM_NAME}プラン</b>の機能です。読み取った結果は、追加する前に確認・選択できます。<br>無料プランでは、写真を見ながら下のリストから食べたものを選んでください。<br><a href="#/plan">プランの詳細を見る</a></div>`;
         return;
       }
       const img = pending[k] || saved[k]; if (!img) return;
@@ -5184,11 +5191,11 @@ function openLifeForm(id, part) {
       try {
         const r = (await callVision('meal', img)).result || {items:[]};
         aiRes[k] = r.items || [];
-        if (!aiRes[k].length) { box.innerHTML = `<div class="notice" style="margin:8px 0 0">料理を読み取れませんでした。${esc(r.note || '料理全体が写るように撮り直すか、下のリストから選んでください。')}</div>`; }
+        if (!aiRes[k].length) { box.innerHTML = `<div class="notice" style="margin:8px 0 0">食べ物を読み取れませんでした。${esc(r.note || '全体が写るように撮り直すか、下のリストから選んでください。')}</div>`; }
         else box.innerHTML = `<div class="notice green" style="margin:8px 0 0"><b>読み取った食べ物</b>
-          ${aiRes[k].map((x, i) => x.basis === '確認できません' ? `<div class="check" style="margin-top:6px;align-items:flex-start;opacity:.85"><input type="checkbox" disabled><span>${esc(x.name)}${aiBasisTag(x)}<br><span class="small muted">栄養成分を確認できませんでした。推測の数字は入れていません。袋や箱の裏の「栄養成分表示」を撮るか、下のリストから入力してください。</span></span></div>` : `<label class="check" style="margin-top:6px;align-items:flex-start"><input type="checkbox" data-aipick="${k}" value="${i}" checked><span>${esc(x.name)}${x.amount && x.basis === '推定' ? `（${esc(x.amount)}）` : ''}${aiBasisTag(x)}${x.unit ? `<br><span class="small muted">${esc(x.unit)}</span>` : ''}${x.sourceUrl ? `<br><a class="small" href="${esc(x.sourceUrl)}" target="_blank" rel="noopener noreferrer">参照元：${esc(x.source || 'メーカー公表情報')}</a>` : ''}${x.checkedAt ? `<span class="small muted">（${esc(fmtShort(x.checkedAt))}確認）</span>` : ''}<br><span class="small muted">${Math.round(x.kcal)}kcal・たんぱく質${x.p}g・脂質${x.f}g・炭水化物${x.c}g${x.salt ? `・食塩相当量${x.salt}g` : ''}${x.veg ? `・野菜${x.veg}g` : ''}</span></span></label>`).join('')}
+          ${aiRes[k].map((x, i) => x.basis === '確認できません' ? `<div class="check" style="margin-top:6px;align-items:flex-start;opacity:.85"><input type="checkbox" disabled><span>${esc(x.name)}${aiBasisTag(x)}${aiProdLine(x) ? `<br><span class="small muted">${aiProdLine(x)}</span>` : ''}<br><span class="small muted">栄養成分を確認できません。推測の数字は入れていません。${x.kind === 'product' ? '袋や箱の裏の「栄養成分表示」を撮るか、' : '料理は公表された数字がないため、'}下のリストから入力してください。</span></span></div>` : `<label class="check" style="margin-top:6px;align-items:flex-start"><input type="checkbox" data-aipick="${k}" value="${i}" checked><span>${esc(x.name)}${aiBasisTag(x)}${aiProdLine(x) ? `<br><span class="small muted">${aiProdLine(x)}</span>` : ''}${x.unit ? `<br><span class="small muted">${esc(x.unit)}</span>` : ''}${x.sourceUrl ? `<br><a class="small" href="${esc(x.sourceUrl)}" target="_blank" rel="noopener noreferrer">参照元：${esc(x.source || 'メーカー公表情報')}</a>` : ''}${x.checkedAt ? `<span class="small muted">（${esc(fmtShort(x.checkedAt))}確認）</span>` : ''}<br><span class="small muted">${Math.round(x.kcal)}kcal・たんぱく質${x.p}g・脂質${x.f}g・炭水化物${x.c}g${x.salt ? `・食塩相当量${x.salt}g` : ''}${x.veg ? `・野菜${x.veg}g` : ''}</span>${x.diff ? `<br><span class="small" style="color:#b45309">${esc(x.diff)}</span>` : ''}</span></label>`).join('')}
           <button type="button" class="btn btn-primary btn-sm" data-aiadd="${k}" style="margin-top:8px">チェックしたものを追加</button>
-          <p class="small muted" style="margin-top:6px">${esc(AI_NOTE)}商品は、写真の「栄養成分表示」→ メーカーの公式情報 の順に確かめた数字だけを入れます（推測では入れません）。家庭の料理だけは目安です。量が違う場合は、追加したあとで消して、リストから選び直せます。</p></div>`;
+          <p class="small muted" style="margin-top:6px">${esc(AI_NOTE)}数字は、写真の「栄養成分表示」→ メーカーの公式情報 の順に確かめたものだけを入れます。推測では入れません（料理など確認できないものは「確認できません」と表示します）。量が違う場合は、追加したあとで消して、リストから選び直せます。</p></div>`;
       } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; }
       b.disabled = false;
       return;
@@ -6465,7 +6472,7 @@ function viewPlan(query) {
   }
   if (acct.polling) return done(html + '<div class="card"><p class="small">お申し込みの内容を確認しています…</p></div>');
   html += `<div class="card"><div class="card-h"><h2>${PREMIUM_NAME}プランに申し込む</h2></div>
-    <p class="small">食事の写真から料理と栄養の目安を、化粧品の写真から商品名・全成分の文字を、AIで読み取れるようになります。詳細な分析・成分相性マップも使え、広告が表示されなくなります。</p>
+    <p class="small">食事の写真から商品名と栄養成分表示を、化粧品の写真から商品名・全成分の文字を、AIで読み取れるようになります。詳細な分析・成分相性マップも使え、広告が表示されなくなります。</p>
     ${!acct.confirm ? '<button class="btn btn-primary" style="margin-top:14px" data-action="acct-confirm">申し込み内容を確認する</button>'
     : `<div class="divider"></div><h3 style="font-size:15px;margin-bottom:10px">お申し込み内容の最終確認</h3>
       <dl class="kv">
@@ -7621,7 +7628,7 @@ function setTopTitle(t) {
   const tb = $('.topbar'); if (!tb) return;
   const cur = tb.firstElementChild, want = t || 'SkinRoad';
   if (cur && cur.dataset.t === want) return;
-  const html = t ? `<h1 class="wordmark top-title" data-t="${esc(t)}">${esc(t)}</h1>` : `<a class="wordmark" data-t="SkinRoad" href="#/home">SkinRoad<small>最小限で最大限を</small></a>`;
+  const html = t ? `<h1 class="wordmark top-title" data-t="${esc(t)}">${esc(t)}</h1>` : `<a class="wordmark" data-t="SkinRoad" href="#/home">SkinRoad</a>`;
   if (cur && cur.classList.contains('wordmark')) cur.outerHTML = html; else tb.insertAdjacentHTML('afterbegin', html);
   const el = tb.firstElementChild; if (cur) { el.classList.add('tt-in'); }
 }
