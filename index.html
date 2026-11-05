@@ -631,14 +631,14 @@ details.acc-cmp{margin-top:14px}
 .home-pane{will-change:transform;touch-action:pan-y pinch-zoom}
 .home-pane.hp-in{animation:hpIn .46s cubic-bezier(.22,.7,.2,1)}
 @keyframes hpIn{from{transform:translateX(var(--hp-from,0));opacity:.4}to{transform:none;opacity:1}}
-.home-tabs{position:sticky;top:0;z-index:12;display:flex;justify-content:center;gap:20px;margin:-20px -16px 14px;padding:0 8px;background:var(--bg);border-bottom:1px solid var(--line)}
+.home-tabs{position:sticky;top:0;z-index:12;display:grid;grid-template-columns:repeat(3,minmax(0,124px));justify-content:center;gap:0;margin:-20px -16px 14px;padding:0 8px;background:var(--bg);border-bottom:1px solid var(--line)}
 .ht-ind{position:absolute;left:0;bottom:-1px;width:48px;height:3px;border-radius:3px;background:var(--green-d);transition:transform .44s cubic-bezier(.3,.8,.25,1);pointer-events:none}
-.ht{display:flex;align-items:center;justify-content:center;gap:5px;min-height:38px;flex:0 1 auto;min-width:56px;padding:0 6px!important;border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;position:relative;white-space:nowrap;padding:0 4px}
+.ht{display:flex;align-items:center;justify-content:center;gap:5px;min-height:38px;min-width:0;padding:0 6px!important;border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;position:relative;white-space:nowrap;padding:0 4px}
 .ht svg{width:19px;height:19px;flex:none}
 .ht.active{color:var(--ink)}
 
-@media (max-width:380px){.home-tabs{gap:14px}.log-tabs .ht{font-size:12px}}
-@media (max-width:330px){.home-tabs{gap:10px}.log-tabs .ht{font-size:11.5px}}
+@media (max-width:380px){.log-tabs .ht,.home-tabs .ht{font-size:12px}}
+@media (max-width:330px){.log-tabs .ht,.home-tabs .ht{font-size:11px}}
 /* 記録の画面の上のバー：ホームと同じ形（画面の上にくっつく・緑の線が動く）。文字だけで大きめに */
 .log-tabs .ht,.home-tabs .ht{font-size:12.5px;font-weight:700;letter-spacing:-.01em;min-width:0}
 @media (min-width:900px){.home-tabs{margin:0 0 16px;border-radius:14px;border:1px solid var(--line)}}
@@ -1007,7 +1007,13 @@ a.used-tile{color:inherit;text-decoration:none}
 .mn-list li{display:flex;align-items:center;gap:8px;font-size:14px}
 .mn-role{flex:none;font-size:10.5px;font-weight:700;border-radius:6px;padding:1px 6px;background:var(--surface2);color:var(--muted)}
 .mn-role.r1{background:#F4EBDA;color:#8A6420}.mn-role.r2{background:#FBE9E4;color:#B04A32}.mn-role.r3{background:#E3F0E6;color:var(--green-d)}.mn-role.r4{background:#E6EEF6;color:#3C6390}.mn-role.r5{background:#F6E8F0;color:#9A4677}
-.mn-pick{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
+.mn-pick{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 8px}
+.mn-pl{font-size:11px;font-weight:700;color:var(--muted);min-width:52px}
+.mn-item{display:flex;align-items:center;gap:10px;min-width:0}
+.mn-item a{color:var(--ink);font-size:14px;text-decoration:underline;text-decoration-color:var(--line2);text-underline-offset:3px}
+.mn-img{flex:none;width:52px;height:52px;border-radius:10px;object-fit:cover;background:var(--surface2);border:1px solid var(--line)}
+.mn-noimg{display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.mn-noimg svg{width:20px;height:20px}
 .mn-pb{border:1px solid var(--line2);background:var(--surface);color:var(--muted);border-radius:999px;padding:5px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 .mn-pb.on{background:var(--green-d);border-color:var(--green-d);color:#fff}
 .qf-chips{display:flex;flex-wrap:wrap;gap:8px}
@@ -5737,11 +5743,15 @@ function menuHtml() {
   const eaten = Object.entries(d.eatenToday).map(([k, v]) => `${k}：${v.join('、')}`).join(' ／ ');
   const ROLE_C = {主食:'r1', 主菜:'r2', 副菜:'r3', 汁物:'r4', 果物:'r5', 飲み物:'r5'};
   // 1食ごとに2〜3パターン。上のボタンで切り替える
+  // パターンの切り替え：「家で作る」と「コンビニ（セブン・ローソン・ファミマ）」に分けて並べる
+  const pb = (pl, i, k, mi) => `<button type="button" class="mn-pb ${i === k ? 'on' : ''}" role="tab" aria-selected="${i === k}" data-mpick="${mi}:${i}">${esc(pl.store ? (pl.short || pl.label) : pl.label)}</button>`;
+  const pickRow = (m, mi, k) => { const home = m.plans.map((pl, i) => [pl, i]).filter(([pl]) => !pl.store), cv = m.plans.map((pl, i) => [pl, i]).filter(([pl]) => pl.store);
+    return `<div class="mn-pick" role="tablist">${home.length ? `<span class="mn-pl">家で作る</span>${home.map(([pl, i]) => pb(pl, i, k, mi)).join('')}` : ''}</div>${cv.length ? `<div class="mn-pick" role="tablist"><span class="mn-pl">コンビニ</span>${cv.map(([pl, i]) => pb(pl, i, k, mi)).join('')}</div>` : ''}`; };
   // 家で作る献立は、料理名を押すと作り方が出る。コンビニの組み合わせは、調べた公式サイトを出す
-  const plan = pl => `<ul class="mn-list">${pl.dishes.map(x => `<li>${x.role ? `<span class="mn-role ${ROLE_C[x.role] || ''}">${esc(x.role)}</span>` : ''}${pl.store ? `<span>${esc(x.name)}</span>` : `<button type="button" class="mn-dish" data-recipe="${esc(x.name)}">${esc(x.name)}<span aria-hidden="true">›</span></button>`}</li>`).join('')}</ul>${pl.point ? `<p class="mn-point">${esc(pl.point)}</p>` : ''}
-    ${pl.store ? `<p class="mn-src">${esc(pl.store)}の公式サイトで調べた商品です（${(pl.sources || []).map(s => s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a>` : esc(s.title)).join('・')}）。地域・時期によって売っていないことがあります。</p>` : '<p class="mn-src">料理名を押すと、作り方が出ます。</p>'}`;
+  const plan = pl => `<ul class="mn-list">${pl.dishes.map(x => `<li>${x.role ? `<span class="mn-role ${ROLE_C[x.role] || ''}">${esc(x.role)}</span>` : ''}${pl.store ? `<span class="mn-item">${x.image ? `<img class="mn-img" src="${esc(x.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : `<span class="mn-img mn-noimg">${icon('bottle')}</span>`}${x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.name)}</a>` : `<span>${esc(x.name)}</span>`}</span>` : `<button type="button" class="mn-dish" data-recipe="${esc(x.name)}">${esc(x.name)}<span aria-hidden="true">›</span></button>`}</li>`).join('')}</ul>${pl.point ? `<p class="mn-point">${esc(pl.point)}</p>` : ''}
+    ${pl.store ? `<p class="mn-src">${esc(pl.store)}の公式サイトで調べた商品です${(pl.sources || []).length ? `（${pl.sources.map(s => s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a>` : esc(s.title)).join('・')}）` : ''}。商品名を押すと公式の商品ページが開きます。地域・時期によって売っていないことがあります。</p>` : '<p class="mn-src">料理名を押すと、作り方が出ます。</p>'}`;
   const body = res ? res.meals.map((m, mi) => { const k = Math.min(ui.menuPick[mi] || 0, m.plans.length - 1);
-    return `<div class="mn-meal"><b class="mn-h">${esc(m.when)}の${esc(m.meal)}</b>${m.plans.length > 1 ? `<div class="mn-pick" role="tablist">${m.plans.map((pl, i) => `<button type="button" class="mn-pb ${i === k ? 'on' : ''}" role="tab" aria-selected="${i === k}" data-mpick="${mi}:${i}">${esc(pl.label)}</button>`).join('')}</div>` : ''}${plan(m.plans[k])}</div>`; }).join('')
+    return `<div class="mn-meal"><b class="mn-h">${esc(m.when)}の${esc(m.meal)}</b>${pickRow(m, mi, k)}${plan(m.plans[k])}</div>`; }).join('')
     : `<p class="small muted" style="margin:0">${menuErr ? esc(menuErr) : 'まだ献立がありません。'}</p>`;
   return head + body + `<div class="adv-foot"><span class="small muted">${eaten ? `今日食べたもの（${esc(Object.keys(d.eatenToday).join('・'))}）と肌の状態から作りました。` : '今日の食事の記録がまだないので、肌の状態から作りました。'}カロリーなどの数字は出しません。</span></div>`;
 }
