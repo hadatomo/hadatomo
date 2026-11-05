@@ -1019,6 +1019,12 @@ a.used-tile{color:inherit;text-decoration:none}
 .mn-noimg svg{width:20px;height:20px}
 .mn-pb{border:1px solid var(--line2);background:var(--surface);color:var(--muted);border-radius:999px;padding:5px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 .mn-pb.on{background:var(--green-d);border-color:var(--green-d);color:#fff}
+.adv-link{border:0;font:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:3px}
+.adv-link i{font-style:normal;opacity:.6}
+.adv-tap{font-style:normal;font-size:10px;color:var(--green-d);margin-left:6px;font-weight:600}
+button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d);text-decoration:underline;cursor:pointer}
+.cam-pick{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cam-pick .btn{justify-content:center;min-height:52px;font-size:15px}
 .qf-chips{display:flex;flex-wrap:wrap;gap:8px}
 .qf-c{border:1px solid var(--line2);background:var(--surface);color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
 .qf-c:active{background:var(--green-s)}
@@ -2706,20 +2712,21 @@ function meter(label, v) {
    ========================================================= */
 // 商品検索の画面の上のタブ（商品を探す／取扱店舗を探す）
 function searchTabs(cur) { const n = (state.favorites || []).length; return `<div class="tabs"><a class="tab ${cur === 'search' ? 'active' : ''}" href="#/search">商品を探す</a><a class="tab ${cur === 'favorites' ? 'active' : ''}" href="#/favorites">${icon('heart')}お気に入り${n ? `（${n}）` : ''}</a><a class="tab ${cur === 'stores' ? 'active' : ''}" href="#/stores">取扱店舗を探す</a></div>`; }
-// 「商品を追加」「化粧品を追加」を押したら、カメラで登録するか、自分で入力するかを選ぶ
+// 「化粧品を追加」を押したら：カメラで登録（バーコード・商品の写真）か、自分で入力（バーコードの数字・商品名から候補を選ぶ）
+// 実際の商品を名前で探して追加するのは「商品検索」でできるので、ここには置かない
 function openAddSheet(kind) {
   const my = kind === 'my';
   openModal({title:my ? '化粧品を追加' : '商品を追加', size:'small', dismissable:true, body:`<div class="add-opts">
-    <button class="add-opt main big" data-action="add-find" data-id="${my ? 'my' : 'cat'}">${icon('search')}<span><b>商品を探して追加</b><small>楽天市場・Yahoo!ショッピングの実際の商品から選ぶ</small></span><i>›</i></button>
-    <button class="add-opt small" data-action="add-manual" data-id="${my ? 'my' : 'cat'}">${icon('note')}<span><b>自分で入力する</b><small>見つからないときは、パッケージを見ながら入力</small></span><i>›</i></button>
-    <button class="add-opt small" data-action="add-camera">${icon('camera')}<span><b>カメラで登録${isPremium() ? '' : `<span class="prem-sub">${PREMIUM_NAME}</span>`}</b><small>パッケージやバーコードを撮る・写真を選ぶ</small></span><i>›</i></button></div>`});
+    <button class="add-opt main big" data-action="add-camera" data-id="${my ? 'my' : 'cat'}">${icon('camera')}<span><b>カメラで登録</b><small>バーコードか商品の写真から、商品を見つける</small></span><i>›</i></button>
+    <button class="add-opt main big" data-action="add-manual" data-id="${my ? 'my' : 'cat'}">${icon('note')}<span><b>自分で入力</b><small>バーコードの数字か商品名を入れると、候補が出ます</small></span><i>›</i></button></div>`});
 }
 // 実際の商品（楽天市場・Yahoo!ショッピング）を名前で探して、そのまま追加する
 let findState = null;
 function openFindSheet(kind) {
   findState = {kind, q:'', items:null, loading:false, err:'', timer:null};
-  openModal({title:'商品を探して追加', dismissable:true, body:`<div class="ac-wrap sbig find-bar">${icon('search')}<input type="search" id="find-q" class="input" placeholder="商品名・ブランド名で探す" autocomplete="off" aria-label="商品名・ブランド名で探す"></div>
-    <div id="find-list" class="net-list" style="margin-top:12px"><p class="small muted">例：「キュレル 化粧水」「イニスフリー」など。実際に売られている商品が出てきます。</p></div>
+  openModal({title:'自分で入力', dismissable:true, body:`<div class="ac-wrap sbig find-bar">${icon('search')}<input type="search" id="find-q" class="input" placeholder="バーコードの数字 または 商品名" autocomplete="off" aria-label="バーコードの数字または商品名"></div>
+    <div id="find-list" class="net-list" style="margin-top:12px"><p class="small muted">バーコードの下の数字（13桁か8桁）か、「キュレル 化粧水」のような商品名を入れると、実際に売られている商品の候補が出ます。押すと選べます。</p></div>
+    <p class="small" style="margin-top:12px"><button type="button" class="link" data-action="add-full" data-id="${kind}">見つからないときは、すべて自分で入力する</button></p>
     <p class="credit small muted" style="margin-top:10px">Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p>`});
   const inp = document.getElementById('find-q');
   if (inp) { setTimeout(() => inp.focus(), 280); inp.addEventListener('input', () => { clearTimeout(findState.timer); const q = inp.value.trim(); findState.timer = setTimeout(() => findRun(q), 600); });
@@ -2732,7 +2739,9 @@ async function findRun(q) {
   fs.loading = true; findPaint();
   try {
     const ctrl = new AbortController(), tm = setTimeout(() => ctrl.abort(), 25000);
-    const res = await fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', signal:ctrl.signal, headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify({q, mode:'discover'})});
+    // 数字だけ（8桁・13桁）ならバーコード（JANコード）として探す
+    const digits = q.replace(/[\s-]/g, ''), jan = /^(\d{8}|\d{13})$/.test(digits) ? digits : '';
+    const res = await fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', signal:ctrl.signal, headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify(jan ? {jan, q:'', mode:'discover'} : {q, mode:'discover'})});
     const j = await res.json().catch(() => ({})); clearTimeout(tm);
     if (findState !== fs || fs.q !== q) return;
     if (!res.ok || j.error) throw new Error('x');
@@ -2742,14 +2751,120 @@ async function findRun(q) {
 }
 function findPaint() {
   const box = document.getElementById('find-list'), fs = findState; if (!box || !fs) return;
-  if (fs.loading) { box.innerHTML = skelHtml(4, {dots:true, label:'商品を検索中'}); return; }
+  if (fs.loading) { box.innerHTML = skelHtml(4, {dots:true, label:fs.reading || '商品を検索中'}); return; }
   if (fs.err) { box.innerHTML = `<p class="small muted">${esc(fs.err)}</p>`; return; }
-  if (!fs.items) { box.innerHTML = '<p class="small muted">例：「キュレル 化粧水」「イニスフリー」など。実際に売られている商品が出てきます。</p>'; return; }
-  if (!fs.items.length) { box.innerHTML = `<p class="small muted">見つかりませんでした。別の言葉で探すか、<button type="button" class="link" data-action="add-manual" data-id="${fs.kind}">自分で入力</button>してください。</p>`; return; }
+  if (!fs.items) { box.innerHTML = fs.cam ? '' : '<p class="small muted">バーコードの数字か商品名を入れると、候補が出ます。</p>'; return; }
+  if (!fs.items.length) { box.innerHTML = `<p class="small muted">見つかりませんでした。${fs.cam ? '撮り直すか、' : '別の言葉で探すか、'}<button type="button" class="link" data-action="add-full" data-id="${fs.kind}">すべて自分で入力</button>してください。</p>`; return; }
   box.innerHTML = fs.items.map((x, i) => `<div class="net-item">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
       <span class="net-t"><b>${esc(truncate(x.name, 60))}</b><small>${esc(x.site)}${x.shop ? '・' + esc(truncate(x.shop, 18)) : ''}</small><em>${yen(x.price)}</em></span>
-      <span class="net-btns"><button class="btn btn-primary btn-sm" data-action="find-pick" data-id="${i}">${icon('plus')}追加</button></span></div>`).join('');
+      <span class="net-btns"><button class="btn btn-primary btn-sm" data-action="find-pick" data-id="${i}">${icon('plus')}これを選ぶ</button></span></div>`).join('');
 }
+// ---------- カメラで登録：選ぶ／撮る → バーコードを読む（だめなら、プレミアムは商品の写真から商品名を読む）→ 候補から選ぶ ----------
+// バーコード（JAN／EAN-13・EAN-8）を写真から読む（外部のライブラリを使わない、簡単な読み取り）
+function eanDecodeImage(img) {
+  const W0 = img.naturalWidth || img.width, H0 = img.naturalHeight || img.height; if (!W0 || !H0) return '';
+  const sc = Math.min(1, 1200 / Math.max(W0, H0)), W = Math.max(1, Math.round(W0 * sc)), H = Math.max(1, Math.round(H0 * sc));
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const cx = cv.getContext('2d', {willReadFrequently:true}); cx.drawImage(img, 0, 0, W, H);
+  const d = cx.getImageData(0, 0, W, H).data, gray = new Float32Array(W * H);
+  for (let i = 0; i < W * H; i++) gray[i] = d[i * 4] * 0.299 + d[i * 4 + 1] * 0.587 + d[i * 4 + 2] * 0.114;
+  const DIG = ['3211', '2221', '2122', '1411', '1132', '1231', '1114', '1312', '1213', '3112']; // L（右側Rも同じ幅）。G は逆順
+  const PAR = ['LLLLLL', 'LLGLGG', 'LLGGLG', 'LLGGGL', 'LGLLGG', 'LGGLLG', 'LGGGLL', 'LGLGLG', 'LGLGGL', 'LGGLGL'];
+  const matchDigit = (w, allowG) => { // w: 4つの幅 → [数字, 'L'|'G'|'R'] と誤差
+    const t = w[0] + w[1] + w[2] + w[3], n = w.map(v => v * 7 / t); let best = null;
+    for (let k = 0; k < 10; k++) for (const [pat, kind] of allowG ? [[DIG[k], 'L'], [DIG[k].split('').reverse().join(''), 'G']] : [[DIG[k], 'R']]) {
+      let e = 0; for (let j = 0; j < 4; j++) e += Math.abs(n[j] - Number(pat[j]));
+      if (!best || e < best.e) best = {d:k, kind, e};
+    }
+    return best;
+  };
+  const check13 = s => { let a = 0; for (let i = 0; i < 12; i++) a += Number(s[i]) * (i % 2 ? 3 : 1); return (10 - a % 10) % 10 === Number(s[12]); };
+  const check8 = s => { let a = 0; for (let i = 0; i < 7; i++) a += Number(s[i]) * (i % 2 ? 1 : 3); return (10 - a % 10) % 10 === Number(s[7]); };
+  const decodeRuns = (runs) => { // runs[0] は黒（バー）から
+    for (let i = 0; i + 59 <= runs.length; i += 2) {
+      let seg = runs.slice(i, i + 59); const tot = seg.reduce((a, b) => a + b, 0), m = tot / 95;
+      if (m < 0.8) continue;
+      // バーは太く・すき間は細く写りやすいので、両端と真ん中の目印（幅が同じはずの線）でずれを直す
+      const gb = [0, 2, 28, 30, 56, 58].reduce((a, k) => a + seg[k], 0) / 6, gs = [1, 27, 29, 31, 57].reduce((a, k) => a + seg[k], 0) / 5, bias = (gb - gs) / 2;
+      seg = seg.map((w, k) => Math.max(0.3, w + ((i + k) % 2 === 0 ? -bias : bias)));
+      const g = k => Math.abs(seg[k] / m - 1) < 0.7;
+      if (!(g(0) && g(1) && g(2) && g(27) && g(28) && g(29) && g(30) && g(31) && g(56) && g(57) && g(58))) continue;
+      let left = '', par = '', right = '', err = 0, ok = true;
+      for (let k = 0; k < 6 && ok; k++) { const r = matchDigit(seg.slice(3 + k * 4, 7 + k * 4), true); if (r.e > 1.9) ok = false; else { left += r.d; par += r.kind; err += r.e; } }
+      for (let k = 0; k < 6 && ok; k++) { const r = matchDigit(seg.slice(32 + k * 4, 36 + k * 4), false); if (r.e > 1.9) ok = false; else { right += r.d; err += r.e; } }
+      if (!ok) continue;
+      const f = PAR.indexOf(par); if (f < 0) continue;
+      const code = f + left + right; if (check13(code) && err < 13) return code;
+    }
+    for (let i = 0; i + 43 <= runs.length; i += 2) { // EAN-8
+      let seg = runs.slice(i, i + 43); const m = seg.reduce((a, b) => a + b, 0) / 67; if (m < 0.8) continue;
+      const gb8 = [0, 2, 20, 22, 40, 42].reduce((a, k) => a + seg[k], 0) / 6, gs8 = [1, 19, 21, 23, 41].reduce((a, k) => a + seg[k], 0) / 5, b8 = (gb8 - gs8) / 2;
+      seg = seg.map((w, k) => Math.max(0.3, w + (k % 2 === 0 ? -b8 : b8)));
+      const g = k => Math.abs(seg[k] / m - 1) < 0.5;
+      if (!(g(0) && g(1) && g(2) && g(19) && g(20) && g(21) && g(22) && g(23) && g(40) && g(41) && g(42))) continue;
+      let s = '', ok = true;
+      for (let k = 0; k < 4 && ok; k++) { const r = matchDigit(seg.slice(3 + k * 4, 7 + k * 4), true); if (r.e > 2 || r.kind !== 'L') ok = false; else s += r.d; }
+      for (let k = 0; k < 4 && ok; k++) { const r = matchDigit(seg.slice(24 + k * 4, 28 + k * 4), false); if (r.e > 2) ok = false; else s += r.d; }
+      if (ok && check8(s)) return s;
+    }
+    return '';
+  };
+  const scanLine = (get, len) => {
+    const raw = new Float32Array(len); for (let i = 0; i < len; i++) raw[i] = get(i);
+    const v = new Float32Array(len); for (let i = 0; i < len; i++) v[i] = (raw[Math.max(0, i - 1)] + raw[i] * 2 + raw[Math.min(len - 1, i + 1)]) / 4; // ざらつきをならす
+    // 近くの一番明るい所と一番暗い所の真ん中を境にする（線が太く・細くならないように）
+    const win = Math.max(12, Math.round(len / 40)), bits = new Uint8Array(len);
+    for (let i = 0; i < len; i++) { let lo = 255, hi = 0; for (let j = Math.max(0, i - win); j < Math.min(len, i + win); j++) { if (v[j] < lo) lo = v[j]; if (v[j] > hi) hi = v[j]; } bits[i] = hi - lo > 30 && v[i] < (lo + hi) / 2 ? 1 : 0; }
+    const runs = []; let cur = bits[0], n = 0, start = -1;
+    for (let i = 0; i < len; i++) { if (start < 0) { if (bits[i] !== 1) continue; start = i; cur = 1; n = 0; } if (bits[i] === cur) n++; else { runs.push(n); cur = bits[i]; n = 1; } }
+    if (n) runs.push(n);
+    if (runs.length < 43) return '';
+    return decodeRuns(runs) || decodeRuns(runs.slice().reverse().slice(runs.length % 2 ? 0 : 1));
+  };
+  const votes = {};
+  for (let k = 1; k < 60; k++) { const y = Math.round(H * k / 60); const r = scanLine(i => gray[y * W + i], W); if (r) votes[r] = (votes[r] || 0) + 1; }
+  if (!Object.values(votes).some(v => v >= 2)) for (let k = 1; k < 60; k++) { const x = Math.round(W * k / 60); const r = scanLine(i => gray[i * W + x], H); if (r) votes[r] = (votes[r] || 0) + 1; }
+  // 13桁を優先。8桁は2本以上の線で同じ数字が読めたときだけ（まちがいを防ぐ）
+  const best = Object.entries(votes).filter(([k, v]) => v >= 2).sort((a, b) => (b[0].length - a[0].length) || (b[1] - a[1]))[0];
+  return best ? best[0] : '';
+}
+
+function openCamSheet(kind) {
+  findState = {kind, q:'', items:null, loading:false, err:'', timer:null, cam:true};
+  openModal({title:'カメラで登録', dismissable:true, body:`<p class="small muted" style="margin:0 0 10px">バーコードが大きく、ピントが合うように撮ってください。バーコードがないときは、商品の正面を撮ります${isPremium() ? '' : `（商品の写真から探すのは${PREMIUM_NAME}の機能です）`}。</p>
+    <div class="cam-pick"><label class="btn btn-primary">${icon('image')}選ぶ<input type="file" accept="image/*" id="cam-lib" class="vh"></label><label class="btn btn-primary">${icon('camera')}撮る<input type="file" accept="image/*" capture="environment" id="cam-shot" class="vh"></label></div>
+    <div id="cam-prev"></div><p class="small" id="cam-msg" style="margin:8px 0 0"></p>
+    <div id="find-list" class="net-list" style="margin-top:12px"></div>
+    <p class="small" style="margin-top:12px"><button type="button" class="link" data-action="add-manual" data-id="${kind}">数字か商品名を自分で入力する</button></p>`});
+}
+async function camGot(file) {
+  const fs = findState; if (!fs || !fs.cam || !file) return;
+  const msg = t => { const m = document.getElementById('cam-msg'); if (m) m.textContent = t; };
+  let small, hi;
+  try { small = await readImage(file, 640, 0.8); hi = await readImage(file, 1400, 0.9); } catch (e) { msg('写真を読み込めませんでした。'); return; }
+  const pv = document.getElementById('cam-prev'); if (pv) pv.innerHTML = `<img class="img-prev" src="${small}" alt="選んだ写真" style="width:120px;height:120px;margin-top:10px">`;
+  fs.items = null; fs.loading = true; fs.reading = 'バーコードを読み取り中'; findPaint(); msg('');
+  // ① バーコード（スマホの機能があればそれを使い、なければアプリの中で読む）
+  let jan = '';
+  try {
+    const img = new Image(); img.src = hi; await img.decode();
+    if ('BarcodeDetector' in window) { try { const r = await new window.BarcodeDetector({formats:['ean_13', 'ean_8']}).detect(img); if (r[0] && /^(\d{8}|\d{13})$/.test(r[0].rawValue)) jan = r[0].rawValue; } catch (e) { /* 次の方法へ */ } }
+    if (!jan) jan = eanDecodeImage(img);
+  } catch (e) { /* 何もしない */ }
+  if (findState !== fs) return;
+  if (jan) { msg(`バーコード ${jan} を読み取りました。当てはまる商品を選んでください。`); fs.reading = ''; await findRun(jan); return; }
+  // ② バーコードがない・読めない：プレミアムは商品の写真から商品名を読む
+  if (!isPremium()) { fs.loading = false; fs.reading = ''; findPaint(); msg(`バーコードを読み取れませんでした。バーコードを大きく・まっすぐ撮り直すか、下の「自分で入力」で数字を入れてください。商品の写真から探すのは${PREMIUM_NAME}の機能です。`); return; }
+  fs.reading = '商品の写真から商品名を読み取り中'; findPaint();
+  try {
+    const r = (await callVision('package', hi)).result || {};
+    if (findState !== fs) return;
+    if (r.jan && /^(\d{8}|\d{13})$/.test(r.jan)) { msg(`バーコード ${r.jan} を読み取りました。`); fs.reading = ''; await findRun(r.jan); return; }
+    const q = [r.brand, r.name].filter(Boolean).join(' ').slice(0, 60);
+    if (!q) throw new Error('商品名を読み取れませんでした。文字が大きく写るように、商品の正面を撮り直してください。');
+    msg(`「${q}」で探しました。当てはまる商品を選んでください。`); fs.reading = ''; await findRun(q);
+  } catch (e) { if (findState === fs) { fs.loading = false; fs.reading = ''; findPaint(); msg(String(e.message || e)); } }
+}
+document.addEventListener('change', e => { if (e.target.id === 'cam-lib' || e.target.id === 'cam-shot') { const f = e.target.files && e.target.files[0]; e.target.value = ''; camGot(f); } });
 function findPick(i) {
   const fs = findState, x = fs && fs.items && fs.items[Number(i)]; if (!x) return;
   const p = netToCat(x, fs.items); if (!p) return;
@@ -2880,22 +2995,23 @@ function netSearchSoon(q, now) {
   netTimer = setTimeout(() => netSearch(q), now ? 0 : 700);
 }
 async function netSearch(q) {
-  if (ui.net && ui.net.q === q && (ui.net.loading || ui.net.items)) return;
-  ui.net = {q, loading:true}; netPaint();
+  const mode = ui.netPopular === q ? 'popular' : 'discover';
+  if (ui.net && ui.net.q === q && ui.net.mode === mode && (ui.net.loading || ui.net.items)) return;
+  ui.net = {q, mode, loading:true}; netPaint();
   try {
     const ctrl = new AbortController(), tm = setTimeout(() => ctrl.abort(), 25000);
-    const res = await fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', signal:ctrl.signal, headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify({q, mode:'discover'})});
+    const res = await fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', signal:ctrl.signal, headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify({q, mode})});
     const j = await res.json().catch(() => ({})); clearTimeout(tm);
     if (!res.ok || j.error) throw new Error(j.error || '商品を探せませんでした。');
     if (!ui.net || ui.net.q !== q) return;
-    ui.net = {q, items:(Array.isArray(j.items) ? j.items : []).slice(0, 30)};
+    ui.net = {q, mode, items:(Array.isArray(j.items) ? j.items : []).slice(0, 30)};
   } catch (e) { if (ui.net && ui.net.q === q) ui.net = {q, err:e.name === 'AbortError' ? '時間がかかりすぎたため中止しました。' : 'インターネットの商品を探せませんでした。電波のよい場所で、もう一度お試しください。'}; }
   netPaint();
 }
 function netPaint() { const b = document.getElementById('net-results'); if (b) b.innerHTML = netHtml(); }
 function netHtml() {
   const n = ui.net; if (!n) return '';
-  const head = `<div class="net-h"><b>${icon('search')}ネットの商品</b><span class="small muted">楽天市場・Yahoo!ショッピング</span></div>`;
+  const head = `<div class="net-h"><b>${icon('search')}${n.mode === 'popular' ? `「${esc(n.q)}」の人気商品` : 'ネットの商品'}</b><span class="small muted">楽天市場・Yahoo!ショッピング${n.mode === 'popular' ? '（レビューの多い順）' : ''}</span></div>`;
   if (n.loading) return head + skelHtml(4, {dots:true, label:'商品を検索中'});
   if (n.err) return head + `<p class="small muted">${esc(n.err)}</p>`;
   if (!n.items.length) return head + '<p class="small muted">見つかりませんでした。別の言葉で検索してください。</p>';
@@ -2903,7 +3019,7 @@ function netHtml() {
     const added = state.catalog.find(c => c.shopUrl && c.shopUrl === x.url);
     return `<div class="net-item">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
       <span class="net-t"><b>${esc(truncate(x.name, 60))}</b><small>${esc(x.site)}${x.shop ? '・' + esc(truncate(x.shop, 18)) : ''}</small><em>${yen(x.price)}${x.shipping === 'included' ? '<span class="small muted">（送料込）</span>' : ''}</em></span>
-      <span class="net-btns">${added ? `<a class="btn btn-ghost btn-sm" href="#/product/${encodeURIComponent(added.id)}">登録済み</a>` : `<button class="btn btn-primary btn-sm" data-action="net-add" data-id="${i}">${icon('plus')}追加</button>`}<a class="link small" href="${esc(x.url)}" target="_blank" rel="noopener sponsored">サイトで見る</a></span></div>`;
+      <span class="net-btns">${added && state.myProducts.some(m => m.catalogId === added.id) ? `<a class="btn btn-ghost btn-sm" href="#/my">マイ化粧品に登録済み</a>` : `<button class="btn btn-primary btn-sm" data-action="net-add" data-id="${i}">${icon('plus')}マイ化粧品に登録</button>`}<a class="link small" href="${esc(x.url)}" target="_blank" rel="noopener sponsored">サイトで見る</a></span></div>`;
   }).join('')}</div><p class="small muted" style="margin-top:8px">価格は検索した時点のものです。「追加」すると、この商品を商品一覧に登録して、お気に入りやマイ化粧品に使えます。${n.items.some(x => x.ad) ? '一部のリンクは広告（アフィリエイト）です。' : ''}</p>
     <p class="credit small muted">Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p>`;
 }
@@ -2937,11 +3053,11 @@ async function pickCleanImage(p, x, others) {
     if (['product', 'search', 'favorites', 'my', 'mydetail'].includes(parseRoute().name) && !$('#modal-root').innerHTML) render();
   } catch (e) { /* 選べなかったときは、最初の画像のまま */ }
 }
+// 商品検索で見つけた商品を、そのままマイ化粧品に登録する（使い始めた日・使う時間などを入れる画面を開く）
 function netAdd(i) {
   const x = ui.net && ui.net.items && ui.net.items[Number(i)]; if (!x) return;
-  if (!netToCat(x, ui.net.items)) return;
-  toast('商品を追加しました。ブランドや成分は、商品の画面の「編集」で入力できます');
-  netPaint(); const box = document.getElementById('search-results'); if (box) box.innerHTML = searchResults();
+  const p = netToCat(x, ui.net.items); if (!p) return;
+  hapticTick(); openMyForm(null, p.id);
 }
 function searchActiveFilters() {
   const a = [];
@@ -2977,6 +3093,13 @@ function quickFindHtml() {
   return `<div class="card"><div class="card-h"><h2>種類から探す</h2></div><div class="qf-chips">${QUICK_FIND.map(w => `<button type="button" class="qf-c" data-qfind="${esc(w)}">${esc(w)}</button>`).join('')}</div>
     <p class="small muted" style="margin:10px 0 0">押すと、楽天市場・Yahoo!ショッピングで実際に売られている商品が出てきます。商品名やブランド名でも検索できます。</p></div>`;
 }
+// おすすめ成分を押したら、商品検索でその成分の人気商品を出す
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-ingfind]'); if (!b) return;
+  const w = b.dataset.ingfind.replace(/（.*?）|\(.*?\)/g, '').trim();
+  hapticTick(); ui.q = w; ui.netPopular = w; location.hash = '#/search';
+  setTimeout(() => { netSearchSoon(w, true); window.scrollTo(0, 0); }, 0);
+});
 document.addEventListener('click', e => {
   const b = e.target.closest && e.target.closest('[data-qfind]'); if (!b) return;
   ui.q = b.dataset.qfind; render(); netSearchSoon(ui.q, true); window.scrollTo({top:0, behavior:'smooth'});
@@ -5704,7 +5827,9 @@ function adviceLocal(d) {
 const ADV_LABELS = {スキンケア:['おすすめ成分', '控えたい成分'], 食事:['おすすめの食べ物', '控えたいもの'], 睡眠:['おすすめ', '控えたいこと'], 運動:['おすすめ', '気をつけること']};
 function advChips(x) {
   const lb = ADV_LABELS[x.area] || ['おすすめ', '控えたいもの'], g = (x.good || []).filter(Boolean), a = (x.avoid || []).filter(Boolean);
-  return (g.length ? `<div class="adv-chips"><small>${lb[0]}</small>${g.map(v => `<span class="adv-c good">${esc(v)}</span>`).join('')}</div>` : '')
+  // スキンケアのおすすめ成分は、押すとその成分の人気商品（楽天市場・Yahoo!ショッピングのレビューの多い順）を出す
+  const skin = x.area === 'スキンケア';
+  return (g.length ? `<div class="adv-chips"><small>${lb[0]}${skin ? '<em class="adv-tap">押すと人気の商品</em>' : ''}</small>${g.map(v => skin && !/日焼け止め|洗顔|こすらない/.test(v) ? `<button type="button" class="adv-c good adv-link" data-ingfind="${esc(v)}">${esc(v)}<i aria-hidden="true">›</i></button>` : skin && /日焼け止め/.test(v) ? `<button type="button" class="adv-c good adv-link" data-ingfind="日焼け止め">${esc(v)}<i aria-hidden="true">›</i></button>` : `<span class="adv-c good">${esc(v)}</span>`).join('')}</div>` : '')
     + (a.length ? `<div class="adv-chips"><small>${lb[1]}</small>${a.map(v => `<span class="adv-c bad">${esc(v)}</span>`).join('')}</div>` : '');
 }
 const ADVICE_KEY = 'skinwise_advice';
@@ -5764,9 +5889,10 @@ async function storeLoad(force) {
   } catch (e) { STORE.state = 'err'; STORE.err = String(e.message || e); }
   const b = document.getElementById('menu-box'); if (b) b.innerHTML = menuHtml();
 }
-// サーバーに一覧を作ってもらう（1回で6種類ずつ。残りがあれば続けて頼む。最大6回）
+// サーバーに一覧を作ってもらう（1回で3種類ずつ。残りがあれば続けて頼む。最大8回。2回続けて進まなければやめる）
 async function storeFillLoop() {
-  for (let round = 0; round < 6; round++) {
+  let stuck = 0, lastRemain = 99;
+  for (let round = 0; round < 8; round++) {
     STORE.filling = true; STORE.note = ''; const b0 = document.getElementById('menu-box'); if (b0) b0.innerHTML = menuHtml();
     try {
       const {data, error} = await acct.client.functions.invoke('vision', {body:{mode:'storefill'}});
@@ -5774,7 +5900,8 @@ async function storeFillLoop() {
       STORE.remaining = data.remaining || 0; STORE.note = (data.notes || []).join('／');
       STORE.at = 0; await storeLoad(true);
       if (!data.remaining) break;
-      if (!data.done || (data.notes || []).length && round >= 1 && !STORE.items.length) break; // うまくいかないときは、くり返さない
+      stuck = data.remaining < lastRemain ? 0 : stuck + 1; lastRemain = data.remaining;
+      if (stuck >= 2) break; // うまくいかないときは、くり返さない
     } catch (e) { STORE.state = 'err'; STORE.err = 'コンビニの商品の一覧を作れませんでした（' + String(e.message || e).slice(0, 100) + '）'; break; }
   }
   STORE.filling = false; const b = document.getElementById('menu-box'); if (b) b.innerHTML = menuHtml();
@@ -7378,10 +7505,10 @@ const actions = {
   'setup': () => openSetupWizard(),
   'setup-later': () => swSave(false),
   'setup-finish': () => { swSave(true); hapticSaved(); },
-  'add-find': kind => { closeModal(); setTimeout(() => openFindSheet(kind), 200); },
+  'add-full': kind => { findState = null; closeModal(); setTimeout(() => (actions[kind === 'my' ? 'new-my' : 'new-cat'])(), 200); },
   'find-pick': i => findPick(i),
-  'add-camera': () => { closeModal(); location.hash = '#/scan'; },
-  'add-manual': kind => { closeModal(); (actions[kind === 'my' ? 'new-my' : 'new-cat'])(); },
+  'add-camera': kind => { closeModal(); setTimeout(() => openCamSheet(kind || 'my'), 200); },
+  'add-manual': kind => { closeModal(); setTimeout(() => openFindSheet(kind || 'my'), 200); },
   'acc-toggle': (k, el) => {
     ui.accOpen = ui.accOpen || {}; ui.accOpen[k] = !ui.accOpen[k];
     const pn = document.getElementById('acc-panel-' + k); if (!pn) return;
