@@ -137,7 +137,7 @@ button{font-family:inherit}
 .sidebar{display:none}
 .topbar{position:relative;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:12px 18px;padding-top:calc(12px + env(safe-area-inset-top));background:#FAF9F6;-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
 .wordmark{font-family:var(--serif);font-size:20px;letter-spacing:.06em;color:var(--ink);text-decoration:none;font-weight:500}
-.top-title{margin:0;font-size:21px;line-height:45px;padding:4px 0;white-space:nowrap;font-family:var(--font);font-weight:600;letter-spacing:.02em;color:var(--ink)}
+.top-title{margin:0;font-size:21px;line-height:40px;padding:0;white-space:nowrap;font-family:var(--font);font-weight:600;letter-spacing:.02em;color:var(--ink)}
 .tt-in{animation:none}
 @keyframes ttIn{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.tt-in{animation:none}}
@@ -637,7 +637,8 @@ details.acc-cmp{margin-top:14px}
 .ht svg{width:17px;height:17px;flex:none}
 .ht.active{color:var(--ink)}
 
-@media (max-width:360px){.ht span{font-size:12px}.ht svg{display:none}}
+@media (max-width:380px){.ht{padding:0 7px!important;gap:4px}.ht span{font-size:12.5px}.ht svg{width:15px;height:15px}}
+@media (max-width:330px){.ht{padding:0 4px!important;gap:3px}.ht span{font-size:11.5px}.ht svg{width:14px;height:14px}}
 /* 記録の画面の上のバー：ホームと同じ形（画面の上にくっつく・緑の線が動く）。文字だけで大きめに */
 .log-tabs .ht{font-size:14px;font-weight:700}
 @media (max-width:360px){.log-tabs .ht{font-size:12.5px}}
@@ -1011,6 +1012,11 @@ a.used-tile{color:inherit;text-decoration:none}
 .advice .adv4 li>i{background:none;font-size:18px;width:22px;height:22px}
 .ldc-note i{width:5px;height:5px;border-radius:50%;background:var(--green)}
 .ld-miss{text-align:center;margin:4px 0 0}
+.ld-card{position:relative}
+.ld-none .ld-stage,.ld-none .ld-swipe{visibility:hidden} /* 3Dの顔は大きさを保ったまま隠す（戻したときにすぐ出せるように） */
+.ld-none .ld-detail{display:none}
+.ld-none .ld-miss{position:absolute;left:16px;right:16px;top:38%;font-size:15px;color:var(--ink);line-height:1.8;margin:0}
+.ld-none .ld-miss b{font-size:18px}
 /* はじめの質問 */
 .sw-dots{display:flex;gap:6px;justify-content:center;margin:0 0 16px}
 .sw-dots i{width:7px;height:7px;border-radius:50%;background:var(--line2)}
@@ -4379,7 +4385,9 @@ function recentCardHtml() {
   }
   return recentCard;
 }
-function viewLog() {
+// 記録の画面：上のバーの下の中身を .home-pane に入れる（横スワイプで中身だけ動かすため）
+function viewLog() { const h = viewLogInner(), i = h.indexOf('</nav>') + 6; return h.slice(0, i) + '<div class="home-pane">' + h.slice(i) + '</div>'; }
+function viewLogInner() {
   const tabs = [['list','記録一覧'],['life','食事・運動・睡眠'],['photos','肌写真']];
   let html = '';
   html += `<nav class="home-tabs log-tabs" role="tablist" aria-label="記録の表示">${tabs.map(([k, l]) => `<button type="button" class="ht ${ui.logTab === k ? 'active' : ''}" role="tab" aria-selected="${ui.logTab === k}" data-action="log-tab" data-id="${k}"><span>${l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
@@ -4471,9 +4479,11 @@ function ldCalOpen(on) {
 }
 function logDayFind(date) {
   const list = logDayList(); if (!list.length || !isValidYmd(date)) return;
-  let best = list[0]; list.forEach(l => { if (Math.abs(diffDays(l.date, date)) < Math.abs(diffDays(best.date, date))) best = l; });
-  logDaySet(best.date);
-  const m = document.getElementById('ld-miss'); if (m) { m.hidden = best.date === date; m.textContent = best.date === date ? '' : `${fmtMD(date)}の記録はないので、いちばん近い${fmtMD(best.date)}を出しています`; }
+  if (list.some(l => l.date === date)) { logDaySet(date); return; }
+  // 記録がない日：ほかの日を出さずに「記録されていません」と出す（3Dの顔と中身は隠す）
+  const card = document.getElementById('log-day-card'), m = document.getElementById('ld-miss');
+  if (card) card.classList.add('ld-none');
+  if (m) { m.hidden = false; m.innerHTML = `<b>${esc(fmtMD(date))}</b><br>記録されていません。`; }
 }
 // 日付を変える（3Dの顔は作り直さず、色だけ塗り替える＝軽い）
 function logDaySet(date) {
@@ -4483,6 +4493,7 @@ function logDaySet(date) {
   if (info) { info.innerHTML = logDayInfoHtml(list, i); info.classList.remove('ld-flash'); void info.offsetWidth; info.classList.add('ld-flash'); }
   if (det) det.innerHTML = logDayDetailHtml(list, i);
   const ms = document.getElementById('ld-miss'); if (ms) ms.hidden = true;
+  const cd = document.getElementById('log-day-card'); if (cd) cd.classList.remove('ld-none');
   // 一番古い記録では「‹」、最新の記録では「›」を出さない
   const pv = document.getElementById('ld-prev'), nx = document.getElementById('ld-next');
   if (pv) pv.hidden = i <= 0; if (nx) nx.hidden = i >= list.length - 1;
@@ -4503,7 +4514,8 @@ function bindLogDaySwipe() {
     if (!window._ldcDoc) { window._ldcDoc = 1; document.addEventListener('click', ev => { const c = document.getElementById('ld-cal'); if (c && !c.hidden && !ev.target.closest('#ld-cal,#ld-calbtn')) ldCalOpen(false); }); }
   }
   let sx = null, sy = 0;
-  card.addEventListener('pointerdown', e => { if (e.target.closest('canvas,button,label,input')) { sx = null; return; } sx = e.clientX; sy = e.clientY; });
+  // 日付を左右にスワイプして変えるのは、日付の行だけ（ほかの場所の横スワイプは、上のタブの切り替えに使う）
+  card.addEventListener('pointerdown', e => { if (!e.target.closest('#ld-swipe') || e.target.closest('canvas,button,label,input')) { sx = null; return; } sx = e.clientX; sy = e.clientY; });
   card.addEventListener('pointerup', e => { if (sx == null) return; const dx = e.clientX - sx, dy = e.clientY - sy; sx = null; if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.3) logDayStep(dx < 0 ? 1 : -1); });
   card.addEventListener('pointercancel', () => { sx = null; });
 }
@@ -7079,7 +7091,7 @@ const actions = {
     state.lifeLogs = state.lifeLogs.filter(x => x.id !== id);
     if (save()) { toast('削除しました'); render(); }
   },
-  'log-tab': v => { if (ui.logTab === v) { window.scrollTo({top:0, behavior:'smooth'}); return; } ui.ltFrom = ui.logTab; ui.logTab = v; render(); window.scrollTo(0, 0); },
+  'log-tab': v => { if (ui.logTab === v) { window.scrollTo({top:0, behavior:'smooth'}); return; } if (!ui.htSlide) { const o = ['list', 'life', 'photos']; ui.htSlide = o.indexOf(v) > o.indexOf(ui.logTab) ? 1 : -1; } ui.ltFrom = ui.logTab; ui.logTab = v; render(); window.scrollTo(0, 0); },
   'log-day-step': v => logDayStep(Number(v)),
   'new-my': () => openMyForm(),
   'new-my-from': id => openMyForm(null, id),
@@ -7676,14 +7688,17 @@ function placeHomeTabInd() {
   let x0 = null, y0 = 0, t0 = 0, lock = '', pane = null, dx = 0, swAt = 0, sx = 0, tot = 0;
   // iPhoneで鳴らし損ねないように、指を離したときのもう一つの合図（pointerup）でも鳴らす（ほぼ同時なので1回に感じる）
   window.addEventListener('pointerup', e => { if (e.pointerType === 'touch' && Date.now() - swAt < 400) { swAt = 0; switchTick(); } }, {passive:true});
-  const idx = () => Math.max(0, HOME_TABS.findIndex(x => x.k === ui.homeTab));
+  // ホームと記録の画面で使う：タブの並びと、今のタブ・切り替える操作
+  const LOG_TABS = [{k:'list'}, {k:'life'}, {k:'photos'}];
+  const page = () => parseRoute().name === 'log' ? {tabs:LOG_TABS, cur:ui.logTab, go:k => actions['log-tab'](k)} : {tabs:HOME_TABS, cur:ui.homeTab, go:k => actions['home-tab'](k)};
+  const idx = () => { const g = page(); return Math.max(0, g.tabs.findIndex(x => x.k === g.cur)); };
   const scrollsX = el => { for (let n = el; n && n !== document.body; n = n.parentElement) { if (n.scrollWidth > n.clientWidth + 2) { const ox = getComputedStyle(n).overflowX; if (ox === 'auto' || ox === 'scroll') return true; } } return false; };
   window.addEventListener('touchstart', e => {
     x0 = null; lock = '';
-    if (e.touches.length !== 1 || parseRoute().name !== 'home') return;
+    const rn = parseRoute(); if (e.touches.length !== 1 || !['home', 'log'].includes(rn.name) || (rn.name === 'log' && rn.id)) return;
     const tg = e.target;
     if ($('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full')) return;
-    if (!tg.closest || !tg.closest('.home-pane') || tg.closest('input,textarea,select,.ld-cal,[data-noswipe]') || scrollsX(tg)) return;
+    if (!tg.closest || !tg.closest('.home-pane') || tg.closest('input,textarea,select,.ld-cal,[data-noswipe],#ld-swipe,.ld-stage') || scrollsX(tg)) return; // 日付の行（横スワイプで日付を変える）と3Dの顔は除く
     pane = document.querySelector('.home-pane'); if (!pane) return;
     x0 = sx = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = performance.now(); dx = 0; tot = 0;
   }, {passive:true});
@@ -7700,7 +7715,7 @@ function placeHomeTabInd() {
     }
     e.preventDefault();
     dx = e.touches[0].clientX - x0; tot = e.touches[0].clientX - sx; // tot：触り始めからの距離（移動するかの判定に使う）
-    const i = idx(), edge = (dx > 0 && i === 0) || (dx < 0 && i === HOME_TABS.length - 1);
+    const i = idx(), edge = (dx > 0 && i === 0) || (dx < 0 && i === page().tabs.length - 1);
     const v = edge ? dx / 3 : dx; // 端のタブでは、ゴムのように重くする
     pane.style.transform = `translateX(${v.toFixed(1)}px)`; pane.style.opacity = String(1 - Math.min(0.35, Math.abs(v) / 900));
   }, {passive:false});
@@ -7711,10 +7726,11 @@ function placeHomeTabInd() {
     // 短いスワイプでも移動：40px（画面幅の1割ほど）動かすか、軽く払えば次のタブへ
     const i = idx(), w = window.innerWidth, fast = Math.abs(tot) > 24 && Math.abs(tot) / (performance.now() - t0) > 0.25;
     const j = (tot < 0 ? i + 1 : i - 1);
-    if ((Math.abs(tot) > Math.min(40, w * 0.11) || fast) && j >= 0 && j < HOME_TABS.length) {
+    const g = page();
+    if ((Math.abs(tot) > Math.min(40, w * 0.11) || fast) && j >= 0 && j < g.tabs.length) {
       hapticTick(); swAt = Date.now(); // 指を離したこの瞬間に「コツッ」
       ui.htSlide = tot < 0 ? 1 : -1;
-      actions['home-tab'](HOME_TABS[j].k);
+      g.go(g.tabs[j].k);
     } else back();
   };
   window.addEventListener('touchend', end, {passive:true});
@@ -7775,7 +7791,7 @@ function render() {
   }
   navRestoreY = null;
   if (r.name === 'home') { placeHomeTabInd(); slideHomePane(); }
-  if (r.name === 'log') placeHomeTabInd();
+  if (r.name === 'log') { placeHomeTabInd(); slideHomePane(); }
   hapticizeTargets();
   drawCharts();
   if (routeChanged) motionIn(r.name + (r.id ? '/' + r.id : '')); // 画面を移ったときだけ、動きのある表示にする
