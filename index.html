@@ -5712,7 +5712,7 @@ function adviceHtml() {
   const pts = ai ? ADVICE_AREAS.map((a, i) => ai.points.find(x => x.area === a) || local[i]) : local; // AIが出さなかった角度は、ルールの結果でうめる
   const prem = isPremium();
   const head = `<h3>おすすめケアポイント</h3>${ai && ai.summary ? `<p class="small muted" style="margin:0">${esc(ai.summary)}</p>` : ''}`;
-  const list = adviceBusy ? skelHtml(4, {dots:true, label:'AIが分析中'}) : `<ol class="adv4">${pts.map((x, i) => `<li><i>${'①②③④'[i] || i + 1}</i><div><em class="adv-area">${esc(x.area || ADVICE_AREAS[i] || '')}</em><b>${esc(x.title)}</b>${prem ? advChips(Object.assign({area:ADVICE_AREAS[i]}, x)) : ''}<span class="adv-text">${esc(x.text)}</span></div></li>`).join('')}</ol>`;
+  const list = adviceBusy ? skelHtml(4, {dots:true, label:'AIが分析中'}) : `<ol class="adv4">${pts.map((x, i) => `<li><i>${'①②③④'[i] || i + 1}</i><div><em class="adv-area">${esc(x.area || ADVICE_AREAS[i] || '')}</em><b>${esc(x.title)}</b>${advChips(Object.assign({area:ADVICE_AREAS[i]}, x))}<span class="adv-text">${esc(x.text)}</span></div></li>`).join('')}</ol>`;
   let foot;
   if (adviceBusy) foot = '<span class="small muted">AIが記録を分析しています…</span>';
   else if (ai) foot = `<span class="small muted">直近7日の記録をAI（Google Gemini）が分析しました。目安としてご覧ください。</span><button class="btn btn-ghost btn-sm" data-action="advice-ai" data-id="again">もう一度分析</button>`;
@@ -5753,13 +5753,14 @@ function menuHtml() {
   const body = res ? res.meals.map((m, mi) => { const k = Math.min(ui.menuPick[mi] || 0, m.plans.length - 1);
     return `<div class="mn-meal"><b class="mn-h">${esc(m.when)}の${esc(m.meal)}</b>${pickRow(m, mi, k)}${plan(m.plans[k])}</div>`; }).join('')
     : `<p class="small muted" style="margin:0">${menuErr ? esc(menuErr) : 'まだ献立がありません。'}</p>`;
-  return head + body + `<div class="adv-foot"><span class="small muted">${eaten ? `今日食べたもの（${esc(Object.keys(d.eatenToday).join('・'))}）と肌の状態から作りました。` : '今日の食事の記録がまだないので、肌の状態から作りました。'}カロリーなどの数字は出しません。</span></div>`;
+  const cvNote = res && res.storeNote && !res.meals.some(m => m.plans.some(pl => pl.store)) ? `<p class="mn-src">コンビニ（セブン・ローソン・ファミマ）の商品は、今回は調べられませんでした（${esc(res.storeNote)}）。「別の献立にする」でもう一度調べます。</p>` : '';
+  return head + body + cvNote + `<div class="adv-foot"><span class="small muted">${eaten ? `今日食べたもの（${esc(Object.keys(d.eatenToday).join('・'))}）と肌の状態から作りました。` : '今日の食事の記録がまだないので、肌の状態から作りました。'}カロリーなどの数字は出しません。</span></div>`;
 }
 // 記録が変わったとき・食事の時間帯が変わったときだけ、自動で作り直す（同じなら前の献立を使う）
 async function runMenu(force) {
   if (menuBusy || !isPremium()) return;
   const d = menuInput(), sig = adviceSig(d), c = menuCache();
-  if (c && c.res && !(c.res.meals || []).every(m => Array.isArray(m.plans))) force = true; // 前の形の結果は作り直す
+  if (c && c.res && (!(c.res.meals || []).every(m => Array.isArray(m.plans)) || !('storeNote' in c.res))) force = true; // 前の形（コンビニなし）の結果は作り直す
   if (!force && c && (c.sig === sig || (c.failSig === sig && Date.now() - (c.failAt || 0) < 10 * 60 * 1000))) return;
   menuBusy = true; menuErr = '';
   const box = () => { const b = document.getElementById('menu-box'); if (b) b.innerHTML = menuHtml(); };
