@@ -1060,6 +1060,9 @@ a.used-tile{color:inherit;text-decoration:none}
 .sw-opt{min-height:48px;border:1.5px solid var(--line2);border-radius:14px;background:var(--surface);color:var(--ink);font:inherit;font-weight:600;font-size:14.5px;cursor:pointer;padding:8px}
 .sw-opt.on{border-color:var(--green-d);background:var(--green-d);color:#fff}
 .sw-opt.wide{grid-column:1/-1}
+/* 枠の大きさをそろえる：バイブ用の包み（.hap-keep）があっても、マス目いっぱいに広げる。小さい説明があってもなくても同じ高さ */
+.sw-opts > .hap-keep{display:flex;width:100%;min-width:0}
+.sw-opts > .hap-keep > .sw-opt,.sw-opts > .sw-opt{width:100%;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center}
 .sw-opt small{display:block;font-size:11.5px;font-weight:500;opacity:.75;margin-top:2px}
 .ld-arrow[hidden]{display:flex!important;visibility:hidden}
 .sw-nums{display:grid;grid-template-columns:1fr 1fr;gap:12px}
