@@ -614,6 +614,7 @@ details.acc-cmp{margin-top:14px}
 .cart-ph .chip{align-self:flex-start}
 .cart-ph em{font-style:normal;font-weight:800;font-size:18px;white-space:nowrap;display:flex;flex-direction:column;align-items:flex-end}
 .cart-ph em small{font-weight:400}
+.net-other{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0 10px}
 .net-tap{cursor:pointer}
 .net-tap:active{opacity:.7}
 .pr-badge{font-size:10.5px;font-weight:700;color:var(--muted);border:1px solid var(--line2);border-radius:4px;padding:0 5px;line-height:17px}
@@ -3128,11 +3129,12 @@ function netHtml() {
   if (n.loading) return head + skelHtml(4, {dots:true, label:'商品を検索中'});
   if (n.err) return head + `<p class="small muted">${esc(n.err)}</p>`;
   if (!n.items.length) return head + '<p class="small muted">見つかりませんでした。別の言葉で検索してください。</p>';
-  return head + `<div class="net-list">${n.items.map((x, i) => {
+  const other = `<div class="net-other"><span class="small muted">ほかのサイトでも見る</span><a class="btn btn-ghost btn-sm" href="${esc(amazonUrl(n.mode === 'popular' ? n.q + ' ' + (/日焼け止め/.test(n.q) ? '' : '化粧品') : n.q, n.mode === 'popular'))}" target="_blank" rel="noopener sponsored">Amazon${n.mode === 'popular' ? 'の人気順' : 'で探す'} ›</a></div>`;
+  return head + other + `<div class="net-list">${n.items.map((x, i) => {
     const added = state.catalog.find(c => c.shopUrl && c.shopUrl === x.url);
     return `<div class="net-item net-tap" data-action="net-view" data-id="${i}">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
       <span class="net-t"><b>${esc(truncate(x.name, 60))}</b><small>${esc(x.site)}${x.shop ? '・' + esc(truncate(x.shop, 18)) : ''}</small><em>${yen(x.price)}${x.shipping === 'included' ? '<span class="small muted">（送料込）</span>' : ''}</em></span>
-      <span class="net-btns">${added && state.myProducts.some(m => m.catalogId === added.id) ? `<a class="btn btn-ghost btn-sm" href="#/my">マイ化粧品に登録済み</a>` : `<button class="btn btn-primary btn-sm" data-action="net-add" data-id="${i}">${icon('plus')}マイ化粧品に登録</button>`}<button class="btn btn-ghost btn-sm" data-action="net-view" data-id="${i}">詳しく見る</button></span></div>`;
+      <span class="net-btns">${added && state.myProducts.some(m => m.catalogId === added.id) ? `<a class="btn btn-ghost btn-sm" href="#/my">マイ化粧品に登録済み</a>` : `<button class="btn btn-primary btn-sm" data-action="net-add" data-id="${i}">${icon('plus')}マイ化粧品に登録</button>`}<button class="btn btn-ghost btn-sm" data-action="net-view" data-id="${i}">値段を比べる</button></span></div>`;
   }).join('')}</div><p class="small muted" style="margin-top:8px">価格は検索した時点のものです。「追加」すると、この商品を商品一覧に登録して、お気に入りやマイ化粧品に使えます。${n.items.some(x => x.ad) ? '一部のリンクは広告（アフィリエイト）です。' : ''}</p>
     <p class="credit small muted">Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p>`;
 }
@@ -3247,6 +3249,8 @@ function recoHtml() {
   return head + body + foot + '<p class="credit small muted">Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p>';
 }
 // ネットの商品を押したら、外のサイトに飛ばずに、アプリの中の商品詳細（特徴・使用方法・全成分・注意事項）を開く
+// Amazon（APIが使えるまでは、Amazonの検索結果を開く。人気順＝レビューの多い順）
+const amazonUrl = (q, popular) => 'https://www.amazon.co.jp/s?k=' + encodeURIComponent(String(q || '').slice(0, 80)) + (popular ? '&s=review-rank' : '');
 function prodOpenFrom(x, others) {
   const p = netToCat(x, others); if (!p) return;
   hapticTick(); ui.prodBack = {id:p.id, hash:location.hash || '#/home', label:parseRoute().name === 'home' ? 'ホーム' : '商品検索'};
@@ -3656,7 +3660,7 @@ function pcmpHtml(p) {
   if (!st || st.loading) return head + skelHtml(3, {dots:true, label:'値段を比べています'}) + '</div>';
   if (st.msg) return head + `<p class="small muted">${esc(st.msg)}</p><button class="btn btn-ghost btn-sm" data-action="price-search" data-id="${esc(p.id)}">もう一度調べる</button></div>`;
   const rows = pcmpItems(p);
-  if (!rows.length) return head + `<p class="small muted">同じ商品が見つかりませんでした。</p><div class="page-actions" style="margin-top:8px">${cartBtn}<a class="btn btn-ghost btn-sm" href="#/prices/${encodeURIComponent(p.id)}">くわしく比較する</a></div></div>`;
+  if (!rows.length) return head + `<p class="small muted">楽天市場・Yahoo!ショッピングで同じ商品が見つかりませんでした。</p><div class="page-actions" style="margin-top:8px">${cartBtn}<a class="btn btn-ghost btn-sm" href="${esc(amazonUrl(p.name))}" target="_blank" rel="noopener sponsored">Amazonで探す ›</a><a class="btn btn-ghost btn-sm" href="#/prices/${encodeURIComponent(p.id)}">くわしく比較する</a></div></div>`;
   const low = rows[0], lowInc = rows.find(x => x.shipping === 'included');
   const sites = ['楽天市場', 'Yahoo!ショッピング'].map(s => ({s, x:rows.find(x => x.site === s)})).filter(v => v.x);
   return head + `<div class="pcmp-best"><div><small>いちばん安い</small><b>${yen(low.price)}</b><span>${esc(low.site)}・${esc(truncate(low.shop || '', 16))}<i class="chip ${low.shipping === 'included' ? 'green' : 'gray'}">${esc(PRICE_SHIP[low.shipping] || '送料別')}</i></span></div>
@@ -3664,6 +3668,7 @@ function pcmpHtml(p) {
     ${lowInc && lowInc !== low ? `<p class="small" style="margin:8px 0 0">送料込みでいちばん安い：<b>${yen(lowInc.price)}</b>（${esc(lowInc.site)}・${esc(truncate(lowInc.shop || '', 16))}）<a class="link" href="${esc(safeUrl(lowInc.url))}" target="_blank" rel="noopener sponsored" style="margin-left:6px">買う</a></p>` : ''}
     <div class="pcmp-sites">${sites.map(v => `<div><small>${esc(v.s)}の最安</small><b>${yen(v.x.price)}</b></div>`).join('')}</div>
     <div class="pcmp-list">${rows.slice(0, 6).map((x, i) => `<a class="pcmp-row" href="${esc(safeUrl(x.url))}" target="_blank" rel="noopener sponsored"><span><b>${esc(truncate(x.shop || 'ショップ', 22))}</b><small>${esc(x.site)}・${esc(PRICE_SHIP[x.shipping] || '送料別')}${x.byJan && p.jan ? '・JAN一致' : ''}</small></span><em>${yen(x.price)}</em></a>`).join('')}</div>
+    <a class="pcmp-row" href="${esc(amazonUrl((p.brand ? p.brand + ' ' : '') + p.name.replace(/[【\[].*?[】\]]/g, '')))}" target="_blank" rel="noopener sponsored"><span><b>Amazon</b><small>Amazonの値段は、Amazonのページで確認できます</small></span><em><i>Amazonで見る ›</i></em></a>
     <div class="page-actions" style="margin-top:10px">${cartBtn}<a class="btn btn-ghost btn-sm" href="#/prices/${encodeURIComponent(p.id)}">すべての価格を見る</a></div>
     <p class="small muted" style="margin-top:8px"><span class="pr-badge">PR</span> 商品価格の安い順（送料は「送料別」のお店で別にかかります）。リンクから購入されると、運営者に紹介料が入ることがあります。価格は調べた時点のものです。</p></div>`;
 }
@@ -6223,8 +6228,18 @@ function adviceLocal(d) {
 }
 // おすすめ・控えたいもののラベル（角度ごと）
 const ADV_LABELS = {スキンケア:['おすすめ成分', '控えたい成分'], 食事:['おすすめの食べ物', '控えたいもの'], 睡眠:['おすすめ', '控えたいこと'], 運動:['おすすめ', '気をつけること']};
+// AIの答えに混ざった説明文・重複を取り除いて、短い言葉だけにする
+function advClean(arr, max = 16) {
+  const seen = new Set(), out = [];
+  (Array.isArray(arr) ? arr : []).forEach(v => {
+    v = String(v || '').replace(/[\s　]+/g, ' ').trim(); if (!v) return;
+    if (v.length > max || /不要|項目|ため|番外|短く|省略|例：|など$/.test(v)) { const m = v.match(/^[ァ-ヶーぁ-ん一-龯]{2,}/); if (!m || /不要|項目|番外/.test(m[0])) return; v = m[0]; }
+    const k = v.replace(/[（(].*?[）)]/g, '').replace(/\s/g, ''); if (!k || seen.has(k)) return; seen.add(k); out.push(v);
+  });
+  return out.slice(0, 6);
+}
 function advChips(x) {
-  const lb = ADV_LABELS[x.area] || ['おすすめ', '控えたいもの'], g = (x.good || []).filter(Boolean), a = (x.avoid || []).filter(Boolean);
+  const lb = ADV_LABELS[x.area] || ['おすすめ', '控えたいもの'], g = advClean(x.good), a = advClean(x.avoid, 24);
   // スキンケアのおすすめ成分は、押すとその成分の人気商品（楽天市場・Yahoo!ショッピングのレビューの多い順）を出す
   const skin = x.area === 'スキンケア';
   return (g.length ? `<div class="adv-chips"><small>${lb[0]}${skin ? '<em class="adv-tap">押すと人気の商品</em>' : ''}</small>${g.map(v => skin && !/日焼け止め|洗顔|こすらない/.test(v) ? `<button type="button" class="adv-c good adv-link" data-ingfind="${esc(v)}">${esc(v)}<i aria-hidden="true">›</i></button>` : skin && /日焼け止め/.test(v) ? `<button type="button" class="adv-c good adv-link" data-ingfind="日焼け止め">${esc(v)}<i aria-hidden="true">›</i></button>` : `<span class="adv-c good">${esc(v)}</span>`).join('')}</div>` : '')
