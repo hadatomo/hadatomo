@@ -1020,6 +1020,9 @@ a.used-tile{color:inherit;text-decoration:none}
 .mn-pb{border:1px solid var(--line2);background:var(--surface);color:var(--muted);border-radius:999px;padding:5px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 .mn-pb.on{background:var(--green-d);border-color:var(--green-d);color:#fff}
 .ld-life{margin-top:12px}
+.pd-img{display:block;width:100%;max-width:300px;aspect-ratio:3/4;object-fit:cover;border-radius:16px;margin:36px auto 8px;background:var(--surface2)}
+.pd-miss{text-align:center;padding:90px 0 70px;font-size:15px;line-height:1.8}
+.pd-miss b{font-size:18px}
 .adv-link{border:0;font:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:3px}
 .adv-link i{font-style:normal;opacity:.6}
 .adv-tap{font-style:normal;font-size:10px;color:var(--green-d);margin-left:6px;font-weight:600}
@@ -2586,7 +2589,8 @@ function lifeSumHtml(lf, date) {
     fMain = `${Math.round(t.kcal).toLocaleString()}kcal`;
     fSub = lack > 0 ? `＋${lack}g<small>（たんぱく質があと${lack}g・目標${g.protein}g）</small>` : `たんぱく質 ${p}g<small>（目標${g.protein}g クリア）</small>`; fCls = lack > 0 ? 'bad' : 'good';
   } else if (lf && MEALS.some(m => lf.meals[m.k] && lf.meals[m.k].ate)) { fMain = `${MEALS.filter(m => lf.meals[m.k].ate).length}回`; fSub = '食べた物を追加するとkcalを表示'; }
-  return `<div class="life-sum"><div class="ls-head"><b>${date && date !== todayStr() ? esc(fmtMD(date)) + 'の' : '今日の'}睡眠・運動・食事</b><button class="link small" data-action="life-goal">目安を変更</button></div>
+  // 記録一覧（date あり）では見出しを出さない
+  return `<div class="life-sum">${date ? '' : `<div class="ls-head"><b>今日の睡眠・運動・食事</b><button class="link small" data-action="life-goal">目安を変更</button></div>`}
     ${row('sleep', 'moon', '睡眠', sMain, sSub, sCls)}${row('exercise', 'chart', '運動', eMain, eSub, eCls)}${row('meal', 'note', '食事', fMain, fSub, fCls)}</div>`;
 }
 function openLifeGoal() {
@@ -4642,7 +4646,7 @@ function logDayDetailHtml(list, i) {
 function logDayCardHtml(logs) {
   const list = logs.slice().reverse(), i = logDayIdx(list);
   return `<div class="card ld-card" id="log-day-card"><div class="card-h ld-top"><button type="button" class="icon-btn ld-calbtn" id="ld-calbtn" aria-label="日付で探す" aria-expanded="false">${icon('calendar')}</button><div class="ld-cal" id="ld-cal" hidden></div></div>
-    <div class="f3-stage ld-stage"><canvas id="face3d-log" aria-label="選んだ日の肌の記録を3Dの顔で表示"></canvas><div class="f3-load" id="ld-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>
+    <div class="f3-stage ld-stage"><canvas id="face3d-log" aria-label="選んだ日の肌の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="log" aria-label="大きく見る">⤢</button><div class="f3-load" id="ld-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>
     <div class="ld-swipe" id="ld-swipe">
       <button class="ld-arrow" id="ld-prev" data-action="log-day-step" data-id="-1" aria-label="前の記録" ${i <= 0 ? 'hidden' : ''}>‹</button>
       <div class="ld-info" id="ld-info">${logDayInfoHtml(list, i)}</div>
@@ -4654,16 +4658,17 @@ function logDayCardHtml(logs) {
 // 日付で探す：その日の記録がなければ、いちばん近い日の記録を出す
 // 日付で探す：右上のカレンダーのマークを押すと小さなカレンダーが開き、日にちを押すと閉じてその日の記録を出す
 let ldCalYM = '';
-function ldCalHtml() {
-  const t = todayStr(), have = new Set(logDayList().map(l => l.date));
+// o：写真のカレンダーでも使う（have＝印を付ける日、cur＝選んでいる日、ym＝表示する月、attr／nav＝押したときの目印）
+function ldCalHtml(o = {}) {
+  const t = todayStr(), have = o.have || new Set(logDayList().map(l => l.date)), A = o.attr || 'ldc', N = o.nav || 'ldcm';
   const cond = {}; state.skinLogs.forEach(l => { if (l.condition) cond[l.date] = l.condition; }); // その日の肌の調子（1〜5）
-  const [y, m] = ldCalYM.split('-').map(Number), first = new Date(y, m - 1, 1), days = new Date(y, m, 0).getDate(), lead = first.getDay();
+  const [y, m] = (o.ym || ldCalYM).split('-').map(Number), first = new Date(y, m - 1, 1), days = new Date(y, m, 0).getDate(), lead = first.getDay();
   const ymd = d => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-  const lst = logDayList(), canNext = ymd(days) < t, cur = (lst[logDayIdx(lst)] || {}).date;
+  const lst = logDayList(), canNext = ymd(days) < t, cur = o.cur !== undefined ? o.cur : (lst[logDayIdx(lst)] || {}).date;
   let cells = ''; for (let i = 0; i < lead; i++) cells += '<span></span>';
   for (let d = 1; d <= days; d++) { const k = ymd(d), fut = k > t;
-    cells += `<button type="button" class="ldc-d ${have.has(k) ? 'has' : ''} ${k === t ? 'today' : ''} ${k === cur ? 'sel' : ''}" data-ldc="${k}" ${fut ? 'disabled' : ''} ${cond[k] ? `aria-label="${m}月${d}日 ${COND_LABELS[cond[k]]}"` : ''}><span class="ldc-n">${d}</span>${cond[k] ? `<span class="ldc-m" style="color:${COND_COLORS[cond[k]]}">${condMarkSvg(cond[k])}</span>` : ''}</button>`; }
-  return `<div class="ldc-h"><button type="button" class="ldc-nav" data-ldcm="-1" aria-label="前の月">‹</button><b>${y}年${m}月</b><button type="button" class="ldc-nav" data-ldcm="1" aria-label="次の月" ${canNext ? '' : 'disabled'}>›</button></div>
+    cells += `<button type="button" class="ldc-d ${have.has(k) ? 'has' : ''} ${k === t ? 'today' : ''} ${k === cur ? 'sel' : ''}" data-${A}="${k}" ${fut ? 'disabled' : ''} ${cond[k] ? `aria-label="${m}月${d}日 ${COND_LABELS[cond[k]]}"` : ''}><span class="ldc-n">${d}</span>${cond[k] ? `<span class="ldc-m" style="color:${COND_COLORS[cond[k]]}">${condMarkSvg(cond[k])}</span>` : ''}</button>`; }
+  return `<div class="ldc-h"><button type="button" class="ldc-nav" data-${N}="-1" aria-label="前の月">‹</button><b>${y}年${m}月</b><button type="button" class="ldc-nav" data-${N}="1" aria-label="次の月" ${canNext ? '' : 'disabled'}>›</button></div>
     <div class="ldc-w">${['日','月','火','水','木','金','土'].map(w => `<span>${w}</span>`).join('')}</div><div class="ldc-g">${cells}</div><p class="ldc-note">${[5,4,3,2,1].map(v => `<span class="ldc-lg"><b style="display:flex;color:${COND_COLORS[v]}">${condMarkSvg(v)}</b>${COND_LABELS[v]}</span>`).join('')}</p>`;
 }
 function ldCalOpen(on) {
@@ -4713,9 +4718,35 @@ function bindLogDaySwipe() {
   card.addEventListener('pointerup', e => { if (sx == null) return; const dx = e.clientX - sx, dy = e.clientY - sy; sx = null; if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.3) logDayStep(dx < 0 ? 1 : -1); });
   card.addEventListener('pointercancel', () => { sx = null; });
 }
+// 肌写真：記録一覧と同じように、左右の矢印で日付を変え、右上のカレンダーで日付を選ぶ
+let pdCalYM = '';
+function photoDayIdx(list) { let i = list.findIndex(l => l.date === ui.photoDay); if (i < 0) i = list.length - 1; return i; }
+function photoDayCardHtml(list) { // list：写真のある記録（古い順）
+  const i = photoDayIdx(list), l = list[i]; ui.photoDay = l.date;
+  const miss = ui.photoMiss;
+  return `<div class="card ld-card" id="photo-day-card"><div class="card-h ld-top"><button type="button" class="icon-btn ld-calbtn" id="pd-calbtn" aria-label="日付で探す" aria-expanded="false">${icon('calendar')}</button><div class="ld-cal" id="pd-cal" hidden></div></div>
+    ${miss ? `<div class="pd-miss"><b>${esc(fmtMD(miss))}</b><br>写真はありません。</div>` : `<img class="pd-img" src="${safeImg(l.photo)}" alt="${esc(l.date)}の肌写真">`}
+    <div class="ld-swipe" ${miss ? 'style="visibility:hidden"' : ''}>
+      <button class="ld-arrow" data-action="photo-step" data-id="-1" aria-label="前の写真" ${i <= 0 ? 'hidden' : ''}>‹</button>
+      <div class="ld-info"><div class="ld-date"><b>${fmtMD(l.date)}</b></div><div class="t3-tags" style="justify-content:center;margin-top:4px"><span class="t-cond" style="background:${COND_COLORS[l.condition] || '#999'};color:${COND_FG[l.condition] || '#fff'}">${esc(COND_LABELS[l.condition] || '—')}</span></div></div>
+      <button class="ld-arrow" data-action="photo-step" data-id="1" aria-label="次の写真" ${i >= list.length - 1 ? 'hidden' : ''}>›</button>
+    </div>
+    <div class="ld-actions" style="justify-content:center"><button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(l.id)}">この日の記録を開く</button></div></div>`;
+}
+function photoList() { return logsDesc().filter(l => safeImg(l.photo)).reverse(); }
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('#pd-calbtn'), cal = document.getElementById('pd-cal');
+  if (b && cal) { e.stopPropagation(); const on = cal.hidden; if (on) { pdCalYM = (ui.photoDay || todayStr()).slice(0, 7); cal.innerHTML = ldCalHtml({have:new Set(photoList().map(l => l.date)), cur:ui.photoMiss ? '' : ui.photoDay, ym:pdCalYM, attr:'pdc', nav:'pdcm'}); } cal.hidden = !on; b.setAttribute('aria-expanded', String(on)); return; }
+  const d = e.target.closest && e.target.closest('[data-pdc]');
+  if (d) { const date = d.dataset.pdc, has = photoList().some(l => l.date === date); ui.photoMiss = has ? '' : date; if (has) ui.photoDay = date; hapticTick(); render(); return; }
+  const nv = e.target.closest && e.target.closest('[data-pdcm]');
+  if (nv && cal) { e.stopPropagation(); const [y, m] = pdCalYM.split('-').map(Number), dt = new Date(y, m - 1 + Number(nv.dataset.pdcm), 1); pdCalYM = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`; cal.innerHTML = ldCalHtml({have:new Set(photoList().map(l => l.date)), cur:ui.photoMiss ? '' : ui.photoDay, ym:pdCalYM, attr:'pdc', nav:'pdcm'}); return; }
+  if (cal && !cal.hidden && !(e.target.closest && e.target.closest('#pd-cal'))) { cal.hidden = true; }
+});
 function viewPhotos() {
   const withPhoto = logsDesc().filter(l => safeImg(l.photo));
   let html = `<div class="notice green">写真は任意です。保存した写真はこのブラウザ内だけにあり、外部へ送信されません。写真がなくても、すべての機能を使えます。</div>`;
+  if (withPhoto.length) html = photoDayCardHtml(withPhoto.slice().reverse()) + html;
   if (!withPhoto.length) return html + `<div class="card">${emptyBox('note', '保存された写真はありません', '肌の記録で写真を選び、「ブラウザ内に保存する」にチェックすると、ここに一覧で表示されます。')}</div>`;
   if (withPhoto.length >= 2) {
     if (!withPhoto.some(l => l.id === ui.photoA)) ui.photoA = withPhoto[withPhoto.length - 1].id;
@@ -4727,8 +4758,6 @@ function viewPhotos() {
       <div><img src="${safeImg(last.photo)}" alt="${esc(last.date)}の写真"><p class="small muted" style="margin-top:4px">${fmtMD(last.date)}・${esc(COND_LABELS[last.condition])}</p></div></div>
       <p class="small muted" style="margin-top:8px">明るさ・角度・距離が違うと、見え方が大きく変わります。同じ場所・同じ時間帯に撮ると比べやすくなります。</p></div>`;
   }
-  html += `<div class="card"><div class="card-h"><h2>写真一覧（${withPhoto.length}枚）</h2></div><div class="photo-grid">
-    ${withPhoto.map(l => `<button class="photo-cell" data-action="edit-log" data-id="${esc(l.id)}" aria-label="${esc(l.date)}の記録を開く"><img src="${safeImg(l.photo)}" alt=""><span>${fmtShort(l.date)}</span></button>`).join('')}</div></div>`;
   return html;
 }
 function viewLife() {
@@ -5750,16 +5779,17 @@ function face3dShowWeek(i) {
 // 3Dの顔を画面いっぱいに大きく表示して、細かく見る
 function openFace3dFull(src) {
   const box = document.createElement('div'); box.className = 'f3-full'; box.id = 'f3-full';
-  box.innerHTML = `<div class="f3-full-head"><b>${src === 'home' ? '今日の肌記録' : '肌の変化（' + esc(($('#f3-label') || {}).textContent || '') + '）'}</b><button class="icon-btn" data-action="f3-full-close" aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button></div>
+  const logDay = src === 'log' ? (() => { const l = logDayList(); return l[logDayIdx(l)]; })() : null;
+  box.innerHTML = `<div class="f3-full-head"><b>${src === 'home' ? '今日の肌記録' : src === 'log' ? (logDay ? esc(fmtMD(logDay.date)) + 'の肌記録' : '肌記録') : '肌の変化（' + esc(($('#f3-label') || {}).textContent || '') + '）'}</b><button class="icon-btn" data-action="f3-full-close" aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button></div>
     <div class="f3-full-stage"><canvas id="face3d-full" aria-label="3Dの顔（大きく表示）"></canvas><div class="f3-tip" id="f3full-tip" hidden></div><div class="f3-load" id="f3full-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>
     <p class="small muted" style="text-align:center;margin:6px 12px 0">${DEV.touch ? '1本の指で回す／2本の指で広げると拡大' : 'ドラッグで回す／ホイールで拡大・縮小'}。</p>
-    <div class="f3-views" style="padding:8px 12px calc(12px + env(safe-area-inset-bottom))">${src === 'home'
+    <div class="f3-views" style="padding:8px 12px calc(12px + env(safe-area-inset-bottom))">${src === 'home' || src === 'log'
       // 今日の肌記録は「←・正面・→」の3つだけ（←で顔が左を向く）
       ? [['left','←','左に向ける'],['front','正面','正面に向ける'],['right','→','右に向ける']].map(([k, l, al]) => `<button class="tab f3v3" data-action="f3-view" data-id="${k}" aria-label="${al}">${l}</button>`).join('')
       : [['front','正面'],['right','右から'],['left','左から'],['back','後ろ'],['top','上から'],['bottom','下から']].map(([k, l]) => `<button class="tab" data-action="f3-view" data-id="${k}">${l}</button>`).join('') + '<button class="tab" data-action="f3-zoom" data-id="in" aria-label="大きくする">＋</button><button class="tab" data-action="f3-zoom" data-id="out" aria-label="小さくする">－</button>'}</div>`;
   document.body.appendChild(box); lockScroll();
   let data;
-  if (src === 'home') { const hd = homeFaceData(); data = {counts:hd.counts, max:hd.max, mode:hd.mode, types:hd.types, marks:hd.marks, unit:hd.mode === 'spots' ? '個' : 'flag'}; }
+  if (src === 'home' || src === 'log') { const hd = src === 'log' ? logFaceData(logDay) : homeFaceData(); data = {counts:hd.counts, max:hd.max, mode:hd.mode, types:hd.types, marks:hd.marks, unit:hd.mode === 'spots' ? '個' : 'flag'}; }
   else { const d = face3dWeeks(8), w = d.weeks[ui.f3Week == null ? 7 : ui.f3Week]; data = {counts:w.c, max:d.max, mode:d.mode, types:w.types, unit:null}; }
   drawFace3d({canvas:'face3d-full', load:'f3full-load', tip:'f3full-tip', camZ:46, full:true, auto:false, grid:!!data.marks, gridLines:false, unit:data.unit, ready:st => { face3dShowLog(st, data); st.yaw = 0; st.user = true; }});
 }
@@ -6104,7 +6134,7 @@ async function drawFace3d(opts) {
       st.drag = null; return;
     }
     st.target = null; st.user = true; st.idle = 0; if (DEV.touch) st.auto = false;
-    if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = {d:Math.hypot(a.x - b.x, a.y - b.y), z:st.zoomT || cam.position.z}; st.drag = null; return; }
+    if (pts.size === 2) { if (!opts.noZoom) { const [a, b] = [...pts.values()]; pinch = {d:Math.hypot(a.x - b.x, a.y - b.y), z:st.zoomT || cam.position.z}; } st.drag = null; return; } // noZoom：指で広げても大きくしない（右上のボタンで大きく見る）
     st.drag = {x:e.clientX, y:e.clientY, yaw:st.yaw, pitch:st.pitch, cy:cam.position.y, moved:false, dir:null, id:e.pointerId}; if (!st.yawOnly) cv.setPointerCapture(e.pointerId);
     // 範囲選択モード：なぞった始まりと終わりのマス目で四角く選ぶ（回さない）
     if (st.rangeMode && st.onRange) { const k = face3dGridCell(st, e); st.range = k ? {a:k, b:k} : null; if (k) st.onRange(k, k, 'move'); }
@@ -7550,6 +7580,7 @@ const actions = {
   'life-goal': () => openLifeGoal(),
   'f3-zoom': v => { const st = FACE3D.st; if (!st) return; st.zoomT = clamp((st.zoomT || st.cam.position.z) + (v === 'in' ? -8 : 8), st.minZ || 34, st.maxZ || 84); st.dirty = true; },
   'f3-full': v => openFace3dFull(v),
+  'photo-step': v => { const l = photoList(); ui.photoMiss = ''; const i = clamp(photoDayIdx(l) + Number(v), 0, l.length - 1); ui.photoDay = l[i].date; render(); },
   'f3-full-close': () => closeFace3dFull(),
   'f3-step': v => { ui.f3Play = false; face3dShowWeek((ui.f3Week == null ? 7 : ui.f3Week) + Number(v)); },
   'f3-play': () => {
@@ -8136,7 +8167,7 @@ function render() {
   if (routeChanged) motionIn(r.name + (r.id ? '/' + r.id : '')); // 画面を移ったときだけ、動きのある表示にする
   fillAds();
   if (r.name === 'charts') drawFace3d();
-  else if (r.name === 'log' && document.getElementById('face3d-log')) { const list = logDayList(), d = logFaceData(list[logDayIdx(list)]); bindLogDaySwipe(); drawFace3d({canvas:'face3d-log', load:'ld-load', tip:'', camZ:55, yawOnly:true, grid:true, gridLines:false, ready:st => { st.canvasId = 'face3d-log'; face3dShowLog(st, d); if (logDayIdx(list) < list.length - 1) { st.auto = false; st.yaw = 0; st.pitch = 0.05; st.dirty = true; } }}); }
+  else if (r.name === 'log' && document.getElementById('face3d-log')) { const list = logDayList(), d = logFaceData(list[logDayIdx(list)]); bindLogDaySwipe(); drawFace3d({canvas:'face3d-log', load:'ld-load', tip:'', camZ:55, yawOnly:true, noZoom:true, grid:true, gridLines:false, ready:st => { st.canvasId = 'face3d-log'; face3dShowLog(st, d); if (logDayIdx(list) < list.length - 1) { st.auto = false; st.yaw = 0; st.pitch = 0.05; st.dirty = true; } }}); }
   else if (r.name === 'home' && document.getElementById('face3d-home')) { const hd = homeFaceData(); drawFace3d({canvas:'face3d-home', load:'t3-load', tip:'t3-tip', camZ:55, yawOnly:true, viewOnly:true, minZ:30, grid:true, gridLines:false, unit:hd.mode === 'spots' ? '個' : 'flag', ready:st => face3dShowLog(st, hd)}); if (isPremium()) runAdvice(false); }
   else if (FACE3D.st) { FACE3D.st.stop = true; FACE3D.st = null; }
   if (r.name === 'stores') drawStoreMap(); else if (storeMap) { try { storeMap.remove(); } catch (e) {} storeMap = null; }
