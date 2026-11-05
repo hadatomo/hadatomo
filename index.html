@@ -3118,8 +3118,10 @@ async function netSearch(q) {
     const j = await res.json().catch(() => ({})); clearTimeout(tm);
     if (!res.ok || j.error) throw new Error(j.error || '商品を探せませんでした。');
     if (!ui.net || ui.net.q !== q) return;
-    ui.net = {q, mode, items:(Array.isArray(j.items) ? j.items : []).slice(0, 30)};
-  } catch (e) { if (ui.net && ui.net.q === q) ui.net = {q, err:e.name === 'AbortError' ? '時間がかかりすぎたため中止しました。' : 'インターネットの商品を探せませんでした。電波のよい場所で、もう一度お試しください。'}; }
+    const its = Array.isArray(j.items) ? j.items : [];
+    if (!its.length && Array.isArray(j.errors) && j.errors.length) throw new Error('busy');
+    ui.net = {q, mode, items:its.slice(0, 30)};
+  } catch (e) { if (ui.net && ui.net.q === q) ui.net = {q, mode, err:e.name === 'AbortError' ? '時間がかかりすぎたため中止しました。' : e.message === 'busy' ? 'お店のサイトが混み合っています。数秒待ってから、もう一度押してください。' : 'インターネットの商品を探せませんでした。電波のよい場所で、もう一度お試しください。'}; }
   netPaint();
 }
 function netPaint() { const b = document.getElementById('net-results'); if (b) b.innerHTML = netHtml(); }
@@ -3127,7 +3129,7 @@ function netHtml() {
   const n = ui.net; if (!n) return '';
   const head = `<div class="net-h"><b>${icon('search')}${n.mode === 'popular' ? `「${esc(n.q)}」の人気商品` : 'ネットの商品'}</b><span class="small muted">楽天市場・Yahoo!ショッピング${n.mode === 'popular' ? '（レビューの多い順）' : ''}</span></div>`;
   if (n.loading) return head + skelHtml(4, {dots:true, label:'商品を検索中'});
-  if (n.err) return head + `<p class="small muted">${esc(n.err)}</p>`;
+  if (n.err) return head + `<p class="small muted">${esc(n.err)}</p><button class="btn btn-ghost btn-sm" data-action="net-retry">もう一度探す</button>`;
   if (!n.items.length) return head + '<p class="small muted">見つかりませんでした。別の言葉で検索してください。</p>';
   const other = `<div class="net-other"><span class="small muted">ほかのサイトでも見る</span><a class="btn btn-ghost btn-sm" href="${esc(amazonUrl(n.mode === 'popular' ? n.q + ' ' + (/日焼け止め/.test(n.q) ? '' : '化粧品') : n.q, n.mode === 'popular'))}" target="_blank" rel="noopener sponsored">Amazon${n.mode === 'popular' ? 'の人気順' : 'で探す'} ›</a></div>`;
   return head + other + `<div class="net-list">${n.items.map((x, i) => {
@@ -3212,13 +3214,13 @@ async function recoRun(force) {
   const seen = new Set(), res = [];
   try {
     const needs = recoNeeds();
-    const lists = await Promise.all(needs.map(async n => {
+    const lists = []; for (const n of needs) lists.push(await (async () => {
       const ctrl = new AbortController(), tm = setTimeout(() => ctrl.abort(), 25000);
       try {
         const r = await fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', signal:ctrl.signal, headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify({q:n.q, mode:'popular'})});
         const j = await r.json().catch(() => ({})); return r.ok && Array.isArray(j.items) ? j.items : null;
       } catch (e) { return null; } finally { clearTimeout(tm); }
-    }));
+    })()); // 楽天は1秒に1回までなので、1つずつ順番に調べる
     if (lists.every(l => l === null)) throw new Error('net');
     needs.forEach((n, i) => {
       const items = (lists[i] || []).filter(x => x && x.url && x.name && Number(x.price) > 0 && (cap < 0 || Number(x.price) <= cap) && !mine.has(x.url) && !/セット|まとめ買い|\d+個セット|\d+本セット|詰め替え|つめかえ|業務用|お試し|サンプル/.test(x.name))
@@ -7904,6 +7906,7 @@ const actions = {
   },
   'fav': (id, el) => toggleFav(id, el),
   'net-add': i => netAdd(i),
+  'net-retry': () => { const q = ui.net && ui.net.q; if (q) { ui.net = null; netSearch(q); } },
   'reco-cap': v => recoSetCap(v),
   'reco-cap-save': () => { const f = document.getElementById('f_recoCap'), v = Math.round(Number(f && f.value) || 0); if (v < 300 || v > 100000) { toast('300〜100,000円の間で入力してください'); return; } dismissModal(); recoSetCap(v); },
   'reco-retry': () => { RECO.err = ''; recoRun(true); },
