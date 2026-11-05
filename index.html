@@ -628,6 +628,9 @@ details.acc-cmp{margin-top:14px}
 .wg-rec.on{color:var(--ink)}.wg-rec.on i{background:var(--green);border-color:var(--green)}
 .wg-rem{grid-column:1/-1;font-size:11.5px;font-weight:600;color:var(--green-d);text-decoration:none;border-top:1px solid var(--line);padding-top:6px}
 /* ホームの上の3つのタブ（Xのように画面の上にくっつく） */
+.home-pane{will-change:transform;touch-action:pan-y pinch-zoom}
+.home-pane.hp-in{animation:hpIn .32s cubic-bezier(.2,.8,.2,1)}
+@keyframes hpIn{from{transform:translateX(var(--hp-from,0));opacity:.4}to{transform:none;opacity:1}}
 .home-tabs{position:sticky;top:0;z-index:12;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:-20px -16px 14px;padding:0 8px;background:var(--bg);border-bottom:1px solid var(--line)}
 .ht-ind{position:absolute;left:0;bottom:-1px;width:48px;height:3px;border-radius:3px;background:var(--green-d);transition:transform .32s cubic-bezier(.3,.8,.25,1);pointer-events:none}
 .ht{display:flex;align-items:center;justify-content:center;gap:6px;min-height:46px;border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;position:relative;white-space:nowrap;padding:0 4px}
@@ -846,6 +849,10 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .hap-wrap > .btn{flex:1;width:100%}
 @media(min-width:640px){.hap-wrap{flex:none}.hap-wrap > .btn{width:auto}}
 .hap-ov{position:absolute;inset:0;z-index:2;cursor:pointer;-webkit-tap-highlight-color:transparent;border-radius:inherit}
+.seg-opt.hap-seg{position:relative}
+/* 設定で「説明文を表示しない」にしたとき */
+.no-help .hint,.no-help .opt-d,.no-help .cond-ai,.no-help .help-text{display:none!important}
+.seg-opt > .hap-ov{border-radius:inherit}
 .hap-ov input{position:absolute;left:50%;top:50%;width:1px;height:1px;margin:0;opacity:0.01;pointer-events:none}
 .cond-seg{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px}
 .cond-seg .seg-opt{min-width:0}
@@ -1823,6 +1830,7 @@ function normalize(d) {
   out.settings.sensitive = !!ds.sensitive; // 敏感肌かどうか
   out.settings.ageBand = AGE_BANDS.includes(ds.ageBand) ? ds.ageBand : ''; // 年代（任意）
   out.settings.gender = ['女性', '男性'].includes(ds.gender) ? ds.gender : ''; // 性別（3Dの顔の形に使う。任意）
+  out.settings.hideHelp = !!ds.hideHelp; // ボタン・入力欄の説明文を隠す（設定の「画面の表示」）
   out.settings.onboarded = !!ds.onboarded; // はじめの質問に答えた（またはあとでにした）
   const rs = ds.research || {}; // 研究への協力（任意・初めはオフ）
   out.settings.research = {on:!!rs.on && !!rs.adult, adult:!!rs.adult, cid:/^[0-9a-f-]{36}$/.test(rs.cid || '') ? rs.cid : '', lastSent:isValidYmd(rs.lastSent) ? rs.lastSent : '', lastHash:String(rs.lastHash || '').slice(0, 20)};
@@ -2126,6 +2134,28 @@ function hapticizeKeep(btn) {
   lb.addEventListener('click', e => e.stopPropagation());
   ip.addEventListener('change', () => { if (btn.disabled) return; hapticAt = Date.now(); try { if (typeof navigator.vibrate === 'function') navigator.vibrate(12); } catch (e) { /* 何もしない */ } btn.click(); });
 }
+// 選ぶボタン（肌の調子・食事の時間帯・並べ替えなど）：押したときに「コツッ」
+// ボタンの上に透明なスイッチを重ねる（iPhoneは指で押したスイッチだけが鳴るため）。スイッチが変わったら、下の選択肢を選ぶ
+function hapticizeSegs(root) {
+  $$('.seg-opt', root || document).forEach(opt => {
+    if (opt.classList.contains('hap-seg')) return;
+    const r = opt.querySelector('input[type="radio"],input[type="checkbox"]:not([switch])'); if (!r || r.disabled) return;
+    opt.classList.add('hap-seg');
+    const lb = document.createElement('label'); lb.className = 'hap-ov'; lb.setAttribute('aria-hidden', 'true');
+    const ip = document.createElement('input'); ip.type = 'checkbox'; ip.setAttribute('switch', ''); ip.tabIndex = -1;
+    lb.appendChild(ip); opt.appendChild(lb);
+    lb.addEventListener('click', e => e.stopPropagation());
+    ip.addEventListener('change', () => {
+      if (r.disabled) return;
+      hapticAt = Date.now(); try { if (typeof navigator.vibrate === 'function') navigator.vibrate(12); } catch (e) { /* 何もしない */ }
+      if (r.type === 'radio') { if (r.checked) return; r.checked = true; } else r.checked = !r.checked;
+      r.dispatchEvent(new Event('input', {bubbles:true})); r.dispatchEvent(new Event('change', {bubbles:true}));
+    });
+  });
+}
+// 画面やシートが描き直されたら、新しく出た選ぶボタンにも付ける
+let hapSegQueued = false;
+new MutationObserver(() => { if (hapSegQueued) return; hapSegQueued = true; requestAnimationFrame(() => { hapSegQueued = false; hapticizeSegs(); }); }).observe(document.documentElement, {childList:true, subtree:true});
 // 画面を開いている間、後ろのページが動かないように固定する（閉じたら元の位置に戻す）
 let lockedY = null;
 function lockScroll() { if (lockedY != null) return; lockedY = window.scrollY; document.body.style.top = `-${lockedY}px`; document.body.classList.add('no-scroll'); }
@@ -2608,9 +2638,10 @@ function viewHome() {
   const tab = HOME_TABS.some(x => x.k === ui.homeTab) ? ui.homeTab : 'today';
   const tabs = `<nav class="home-tabs" role="tablist" aria-label="ホームの表示">${HOME_TABS.map(x => `<button type="button" class="ht ${tab === x.k ? 'active' : ''}" role="tab" aria-selected="${tab === x.k}" data-action="home-tab" data-id="${x.k}">${icon(x.i)}<span>${x.l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
   // 3つのタブ：画面の上にくっついたまま、押すと中身だけ切り替わる
-  if (tab === 'today') { html = tabs + html + onboard + todayCard; }
-  else if (tab === 'care') { html = tabs + (loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '') + careCard; }
-  else { html = tabs + (loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '') + shortcuts; }
+  // 中身は .home-pane に入れる（横にスワイプしたとき、タブのバーは動かさずに中身だけ動かすため）
+  if (tab === 'today') { html = tabs + '<div class="home-pane">' + html + onboard + todayCard + '</div>'; }
+  else if (tab === 'care') { html = tabs + '<div class="home-pane">' + (loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '') + careCard + '</div>'; }
+  else { html = tabs + '<div class="home-pane">' + (loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '') + shortcuts + '</div>'; }
   html += adSlot('home');
   html += `<p class="small muted" style="margin-top:20px;text-align:center">スキンロードは、肌の状態やスキンケアを記録・管理し、自分に合ったケアを効率よく選ぶための肌サポートアプリです。病気の診断や、化粧品の効果の保証は行いません。</p>`;
   return html;
@@ -4542,11 +4573,11 @@ function openLogForm(id) {
   const usable = state.myProducts.filter(p => p.status === '使用中' || p.status === '一時停止' || d.usedProducts.includes(p.id));
   openModal({title: ex ? '肌の記録を編集' : '肌の記録', body: `<form id="log-form" novalidate><div class="form-grid">
     ${d.date ? `<input type="hidden" id="f_date" name="date" value="${esc(d.date)}">` : field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint: !ex && map[t] ? '今日の記録はすでにあります。別の日付を選ぶか、一覧から今日の記録を編集してください。' : ''})}
-    <div class="field face-ai"><span class="lbl">顔の写真で自動で記録<span class="opt">写真から今日の肌をAIが入れます</span></span><div class="meal-photo-top mpt-even">${isPremium()
+    <div class="field face-ai"><span class="lbl">顔の写真で自動で記録<span class="opt opt-d">写真から今日の肌をAIが入れます</span></span><div class="meal-photo-top mpt-even">${isPremium()
       ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="user" id="f_faceai" class="vh"></label>`
       : `<button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('image')}選ぶ</span><span class="prem-sub">${PREMIUM_NAME}</span></button><button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('camera')}撮る</span><span class="prem-sub">${PREMIUM_NAME}</span></button>`}</div><div id="faceai-info"></div></div>
     ${field('肌の調子', condSeg(d.condition) + `<p class="cond-ai ai-text" id="cond-ai">${ex ? '' : condAiNote(null)}</p>`, {name:'condition', required:true})}
-    <div class="field fp-field" id="fp-field"><div class="fp-bighead"><b>顔を押して記録</b><button type="button" class="icon-btn" data-fp-done aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button></div><span class="lbl fp-lbl">顔を押して記録<span class="opt">ニキビ選択＝ニキビ、肌質選択＝乾燥・テカリなどの状態</span></span>
+    <div class="field fp-field" id="fp-field"><div class="fp-bighead"><b>顔を押して記録</b><button type="button" class="icon-btn" data-fp-done aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button></div><span class="lbl fp-lbl">顔を押して記録<span class="opt opt-d">ニキビ選択＝ニキビ、肌質選択＝乾燥・テカリなどの状態</span></span>
       <div class="fp-mode" role="group" aria-label="選び方"><button type="button" class="on" data-fp-mode="tap" aria-pressed="true">ニキビ選択</button><button type="button" data-fp-mode="range" aria-pressed="false">肌質選択</button></div>
       <div class="fp-wrap"><div class="f3-stage fp-stage"><canvas id="face3d-form" aria-label="押して部位を選ぶ3Dの顔"></canvas><button type="button" class="fp-open" data-fp-open aria-label="顔を大きくして記録する"><i>⤢</i></button><div class="fp-zoom"><button type="button" class="icon-btn" data-fp-zoom="in" aria-label="拡大">＋</button><button type="button" class="icon-btn" data-fp-zoom="out" aria-label="縮小">−</button></div><div class="f3-load" id="fp-load"><span class="skel skel-face"></span></div></div>
       <div class="fp-panel" id="fp-panel"></div></div>
@@ -4554,7 +4585,7 @@ function openLogForm(id) {
       <p class="fp-gest">1本の指で回す／2本の指で広げると拡大。</p>
       <p class="hint" id="fp-hint">${FP_HINT_TAP}</p></div>
     <div class="fp-hidden" aria-hidden="true">
-    <div class="field" data-field="acneCount"><span class="lbl">ニキビ<span class="opt">数と状態</span></span>
+    <div class="field" data-field="acneCount"><span class="lbl">ニキビ<span class="opt opt-d">数と状態</span></span>
       <div class="counter"><button type="button" class="icon-btn" data-step="-1" aria-label="1つ減らす">−</button><input class="input" id="f_acneCount" name="acneCount" inputmode="numeric" value="${d.acneCount}" aria-label="ニキビの数"><button type="button" class="icon-btn" data-step="1" aria-label="1つ増やす">＋</button><span class="small muted">個</span></div>
       <div class="field-error" data-err="acneCount"></div>
 
@@ -4658,7 +4689,7 @@ function openLogForm(id) {
     if (pred) { const r = $(`input[name="condition"][value="${pred}"]`, form); if (r) r.checked = true; }
     if (note) note.textContent = condAiNote(pred);
   };
-  $$('input[name="condition"]', form).forEach(r => r.addEventListener('change', () => { condTouched = true; hapticTick(); const note = $('#cond-ai', form); if (note && condModel()) note.textContent = ''; }));
+  $$('input[name="condition"]', form).forEach(r => r.addEventListener('change', () => { condTouched = true; const note = $('#cond-ai', form); if (note && condModel()) note.textContent = ''; }));
   form.elements.date.addEventListener('change', condAuto);
   const fpPaint = () => { const st = FACE3D.st; if (st && st.canvasId === 'face3d-form') {
     face3dApply(st, {}, 1, 'areas'); // 肌の色を元に戻す（色はマス目と区切りで見せる）
@@ -6906,7 +6937,9 @@ function viewSettings() {
     ${researchCardHtml()}
     <div class="card"><div class="card-h"><h2>画面の表示</h2></div>
       <p class="small muted" style="margin-bottom:10px">暗い場所でも見やすい「ダーク」表示に切り替えられます。「自動」は、スマホ・パソコンの設定（ダークモード）に合わせます。</p>
-      <div class="chips">${[['auto','自動'],['light','ライト'],['dark','ダーク']].map(([k, l]) => `<button class="tab ${themePref() === k ? 'active' : ''}" data-action="theme" data-id="${k}">${l}</button>`).join('')}</div></div>
+      <div class="chips">${[['auto','自動'],['light','ライト'],['dark','ダーク']].map(([k, l]) => `<button class="tab ${themePref() === k ? 'active' : ''}" data-action="theme" data-id="${k}">${l}</button>`).join('')}</div>
+      <label class="check" style="margin-top:14px"><input type="checkbox" id="f_hideHelp" ${state.settings.hideHelp ? 'checked' : ''}> ボタンや入力欄の説明文を表示しない</label>
+      <p class="small muted" style="margin:4px 0 0">慣れてきたら、記録画面などの小さな説明文を隠して、すっきり表示できます。</p></div>
     <div class="card"><div class="card-h"><h2>記録のリマインダー</h2></div>
       <p class="small muted" style="margin-bottom:10px">毎日決まった時間に「肌を記録しよう」と通知が来るように、スマホ・パソコンのカレンダーに予定を追加できます。止めたいときは、カレンダーからその予定を削除してください。</p>
       <label class="lbl" for="f_remind_h">通知する時刻</label>
@@ -7105,7 +7138,7 @@ const actions = {
   },
   'install-app': async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (e) { /* 何もしない */ } installEvt = null; render(); },
   'go-back': () => goBack('#/home'),
-  'home-tab': k => { if (ui.homeTab === k) { window.scrollTo({top:0, behavior:'smooth'}); return; } ui.htFrom = ui.homeTab; ui.homeTab = k; try { sessionStorage.setItem('hadatomo_homeTab', k); } catch (e) { /* 何もしない */ } render(); window.scrollTo(0, 0); },
+  'home-tab': k => { if (ui.homeTab === k) { window.scrollTo({top:0, behavior:'smooth'}); return; } if (!ui.htSlide) { const a = HOME_TABS.findIndex(x => x.k === ui.homeTab), b = HOME_TABS.findIndex(x => x.k === k); ui.htSlide = b > a ? 1 : -1; } ui.htFrom = ui.homeTab; ui.homeTab = k; try { sessionStorage.setItem('hadatomo_homeTab', k); } catch (e) { /* 何もしない */ } render(); window.scrollTo(0, 0); },
   'f3-view': v => {
     const st = FACE3D.st; if (!st) return;
     const P = Math.PI, base = Math.round(st.yaw / (2 * P)) * 2 * P; // 今の向きから近い回り方で回る
@@ -7499,6 +7532,13 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'Escape') { acClose(); }
 });
 // 入力欄（フォーカスを保つため、結果部分だけを更新）
+// 説明文を隠す／表示する
+function applyHelpPref() { document.body.classList.toggle('no-help', !!(state.settings && state.settings.hideHelp)); }
+document.addEventListener('change', e => {
+  if (e.target.id !== 'f_hideHelp') return;
+  state.settings.hideHelp = e.target.checked; save(); applyHelpPref(); hapticSaved();
+  toast(e.target.checked ? '説明文を隠しました' : '説明文を表示します');
+});
 // 肌質・年代・敏感肌
 document.addEventListener('change', e => {
   const id = e.target.id; if (!['f_skinType', 'f_ageBand', 'f_sensitive', 'f_gender'].includes(id)) return;
@@ -7622,6 +7662,60 @@ function placeHomeTabInd() {
   ind.style.transition = 'none'; ind.style.transform = `translateX(${from}px)`; void ind.offsetWidth;
   ind.style.transition = ''; ind.style.transform = `translateX(${to}px)`;
 }
+// ホームを横にスワイプ：今日の記録 ⇄ ケアポイント ⇄ ショートカット
+// 指に合わせて中身が動き、十分に動かすか、すばやく払うと隣のタブへ。縦のスクロールが先に始まったら、横には動かさない
+(() => {
+  let x0 = null, y0 = 0, t0 = 0, lock = '', pane = null, dx = 0;
+  const idx = () => Math.max(0, HOME_TABS.findIndex(x => x.k === ui.homeTab));
+  const scrollsX = el => { for (let n = el; n && n !== document.body; n = n.parentElement) { if (n.scrollWidth > n.clientWidth + 2) { const ox = getComputedStyle(n).overflowX; if (ox === 'auto' || ox === 'scroll') return true; } } return false; };
+  window.addEventListener('touchstart', e => {
+    x0 = null; lock = '';
+    if (e.touches.length !== 1 || parseRoute().name !== 'home') return;
+    const tg = e.target;
+    if ($('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full')) return;
+    if (!tg.closest || !tg.closest('.home-pane') || tg.closest('input,textarea,select,.ld-cal,[data-noswipe]') || scrollsX(tg)) return;
+    pane = document.querySelector('.home-pane'); if (!pane) return;
+    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = performance.now(); dx = 0;
+  }, {passive:true});
+  window.addEventListener('touchmove', e => {
+    if (x0 == null) return;
+    if (e.touches.length !== 1) { x0 = null; if (lock === 'x') back(); return; }
+    const mx = e.touches[0].clientX - x0, my = e.touches[0].clientY - y0;
+    if (!lock) {
+      if (Math.abs(mx) < 10 && Math.abs(my) < 10) return;
+      lock = Math.abs(mx) > Math.abs(my) * 1.2 && !window.__ptrOn ? 'x' : 'y'; // 上に引っぱって更新が始まっていたら、横には動かさない
+      if (lock === 'y') { x0 = null; return; }
+      x0 = e.touches[0].clientX; // ここから動かす（はじめの10pxでカクッとしないように）
+      pane.style.transition = 'none';
+    }
+    e.preventDefault();
+    dx = e.touches[0].clientX - x0;
+    const i = idx(), edge = (dx > 0 && i === 0) || (dx < 0 && i === HOME_TABS.length - 1);
+    const v = edge ? dx / 3 : dx; // 端のタブでは、ゴムのように重くする
+    pane.style.transform = `translateX(${v.toFixed(1)}px)`; pane.style.opacity = String(1 - Math.min(0.35, Math.abs(v) / 900));
+  }, {passive:false});
+  const back = () => { if (!pane) return; pane.style.transition = 'transform .28s cubic-bezier(.2,.8,.2,1),opacity .28s'; pane.style.transform = ''; pane.style.opacity = ''; };
+  const end = () => {
+    if (x0 == null || lock !== 'x') { x0 = null; return; }
+    x0 = null; lock = '';
+    const i = idx(), w = window.innerWidth, fast = Math.abs(dx) > 30 && Math.abs(dx) / (performance.now() - t0) > 0.45;
+    const j = (dx < 0 ? i + 1 : i - 1);
+    if ((Math.abs(dx) > w * 0.22 || fast) && j >= 0 && j < HOME_TABS.length) {
+      hapticTick(); // 指を離したこの瞬間に「コツッ」
+      ui.htSlide = dx < 0 ? 1 : -1;
+      actions['home-tab'](HOME_TABS[j].k);
+    } else back();
+  };
+  window.addEventListener('touchend', end, {passive:true});
+  window.addEventListener('touchcancel', () => { if (lock === 'x') back(); x0 = null; lock = ''; }, {passive:true});
+})();
+// タブを切り替えたあと、新しい中身をスワイプした向きからすべり込ませる
+function slideHomePane() {
+  const dir = ui.htSlide; ui.htSlide = 0; if (!dir) return;
+  const p = document.querySelector('.home-pane'); if (!p) return;
+  p.style.setProperty('--hp-from', `${dir * 36}%`); p.classList.add('hp-in');
+  p.addEventListener('animationend', () => p.classList.remove('hp-in'), {once:true});
+}
 window.addEventListener('resize', () => { if (document.querySelector('.home-tabs')) { const i = document.querySelector('.ht-ind'); if (i) i.style.transition = 'none'; placeHomeTabInd(); } });
 // 左上：ホームでは「スキンロード」、肌の記録・マイ化粧品・商品検索・アカウントでは、その画面の名前を出す
 function setTopTitle(t) {
@@ -7633,6 +7727,7 @@ function setTopTitle(t) {
   const el = tb.firstElementChild; if (cur) { el.classList.add('tt-in'); }
 }
 function render() {
+  applyHelpPref();
   const r = parseRoute();
   if (r.name === 'new') { // ウィジェット・ショートカットから：記録の画面を直接開く
     const what = r.id; history.replaceState(null, '', '#/home'); render();
@@ -7668,7 +7763,7 @@ function render() {
     else stopMomentumTop();
   }
   navRestoreY = null;
-  if (r.name === 'home') placeHomeTabInd();
+  if (r.name === 'home') { placeHomeTabInd(); slideHomePane(); }
   hapticizeTargets();
   drawCharts();
   if (routeChanged) motionIn(r.name + (r.id ? '/' + r.id : '')); // 画面を移ったときだけ、動きのある表示にする
@@ -7739,7 +7834,7 @@ function ptrRepaint() {
   const arc = ptr.querySelector('.ptr-arc'), svg = ptr.querySelector('svg');
   const MAX = 170, GO = 78, HOLD = 60; // 引っぱれる最大・更新が始まる距離・更新中に保つ位置（px）
   const canVibrate = typeof navigator.vibrate === 'function';
-  let phase = 'idle', y0 = null, started = false, d = 0, raf = 0, touching = false, done = false, tickLater = false;
+  let ptrX0 = 0, phase = 'idle', y0 = null, started = false, d = 0, raf = 0, touching = false, done = false, tickLater = false;
   const setY = v => { d = v; page.style.transform = v > 0.25 ? `translate3d(0,${v.toFixed(2)}px,0)` : ''; };
   const drawPull = () => { // 引っぱった量に合わせて、輪が伸びて回る
     const k = Math.min(1, d / GO);
@@ -7770,7 +7865,7 @@ function ptrRepaint() {
   };
   window.addEventListener('touchstart', e => {
     if (phase !== 'idle' || e.touches.length !== 1 || window.scrollY > 0 || blocked(e.target)) { y0 = null; return; }
-    y0 = e.touches[0].clientY; started = false;
+    y0 = e.touches[0].clientY; ptrX0 = e.touches[0].clientX; started = false;
   }, {passive:true});
   window.addEventListener('touchmove', e => {
     if (y0 == null || (phase !== 'idle' && phase !== 'pulling' && !(phase === 'refreshing' && touching))) return;
@@ -7778,7 +7873,8 @@ function ptrRepaint() {
     if (!started) {
       // 一番上で、下向きに動かし始めた最初の1回から引き受ける（ブラウザのスクロールに取られて途中で止まらないように）
       if (dy <= 0 || window.scrollY > 0) { if (dy < 0) y0 = null; return; }
-      started = true; touching = true; phase = 'pulling'; ptr.classList.remove('spin', 'fade');
+      if (Math.abs(e.touches[0].clientX - ptrX0) > dy) { y0 = null; return; } // 横向きのスワイプ（ホームのタブ切り替え）は、更新にしない
+      started = true; touching = true; phase = 'pulling'; window.__ptrOn = true; ptr.classList.remove('spin', 'fade');
     }
     e.preventDefault();
     setY(dy > 0 ? rubber(dy) : 0);
@@ -7786,6 +7882,7 @@ function ptrRepaint() {
   }, {passive:false});
   const end = () => {
     if (y0 == null) return; y0 = null;
+    window.__ptrOn = false;
     if (!started) return; touching = false;
     if (tickLater) { tickLater = false; hapticTick(); } // 更新が始まっていれば、指を離したこの瞬間に「カチッ」
     if (phase === 'refreshing') {
