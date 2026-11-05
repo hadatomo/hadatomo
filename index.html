@@ -584,6 +584,14 @@ details.acc-cmp{margin-top:14px}
 .net-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px}
 .net-h b{display:flex;align-items:center;gap:6px;font-size:15px}
 .net-h svg{width:16px;height:16px;color:var(--green-d)}
+.pr-badge{font-size:10.5px;font-weight:700;color:var(--muted);border:1px solid var(--line2);border-radius:4px;padding:0 5px;line-height:17px}
+.mn-pick.reco-cap{margin:0 0 6px;flex-wrap:wrap;overflow:visible}
+.reco-box .net-btns{grid-column:1/-1;gap:8px;flex-wrap:nowrap}
+.reco-box .net-btns .btn{flex:1;justify-content:center}
+.reco-g{margin-top:10px}
+.reco-why{display:flex;gap:6px;align-items:flex-start;margin:0 0 2px;font-size:12.5px;font-weight:700;color:var(--green-d);line-height:1.5}
+.reco-why svg{flex:none;width:14px;height:14px;margin-top:3px}
+.reco-note{margin:12px 0 0;line-height:1.6}
 .net-list{display:flex;flex-direction:column}
 .net-item{display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px;padding:10px 0;border-top:1px solid var(--line);align-items:start}
 .net-item .xim,.net-noimg{width:64px;height:64px;border-radius:10px;background:#fff;border:1px solid var(--line);flex:none}
@@ -1926,6 +1934,7 @@ function normalize(d) {
   out.settings.sensitive = !!ds.sensitive; // 敏感肌かどうか
   out.settings.ageBand = ds.ageBand === '18〜19歳' ? '10代' : AGE_BANDS.includes(ds.ageBand) ? ds.ageBand : ''; // 以前の「18〜19歳」は「10代」にまとめる // 年代（任意）
   out.settings.gender = ['女性', '男性'].includes(ds.gender) ? ds.gender : ''; // 性別（3Dの顔の形に使う。任意）
+  out.settings.recoBudget = num(ds.recoBudget) === -1 ? -1 : clamp(Math.round(num(ds.recoBudget) || 0), 0, 100000); // あなたに合う化粧品：1つあたりの上限金額（0：未設定、-1：上限なし）
   out.settings.hideHelp = !!ds.hideHelp; // ボタン・入力欄の説明文を隠す（設定の「画面の表示」）
   out.settings.onboarded = !!ds.onboarded; // はじめの質問に答えた（またはあとでにした）
   const rs = ds.research || {}; // 研究への協力（任意・初めはオフ）
@@ -2696,7 +2705,7 @@ function viewHome() {
   const todayCard = `<div class="card"><div class="card-h"><h2>今日の肌記録</h2>${L ? `<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(L.id)}">編集</button>` : ''}</div>
       <div class="t3-grid">${side}<div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div></div>
       ${lifeLine}</div>`;
-  const careCard = `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div><div class="card"><div class="menu-box" id="menu-box">${menuHtml()}</div></div>`;
+  const careCard = `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div><div class="card"><div class="reco-box" id="reco-box">${recoHtml()}</div></div><div class="card"><div class="menu-box" id="menu-box">${menuHtml()}</div></div>`;
 
   let activeCard;
   if (active.length) {
@@ -3099,6 +3108,94 @@ function netAdd(i) {
   const x = ui.net && ui.net.items && ui.net.items[Number(i)]; if (!x) return;
   const p = netToCat(x, ui.net.items); if (!p) return;
   hapticTick(); openMyForm(null, p.id);
+}
+// ===== あなたに合う化粧品（1つあたりの上限金額は、その人が決める） =====
+// 肌悩み・肌質・最近の記録から「探す成分」を決め、楽天・Yahoo!のレビューの多い商品から上限金額以内のものを出す（AIは使わない）
+const RECO_BUDGETS = [1000, 2000, 3000, 5000];
+const RECO_KEY = 'nakakaramo_reco';
+let RECO = {busy:false, err:'', res:null};
+function recoNeeds() {
+  const st = state.settings, c = st.concerns || [], since = addDays(todayStr(), -14);
+  const logs = state.skinLogs.filter(l => l.date >= since), avg = k => logs.length ? logs.reduce((s, l) => s + (Number(l[k]) || 0), 0) / logs.length : 0;
+  const acne = logs.reduce((s, l) => s + (Number(l.acneCount) || 0), 0);
+  const sens = !!st.sensitive, out = [];
+  const add = (score, key, why, q) => { if (score > 0 && !out.some(x => x.key === key)) out.push({score, key, why, q}); };
+  const dry = (c.includes('乾燥') ? 2 : 0) + (st.skinType === '乾燥肌' ? 1.5 : 0) + (avg('dryness') >= 2 ? 1.5 : 0);
+  const oil = (c.includes('皮脂・テカリ') ? 2 : 0) + (c.includes('毛穴') ? 1.5 : 0) + (st.skinType === '脂性肌' ? 1 : 0) + (avg('oil') >= 2 ? 1.5 : 0);
+  const acn = (c.includes('ニキビ') ? 2.5 : 0) + (acne >= 3 ? 1.5 : 0);
+  const red = (c.includes('赤み') ? 2 : 0) + (c.includes('肌あれ') ? 2 : 0) + (sens ? 1 : 0) + (avg('redness') >= 2 ? 1.5 : 0);
+  add(dry, 'dry', `${c.includes('乾燥') || st.skinType === '乾燥肌' ? '乾燥が気になる' : '最近の記録で乾燥が多い'}ので、保湿成分のセラミド入り`, 'セラミド 化粧水');
+  add(acn, 'acne', `ニキビ${acne >= 3 ? `（この2週間で${acne}個の記録）` : ''}が気になるので、薬用（医薬部外品）タイプ`, '薬用 ニキビ 化粧水');
+  add(oil, 'oil', `${c.includes('毛穴') ? '毛穴' : '皮脂・テカリ'}が気になるので、ナイアシンアミド入り`, 'ナイアシンアミド 美容液');
+  add(red, 'calm', `${c.includes('赤み') || avg('redness') >= 2 ? '赤みが気になる' : c.includes('肌あれ') ? '肌あれが気になる' : '敏感肌な'}ので、ツボクサエキス（CICA）入りのやさしいもの`, 'シカ 化粧水 敏感肌');
+  add(c.includes('くすみ') ? 2 : 0, 'dull', 'くすみが気になるので、ビタミンC誘導体入り', 'ビタミンC誘導体 美容液');
+  add(c.includes('ハリ・エイジング') ? 2 : 0, 'age', sens ? 'ハリが気になり、敏感肌なので、刺激の少ないペプチド入り' : 'ハリが気になるので、レチノール入り', sens ? 'ペプチド 美容液' : 'レチノール 美容液');
+  out.sort((a, b) => b.score - a.score);
+  if (!out.length) out.push({key:'base', why:`${st.skinType || 'あなたの肌'}の毎日のうるおいケアに`, q:sens ? '敏感肌 保湿 化粧水' : '保湿 化粧水'});
+  const top = out.slice(0, 3);
+  if (top.length < 3) top.push({key:'uv', why:'どの肌悩みにも、毎日の紫外線対策が基本', q:sens ? '日焼け止め 敏感肌' : '日焼け止め 顔'});
+  return top;
+}
+function recoCap() { return Number(state.settings.recoBudget) || 0; } // 0：未設定　-1：上限なし
+function recoSig() { return todayStr() + '|' + recoCap() + '|' + recoNeeds().map(n => n.q).join(','); }
+function recoCache() { try { const c = JSON.parse(localStorage.getItem(RECO_KEY) || 'null'); return c && c.sig === recoSig() ? c.res : null; } catch (e) { return null; } }
+async function recoRun(force) {
+  if (!recoCap() || RECO.busy) return;
+  const sig = recoSig(); if (!force) { const c = recoCache(); if (c) { RECO.res = c; recoPaint(); return; } }
+  RECO.busy = true; RECO.err = ''; recoPaint();
+  const cap = recoCap(), mine = new Set(state.myProducts.map(m => { const c = state.catalog.find(x => x.id === m.catalogId); return c && c.shopUrl; }).filter(Boolean));
+  const seen = new Set(), res = [];
+  try {
+    const needs = recoNeeds();
+    const lists = await Promise.all(needs.map(async n => {
+      const ctrl = new AbortController(), tm = setTimeout(() => ctrl.abort(), 25000);
+      try {
+        const r = await fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', signal:ctrl.signal, headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify({q:n.q, mode:'popular'})});
+        const j = await r.json().catch(() => ({})); return r.ok && Array.isArray(j.items) ? j.items : null;
+      } catch (e) { return null; } finally { clearTimeout(tm); }
+    }));
+    if (lists.every(l => l === null)) throw new Error('net');
+    needs.forEach((n, i) => {
+      const items = (lists[i] || []).filter(x => x && x.url && x.name && Number(x.price) > 0 && (cap < 0 || Number(x.price) <= cap) && !mine.has(x.url) && !/セット|まとめ買い|\d+個セット|\d+本セット|詰め替え|つめかえ|業務用|お試し|サンプル/.test(x.name))
+        .filter(x => { const k = normName(x.name).slice(0, 24); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 2);
+      res.push({key:n.key, why:n.why, q:n.q, items:items.map(x => ({name:x.name, price:Number(x.price), url:x.url, image:x.image || '', site:x.site || '', shop:x.shop || '', shipping:x.shipping || '', jan:x.jan || '', ad:!!x.ad}))});
+    });
+    RECO.res = res;
+    try { localStorage.setItem(RECO_KEY, JSON.stringify({sig, res})); } catch (e) {}
+  } catch (e) { RECO.err = '商品を探せませんでした。電波のよい場所で、もう一度お試しください。'; }
+  RECO.busy = false; recoPaint();
+}
+function recoPaint() { const b = document.getElementById('reco-box'); if (b) b.innerHTML = recoHtml(); }
+function recoHtml() {
+  const cap = recoCap();
+  const chips = `<div class="mn-pick reco-cap" role="radiogroup" aria-label="1つあたりの上限金額">${RECO_BUDGETS.map(v => `<button type="button" class="mn-pb ${cap === v ? 'on' : ''}" role="radio" aria-checked="${cap === v}" data-action="reco-cap" data-id="${v}">〜${v.toLocaleString()}円</button>`).join('')}<button type="button" class="mn-pb ${cap === -1 ? 'on' : ''}" role="radio" aria-checked="${cap === -1}" data-action="reco-cap" data-id="-1">上限なし</button><button type="button" class="mn-pb ${cap > 0 && !RECO_BUDGETS.includes(cap) ? 'on' : ''}" data-action="reco-cap" data-id="custom">${cap > 0 && !RECO_BUDGETS.includes(cap) ? `〜${cap.toLocaleString()}円` : '金額を入力'}</button></div>`;
+  const head = `<div class="card-h"><h3 style="margin:0">あなたに合う化粧品</h3><span class="pr-badge">PR</span></div>
+    <p class="small muted" style="margin:0 0 8px">肌悩みと最近の記録から、1つあたりの上限金額以内で、レビューの多い商品を選びました。</p>${chips}`;
+  const foot = `<p class="small muted reco-note">※楽天市場・Yahoo!ショッピングの商品です。リンクから購入されると、運営者に紹介料が入ることがあります。価格は調べた時点のもので、効果を約束するものではありません。肌に合わないときは使用をやめてください。</p>`;
+  if (!cap) return head + '<p class="small" style="margin:4px 0 0">まず、1つあたりいくらまでなら買えるかを選んでください。</p>';
+  if (RECO.busy) return head + skelHtml(3, {dots:true, label:'あなたに合う商品を探し中'});
+  if (RECO.err) return head + `<p class="small muted">${esc(RECO.err)}</p><button class="btn btn-ghost btn-sm" data-action="reco-retry">もう一度探す</button>`;
+  const res = RECO.res || recoCache(); if (!res) { setTimeout(() => recoRun(false), 0); return head + skelHtml(3, {dots:true, label:'あなたに合う商品を探し中'}); }
+  RECO.res = res;
+  const body = res.map((g, gi) => `<div class="reco-g"><p class="reco-why">${icon('spark')}${esc(g.why)}</p>${g.items.length ? `<div class="net-list">${g.items.map((x, i) => `<div class="net-item">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
+      <span class="net-t"><b>${esc(truncate(x.name, 60))}</b><small>${esc(x.site)}${x.shop ? '・' + esc(truncate(x.shop, 18)) : ''}</small><em>${yen(x.price)}${x.shipping === 'included' ? '<span class="small muted">（送料込）</span>' : ''}</em></span>
+      <span class="net-btns"><a class="btn btn-primary btn-sm" href="${esc(x.url)}" target="_blank" rel="noopener sponsored">商品を見る</a><button class="btn btn-ghost btn-sm" data-action="reco-add" data-id="${gi}:${i}">${icon('plus')}マイ化粧品に登録</button></span></div>`).join('')}</div>`
+    : `<p class="small muted" style="margin:2px 0 0">${cap > 0 ? `${yen(cap)}以内の` : ''}商品が見つかりませんでした。${cap > 0 ? '上限金額を上げると見つかるかもしれません。' : ''}</p>`}</div>`).join('');
+  return head + body + foot + '<p class="credit small muted">Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p>';
+}
+function recoAdd(id) {
+  const [gi, i] = String(id).split(':').map(Number), g = RECO.res && RECO.res[gi], x = g && g.items[i]; if (!x) return;
+  const p = netToCat(x, g.items); if (!p) return;
+  hapticTick(); openMyForm(null, p.id);
+}
+function recoSetCap(v) {
+  if (v === 'custom') {
+    const cur = recoCap() > 0 ? recoCap() : '';
+    openModal({title:'1つあたりの上限金額', dismissable:true, body:`<div class="field"><label class="lbl" for="f_recoCap">いくらまで（円）</label><input class="input" id="f_recoCap" type="number" inputmode="numeric" min="300" max="100000" step="100" value="${cur}" placeholder="例：1500"></div>`,
+      footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">やめる</button><button type="button" class="btn btn-primary" data-action="reco-cap-save">決定</button>`});
+    setTimeout(() => { const f = document.getElementById('f_recoCap'); if (f) f.focus(); }, 50); return;
+  }
+  state.settings.recoBudget = Number(v); save(); switchTick(); RECO.res = null; RECO.err = ''; recoPaint(); recoRun(false);
 }
 function searchActiveFilters() {
   const a = [];
@@ -7644,6 +7741,10 @@ const actions = {
   },
   'fav': (id, el) => toggleFav(id, el),
   'net-add': i => netAdd(i),
+  'reco-cap': v => recoSetCap(v),
+  'reco-cap-save': () => { const f = document.getElementById('f_recoCap'), v = Math.round(Number(f && f.value) || 0); if (v < 300 || v > 100000) { toast('300〜100,000円の間で入力してください'); return; } dismissModal(); recoSetCap(v); },
+  'reco-retry': () => { RECO.err = ''; recoRun(true); },
+  'reco-add': id => recoAdd(id),
   'flt-sheet': () => openFilterSheet(),
   'research-on': async () => {
     const ad = document.getElementById('f_adult');
