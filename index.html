@@ -142,7 +142,7 @@ button{font-family:inherit}
 @keyframes ttIn{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.tt-in{animation:none}}
 .wordmark small{display:block;font-family:var(--font);font-size:10px;letter-spacing:.08em;color:var(--muted);margin-top:2px}
-main{max-width:1100px;margin:0 auto;padding:20px 16px calc(110px + env(safe-area-inset-bottom))}
+main{max-width:1100px;margin:0 auto;padding:20px 16px calc(150px + env(safe-area-inset-bottom))} /* 一番下にも余白：最後のカードが下のバーにくっつかないように */
 .bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
 .bn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 0 7px;font-size:10.5px;color:var(--muted);text-decoration:none;background:none;border:0;cursor:pointer;min-width:0;white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .bn-item span{max-width:100%;overflow:hidden;text-overflow:clip}
@@ -612,6 +612,29 @@ details.acc-cmp{margin-top:14px}
 .sbar-top .sbar-f{min-height:54px;width:54px;padding:0;border-radius:50%;justify-content:center}
 .top-actions{display:flex;gap:8px;margin:0 0 12px}
 .my-add{width:100%;justify-content:center}
+/* ウィジェットのプレビュー */
+.wg-row{display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;padding-bottom:2px}
+.wg{flex:none;border-radius:22px;background:var(--surface);box-shadow:0 2px 10px rgba(0,0,0,.08);border:1px solid var(--line);color:var(--ink);text-decoration:none;padding:12px}
+.wg-s{width:132px;height:132px;display:flex;flex-direction:column}
+.wg-m{width:min(100%,340px);min-height:132px;display:grid;grid-template-columns:1fr 1.5fr;gap:4px 12px}
+.wg-mc{display:flex;flex-direction:column;min-width:0}
+.wg-h{font-size:11px;font-weight:700;color:var(--green-d);letter-spacing:.04em}
+.wg-score{font-size:38px;line-height:1.1;font-weight:700;margin-top:6px}
+.wg-l{font-size:12.5px;font-weight:600;color:var(--ink);text-decoration:none}
+.wg-f{font-size:11px;color:var(--muted);margin-top:auto}
+.wg-recs{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:6px 0}
+.wg-rec{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);text-decoration:none}
+.wg-rec i{width:9px;height:9px;border-radius:50%;border:1.5px solid var(--line2)}
+.wg-rec.on{color:var(--ink)}.wg-rec.on i{background:var(--green);border-color:var(--green)}
+.wg-rem{grid-column:1/-1;font-size:11.5px;font-weight:600;color:var(--green-d);text-decoration:none;border-top:1px solid var(--line);padding-top:6px}
+/* ホームの上の3つのタブ（Xのように画面の上にくっつく） */
+.home-tabs{position:sticky;top:0;z-index:12;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:-4px -16px 14px;padding:0 8px;background:var(--bg);border-bottom:1px solid var(--line)}
+.ht{display:flex;align-items:center;justify-content:center;gap:6px;min-height:46px;border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;position:relative;white-space:nowrap;padding:0 4px}
+.ht svg{width:17px;height:17px;flex:none}
+.ht.active{color:var(--ink)}
+.ht.active::after{content:"";position:absolute;left:50%;bottom:-1px;width:48px;margin-left:-24px;height:3px;border-radius:3px;background:var(--green-d)}
+@media (max-width:360px){.ht span{font-size:12px}.ht svg{display:none}}
+@media (min-width:900px){.home-tabs{margin:0 0 16px;border-radius:14px;border:1px solid var(--line)}}
 .my-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 14px}
 .my-f{justify-content:center;gap:6px;padding-left:6px;padding-right:6px;white-space:nowrap}
 .my-f span{font-size:11.5px;font-weight:700;color:var(--muted)}
@@ -750,7 +773,7 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .food-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
 .food-list:empty{display:none}
 .food-row{display:grid;grid-template-columns:auto auto minmax(0,1fr) 28px;grid-template-areas:"n n n x" "q k . x";align-items:center;gap:6px 10px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
-.food-row .fr-n{grid-area:n}.food-row .fr-q{grid-area:q;width:auto;min-width:112px}.food-row .fr-k{grid-area:k}.food-row .chip-x{grid-area:x;align-self:center}
+.food-row .fr-n{grid-area:n}.fr-src{display:block;font-size:11px;color:var(--muted);margin-top:2px}.food-row .fr-q{grid-area:q;width:auto;min-width:112px}.food-row .fr-k{grid-area:k}.food-row .chip-x{grid-area:x;align-self:center}
 .fr-n{font-size:13px;line-height:1.35;min-width:0;overflow-wrap:anywhere}
 .fr-q{min-height:36px;font-size:13px;padding:4px 24px 4px 8px}
 .fr-k{font-size:11.5px;color:var(--muted);white-space:nowrap}
@@ -761,6 +784,7 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .ai-basis{display:inline-block;font-size:10.5px;font-weight:700;border-radius:999px;padding:1px 7px;margin-left:2px;vertical-align:1px}
 .ai-basis.b-l,.ai-basis.b-p{background:#E3F0E6;color:var(--green-d)}
 .ai-basis.b-e{background:var(--surface2);color:var(--muted)}
+.ai-basis.b-n{background:#FBE9E4;color:#B04A32}
 .meal-photo-top.mpt-even{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 .meal-photo-top>.mpt-locked{flex-direction:column;min-height:52px;border-radius:999px;padding:4px 12px;gap:0}
 .mpt-blk.meal-photo-top>.mpt-locked{min-height:44px}
@@ -1528,6 +1552,8 @@ const ICONS = {
   gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1 7 17M17 7l2.1-2.1"/>',
   menu:'<path d="M4 7h16M4 12h16M4 17h16"/>',
   plus:'<path d="M12 5v14M5 12h14"/>',
+  spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.7 1.8 1.8.7-1.8.7L19 21l-.7-1.8-1.8-.7 1.8-.7z"/>',
+  grid:'<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>',
   flask:'<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 15h9"/>',
   book:'<path d="M4 4h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z"/><path d="M20 4h-6a3 3 0 0 0-1 .2"/><path d="M20 4v14h-7"/>',
   pin:'<path d="M12 21s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/>',
@@ -1713,8 +1739,22 @@ function normOffer(o) {
 function normFood(x) {
   const r = (v, max) => Math.round(clamp(num(v), 0, max) * 10) / 10;
   return {id:String(x.id || uid()), meal:FOOD_MEAL_KEYS.includes(x.meal) ? x.meal : 'snack', name:String(x.name).slice(0, 40), qty:clamp(num(x.qty, 1), 0.1, 10),
-    kcal:r(x.kcal, 5000), p:r(x.p, 500), f:r(x.f, 500), c:r(x.c, 1000), veg:r(x.veg, 2000)};
+    kcal:r(x.kcal, 5000), p:r(x.p, 500), f:r(x.f, 500), c:r(x.c, 1000), veg:r(x.veg, 2000),
+    ...(x.salt != null && x.salt !== '' ? {salt:r(x.salt, 100)} : {}),
+    ...(['表示', '公式', '推定'].includes(x.basis) ? {basis:x.basis} : {}),
+    ...(x.unit ? {unit:String(x.unit).slice(0, 40)} : {}),
+    ...(x.src ? {src:String(x.src).slice(0, 80)} : {}),
+    ...(/^https?:\/\//.test(String(x.srcUrl || '')) ? {srcUrl:String(x.srcUrl).slice(0, 300)} : {}),
+    ...(isValidYmd(x.checked || '') ? {checked:x.checked} : {})};
 }
+// 写真の読み取り結果（1品）を、記録する食べ物の形にする。「確認できません」のもの（数字がない）は null を返す
+function aiFoodToRec(x, meal) {
+  if (x.basis === '確認できません' || x.kcal == null) return null;
+  return {id:uid(), meal, qty:1, name:(x.name + (x.amount && x.basis === '推定' ? `（${x.amount}）` : '')).slice(0, 40), kcal:x.kcal, p:x.p, f:x.f, c:x.c, veg:x.veg || 0, salt:x.salt,
+    basis:x.basis, unit:x.unit || '', src:x.source || '', srcUrl:x.sourceUrl || '', checked:x.checkedAt || ''};
+}
+const AI_BASIS_LABEL = {表示:'パッケージの表示', 公式:'メーカー公表', 推定:'目安（料理）', '確認できません':'確認できません'};
+const aiBasisTag = x => x.basis ? ` <span class="ai-basis b-${({表示:'l', 公式:'p', 推定:'e', '確認できません':'n'})[x.basis] || 'e'}">${esc(AI_BASIS_LABEL[x.basis] || x.basis)}</span>` : '';
 function normalize(d) {
   const samples = Object.fromEntries(sampleCatalog().map(s => [s.id, s]));
   const out = {version:2, catalog:[], myProducts:[], skinLogs:[], lifeLogs:[], customFoods:[], settings:{monthlyBudget:0}};
@@ -1795,8 +1835,34 @@ function load() {
 }
 function save() {
   if (!storageOK) return false;
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); return true; }
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); widgetSoon(); return true; }
   catch (e) { toast('保存できませんでした。容量が不足している可能性があります（写真を減らしてください）。', 'error'); return false; }
+}
+// ---------- ウィジェット（スマホのホーム画面に置く小さな表示）用のデータ ----------
+// Web版でできること：今日の状態をまとめたデータを作り、保存のたびに更新する（下の widgetData）。設定にプレビューを出す
+// アプリ版で必要なこと：このデータを、iPhoneはWidgetKit（App Groupの共有保存）、AndroidはApp Widgets（SharedPreferences）へ渡して表示する
+//   → アプリの中から window.HadatomoNative.widget.update(データ) が用意されていれば、保存のたびに自動で渡す
+// 写真・メモ・商品名・体重などの個人的な内容は入れない（数字と「記録したかどうか」だけ）
+const WIDGET_LINKS = {skin:'#/new/skin', meal:'#/new/meal', sleep:'#/new/sleep', exercise:'#/new/exercise', home:'#/home'};
+function widgetData() {
+  const t = todayStr(), L = state.skinLogs.find(l => l.date === t), life = state.lifeLogs.find(l => l.date === t);
+  const foods = life ? (life.foods || []) : [], tot = nutTotals(foods), g = lifeGoals();
+  const done = {skin:!!L, meal:!!(foods.length || (life && MEALS.some(m => life.meals && life.meals[m.k] && life.meals[m.k].ate))), sleep:!!(life && life.bed && life.wake), exercise:!!(life && (life.exRecorded || (life.exercise || []).length))};
+  const n = Object.values(done).filter(Boolean).length;
+  const next = !done.skin ? {text:'今日の肌をまだ記録していません', link:WIDGET_LINKS.skin} : !done.meal ? {text:'食事を記録しましょう', link:WIDGET_LINKS.meal} : !done.sleep ? {text:'睡眠を記録しましょう', link:WIDGET_LINKS.sleep} : {text:'今日の記録はばっちりです', link:WIDGET_LINKS.home};
+  return {v:1, date:t, updatedAt:new Date().toISOString(),
+    skin:{recorded:!!L, score:L ? L.condition * 20 : null, label:L ? COND_LABELS[L.condition] : null, color:L ? COND_COLORS[L.condition] : null}, // 肌スコア：肌の調子（1〜5）×20
+    records:done, recordCount:n, recordTotal:4,
+    nutrition:{kcal:Math.round(tot.kcal), protein:Math.round(tot.p), proteinGoal:g.protein, salt:Math.round(tot.salt * 10) / 10},
+    skincare:{recorded:!!(L && L.usageRecorded), used:L && L.usageRecorded ? L.usedProducts.length : 0, active:state.myProducts.filter(p => p.status === '使用中').length},
+    reminder:next, links:WIDGET_LINKS};
+}
+let widgetTimer = 0;
+function widgetSoon() { clearTimeout(widgetTimer); widgetTimer = setTimeout(widgetSync, 300); }
+function widgetSync() {
+  let d; try { d = widgetData(); } catch (e) { return; }
+  try { localStorage.setItem('hadatomo_widget', JSON.stringify(d)); } catch (e) { /* 何もしない */ }
+  try { const n = window.HadatomoNative; if (n && n.widget && typeof n.widget.update === 'function') n.widget.update(d); } catch (e) { /* アプリ版でないときは何もしない */ }
 }
 let state = load();
 if (storageOK) save(); // 第1版のデータを新しい形式で保存し直す
@@ -1879,7 +1945,7 @@ function sleepMin(l) {
   return d;
 }
 const fmtHM = m => m == null ? '記録なし' : `${Math.floor(m/60)}時間${Math.round(m%60)}分`;
-const nutTotals = foods => foods.reduce((a, x) => { ['kcal','p','f','c','veg'].forEach(k => a[k] += x[k] * x.qty); return a; }, {kcal:0, p:0, f:0, c:0, veg:0});
+const nutTotals = foods => foods.reduce((a, x) => { ['kcal','p','f','c','veg','salt'].forEach(k => a[k] += (x[k] || 0) * x.qty); return a; }, {kcal:0, p:0, f:0, c:0, veg:0, salt:0});
 const nutLine = t => `${Math.round(t.kcal).toLocaleString()}kcal／たんぱく質 ${Math.round(t.p)}g／脂質 ${Math.round(t.f)}g／炭水化物 ${Math.round(t.c)}g／野菜 ${Math.round(t.veg)}g`;
 const exTotal = l => l.exercise.reduce((a, e) => a + e.minutes, 0);
 const fmtMin = m => m >= 60 ? `${Math.floor(m/60)}時間${m % 60 ? (m % 60) + '分' : ''}` : `${m}分`;
@@ -1983,9 +2049,16 @@ function hapticTick() {
   try { if (typeof navigator.vibrate === 'function' && navigator.vibrate(12)) return; } catch (e) { /* 次の方法へ */ }
   switchTick();
 }
+// 記録・保存・登録が「うまくいったとき」だけ鳴らす、短く控えめなバイブ（続けて操作しても0.3秒に1回まで）
+// Android：短い振動／iPhone：スイッチの「コツッ」1回／どちらにも対応していない端末：何もしない
+function hapticSaved() {
+  const now = Date.now(); if (now - hapticAt < 300) return; hapticAt = now;
+  try { if (typeof navigator.vibrate === 'function' && navigator.vibrate(15)) return; } catch (e) { /* 次の方法へ */ }
+  switchTick();
+}
 function toast(msg, type='') {
-  // 保存・記録・追加できたときはブルッと知らせる
-  if (type !== 'error' && /保存しました|記録しました|追加しました|登録しました/.test(msg)) haptic(type === 'undo' ? 20 : 35);
+  // 保存・記録・追加できたときは軽く知らせる（エラーのときは鳴らさない）
+  if (type !== 'error' && /保存しました|記録しました|追加しました|登録しました/.test(msg)) hapticSaved();
   if (type !== 'error') return; // 「保存しました」などのお知らせは出さない（見づらいため）。エラーだけ表示する
   const el = document.createElement('div');
   el.className = 'toast ' + type;
@@ -2019,28 +2092,11 @@ function hapticize(btn) {
   const ip = document.createElement('input'); ip.type = 'checkbox'; ip.setAttribute('switch', ''); ip.tabIndex = -1;
   lb.appendChild(ip); wrap.appendChild(lb);
   lb.addEventListener('click', e => e.stopPropagation());
-  ip.addEventListener('change', () => { if (btn.disabled) return; hapticStrong(true); btn.click(); }); // 指で押した1回目に続けて、さらに2回鳴らして強めにする
+  // 入力が足りない（保存できない）ときは、スイッチを通さずにボタンを押す → バイブは鳴らない
+  lb.addEventListener('pointerdown', () => { lb.style.pointerEvents = btn.form && !btn.form.checkValidity() ? 'none' : ''; setTimeout(() => { lb.style.pointerEvents = ''; }, 600); });
+  ip.addEventListener('change', () => { if (btn.disabled) return; hapticAt = Date.now(); btn.click(); }); // 指で押したスイッチの「コツッ」1回だけ（短く控えめ）
 }
-// 大事なボタン（濃い緑のボタン）にも、保存と同じバイブを付ける。
-// まわりの並び方がくずれないように、ボタンの置き場所・幅をそのまま包む箱に写す
-function hapticizeKeep(btn) {
-  if (!btn || !btn.parentNode || btn.closest('.hap-wrap,.hap-keep') || btn.tagName === 'LABEL' || btn.disabled) return;
-  const cs = getComputedStyle(btn), ps = getComputedStyle(btn.parentNode), pw = btn.parentNode.clientWidth - parseFloat(ps.paddingLeft) - parseFloat(ps.paddingRight), full = pw > 0 && btn.offsetWidth >= pw - 2;
-  const wrap = document.createElement('span'); wrap.className = 'hap-keep';
-  wrap.style.gridColumn = cs.gridColumn; wrap.style.gridRow = cs.gridRow;
-  if (full) wrap.style.width = '100%';
-  if (cs.flexGrow !== '0') wrap.style.flexGrow = cs.flexGrow;
-  if (btn.style.marginTop) { wrap.style.marginTop = btn.style.marginTop; btn.style.marginTop = '0'; }
-  btn.parentNode.insertBefore(wrap, btn); wrap.appendChild(btn);
-  if (full) btn.style.width = '100%';
-  const lb = document.createElement('label'); lb.className = 'hap-ov'; lb.setAttribute('aria-hidden', 'true');
-  const ip = document.createElement('input'); ip.type = 'checkbox'; ip.setAttribute('switch', ''); ip.tabIndex = -1;
-  lb.appendChild(ip); wrap.appendChild(lb);
-  lb.addEventListener('click', e => e.stopPropagation());
-  ip.addEventListener('change', () => { if (btn.disabled) return; hapticStrong(true); btn.click(); });
-}
-const hapticizeAll = root => (root || document).querySelectorAll('.btn-primary').forEach(b => { if (b.offsetParent) hapticizeKeep(b); });
-{ let hz = 0; new MutationObserver(() => { cancelAnimationFrame(hz); hz = requestAnimationFrame(() => hapticizeAll()); }).observe(document.body, {childList:true, subtree:true}); }
+
 // 画面を開いている間、後ろのページが動かないように固定する（閉じたら元の位置に戻す）
 let lockedY = null;
 function lockScroll() { if (lockedY != null) return; lockedY = window.scrollY; document.body.style.top = `-${lockedY}px`; document.body.classList.add('no-scroll'); }
@@ -2359,7 +2415,7 @@ function timelineChart(w, o) {
 
 /* ---------- UI状態（画面の絞り込みなど） ---------- */
 const scanInit = () => ({photo:null, photoHi:null, jan:'', name:'', brand:'', ings:'', volume:'', category:'', searched:false, msg:'', janErr:'', aiBusy:false, aiMsg:''});
-const ui = {priceRes:{}, priceSet:true, priceVol:true, geoHelp:'', geoConsent:false, visitRange:30, visitPhotos:false, visitNote:'', q:'', brand:'', cat:'', origin:'', ing:false, ingQ:'', purpose:'', maxPrice:'', sort:'std', myFilter:'使用中', chartRange:30, reportOffset:0,
+const ui = {homeTab:(() => { try { return sessionStorage.getItem('hadatomo_homeTab') || 'today'; } catch (e) { return 'today'; } })(), priceRes:{}, priceSet:true, priceVol:true, geoHelp:'', geoConsent:false, visitRange:30, visitPhotos:false, visitNote:'', q:'', brand:'', cat:'', origin:'', ing:false, ingQ:'', purpose:'', maxPrice:'', sort:'std', myFilter:'使用中', chartRange:30, reportOffset:0,
   spendMonth:monthKey(todayStr()), logTab:'list', cmpA:'', cmpB:'', checkCat:'', checkPurpose:'', storeArea:'', storeProduct:'', geo:null, ingQ:'', photoA:'', photoB:'', scan:scanInit(), storeTypes:['chemist','cosmetics','variety','pharmacy'], storeRadius:1000, storeShow:40, storeRes:null, storeCands:[], storeBusy:false, storeLast:0, osmConsent:false};
 
 /* =========================================================
@@ -2483,8 +2539,8 @@ function viewHome() {
     : `<div class="t3-side"><p class="small muted" style="margin:0 0 8px">まだ今日の記録がありません。1分ほどで記録できます。</p><button class="btn btn-primary btn-sm" data-action="new-log">${icon('plus')}記録する</button></div>`;
   const todayCard = `<div class="card"><div class="card-h"><h2>今日の肌記録</h2>${L ? `<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(L.id)}">編集</button>` : ''}</div>
       <div class="t3-grid">${side}<div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div></div>
-      <div class="advice" id="advice-box">${adviceHtml()}</div>
       ${lifeLine}</div>`;
+  const careCard = `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div>`;
 
   let activeCard;
   if (active.length) {
@@ -2520,11 +2576,17 @@ function viewHome() {
   const shortcuts = `<div class="card" id="sc-card"><div class="card-h"><h2>ショートカット</h2><button class="link small sc-edit" data-action="sc-edit">${icon('gear')}変更</button></div><div class="shortcuts">${myShortcuts().map(x => `<a class="shortcut" href="${x.h}">${icon(x.ic)}${esc(x.l)}</a>`).join('')}</div></div>`;
 
   const onboard = !state.settings.concerns.length ? `<div class="notice green" style="margin-bottom:16px"><b>はじめに：あなたの肌悩みを教えてください。</b>手持ちの化粧品と予算をふまえて、ケアの考え方と候補を整理します。<br><button type="button" class="btn btn-primary btn-sm" style="margin-top:10px" data-action="setup">質問に答える（1分）</button></div>` : '';
-  html += onboard + `<div class="grid g2">${todayCard}${shortcuts}</div>`;
+  const tab = HOME_TABS.some(x => x.k === ui.homeTab) ? ui.homeTab : 'today';
+  const tabs = `<nav class="home-tabs" role="tablist" aria-label="ホームの表示">${HOME_TABS.map(x => `<button type="button" class="ht ${tab === x.k ? 'active' : ''}" role="tab" aria-selected="${tab === x.k}" data-action="home-tab" data-id="${x.k}">${icon(x.i)}<span>${x.l}</span></button>`).join('')}</nav>`;
+  // 3つのタブ：画面の上にくっついたまま、押すと中身だけ切り替わる
+  if (tab === 'today') { html = tabs + html + onboard + todayCard; }
+  else if (tab === 'care') { html = tabs + (loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '') + careCard; }
+  else { html = tabs + (loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '') + shortcuts; }
   html += adSlot('home');
   html += `<p class="small muted" style="margin-top:20px;text-align:center">肌トモは、肌の状態やスキンケアを記録・管理し、自分に合ったケアを効率よく選ぶための肌サポートアプリです。病気の診断や、化粧品の効果の保証は行いません。</p>`;
   return html;
 }
+const HOME_TABS = [{k:'today', l:'今日の記録', i:'note'}, {k:'care', l:'ケアポイント', i:'spark'}, {k:'sc', l:'ショートカット', i:'grid'}];
 function meter(label, v) {
   return `<div class="meter"><span class="muted">${esc(label)}</span><span class="bar"><i style="width:${v / 5 * 100}%"></i></span><span>${v}</span></div>`;
 }
@@ -2647,7 +2709,7 @@ function swClick(e) {
     const k = o.dataset.sw, val = o.dataset.v, v = swState.v;
     if (k === 'concerns') v.concerns = v.concerns.includes(val) ? v.concerns.filter(x => x !== val) : v.concerns.concat(val);
     else v[k] = v[k] === val && val !== '' ? '' : val;
-    haptic(6); swPaint(); return;
+    swPaint(); return;
   }
   const g = e.target.closest('[data-swgo]');
   if (g) { const n = Number(g.dataset.swgo); if (n > 0 && !swRead()) return; if (n < 0) swRead(); swState.i = clamp(swState.i + n, 0, SW_STEPS.length - 1); swPaint(); const mb = $('#modal-root .modal-body'); if (mb) mb.scrollTop = 0; }
@@ -4368,7 +4430,7 @@ function bindLogDaySwipe() {
     cb.addEventListener('click', e => { e.stopPropagation(); ldCalOpen(cal.hidden); });
     cal.addEventListener('click', e => {
       e.stopPropagation();
-      const d = e.target.closest('[data-ldc]'); if (d) { ldCalOpen(false); logDayFind(d.dataset.ldc); haptic(8); return; }
+      const d = e.target.closest('[data-ldc]'); if (d) { ldCalOpen(false); logDayFind(d.dataset.ldc); return; }
       const nv = e.target.closest('[data-ldcm]'); if (nv) { const [y, m] = ldCalYM.split('-').map(Number), dt = new Date(y, m - 1 + Number(nv.dataset.ldcm), 1); ldCalYM = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`; cal.innerHTML = ldCalHtml(); }
     });
     if (!window._ldcDoc) { window._ldcDoc = 1; document.addEventListener('click', ev => { const c = document.getElementById('ld-cal'); if (c && !c.hidden && !ev.target.closest('#ld-cal,#ld-calbtn')) ldCalOpen(false); }); }
@@ -4611,10 +4673,10 @@ function openLogForm(id) {
     const b = e.target.closest('[data-fp-note],[data-fp-close],[data-fp-clear],[data-fp-acne-clear],[data-fp-zoom],[data-fp-mode],[data-fp-undo],[data-fp-next],[data-fp-open],[data-fp-done]'); if (!b) return;
     // 最初は小さい顔。押すと画面いっぱいに大きくなって記録できる。「完了」で小さく戻る
     // 大きくするときは、下から出る画面（ボトムシート）の外に出して、普通の全画面にする（シートの中だと動きがおかしくなるため）
-    if ('fpOpen' in b.dataset) { { const st = FACE3D.st; if (st) { st.auto = false; st.target = {yaw:0, pitch:0.05}; st.zoomT = null; st.cam.position.z = 44; st.dirty = true; } } const f = fpEl(); fpPh = document.createComment('fp'); f.parentNode.insertBefore(fpPh, f); document.body.appendChild(f); f.classList.add('fp-big'); fpLines(true); haptic(8); fpSync(); return; }
+    if ('fpOpen' in b.dataset) { { const st = FACE3D.st; if (st) { st.auto = false; st.target = {yaw:0, pitch:0.05}; st.zoomT = null; st.cam.position.z = 44; st.dirty = true; } } const f = fpEl(); fpPh = document.createComment('fp'); f.parentNode.insertBefore(fpPh, f); document.body.appendChild(f); f.classList.add('fp-big'); fpLines(true); fpSync(); return; }
     if ('fpDone' in b.dataset) { const f = fpEl(); f.classList.remove('fp-big'); if (fpPh && fpPh.parentNode) { fpPh.parentNode.replaceChild(f, fpPh); } fpPh = null; fpSel.clear(); fpLast = null; fpBlink(false); const st = FACE3D.st; if (st) { st.zoomT = null; st.cam.position.z = 63; st.cam.position.y = 0.6; st.yaw = 0; st.dirty = true; } /* 小さい顔は頭から首まで全部見える距離 */ fpLines(false); fpSync(); return; }
-    if ('fpUndo' in b.dataset) { const k = fpHist.pop(); if (k) { fpTouched = true; fpToggleAcne(k); fpLast = fpHist[fpHist.length - 1] || null; syncAcne(); condAuto(); haptic(8); fpSync(); fpBlink(true); } return; }
-    if ('fpNext' in b.dataset) { fpLast = null; fpBlink(false); fpPanel(); haptic(8); return; }
+    if ('fpUndo' in b.dataset) { const k = fpHist.pop(); if (k) { fpTouched = true; fpToggleAcne(k); fpLast = fpHist[fpHist.length - 1] || null; syncAcne(); condAuto(); hapticSaved(); fpSync(); fpBlink(true); } return; }
+    if ('fpNext' in b.dataset) { fpLast = null; fpBlink(false); fpPanel(); return; }
     if (b.dataset.fpMode) {
       fpRange = b.dataset.fpMode === 'range';
       $$('[data-fp-mode]', fpEl()).forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-pressed', on); });
@@ -4640,7 +4702,7 @@ function openLogForm(id) {
     const r = e.target.closest('[data-fp-level]'); if (!r) return;
     const c = r.dataset.fpLevel, v = Number(r.value);
     fpSel.forEach(k => { (fpMarks[k] = fpMarks[k] || {})[c] = v; }); fpTouched = true;
-    const lab = r.closest('.fp-slider').querySelector('b'); if (lab && lab.textContent !== String(v)) { lab.textContent = v; haptic(6); }
+    const lab = r.closest('.fp-slider').querySelector('b'); if (lab && lab.textContent !== String(v)) { lab.textContent = v; }
     const chip = $(`[data-fp-note="${CSS.escape(c)}"]`, fpEl()); if (chip) chip.lastChild.textContent = `${c} ${v}`;
     fpGlobal(); $('#modal-root').dataset.dirty = '1'; fpPaint();
   };
@@ -4669,7 +4731,7 @@ function openLogForm(id) {
     st.onTapCell = key => {
       if (smallTap()) return;
       fpToggleAcne(key); fpHist.push(key); fpLast = key;
-      haptic(8); syncAcne(); condAuto(); $('#modal-root').dataset.dirty = '1'; fpTouched = true; fpSync(); fpBlink(true);
+      hapticSaved(); syncAcne(); condAuto(); $('#modal-root').dataset.dirty = '1'; fpTouched = true; fpSync(); fpBlink(true);
     };
     // 範囲選択：押した区切り（額・鼻・頬など）のマス目を、まとめて選ぶ／外す
     st.onTapZone = z => {
@@ -4760,7 +4822,7 @@ function openLogForm(id) {
       const n = (r.acne || []).reduce((a, x) => a + x.count, 0);
       box.innerHTML = `<div class="notice green" style="margin:8px 0 0"><b>写真から今日の記録を入れました</b>${r.note ? `<br>${esc(r.note)}` : ''}<br><span class="small">ニキビ ${n}個${(r.zones || []).length ? '・' + [...new Set(r.zones.map(x => x.concern))].join('・') : ''}</span>
         <p class="small muted" style="margin:6px 0 0">${esc(AI_NOTE)}光の当たり方で見え方が変わります。違うところは顔を押して直してから「記録する」を押してください。</p></div>`;
-      haptic(20);
+
     } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; }
   };
   ['f_faceai', 'f_faceai2'].forEach(id => { const inp = $('#' + id, form); if (inp) inp.onchange = e => { const f = e.target.files[0]; e.target.value = ''; faceAi(f); }; });
@@ -4793,7 +4855,7 @@ function openLogForm(id) {
     let backup = null;
     if (ex) { backup = Object.assign({}, ex); Object.assign(ex, data); }
     else state.skinLogs.push(Object.assign({id:uid(), demo:false}, data));
-    if (save()) { haptic(35); closeModal(); toast(ex ? '記録を保存しました' : '肌の状態を記録しました'); render(); }
+    if (save()) { hapticSaved(); closeModal(); toast(ex ? '記録を保存しました' : '肌の状態を記録しました'); render(); }
     else { if (ex) Object.assign(ex, backup); else state.skinLogs.pop(); }
   };
 }
@@ -4868,7 +4930,7 @@ async function quickMealSave(file) {
   const t = todayStr(); let L = getLife(t); if (!L) { L = blankLife(t); state.lifeLogs.push(L); }
   const q = {k:mealByTime(tm), tm, img, added:[], ai:'idle', aiMsg:''};
   const put = k => { L.mealPhotos[k] = img; if (L.meals[k]) L.meals[k] = {ate:true, time:tm}; };
-  put(q.k); save(); haptic(35); render();
+  put(q.k); if (save()) hapticSaved(); render();
   const sheet = () => {
     const m = FOOD_MEALS.find(x => x.k === q.k), foods = L.foods.filter(x => q.added.includes(x.id));
     return `<div class="qm"><img class="qm-img" src="${img}" alt="撮った食事の写真"><div class="qm-t"><b>${esc(m.l)}として記録しました</b><span class="small muted">${esc(tm)} に撮った写真</span></div></div>
@@ -4888,14 +4950,17 @@ async function quickMealSave(file) {
     if (L.mealPhotos[q.k] === img) delete L.mealPhotos[q.k];
     if (L.meals[q.k] && L.meals[q.k].time === tm && !L.foods.some(x => x.meal === q.k && !q.added.includes(x.id))) L.meals[q.k] = {ate:false, time:''};
     L.foods.forEach(x => { if (q.added.includes(x.id)) x.meal = nk; });
-    q.k = nk; put(nk); save(); haptic(15); render(); redraw();
+    q.k = nk; put(nk); if (save()) hapticSaved(); render(); redraw();
   });
   if (isPremium()) {
     q.ai = 'busy'; redraw();
     try {
       const r = (await callVision('meal', img)).result || {items:[]};
-      (r.items || []).forEach(x => { const f = normFood({meal:q.k, qty:1, name:(x.name + (x.amount ? `（${x.amount}）` : '')).slice(0, 40), kcal:x.kcal, p:x.p, f:x.f, c:x.c, veg:x.veg}); L.foods.push(f); q.added.push(f.id); });
-      q.ai = q.added.length ? 'done' : 'err'; if (!q.added.length) q.aiMsg = r.note || '料理を読み取れませんでした。「詳しく編集」からリストで選べます。';
+      const miss = [];
+      (r.items || []).forEach(x => { const rec = aiFoodToRec(x, q.k); if (!rec) { miss.push(x.name); return; } const f = normFood(rec); L.foods.push(f); q.added.push(f.id); });
+      q.ai = q.added.length ? 'done' : 'err';
+      // 商品で、栄養成分を確かめられなかったものは、推測の数字を入れずに知らせる
+      q.aiMsg = (!q.added.length ? (r.note || '料理を読み取れませんでした。「詳しく編集」からリストで選べます。') : '') + (miss.length ? `「${miss.join('」「')}」は栄養成分を確認できませんでした（推測の数字は入れていません）。袋や箱の裏の栄養成分表示を撮るか、「詳しく編集」から入力してください。` : '');
       save(); render();
     } catch (err) { q.ai = 'err'; q.aiMsg = err.message; }
     redraw();
@@ -4974,7 +5039,7 @@ function openLifeForm(id, part) {
   const renderFoods = () => {
     FOOD_MEALS.forEach(m => {
       const fs = foods.filter(x => x.meal === m.k);
-      $(`[data-mfoods="${m.k}"]`, form).innerHTML = fs.map(x => `<div class="food-row"><span class="fr-n">${esc(x.name)}</span><select class="select fr-q" data-fqid="${esc(x.id)}" aria-label="${esc(x.name)}の量">${(QTYS.some(q => q.v === x.qty) ? QTYS : QTYS.concat([{v:x.qty, l:qtyLabel(x.qty)}])).map(q => `<option value="${q.v}" ${q.v === x.qty ? 'selected' : ''}>${q.l}</option>`).join('')}</select><span class="fr-k">${Math.round(x.kcal * x.qty)}kcal</span><button type="button" class="chip-x" data-fdel="${esc(x.id)}" aria-label="${esc(x.name)}を削除">×</button></div>`).join('');
+      $(`[data-mfoods="${m.k}"]`, form).innerHTML = fs.map(x => `<div class="food-row"><span class="fr-n">${esc(x.name)}${x.basis === '表示' || x.basis === '公式' ? `<small class="fr-src">${x.srcUrl ? `<a href="${esc(x.srcUrl)}" target="_blank" rel="noopener noreferrer">${esc(AI_BASIS_LABEL[x.basis])}</a>` : esc(AI_BASIS_LABEL[x.basis])}${x.unit ? `・${esc(x.unit)}` : ''}${x.checked ? `・${esc(fmtShort(x.checked))}確認` : ''}</small>` : ''}</span><select class="select fr-q" data-fqid="${esc(x.id)}" aria-label="${esc(x.name)}の量">${(QTYS.some(q => q.v === x.qty) ? QTYS : QTYS.concat([{v:x.qty, l:qtyLabel(x.qty)}])).map(q => `<option value="${q.v}" ${q.v === x.qty ? 'selected' : ''}>${q.l}</option>`).join('')}</select><span class="fr-k">${Math.round(x.kcal * x.qty)}kcal</span><button type="button" class="chip-x" data-fdel="${esc(x.id)}" aria-label="${esc(x.name)}を削除">×</button></div>`).join('');
       // 閉じているときも、食べたものがまとめて見えるようにする
       const sm = $(`[data-msum="${m.k}"]`, form), ate = form.elements['ate_' + m.k];
       if (sm) sm.innerHTML = fs.length ? `<span class="ms-n">${esc(fs.map(x => x.name.replace(/（.*?）/g, '')).join('・'))}</span><span class="ms-k">${Math.round(fs.reduce((a, x) => a + x.kcal * x.qty, 0))}kcal</span>` : (ate && ate.checked ? '記録あり' : '未記録');
@@ -5036,8 +5101,8 @@ function openLifeForm(id, part) {
   form.addEventListener('keydown', e => { const k = e.target.dataset && e.target.dataset.fq; if (k && e.key === 'Enter' && !e.isComposing) { e.preventDefault(); const f = $(`[data-fsug="${k}"] [data-fpick]`, form); if (f) f.click(); else { const c = $(`[data-fsug="${k}"] [data-fcust]`, form); if (c) c.click(); } } });
   form.addEventListener('click', async e => {
     const b = e.target.closest('button'); if (!b) return;
-    if (b.dataset.fpick && b.dataset.v.startsWith('hist:')) { const k = b.dataset.fpick, n = b.dataset.v.slice(5), h = hist[n]; if (h) { foods.push({id:uid(), meal:k, qty:1, name:n, kcal:h.kcal, p:h.p, f:h.f, c:h.c, veg:h.veg}); markAte(k); renderFoods(); } $(`[data-fq="${k}"]`, form).value = ''; sugHide(k); haptic(8); return; }
-    if (b.dataset.fpick) { const k = b.dataset.fpick, sel = $(`[data-fsel="${k}"]`, form); sel.value = b.dataset.v; $(`[data-fadd="${k}"]`, form).click(); $(`[data-fq="${k}"]`, form).value = ''; sugHide(k); haptic(8); return; }
+    if (b.dataset.fpick && b.dataset.v.startsWith('hist:')) { const k = b.dataset.fpick, n = b.dataset.v.slice(5), h = hist[n]; if (h) { foods.push({id:uid(), meal:k, qty:1, name:n, kcal:h.kcal, p:h.p, f:h.f, c:h.c, veg:h.veg}); markAte(k); renderFoods(); } $(`[data-fq="${k}"]`, form).value = ''; sugHide(k); hapticSaved(); return; }
+    if (b.dataset.fpick) { const k = b.dataset.fpick, sel = $(`[data-fsel="${k}"]`, form); sel.value = b.dataset.v; $(`[data-fadd="${k}"]`, form).click(); $(`[data-fq="${k}"]`, form).value = ''; sugHide(k); hapticSaved(); return; }
     if (b.dataset.fcust) { const k = b.dataset.fcust, q = $(`[data-fq="${k}"]`, form).value.trim(), box = $(`[data-fcustom="${k}"]`, form); box.hidden = false; $('[data-cf="name"]', box).value = q; $('[data-cf="kcal"]', box).focus(); sugHide(k); return; }
     if (b.dataset.fadd && !$(`[data-fsel="${b.dataset.fadd}"]`, form).value) {
       // 入力欄の文字から選ぶ（候補の一番上）。候補がなければ自分で入力
@@ -5098,10 +5163,10 @@ function openLifeForm(id, part) {
         const r = (await callVision('meal', img)).result || {items:[]};
         aiRes[k] = r.items || [];
         if (!aiRes[k].length) { box.innerHTML = `<div class="notice" style="margin:8px 0 0">料理を読み取れませんでした。${esc(r.note || '料理全体が写るように撮り直すか、下のリストから選んでください。')}</div>`; }
-        else box.innerHTML = `<div class="notice green" style="margin:8px 0 0"><b>読み取った料理（目安）</b>
-          ${aiRes[k].map((x, i) => `<label class="check" style="margin-top:6px;align-items:flex-start"><input type="checkbox" data-aipick="${k}" value="${i}" checked><span>${esc(x.name)}${x.amount ? `（${esc(x.amount)}）` : ''}${x.basis ? ` <span class="ai-basis b-${({表示:'l', 商品:'p', 推定:'e'})[x.basis] || 'e'}">${esc(({表示:'パッケージの表示', 商品:'商品の公式の値', 推定:'見た目から推定'})[x.basis] || '見た目から推定')}</span>` : ''}<br><span class="small muted">${Math.round(x.kcal)}kcal・たんぱく質${x.p}g・脂質${x.f}g・炭水化物${x.c}g${x.veg ? `・野菜${x.veg}g` : ''}</span></span></label>`).join('')}
+        else box.innerHTML = `<div class="notice green" style="margin:8px 0 0"><b>読み取った食べ物</b>
+          ${aiRes[k].map((x, i) => x.basis === '確認できません' ? `<div class="check" style="margin-top:6px;align-items:flex-start;opacity:.85"><input type="checkbox" disabled><span>${esc(x.name)}${aiBasisTag(x)}<br><span class="small muted">栄養成分を確認できませんでした。推測の数字は入れていません。袋や箱の裏の「栄養成分表示」を撮るか、下のリストから入力してください。</span></span></div>` : `<label class="check" style="margin-top:6px;align-items:flex-start"><input type="checkbox" data-aipick="${k}" value="${i}" checked><span>${esc(x.name)}${x.amount && x.basis === '推定' ? `（${esc(x.amount)}）` : ''}${aiBasisTag(x)}${x.unit ? `<br><span class="small muted">${esc(x.unit)}</span>` : ''}${x.sourceUrl ? `<br><a class="small" href="${esc(x.sourceUrl)}" target="_blank" rel="noopener noreferrer">参照元：${esc(x.source || 'メーカー公表情報')}</a>` : ''}${x.checkedAt ? `<span class="small muted">（${esc(fmtShort(x.checkedAt))}確認）</span>` : ''}<br><span class="small muted">${Math.round(x.kcal)}kcal・たんぱく質${x.p}g・脂質${x.f}g・炭水化物${x.c}g${x.salt ? `・食塩相当量${x.salt}g` : ''}${x.veg ? `・野菜${x.veg}g` : ''}</span></span></label>`).join('')}
           <button type="button" class="btn btn-primary btn-sm" data-aiadd="${k}" style="margin-top:8px">チェックしたものを追加</button>
-          <p class="small muted" style="margin-top:6px">${esc(AI_NOTE)}袋や箱の商品は、裏の「栄養成分表示」も一緒に写すと、その数字をそのまま使うので正確になります。量が違う場合は、追加したあとで消して、リストから選び直せます。</p></div>`;
+          <p class="small muted" style="margin-top:6px">${esc(AI_NOTE)}商品は、写真の「栄養成分表示」→ メーカーの公式情報 の順に確かめた数字だけを入れます（推測では入れません）。家庭の料理だけは目安です。量が違う場合は、追加したあとで消して、リストから選び直せます。</p></div>`;
       } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; }
       b.disabled = false;
       return;
@@ -5109,8 +5174,8 @@ function openLifeForm(id, part) {
     if (b.dataset.aiadd) {
       const k = b.dataset.aiadd, picks = $$(`[data-aipick="${k}"]:checked`, form).map(x => aiRes[k][Number(x.value)]).filter(Boolean);
       if (!picks.length) { toast('追加するものにチェックを入れてください', 'error'); return; }
-      picks.forEach(x => foods.push({id:uid(), meal:k, qty:1, name:(x.name + (x.amount ? `（${x.amount}）` : '')).slice(0, 40), kcal:x.kcal, p:x.p, f:x.f, c:x.c, veg:x.veg}));
-      markAte(k); renderFoods(); $(`[data-pinfo="${k}"]`, form).innerHTML = `<p class="small" style="margin-top:6px;color:var(--green-d)">${picks.length}品を追加しました（AIの推定）。</p>`;
+      picks.forEach(x => { const rec = aiFoodToRec(x, k); if (rec) foods.push(rec); });
+      markAte(k); renderFoods(); $(`[data-pinfo="${k}"]`, form).innerHTML = `<p class="small" style="margin-top:6px;color:var(--green-d)">${picks.length}品を追加しました。</p>`;
       return;
     }
     if (b.dataset.mpcancel) { delete pending[b.dataset.mpcancel]; $(`[data-pinfo="${b.dataset.mpcancel}"]`, form).innerHTML = ''; renderPhoto(b.dataset.mpcancel); return; }
@@ -5146,7 +5211,7 @@ function openLifeForm(id, part) {
       if (h.workouts.length && (force || !exercise.length)) { exercise = h.workouts.slice(); renderExercise(); }
       if (h.steps != null && (force || !form.elements.steps.value)) form.elements.steps.value = h.steps;
     }
-    haptic(15);
+
   };
   if (healthOK() && part !== 'meal') setTimeout(() => applyHealth('all', false), 0);
   form.elements.bed.oninput = calc; form.elements.wake.oninput = calc; calc();
@@ -5618,14 +5683,21 @@ async function drawFace3d(opts) {
   // 2本の指で広げる・つまむと拡大・縮小（大きく見る画面では、マウスのホイールでも）
   const pts = new Map(); let pinch = null;
   const minZ = opts.minZ || (opts.full ? 20 : 34), maxZ = opts.full ? 90 : 84;
+  // viewOnly（ホーム）：1本の指では回したり動かしたりしない（ページのスクロールを優先）。2本の指でつまむ・広げると拡大・縮小だけできる
+  st.viewOnly = !!opts.viewOnly;
   cv.addEventListener('pointerdown', e => {
-    pts.set(e.pointerId, {x:e.clientX, y:e.clientY}); st.target = null; st.user = true; st.idle = 0; if (DEV.touch) st.auto = false;
+    pts.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if (st.viewOnly) {
+      if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = {d:Math.hypot(a.x - b.x, a.y - b.y), z:st.zoomT || cam.position.z}; cv.style.touchAction = 'none'; }
+      st.drag = null; return;
+    }
+    st.target = null; st.user = true; st.idle = 0; if (DEV.touch) st.auto = false;
     if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = {d:Math.hypot(a.x - b.x, a.y - b.y), z:st.zoomT || cam.position.z}; st.drag = null; return; }
     st.drag = {x:e.clientX, y:e.clientY, yaw:st.yaw, pitch:st.pitch, cy:cam.position.y, moved:false, dir:null, id:e.pointerId}; if (!st.yawOnly) cv.setPointerCapture(e.pointerId);
     // 範囲選択モード：なぞった始まりと終わりのマス目で四角く選ぶ（回さない）
     if (st.rangeMode && st.onRange) { const k = face3dGridCell(st, e); st.range = k ? {a:k, b:k} : null; if (k) st.onRange(k, k, 'move'); }
   });
-  const ptUp = e => { pts.delete(e.pointerId); if (pts.size < 2) pinch = null; };
+  const ptUp = e => { pts.delete(e.pointerId); if (pts.size < 2) { pinch = null; if (st.viewOnly) cv.style.touchAction = 'pan-y'; } };
   cv.addEventListener('pointerup', ptUp); cv.addEventListener('pointercancel', ptUp);
   if (opts.full) cv.addEventListener('wheel', e => { e.preventDefault(); st.zoomT = clamp((st.zoomT || cam.position.z) + e.deltaY * 0.03, minZ, maxZ); st.dirty = true; }, {passive:false});
   st.minZ = minZ; st.maxZ = maxZ;
@@ -5669,7 +5741,7 @@ async function drawFace3d(opts) {
     // ・スマホ：画面の揺れを防ぐため、最初に左右へ1往復だけ回って正面で止まる。スクロール中は回さない
     if (st.auto && !st.drag && !st.target && pts.size === 0 && st.idle > (st.user ? 150 : 0)) {
       if (Math.abs(st.yaw) > Math.PI) st.yaw = ((st.yaw + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI; // 何周も回したあとは、近い向きに戻す
-      st.phase += DEV.touch ? 0.0075 : 0.0055; /* 自動で回る速さ（少しゆっくり） */ const want = Math.sin(st.phase) * 0.95;
+      st.phase += DEV.touch ? 0.0095 : 0.007; /* 自動で回る速さ */ const want = Math.sin(st.phase) * 0.95;
       st.yaw += (want - st.yaw) * (st.user ? 0.03 : 0.12); st.pitch += (0.05 - st.pitch) * 0.03;
       if (DEV.touch && st.phase >= 2 * Math.PI) { st.auto = false; st.target = {yaw:0, pitch:0.05}; }
       st.dirty = true;
@@ -6656,6 +6728,19 @@ function viewAccount() {
   return ['spend', 'plan', 'settings'].map(accSectionHtml).join('');
 }
 // 設定・プライバシー（アカウントの中）：並びを整え、データ関係を1つにまとめ、プライバシーは押すと開く形にする
+// 設定：ウィジェットの見た目（アプリ版でホーム画面に置けるもの）のプレビュー
+function widgetPreviewCard() {
+  const w = widgetData(), rec = w.records;
+  const dot = (on, l, link) => `<a class="wg-rec ${on ? 'on' : ''}" href="${link}"><i></i>${l}</a>`;
+  const small = `<a class="wg wg-s" href="${w.skin.recorded ? '#/home' : w.links.skin}"><span class="wg-h">肌トモ</span>${w.skin.recorded ? `<b class="wg-score" style="color:${w.skin.color}">${w.skin.score}</b><span class="wg-l">${esc(w.skin.label)}</span>` : `<b class="wg-score muted">—</b><span class="wg-l">肌を記録</span>`}<span class="wg-f">記録 ${w.recordCount}/${w.recordTotal}</span></a>`;
+  const medium = `<div class="wg wg-m"><div class="wg-mc"><span class="wg-h">今日の肌</span>${w.skin.recorded ? `<b class="wg-score" style="color:${w.skin.color}">${w.skin.score}</b><span class="wg-l">${esc(w.skin.label)}</span>` : `<a class="wg-l" href="${w.links.skin}">＋ 記録する</a>`}</div>
+    <div class="wg-mc"><span class="wg-h">今日の記録</span><div class="wg-recs">${dot(rec.skin, '肌', w.links.skin)}${dot(rec.meal, '食事', w.links.meal)}${dot(rec.sleep, '睡眠', w.links.sleep)}${dot(rec.exercise, '運動', w.links.exercise)}</div>
+      <span class="wg-f">${w.nutrition.kcal}kcal・たんぱく質 ${w.nutrition.protein}/${w.nutrition.proteinGoal}g</span><span class="wg-f">スキンケア ${w.skincare.recorded ? `${w.skincare.used}品` : '未記録'}</span></div>
+    <a class="wg-rem" href="${w.reminder.link}">${esc(w.reminder.text)}</a></div>`;
+  return `<div class="card"><div class="card-h"><h2>ウィジェット</h2><span class="small muted">アプリ版で使えます</span></div>
+    <p class="small muted" style="margin:0 0 10px">スマホのアプリ版では、ホーム画面にこのような小さな表示を置けるようにする予定です（Web版では置けません）。押すと、その記録画面がすぐ開きます。写真やメモ、商品名は表示しません。</p>
+    <div class="wg-row">${small}${medium}</div></div>`;
+}
 function settingsEmbedHtml() {
   const t = document.createElement('template'); t.innerHTML = embedView(viewSettings);
   const top = [...t.content.children].filter(c => c.classList.contains('card'));
@@ -6668,6 +6753,7 @@ function settingsEmbedHtml() {
   if (cards['研究への協力']) out.push(cards['研究への協力'].outerHTML);
   if (cards['画面の表示']) out.push(cards['画面の表示'].outerHTML);
   if (cards['記録のリマインダー']) out.push(cards['記録のリマインダー'].outerHTML);
+  out.push(widgetPreviewCard());
   out.push(`<div class="card"><div class="card-h"><h2>データ</h2></div>${sub('保存状況', cards['データの保存状況'])}${sub('バックアップ', cards['バックアップ'])}${sub('動作確認用データ', cards['動作確認用データ'])}${sub('すべてのデータを削除', cards['すべてのデータを削除'])}</div>`);
   if (cards['プライバシー']) out.push(`<div class="card"><details class="fold set-fold"><summary>プライバシー</summary>${inner(cards['プライバシー']).replace(/<details class="fold"[^>]*><summary>詳しく見る<\/summary>/, '').replace(/<\/ul><\/details>/, '</ul>')}</details></div>`);
   const install = top.find(c => /アプリとして使う/.test(c.textContent)); if (install) out.push(install.outerHTML);
@@ -6990,6 +7076,7 @@ const actions = {
   },
   'install-app': async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (e) { /* 何もしない */ } installEvt = null; render(); },
   'go-back': () => goBack('#/home'),
+  'home-tab': k => { if (ui.homeTab === k) { window.scrollTo({top:0, behavior:'smooth'}); return; } ui.homeTab = k; try { sessionStorage.setItem('hadatomo_homeTab', k); } catch (e) { /* 何もしない */ } render(); window.scrollTo(0, 0); },
   'f3-view': v => {
     const st = FACE3D.st; if (!st) return;
     const P = Math.PI, base = Math.round(st.yaw / (2 * P)) * 2 * P; // 今の向きから近い回り方で回る
@@ -7011,7 +7098,7 @@ const actions = {
   'research-on': async () => {
     const ad = document.getElementById('f_adult');
     if (!ad || !ad.checked) { toast('協力できるのは18歳以上の方です。「18歳以上です」にチェックしてください。', 'error'); return; }
-    const r = researchState(); r.adult = true; r.on = true; r.lastHash = ''; save(); haptic(35); refreshAccPanel('settings'); render();
+    const r = researchState(); r.adult = true; r.on = true; r.lastHash = ''; save(); refreshAccPanel('settings'); render();
     await researchSend(true); refreshAccPanel('settings');
   },
   'research-off': async () => {
@@ -7024,7 +7111,7 @@ const actions = {
   'add-sheet': kind => openAddSheet(kind),
   'setup': () => openSetupWizard(),
   'setup-later': () => swSave(false),
-  'setup-finish': () => { swSave(true); haptic(35); },
+  'setup-finish': () => { swSave(true); hapticSaved(); },
   'add-find': kind => { closeModal(); setTimeout(() => openFindSheet(kind), 200); },
   'find-pick': i => findPick(i),
   'add-camera': () => { closeModal(); location.hash = '#/scan'; },
@@ -7388,7 +7475,7 @@ document.addEventListener('change', e => {
   const id = e.target.id; if (!['f_skinType', 'f_ageBand', 'f_sensitive', 'f_gender'].includes(id)) return;
   const st = state.settings;
   if (id === 'f_skinType') st.skinType = e.target.value; else if (id === 'f_ageBand') st.ageBand = e.target.value; else if (id === 'f_gender') st.gender = e.target.value; else st.sensitive = e.target.checked;
-  save(); haptic(20); if (researchState().on) researchSend();
+  save(); if (researchState().on) researchSend();
 });
 document.addEventListener('input', e => {
   const id = e.target.id;
@@ -7510,6 +7597,11 @@ function setTopTitle(t) {
 }
 function render() {
   const r = parseRoute();
+  if (r.name === 'new') { // ウィジェット・ショートカットから：記録の画面を直接開く
+    const what = r.id; history.replaceState(null, '', '#/home'); render();
+    setTimeout(() => { if (what === 'skin') actions['new-log'](); else if (LIFE_PARTS[what]) actions['life-part'](what); }, 50);
+    return;
+  }
   const views = {home:viewHome, search:viewSearch, product:() => viewProduct(r.id), prices:() => viewPrices(r.id), stores:viewStores,
     ingredients:() => viewIngredients(r.id), scan:viewScan, my:() => r.id ? viewMyDetail(r.id) : viewMy(), compare:viewCompare, combo:viewCombo,
     log:viewLog, charts:viewCharts, report:viewReport, spending:viewSpending, check:() => viewCheck(r.id), settings:viewSettings, account:viewAccount, favorites:viewFavorites, terms:viewTerms, privacy:viewPrivacy, law:viewLaw, plan:() => viewPlan(r.query), suggest:viewSuggest, visit:viewVisit};
@@ -7544,7 +7636,7 @@ function render() {
   fillAds();
   if (r.name === 'charts') drawFace3d();
   else if (r.name === 'log' && document.getElementById('face3d-log')) { const list = logDayList(), d = logFaceData(list[logDayIdx(list)]); bindLogDaySwipe(); drawFace3d({canvas:'face3d-log', load:'ld-load', tip:'', camZ:55, yawOnly:true, grid:true, gridLines:false, ready:st => { st.canvasId = 'face3d-log'; face3dShowLog(st, d); if (logDayIdx(list) < list.length - 1) { st.auto = false; st.yaw = 0; st.pitch = 0.05; st.dirty = true; } }}); }
-  else if (r.name === 'home' && document.getElementById('face3d-home')) { const hd = homeFaceData(); drawFace3d({canvas:'face3d-home', load:'t3-load', tip:'t3-tip', camZ:55, yawOnly:true, grid:true, gridLines:false, unit:hd.mode === 'spots' ? '個' : 'flag', ready:st => face3dShowLog(st, hd)}); if (isPremium()) runAdvice(false); }
+  else if (r.name === 'home' && document.getElementById('face3d-home')) { const hd = homeFaceData(); drawFace3d({canvas:'face3d-home', load:'t3-load', tip:'t3-tip', camZ:55, yawOnly:true, viewOnly:true, minZ:30, grid:true, gridLines:false, unit:hd.mode === 'spots' ? '個' : 'flag', ready:st => face3dShowLog(st, hd)}); if (isPremium()) runAdvice(false); }
   else if (FACE3D.st) { FACE3D.st.stop = true; FACE3D.st = null; }
   if (r.name === 'stores') drawStoreMap(); else if (storeMap) { try { storeMap.remove(); } catch (e) {} storeMap = null; }
 }
@@ -7582,7 +7674,7 @@ window.addEventListener('hashchange', () => { if ($('#modal-root').innerHTML) cl
 // 下に引っぱって更新（ページのいちばん上で下へ引っぱって離すと読み込み直す）
 // ---------- 下に引っぱって更新（Pull-to-Refresh）----------
 // 引っぱって離すと、データを読み直して今の画面を描き直す（ページは移動しない）
-async function ptrRefresh() {
+async function ptrRefresh(noRender) {
   const tasks = [];
   // ① 保存してある記録を読み直す（ほかのタブで入力した分・ヘルスケア連携で入った分など）
   try { state = load(); } catch (e) { /* 読めなくても今のデータのまま */ }
@@ -7593,16 +7685,22 @@ async function ptrRefresh() {
   // ④ 商品検索の画面なら、ネットの商品を検索し直す（価格が変わっていることがあるため）
   if (ui.net && ui.net.q && parseRoute().name === 'search') { const q = ui.net.q; ui.net = null; tasks.push(netSearch(q)); }
   await Promise.race([Promise.allSettled(tasks), new Promise(r => setTimeout(r, 8000))]); // 電波が悪くても8秒で終える
+  if (!noRender) ptrRepaint();
+}
+// 新しいデータで今の画面を描き直す（指が画面に触れている間は描き直さない：触れている部分が消えると、指を離したことが伝わらなくなるため）
+function ptrRepaint() {
   render();
   if (isPremium()) setTimeout(() => runAdvice(false), 0); // プレミアム：記録が変わっていれば、AIのケアポイントも新しくする
 }
 // 状態を4つに分けて管理する：idle（ふだん）→ pulling（引っぱり中）→ refreshing（更新中：画面の位置を保つ）→ settling（更新後に元へ戻る）
 // 画面の動きは、CSSのトランジションではなく、毎フレーム自分で位置を計算して動かす（iPhoneでも途中で飛ばないように）
+// 決まった距離まで引っぱった時点で（指を離すのを待たずに）更新を始める。iPhoneの標準アプリと同じ動き
 (function pullToRefresh() {
   const page = document.getElementById('page'), ptr = document.getElementById('ptr'); if (!page || !ptr) return;
   const arc = ptr.querySelector('.ptr-arc'), svg = ptr.querySelector('svg');
-  const MAX = 130, GO = 72, HOLD = 60; // 引っぱれる最大・更新が始まる距離・更新中に保つ位置（px）
-  let phase = 'idle', y0 = null, started = false, d = 0, raf = 0;
+  const MAX = 170, GO = 78, HOLD = 60; // 引っぱれる最大・更新が始まる距離・更新中に保つ位置（px）
+  const canVibrate = typeof navigator.vibrate === 'function';
+  let phase = 'idle', y0 = null, started = false, d = 0, raf = 0, touching = false, done = false, tickLater = false;
   const setY = v => { d = v; page.style.transform = v > 0.25 ? `translate3d(0,${v.toFixed(2)}px,0)` : ''; };
   const drawPull = () => { // 引っぱった量に合わせて、輪が伸びて回る
     const k = Math.min(1, d / GO);
@@ -7610,56 +7708,78 @@ async function ptrRefresh() {
     arc.setAttribute('stroke-dashoffset', String(56.5 * (1 - k * 0.82)));
     svg.style.transform = `rotate(${(d * 2.6).toFixed(1)}deg)`;
   };
-  // from → to へ、時間 ms で動かす（ease：最初は速く、最後はゆっくり止まる）
-  const animate = (to, ms, ease, onStep, done) => {
+  // ゴムのように：はじめは指とほぼ同じだけ動き、引っぱるほど少しずつ重くなる（途中で止まらない）
+  const rubber = dy => MAX * (1 - Math.exp(-dy / 260));
+  const animate = (to, ms, ease, onStep, fin) => {
     cancelAnimationFrame(raf); const from = d, t0 = performance.now();
-    const step = now => { const k = Math.min(1, (now - t0) / ms), e = ease(k); setY(from + (to - from) * e); if (onStep) onStep(e); if (k < 1) raf = requestAnimationFrame(step); else { setY(to); if (done) done(); } };
+    const step = now => { const k = Math.min(1, (now - t0) / ms), e = ease(k); setY(from + (to - from) * e); if (onStep) onStep(e); if (k < 1) raf = requestAnimationFrame(step); else { setY(to); if (fin) fin(); } };
     raf = requestAnimationFrame(step);
   };
   const easeOutCubic = k => 1 - Math.pow(1 - k, 3);
   const easeSettle = k => 1 - Math.pow(1 - k, 4); // Safariの戻り方に近い：はじめは速く、最後はなめらかに減速
-  // 一番上にいて、ほかの画面（下から出る画面など）が開いていないときだけ反応する
-  const blocked = t => $('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full') || (t && t.closest && t.closest('canvas,input,textarea,select,.f3-stage,.ld-cal'));
+  const blocked = t => $('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full') || (t && t.closest && t.closest('input,textarea,select,.ld-cal,.home-tabs'));
+  const settle = () => { // settling：くるくるを消してから、画面を元の位置へ戻す
+    phase = 'settling'; ptr.classList.add('fade');
+    setTimeout(() => animate(0, 480, easeSettle, null, () => { ptr.classList.remove('spin', 'fade'); ptr.style.opacity = '0'; svg.style.transform = ''; phase = 'idle'; }), 160);
+  };
+  const startRefresh = () => { // refreshing：更新を始める（指はまだ画面の上でもよい）
+    phase = 'refreshing'; done = false;
+    ptr.style.opacity = '1'; svg.style.transform = ''; arc.setAttribute('stroke-dashoffset', String(56.5 * 0.72)); ptr.classList.add('spin');
+    if (canVibrate) hapticTick(); else tickLater = true; // iPhoneは指を離した瞬間でないと鳴らせないので、離したときに鳴らす
+    const t0 = performance.now();
+    ptrRefresh(true).catch(() => {}).finally(() => setTimeout(() => { done = true; if (!touching) { ptrRepaint(); settle(); } }, Math.max(250, 800 - (performance.now() - t0))));
+  };
   window.addEventListener('touchstart', e => {
     if (phase !== 'idle' || e.touches.length !== 1 || window.scrollY > 0 || blocked(e.target)) { y0 = null; return; }
     y0 = e.touches[0].clientY; started = false;
   }, {passive:true});
   window.addEventListener('touchmove', e => {
-    if (y0 == null || (phase !== 'idle' && phase !== 'pulling')) return;
+    if (y0 == null || (phase !== 'idle' && phase !== 'pulling' && !(phase === 'refreshing' && touching))) return;
     const dy = e.touches[0].clientY - y0;
-    if (!started) { // 下向きにはっきり動かしたときだけ始める（上向き・途中のスクロールでは反応しない）
-      if (dy < 0 || window.scrollY > 0) { y0 = null; return; }
-      if (dy < 6) return;
-      started = true; phase = 'pulling'; ptr.classList.remove('spin', 'fade');
+    if (!started) {
+      // 一番上で、下向きに動かし始めた最初の1回から引き受ける（ブラウザのスクロールに取られて途中で止まらないように）
+      if (dy <= 0 || window.scrollY > 0) { if (dy < 0) y0 = null; return; }
+      started = true; touching = true; phase = 'pulling'; ptr.classList.remove('spin', 'fade');
     }
     e.preventDefault();
-    setY(dy > 0 ? MAX * (1 - Math.exp(-dy / 190)) : 0); // ゴムのように、引っぱるほど重くなる
-    drawPull();
+    setY(dy > 0 ? rubber(dy) : 0);
+    if (phase === 'pulling') { drawPull(); if (d >= GO) startRefresh(); }
   }, {passive:false});
-  const settle = () => { // settling：くるくるを消してから、画面を元の位置へ戻す
-    phase = 'settling';
-    ptr.classList.add('fade');
-    setTimeout(() => animate(0, 480, easeSettle, null, () => { ptr.classList.remove('spin', 'fade'); ptr.style.opacity = '0'; svg.style.transform = ''; phase = 'idle'; }), 160);
-  };
   const end = () => {
     if (y0 == null) return; y0 = null;
-    if (phase !== 'pulling') return;
-    if (d >= GO) {
-      // refreshing：指を離しても戻さず、更新中の位置で止めておく
-      phase = 'refreshing';
-      hapticTick(); // 更新が始まった瞬間に、軽く「カチッ」
-      ptr.style.opacity = '1'; svg.style.transform = ''; arc.setAttribute('stroke-dashoffset', String(56.5 * 0.72)); ptr.classList.add('spin');
-      animate(HOLD, 260, easeOutCubic);
-      const t0 = performance.now();
-      ptrRefresh().catch(() => {}).finally(() => {
-        // 更新が終わっても、すぐには戻さない：くるくるが見える時間を確保してから settling へ
-        setTimeout(settle, Math.max(250, 800 - (performance.now() - t0)));
-      });
-    } else {
+    if (!started) return; touching = false;
+    if (tickLater) { tickLater = false; hapticTick(); } // 更新が始まっていれば、指を離したこの瞬間に「カチッ」
+    if (phase === 'refreshing') {
+      // 指を離しても戻さず、更新中の位置で止めておく。更新がもう終わっていれば、そのあとで戻す
+      animate(HOLD, 260, easeOutCubic, null, () => { if (done && phase === 'refreshing') { ptrRepaint(); settle(); } });
+    } else if (phase === 'pulling') {
       // 更新するほど引っぱらなかったとき：そのまま元の位置へ戻す
       phase = 'settling';
       animate(0, 380, easeSettle, () => drawPull(), () => { ptr.style.opacity = '0'; phase = 'idle'; });
     }
+  };
+  window.addEventListener('touchend', end); window.addEventListener('touchcancel', end);
+})();
+// 一番下まで来たあとも、さらに上へ少し引っぱれる（ゴムのように伸びて、離すとなめらかに戻る）
+(function bottomBounce() {
+  const page = document.getElementById('page'); if (!page) return;
+  let y0 = null, on = false, d = 0, raf = 0;
+  const atBottom = () => window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+  const setY = v => { d = v; page.style.transform = v > 0.25 ? `translate3d(0,${(-v).toFixed(2)}px,0)` : ''; };
+  const blocked = t => $('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full') || (t && t.closest && t.closest('input,textarea,select,canvas'));
+  window.addEventListener('touchstart', e => { cancelAnimationFrame(raf); if (e.touches.length !== 1 || blocked(e.target) || page.style.transform && !on) { y0 = null; return; } y0 = e.touches[0].clientY; on = false; }, {passive:true});
+  window.addEventListener('touchmove', e => {
+    if (y0 == null) return;
+    const dy = y0 - e.touches[0].clientY; // 上に動かした量
+    if (!on) { if (dy <= 0) return; if (!atBottom()) { y0 = e.touches[0].clientY; return; } on = true; y0 = e.touches[0].clientY; return; }
+    if (dy <= 0) { setY(0); return; }
+    e.preventDefault(); setY(90 * (1 - Math.exp(-dy / 200)));
+  }, {passive:false});
+  const end = () => {
+    if (!on) { y0 = null; return; } on = false; y0 = null;
+    const from = d, t0 = performance.now();
+    const step = now => { const k = Math.min(1, (now - t0) / 420), e = 1 - Math.pow(1 - k, 4); setY(from * (1 - e)); if (k < 1) raf = requestAnimationFrame(step); else setY(0); };
+    raf = requestAnimationFrame(step);
   };
   window.addEventListener('touchend', end); window.addEventListener('touchcancel', end);
 })();
