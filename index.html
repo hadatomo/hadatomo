@@ -33,7 +33,8 @@
   --beige:#4A4232;--beige-s:#29251D;--gold:#C9A877;
   --danger:#E3907C;--danger-s:#3A2420;--warn:#D9A955;--warn-s:#33291A;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.25);color-scheme:dark}
-:root[data-theme="dark"] .topbar{background:#121614!important}
+:root[data-theme="dark"] .topbar{background:rgba(18,22,20,.55)!important}
+:root[data-theme="dark"] .home-tabs{background:rgba(18,22,20,.55)!important}
 :root[data-theme="dark"] .bottom-nav{background:rgba(27,32,29,.96)!important;border-color:var(--line)!important}
 :root[data-theme="dark"] .input,:root[data-theme="dark"] .select,:root[data-theme="dark"] .textarea,:root[data-theme="dark"] .checks .check,:root[data-theme="dark"] .used-list .check{background:var(--surface2);color:var(--ink)}
 :root[data-theme="dark"] .field.has-error .input,:root[data-theme="dark"] .field.has-error .select,:root[data-theme="dark"] .field.has-error .textarea{background:#2A1D1A}
@@ -63,7 +64,8 @@
   --beige:#4A4232;--beige-s:#29251D;--gold:#C9A877;
   --danger:#E3907C;--danger-s:#3A2420;--warn:#D9A955;--warn-s:#33291A;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.25);color-scheme:dark}
-:root:not([data-theme="light"]) .topbar{background:#121614!important}
+:root:not([data-theme="light"]) .topbar{background:rgba(18,22,20,.55)!important}
+:root:not([data-theme="light"]) .home-tabs{background:rgba(18,22,20,.55)!important}
 :root:not([data-theme="light"]) .bottom-nav{background:rgba(27,32,29,.96)!important;border-color:var(--line)!important}
 :root:not([data-theme="light"]) .input,:root:not([data-theme="light"]) .select,:root:not([data-theme="light"]) .textarea,:root:not([data-theme="light"]) .checks .check,:root:not([data-theme="light"]) .used-list .check{background:var(--surface2);color:var(--ink)}
 :root:not([data-theme="light"]) .field.has-error .input,:root:not([data-theme="light"]) .field.has-error .select,:root:not([data-theme="light"]) .field.has-error .textarea{background:#2A1D1A}
@@ -89,7 +91,7 @@
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;background:var(--bg)}
-/* 画面の上を下に引っぱったとき、「ナカカラモ」の上に背景のグラデーションが見えないように、上の帯と同じ色で埋める */
+/* 上の帯も背景のグラデーションを見せる（透明）。引っぱったときも同じグラデーションが見える */
 .topbar::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:400px;background:inherit;pointer-events:none}
 /* 下に引っぱって更新：ふつうのバウンドは止めて、上に出る部分は「ナカカラモ」の帯と同じ色にする */
 html,body{overscroll-behavior-y:none}
@@ -119,7 +121,10 @@ a,button,input,select,textarea,label,[data-action]{touch-action:manipulation;-we
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 input,textarea,[contenteditable="true"],.selectable{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 @media(max-width:959px){
-  .topbar{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:var(--bg)!important}
+  /* 上の帯（ナカカラモ）とタブのバーを、いつもくっつけたまま上に固定する（離れないように） */
+  .topbar{position:sticky!important;top:0;background:rgba(255,255,255,.38)!important;-webkit-backdrop-filter:blur(18px) saturate(1.15)!important;backdrop-filter:blur(18px) saturate(1.15)!important;border-bottom:0!important}
+  .topbar::before{display:none}
+  .home-tabs{top:var(--tbh,0px)!important}
   .bottom-nav{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:var(--surface)!important}
   .hero::after{display:none}
 }
@@ -467,6 +472,16 @@ label.btn{position:relative}
 .f3-views{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
 .f3-load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted);padding:20px;text-align:center}
 .f3-tip{position:absolute;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:12.5px;padding:4px 10px;border-radius:8px;pointer-events:none;white-space:nowrap}
+/* ホームの「今日の肌を記録・睡眠・運動・食事」：うしろの枠はなくして、4つのボタンを大きく */
+.hero.hero-plain{background:none;border:0;padding:0;border-radius:0;animation:none;overflow:visible;box-shadow:none}
+.hero.hero-plain::after{display:none}
+.hero-plain .life-btns{max-width:none;margin-top:0;gap:10px}
+.hero-plain .life-btns .life-main{min-height:58px;font-size:16.5px;border-radius:999px}
+.hero-plain .life-btns .life-main svg{width:20px;height:20px}
+.hero-plain .life-btns .btn-sm{min-height:52px;font-size:15px;border-radius:999px;background:var(--surface);gap:6px}
+.hero-plain .life-btns .btn-sm svg{width:19px;height:19px}
+.hero-plain .life-btns .hap-keep{width:100%;display:block}
+.hero-plain .life-btns .hap-keep>.btn{width:100%}
 .life-btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px;max-width:420px}
 .life-btns .btn{justify-content:center;padding-left:6px;padding-right:6px;white-space:nowrap}
 .life-btns .life-main{grid-column:1 / -1;grid-row:1}
@@ -672,7 +687,7 @@ details.acc-cmp{margin-top:14px}
 .home-pane{will-change:transform;touch-action:pan-y pinch-zoom}
 .home-pane.hp-in{animation:hpIn .46s cubic-bezier(.22,.7,.2,1)}
 @keyframes hpIn{from{transform:translateX(var(--hp-from,0));opacity:.4}to{transform:none;opacity:1}}
-.home-tabs{position:sticky;top:0;z-index:12;display:grid;grid-template-columns:repeat(3,minmax(0,124px));justify-content:center;gap:0;margin:-20px -16px 14px;padding:0 8px;background:var(--bg);border-bottom:1px solid var(--line)}
+.home-tabs{position:sticky;top:0;z-index:12;display:grid;grid-template-columns:repeat(3,minmax(0,124px));justify-content:center;gap:0;margin:-20px -16px 14px;padding:0 8px;background:rgba(255,255,255,.38);-webkit-backdrop-filter:blur(18px) saturate(1.15);backdrop-filter:blur(18px) saturate(1.15);border-bottom:1px solid var(--line)}
 .ht-ind{position:absolute;left:0;bottom:-1px;width:48px;height:3px;border-radius:3px;background:var(--green-d);transition:transform .44s cubic-bezier(.3,.8,.25,1);pointer-events:none}
 .ht{display:flex;align-items:center;justify-content:center;gap:5px;min-height:38px;min-width:0;padding:0 6px!important;border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;position:relative;white-space:nowrap;padding:0 4px}
 .ht svg{width:19px;height:19px;flex:none}
@@ -1192,6 +1207,8 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .sw-nums .unit{display:flex;align-items:center;gap:6px}
 .sw-err{color:var(--danger);font-size:12.5px;text-align:center;margin:10px 0 0}
 .sw-sec{font-size:13px;font-weight:700;margin:16px 0 8px}
+.sw-list{margin:0 0 14px;padding-left:1.2em;font-size:12.5px;color:var(--ink2);line-height:1.6}
+.sw-list li+li{margin-top:4px}
 .sw-hello{text-align:center;font-size:40px;margin:4px 0 8px}
 .sw-foot{display:flex;gap:8px;width:100%}
 .sw-foot .btn{flex:1}
@@ -2793,7 +2810,7 @@ function viewHome() {
   const budget = state.settings.monthlyBudget;
 
   let html = loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '';
-  html += `<section class="hero">
+  html += `<section class="hero hero-plain">
     <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${icon('plus')}今日の肌を記録</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('chart')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('note')}食事</button></div></section>`;
 
   const lifeLine = lifeSumHtml(todayLife);
@@ -2836,7 +2853,7 @@ function viewHome() {
     ${budget > 0 ? `<div class="progress ${over ? 'over' : ''}"><i style="width:${Math.min(100, mTotal / budget * 100).toFixed(1)}%"></i></div><p class="small" style="margin-top:6px;${over ? 'color:var(--danger)' : 'color:var(--muted)'}">月の予算 ${yen(budget)}${over ? `／${yen(mTotal - budget)} 超過` : `／残り ${yen(budget - mTotal)}`}</p>`
       : `<p class="small muted" style="margin-top:10px">${allPurchases().length ? '' : '化粧品を登録するときに購入価格を入れると、ここに集計されます。'}<a href="#/settings">月の予算を設定する</a></p>`}
     ${hints.length ? `<ul class="hint-list">${hints.map(h => `<li>${esc(h)}</li>`).join('')}</ul>` : ''}
-    <a class="btn btn-soft btn-sm" style="margin-top:12px" href="#/check">${icon('check')}買う前チェック</a></div>`;
+    </div>`;
 
   const shortcuts = `<div class="card" id="sc-card"><div class="card-h"><h2>ショートカット</h2><button class="link small sc-edit" data-action="sc-edit">${icon('gear')}変更</button></div><div class="shortcuts">${myShortcuts().map(x => `<a class="shortcut" href="${x.h}">${icon(x.ic)}${esc(x.l)}</a>`).join('')}</div></div>`;
 
@@ -3026,14 +3043,14 @@ function findPick(i) {
 let swState = null;
 function openSetupWizard() {
   const st = state.settings;
-  swState = {i:0, v:{gender:st.gender || '', ageBand:st.ageBand || '', height:st.height || '', weight:st.weight || '', skinType:st.skinType || '', sensitive:st.sensitive ? 'yes' : (st.onboarded ? 'no' : ''), concerns:st.concerns.slice(), sleepNeed:st.sleepNeed || 420, budget:st.monthlyBudget || ''}};
+  swState = {i:0, v:{gender:st.gender || '', ageBand:st.ageBand || '', height:st.height || '', weight:st.weight || '', skinType:st.skinType || '', sensitive:st.sensitive ? 'yes' : (st.onboarded ? 'no' : ''), concerns:st.concerns.slice(), sleepNeed:st.sleepNeed || 420, budget:st.monthlyBudget || '', research:researchState().on ? 'yes' : ''}};
   openModal({title:'はじめの質問', body:'<div id="sw-body"></div>', footer:'<div class="sw-foot" id="sw-foot"></div>'});
   const root = $('#modal-root');
   root.querySelector('.modal-head [data-action="close-modal"]').setAttribute('data-action', 'setup-later');
   if (!root._sw) { root.addEventListener('click', swClick); root._sw = 1; }
   swPaint();
 }
-const SW_STEPS = ['hello', 'age', 'body', 'skin', 'concerns', 'life', 'done'];
+const SW_STEPS = ['hello', 'age', 'body', 'skin', 'concerns', 'life', 'research', 'done'];
 function swOpts(key, list, cur, multi) { return `<div class="sw-opts">${list.map(([v, l, w]) => { const on = multi ? cur.includes(v) : cur === v; return `<button type="button" class="sw-opt ${on ? 'on' : ''} ${w ? 'wide' : ''}" data-sw="${key}" data-v="${esc(v)}" aria-pressed="${on}">${l.includes('|') ? `${esc(l.split('|')[0])}<small>${esc(l.split('|')[1])}</small>` : esc(l)}</button>`; }).join('')}</div>`; }
 function swPaint() {
   const s = swState; if (!s) return; const b = $('#sw-body'), f = $('#sw-foot'); if (!b || !f) return;
@@ -3052,13 +3069,16 @@ function swPaint() {
   if (step === 'life') h = `<p class="sw-q">生活と予算</p><p class="sw-sub">睡眠の記録と、化粧品の支出の管理に使います</p>
     <p class="sw-sec">ちょうどいい睡眠時間</p><select class="select" id="sw-sleep">${[300, 330, 360, 390, 420, 450, 480, 510, 540].map(m => `<option value="${m}" ${m === v.sleepNeed ? 'selected' : ''}>${fmtDur(m)}</option>`).join('')}</select>
     <p class="sw-sec">化粧品に使う月の予算<span class="small muted">（任意）</span></p><div class="sw-nums" style="grid-template-columns:1fr"><span class="unit"><input class="input" id="sw-budget" inputmode="numeric" placeholder="例：5000" value="${esc(v.budget)}">円</span></div>`;
+  if (step === 'research') h = `<p class="sw-q">研究に協力してもらえますか？</p><p class="sw-sub">「どんな肌質の人が、どの成分を使って、肌がどう変わったか」を、たくさんの人の記録から統計にして、スキンケアの研究・商品開発に役立てます</p>
+    <ul class="sw-list"><li><b>送るもの</b>：肌質・年代、肌の状態の平均、成分ごとの肌の変化（数字だけ）</li><li><b>送らないもの</b>：名前・メール・写真・メモ・日付・商品名・位置</li><li>5人以上をまとめた統計にしてから使います。いつでも設定からやめられて、やめると送ったデータも消えます</li></ul>`
+    + swOpts('research', [['yes', '協力する|18歳以上で、内容に同意します'], ['no', '協力しない']], v.research);
   if (step === 'done') h = `<div class="sw-hello">✨</div><p class="sw-q">準備ができました</p><p class="sw-sub">さっそく今日の肌を記録してみましょう。<br>答えた内容は「設定」の「肌質・年代」から答え直せます。</p>`;
   b.innerHTML = dots + h + '<p class="sw-err" id="sw-err" hidden></p>';
   f.innerHTML = step === 'hello' ? `<button type="button" class="btn btn-ghost" data-action="setup-later">あとで</button><button type="button" class="btn btn-primary" data-swgo="1">はじめる</button>`
     : step === 'done' ? `<button type="button" class="btn btn-primary" data-action="setup-finish">ナカカラモをはじめる</button>`
-    : `<button type="button" class="btn btn-ghost" data-swgo="-1">戻る</button><button type="button" class="btn btn-primary" data-swgo="1">${['gender', 'age', 'skin', 'concerns'].includes(step) && !swHas(step) ? 'スキップ' : '次へ'}</button>`;
+    : `<button type="button" class="btn btn-ghost" data-swgo="-1">戻る</button><button type="button" class="btn btn-primary" data-swgo="1">${['gender', 'age', 'skin', 'concerns', 'research'].includes(step) && !swHas(step) ? 'スキップ' : '次へ'}</button>`;
 }
-const swHas = step => { const v = swState.v; return step === 'gender' ? !!v.gender : step === 'age' ? !!v.ageBand : step === 'skin' ? !!(v.skinType || v.sensitive) : step === 'concerns' ? v.concerns.length > 0 : true; };
+const swHas = step => { const v = swState.v; return step === 'research' ? !!v.research : step === 'gender' ? !!v.gender : step === 'age' ? !!v.ageBand : step === 'skin' ? !!(v.skinType || v.sensitive) : step === 'concerns' ? v.concerns.length > 0 : true; };
 // 入力欄の値を読み取る（数字のまちがいがあれば止める）
 function swRead() {
   const v = swState.v, step = SW_STEPS[swState.i], err = $('#sw-err');
@@ -3094,6 +3114,8 @@ function swSave(done) {
   if (v && done) {
     st.gender = v.gender; st.ageBand = v.ageBand; st.skinType = v.skinType; st.sensitive = v.sensitive === 'yes'; st.concerns = v.concerns.filter(x => CONCERNS.includes(x));
     st.height = Number(v.height) || 0; st.weight = Number(v.weight) || 0; st.sleepNeed = v.sleepNeed || 420; st.monthlyBudget = Number(v.budget) || 0;
+    // 研究への協力：はじめの質問で「協力する（18歳以上で同意）」を選んだときだけオンにする
+    if (v.research === 'yes') { const r = researchState(); if (!r.on) { r.adult = true; r.on = true; r.lastHash = ''; setTimeout(() => researchSend(true), 0); } }
   }
   st.onboarded = true; swState = null; save(); closeModal(); render();
 }
@@ -4545,7 +4567,7 @@ function viewMy() {
     .sort((a,b) => (useN[b.id] || 0) - (useN[a.id] || 0) || FREQS.indexOf(a.frequency) - FREQS.indexOf(b.frequency) || b.startDate.localeCompare(a.startDate));
   let html = `<button class="btn btn-primary my-add" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button>`;
   html += `<div class="my-filters" role="tablist">${filters.map(f => `<button class="btn btn-ghost btn-sm my-f ${ui.myFilter === f ? 'active' : ''}" role="tab" aria-selected="${ui.myFilter === f}" data-action="my-filter" data-id="${esc(f)}">${esc(label(f))}<span>${f === 'すべて' ? state.myProducts.length : counts[f]}</span></button>`).join('')}</div>`;
-  const tools = `<div class="mtools">${state.myProducts.length ? `<a href="#/compare">${icon('compare')}商品と肌状態の比較<i>›</i></a><a href="#/combo">${icon('flask')}成分の組み合わせ<i>›</i></a>` : ''}<a href="#/spending">${icon('wallet')}支出<i>›</i></a><a href="#/check">${icon('check')}買う前チェック<i>›</i></a></div>`;
+  const tools = !state.myProducts.length ? '' : `<div class="mtools">${state.myProducts.length ? `<a href="#/compare">${icon('compare')}商品と肌状態の比較<i>›</i></a><a href="#/combo">${icon('flask')}成分の組み合わせ<i>›</i></a>` : ''}</div>`;
   if (!state.myProducts.length) {
     html += `<div class="card">${emptyBox('bottle', 'まだ化粧品が登録されていません', '使っている化粧品を登録すると、使用期間・成分・支出をまとめて管理できます。上の「化粧品を追加」から登録できます。')}</div>`;
   } else if (!list.length) {
@@ -7683,7 +7705,7 @@ function accSectionHtml(k) {
 function viewAccount() {
   ui.budgetEdit = false; ui.accOpen = ui.accOpen || {};
   if (ui.accOpen.plan && acct.status === 'idle') setTimeout(initCloud, 0);
-  return ['plan', 'settings'].map(accSectionHtml).join(''); // 支出はマイ化粧品の中へ移した
+  return ['spend', 'plan', 'settings'].map(accSectionHtml).join('');
 }
 // 設定・プライバシー（アカウントの中）：並びを整え、データ関係を1つにまとめ、プライバシーは押すと開く形にする
 // 設定：ウィジェットの見た目（アプリ版でホーム画面に置けるもの）のプレビュー
@@ -8663,6 +8685,9 @@ function slideHomePane() {
 }
 window.addEventListener('resize', () => { if (document.querySelector('.home-tabs')) { const i = document.querySelector('.ht-ind'); if (i) i.style.transition = 'none'; placeHomeTabInd(); } });
 // 左上：ホームでは「ナカカラモ」、肌の記録・マイ化粧品・商品検索・アカウントでは、その画面の名前を出す
+// 上の帯の高さを測って、タブのバーをそのすぐ下にくっつける
+function setTbh() { const tb = document.querySelector('.topbar'); if (tb) document.documentElement.style.setProperty('--tbh', tb.offsetHeight + 'px'); }
+window.addEventListener('resize', setTbh); window.addEventListener('orientationchange', () => setTimeout(setTbh, 300));
 function setTopTitle(t) {
   const tb = $('.topbar'); if (!tb) return;
   const cur = tb.firstElementChild, want = t || 'ナカカラモ';
@@ -8670,6 +8695,7 @@ function setTopTitle(t) {
   const html = t ? `<h1 class="wordmark top-title" data-t="${esc(t)}">${esc(t)}</h1>` : `<a class="wordmark" data-t="ナカカラモ" href="#/home">ナカカラモ</a>`;
   if (cur && cur.classList.contains('wordmark')) cur.outerHTML = html; else tb.insertAdjacentHTML('afterbegin', html);
   const el = tb.firstElementChild; if (cur) { el.classList.add('tt-in'); }
+  setTbh();
 }
 function render() {
   applyHelpPref();
@@ -8680,11 +8706,12 @@ function render() {
     return;
   }
   if (['search', 'favorites', 'stores', 'cart', 'prices'].includes(r.name)) { location.replace('#/my'); return; }
-  if (r.name === 'suggest') { location.replace('#/settings'); return; } // ケアの提案は「おすすめケア」と重なるのでなくした（肌悩みは設定へ） // 商品検索は試作の段階ではなくした
+  if (r.name === 'suggest') { location.replace('#/settings'); return; }
+  if (r.name === 'check') { location.replace('#/account'); return; } // 買う前チェックはなくした // ケアの提案は「おすすめケア」と重なるのでなくした（肌悩みは設定へ） // 商品検索は試作の段階ではなくした
   const views = {home:viewHome, search:viewSearch, product:() => viewProduct(r.id), prices:() => viewPrices(r.id), cart:viewCart, stores:viewStores,
     ingredients:() => viewIngredients(r.id), scan:viewScan, my:() => r.id ? viewMyDetail(r.id) : viewMy(), compare:viewCompare, combo:viewCombo,
     log:viewLog, charts:viewCharts, report:viewReport, spending:viewSpending, check:() => viewCheck(r.id), settings:viewSettings, account:viewAccount, favorites:viewFavorites, terms:viewTerms, privacy:viewPrivacy, law:viewLaw, plan:() => viewPlan(r.query), suggest:viewSuggest, visit:viewVisit};
-  const alias = {account:'account', product:'search', prices:'search', cart:'search', stores:'search', favorites:'search', spending:'my', plan:'account', settings:'account', compare:'log', charts:'log', report:'log', visit:'log', check:'my', terms:'account', privacy:'account', law:'account'};
+  const alias = {account:'account', product:'search', prices:'search', cart:'search', stores:'search', favorites:'search', spending:'account', plan:'account', settings:'account', compare:'log', charts:'log', report:'log', visit:'log', check:'account', terms:'account', privacy:'account', law:'account'};
   const navName = alias[r.name] || (views[r.name] ? r.name : 'home');
   if (r.name !== 'check') ui._checkFrom = '';
   if (r.name === 'plan' && acct.status === 'idle') setTimeout(initCloud, 0);
@@ -8855,7 +8882,7 @@ function ptrRepaint() {
   const setY = v => {
     d = v; const on2 = v > 0.25;
     page.style.transform = on2 ? `translate3d(0,${(-v).toFixed(2)}px,0)` : '';
-    if (bar) bar.style.transform = on2 ? `translate3d(0,${v.toFixed(2)}px,0)` : '';
+    if (bar) bar.forEach(el => { el.style.transform = on2 ? `translate3d(0,${v.toFixed(2)}px,0)` : ''; });
     if (!on2) bar = null;
   };
   const blocked = t => $('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full') || (t && t.closest && t.closest('input,textarea,select,canvas'));
@@ -8864,7 +8891,8 @@ function ptrRepaint() {
     if (y0 == null) return;
     const dy = y0 - e.touches[0].clientY; // 上に動かした量
     if (!on) { if (dy <= 0) return; if (!atBottom()) { y0 = e.touches[0].clientY; return; } on = true; y0 = e.touches[0].clientY;
-      const tb = document.querySelector('.home-tabs'); bar = tb && tb.getBoundingClientRect().top <= 1 ? tb : null; return; } // バーが上にくっついている（止まっている）ときだけ
+      const tb = document.querySelector('.home-tabs'), top = document.querySelector('.topbar'), stuck = tb && tb.getBoundingClientRect().top <= (top ? top.offsetHeight : 0) + 1;
+      bar = [top, stuck ? tb : null].filter(Boolean); return; } // 上の帯はいつも、タブのバーは上にくっついているときだけ、ページといっしょに動かさない // バーが上にくっついている（止まっている）ときだけ
     if (dy <= 0) { setY(0); return; }
     e.preventDefault(); setY(90 * (1 - Math.exp(-dy / 200)));
   }, {passive:false});
@@ -8882,6 +8910,7 @@ $('#top-menu').innerHTML = '<span class="hb" aria-hidden="true"><i></i><i></i><i
 // 朝（5〜11時）・昼（11〜17時）・夜（17〜5時）で背景の色を変える。10分ごとに確かめる
 const setTimeOfDay = () => { const h = new Date().getHours(); document.documentElement.dataset.tod = h >= 5 && h < 11 ? 'morning' : h >= 11 && h < 17 ? 'day' : 'night'; };
 setTimeOfDay(); setInterval(setTimeOfDay, 10 * 60 * 1000);
+setTbh(); if (document.fonts && document.fonts.ready) document.fonts.ready.then(setTbh);
 if (researchState() && researchState().on) setTimeout(() => { if (researchState().lastSent !== todayStr()) researchSend(); }, 5000); // 研究に協力中なら、1日1回まで統計を新しくする
 if (hasSavedLogin()) setTimeout(initCloud, 0); // 以前ログインしていた場合だけ、ログイン状態を確認する
 document.title = SERVICE;
