@@ -1173,7 +1173,8 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .ld-card .ld-stage{max-width:240px;width:100%;aspect-ratio:auto;height:190px;margin:0 auto}
 .ld-swipe{display:grid;grid-template-columns:40px 1fr 40px;align-items:center;gap:6px;margin-top:8px;user-select:none;-webkit-user-select:none}
 .ld-arrow[hidden]{display:block;visibility:hidden}
-.ld-arrow{width:40px;height:40px;border-radius:50%;border:1px solid var(--line2);background:var(--surface);color:var(--ink);font-size:24px;line-height:1;cursor:pointer;font-family:inherit}
+.ld-arrow{width:40px;height:40px;border-radius:50%;border:1px solid var(--line2);background:var(--surface);color:var(--ink);font-size:24px;line-height:1;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;justify-content:center;padding:0}
+.ld-arrow svg{display:block;flex:none}
 .ld-info{text-align:center;min-width:0}
 .ld-date{display:flex;flex-direction:column;align-items:center;line-height:1.4}
 .ld-sleep{text-align:center;margin-top:2px}
@@ -4954,7 +4955,7 @@ function logDayIdx(list) { let i = list.findIndex(l => l.date === ui.logDay); if
 function logDayInfoHtml(list, i) {
   const l = list[i]; if (!l) return '';
   const life = lifeMap()[l.date], sm = life ? sleepMin(life) : null;
-  return `<div class="ld-date"><b>${fmtMD(l.date)}</b></div>${sm != null ? `<div class="ld-sleep small muted">睡眠 ${esc(fmtHM(sm))}</div>` : ''}
+  return `<div class="ld-date"><b>${fmtMD(l.date)}</b></div><div class="ld-sleep small muted">睡眠 ${sm != null ? esc(fmtHM(sm)) : "未記録"}</div>
     <div class="t3-tags" style="justify-content:center;margin-top:4px"><span class="t-cond" style="background:${COND_COLORS[l.condition] || '#999'};color:${COND_FG[l.condition] || '#fff'}">${esc(COND_LABELS[l.condition] || '—')}</span>${l.demo ? '<span class="badge-sample">デモ</span>' : ''}</div>`;
 }
 // その日の記録の詳しい内容（記録一覧にあった情報を、ここにまとめて表示）
@@ -4992,9 +4993,9 @@ function logDayCardHtml(logs) {
   return `<div class="card ld-card" id="log-day-card"><div class="card-h ld-top"><button type="button" class="icon-btn ld-calbtn" id="ld-calbtn" aria-label="日付で探す" aria-expanded="false">${icon('calendar')}</button><div class="ld-cal" id="ld-cal" hidden></div></div>
     <div class="f3-stage ld-stage"><canvas id="face3d-log" aria-label="選んだ日の肌の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="log" aria-label="大きく見る">⤢</button><div class="f3-load" id="ld-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>
     <div class="ld-swipe" id="ld-swipe">
-      <button class="ld-arrow" id="ld-prev" data-action="log-day-step" data-id="-1" aria-label="前の記録" ${i <= 0 ? 'hidden' : ''}>‹</button>
+      <button class="ld-arrow" id="ld-prev" data-action="log-day-step" data-id="-1" aria-label="前の記録" ${i <= 0 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="ld-info" id="ld-info">${logDayInfoHtml(list, i)}</div>
-      <button class="ld-arrow" id="ld-next" data-action="log-day-step" data-id="1" aria-label="次の記録" ${i >= list.length - 1 ? 'hidden' : ''}>›</button>
+      <button class="ld-arrow" id="ld-next" data-action="log-day-step" data-id="1" aria-label="次の記録" ${i >= list.length - 1 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
     </div>
     <p class="small muted ld-miss" id="ld-miss" hidden></p>
     <div class="ld-detail" id="ld-detail">${logDayDetailHtml(list, i)}</div></div>`;
@@ -5071,9 +5072,9 @@ function photoDayCardHtml(list) { // list：写真のある記録（古い順）
   return `<div class="card ld-card" id="photo-day-card"><div class="card-h ld-top"><button type="button" class="icon-btn ld-calbtn" id="pd-calbtn" aria-label="日付で探す" aria-expanded="false">${icon('calendar')}</button><div class="ld-cal" id="pd-cal" hidden></div></div>
     ${miss ? `<div class="pd-miss"><b>${esc(fmtMD(miss))}</b><br>写真はありません。</div>` : `<img class="pd-img" src="${safeImg(l.photo)}" alt="${esc(l.date)}の肌写真">`}
     <div class="ld-swipe" ${miss ? 'style="visibility:hidden"' : ''}>
-      <button class="ld-arrow" data-action="photo-step" data-id="-1" aria-label="前の写真" ${i <= 0 ? 'hidden' : ''}>‹</button>
+      <button class="ld-arrow" data-action="photo-step" data-id="-1" aria-label="前の写真" ${i <= 0 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg></button>
       <div class="ld-info"><div class="ld-date"><b>${fmtMD(l.date)}</b></div><div class="t3-tags" style="justify-content:center;margin-top:4px"><span class="t-cond" style="background:${COND_COLORS[l.condition] || '#999'};color:${COND_FG[l.condition] || '#fff'}">${esc(COND_LABELS[l.condition] || '—')}</span></div></div>
-      <button class="ld-arrow" data-action="photo-step" data-id="1" aria-label="次の写真" ${i >= list.length - 1 ? 'hidden' : ''}>›</button>
+      <button class="ld-arrow" data-action="photo-step" data-id="1" aria-label="次の写真" ${i >= list.length - 1 ? 'hidden' : ''}><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></svg></button>
     </div>
     <div class="ld-actions" style="justify-content:center"><button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(l.id)}">この日の記録を開く</button></div></div>`;
 }
