@@ -7665,7 +7665,9 @@ function placeHomeTabInd() {
 // ホームを横にスワイプ：今日の記録 ⇄ ケアポイント ⇄ ショートカット
 // 指に合わせて中身が動き、十分に動かすか、すばやく払うと隣のタブへ。縦のスクロールが先に始まったら、横には動かさない
 (() => {
-  let x0 = null, y0 = 0, t0 = 0, lock = '', pane = null, dx = 0;
+  let x0 = null, y0 = 0, t0 = 0, lock = '', pane = null, dx = 0, swAt = 0, sx = 0, tot = 0;
+  // iPhoneで鳴らし損ねないように、指を離したときのもう一つの合図（pointerup）でも鳴らす（ほぼ同時なので1回に感じる）
+  window.addEventListener('pointerup', e => { if (e.pointerType === 'touch' && Date.now() - swAt < 400) { swAt = 0; switchTick(); } }, {passive:true});
   const idx = () => Math.max(0, HOME_TABS.findIndex(x => x.k === ui.homeTab));
   const scrollsX = el => { for (let n = el; n && n !== document.body; n = n.parentElement) { if (n.scrollWidth > n.clientWidth + 2) { const ox = getComputedStyle(n).overflowX; if (ox === 'auto' || ox === 'scroll') return true; } } return false; };
   window.addEventListener('touchstart', e => {
@@ -7675,21 +7677,21 @@ function placeHomeTabInd() {
     if ($('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full')) return;
     if (!tg.closest || !tg.closest('.home-pane') || tg.closest('input,textarea,select,.ld-cal,[data-noswipe]') || scrollsX(tg)) return;
     pane = document.querySelector('.home-pane'); if (!pane) return;
-    x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = performance.now(); dx = 0;
+    x0 = sx = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = performance.now(); dx = 0; tot = 0;
   }, {passive:true});
   window.addEventListener('touchmove', e => {
     if (x0 == null) return;
     if (e.touches.length !== 1) { x0 = null; if (lock === 'x') back(); return; }
     const mx = e.touches[0].clientX - x0, my = e.touches[0].clientY - y0;
     if (!lock) {
-      if (Math.abs(mx) < 10 && Math.abs(my) < 10) return;
-      lock = Math.abs(mx) > Math.abs(my) * 1.2 && !window.__ptrOn ? 'x' : 'y'; // 上に引っぱって更新が始まっていたら、横には動かさない
+      if (Math.abs(mx) < 7 && Math.abs(my) < 7) return;
+      lock = Math.abs(mx) > Math.abs(my) * 1.1 && !window.__ptrOn ? 'x' : 'y'; // 上に引っぱって更新が始まっていたら、横には動かさない
       if (lock === 'y') { x0 = null; return; }
       x0 = e.touches[0].clientX; // ここから動かす（はじめの10pxでカクッとしないように）
       pane.style.transition = 'none';
     }
     e.preventDefault();
-    dx = e.touches[0].clientX - x0;
+    dx = e.touches[0].clientX - x0; tot = e.touches[0].clientX - sx; // tot：触り始めからの距離（移動するかの判定に使う）
     const i = idx(), edge = (dx > 0 && i === 0) || (dx < 0 && i === HOME_TABS.length - 1);
     const v = edge ? dx / 3 : dx; // 端のタブでは、ゴムのように重くする
     pane.style.transform = `translateX(${v.toFixed(1)}px)`; pane.style.opacity = String(1 - Math.min(0.35, Math.abs(v) / 900));
@@ -7698,11 +7700,12 @@ function placeHomeTabInd() {
   const end = () => {
     if (x0 == null || lock !== 'x') { x0 = null; return; }
     x0 = null; lock = '';
-    const i = idx(), w = window.innerWidth, fast = Math.abs(dx) > 30 && Math.abs(dx) / (performance.now() - t0) > 0.45;
-    const j = (dx < 0 ? i + 1 : i - 1);
-    if ((Math.abs(dx) > w * 0.22 || fast) && j >= 0 && j < HOME_TABS.length) {
-      hapticTick(); // 指を離したこの瞬間に「コツッ」
-      ui.htSlide = dx < 0 ? 1 : -1;
+    // 短いスワイプでも移動：40px（画面幅の1割ほど）動かすか、軽く払えば次のタブへ
+    const i = idx(), w = window.innerWidth, fast = Math.abs(tot) > 24 && Math.abs(tot) / (performance.now() - t0) > 0.25;
+    const j = (tot < 0 ? i + 1 : i - 1);
+    if ((Math.abs(tot) > Math.min(40, w * 0.11) || fast) && j >= 0 && j < HOME_TABS.length) {
+      hapticTick(); swAt = Date.now(); // 指を離したこの瞬間に「コツッ」
+      ui.htSlide = tot < 0 ? 1 : -1;
       actions['home-tab'](HOME_TABS[j].k);
     } else back();
   };
