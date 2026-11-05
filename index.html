@@ -119,9 +119,7 @@ a,button,input,select,textarea,label,[data-action]{touch-action:manipulation;-we
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 input,textarea,[contenteditable="true"],.selectable{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 @media(max-width:959px){
-  /* 上の帯（ナカカラモ）とタブのバーを、いつもくっつけたまま上に固定する（離れないように） */
-  .topbar{position:sticky!important;top:0;background:var(--bg)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border-bottom:0!important}
-  .home-tabs{top:var(--tbh,0px)!important}
+  .topbar{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:var(--bg)!important}
   .bottom-nav{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:var(--surface)!important}
   .hero::after{display:none}
 }
@@ -8885,8 +8883,7 @@ function ptrRepaint() {
     if (y0 == null) return;
     const dy = y0 - e.touches[0].clientY; // 上に動かした量
     if (!on) { if (dy <= 0) return; if (!atBottom()) { y0 = e.touches[0].clientY; return; } on = true; y0 = e.touches[0].clientY;
-      const tb = document.querySelector('.home-tabs'), top = document.querySelector('.topbar'), stuck = tb && tb.getBoundingClientRect().top <= (top ? top.offsetHeight : 0) + 1;
-      bar = [top, stuck ? tb : null].filter(Boolean); return; } // 上の帯はいつも、タブのバーは上にくっついているときだけ、ページといっしょに動かさない // バーが上にくっついている（止まっている）ときだけ
+      const tb = document.querySelector('.home-tabs'); bar = tb && tb.getBoundingClientRect().top <= 1 ? [tb] : null; return; } // 上の帯はいつも、タブのバーは上にくっついているときだけ、ページといっしょに動かさない // バーが上にくっついている（止まっている）ときだけ
     if (dy <= 0) { setY(0); return; }
     e.preventDefault(); setY(90 * (1 - Math.exp(-dy / 200)));
   }, {passive:false});
