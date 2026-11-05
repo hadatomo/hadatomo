@@ -1302,7 +1302,7 @@ const FREQS = ['毎日','週4〜6回','週2〜3回','週1回','不定期'];
 const FREQ_RANGE = {'毎日':[7,7],'週4〜6回':[4,6],'週2〜3回':[2,3],'週1回':[1,1],'不定期':null};
 const STOCK = 'ストック（未開封）';
 const SKIN_TYPES = ['乾燥肌','脂性肌','混合肌','普通肌'];
-const AGE_BANDS = ['18〜19歳','20代','30代','40代','50代','60代以上'];
+const AGE_BANDS = ['10代','20代','30代','40代','50代','60代以上'];
 const STATUSES = ['使用中','一時停止',STOCK,'使用終了'];
 const AREAS = [{id:'forehead',name:'額'},{id:'nose',name:'鼻'},{id:'rcheek',name:'右頬'},{id:'lcheek',name:'左頬'},{id:'mouth',name:'口まわり'},{id:'chin',name:'顎'}];
 const ACNE_TYPES = ['白ニキビ','黒ニキビ','赤ニキビ','黄ニキビ（膿あり）','しこり・硬い','ニキビ跡'];
@@ -1876,7 +1876,7 @@ function normalize(d) {
   out.settings.proteinGoal = clamp(Math.round(num(ds.proteinGoal) || 0), 0, 300); // たんぱく質の目標（g）。0は自動
   out.settings.skinType = SKIN_TYPES.includes(ds.skinType) ? ds.skinType : ''; // 肌質
   out.settings.sensitive = !!ds.sensitive; // 敏感肌かどうか
-  out.settings.ageBand = AGE_BANDS.includes(ds.ageBand) ? ds.ageBand : ''; // 年代（任意）
+  out.settings.ageBand = ds.ageBand === '18〜19歳' ? '10代' : AGE_BANDS.includes(ds.ageBand) ? ds.ageBand : ''; // 以前の「18〜19歳」は「10代」にまとめる // 年代（任意）
   out.settings.gender = ['女性', '男性'].includes(ds.gender) ? ds.gender : ''; // 性別（3Dの顔の形に使う。任意）
   out.settings.hideHelp = !!ds.hideHelp; // ボタン・入力欄の説明文を隠す（設定の「画面の表示」）
   out.settings.onboarded = !!ds.onboarded; // はじめの質問に答えた（またはあとでにした）
@@ -2164,7 +2164,7 @@ function hapticize(btn) {
 
 // 押したときにバイブを付けるボタン：今日の肌を記録／睡眠・運動・食事／記録する（ホームの小さいボタン）／メニュー
 // （保存する・記録するの保存ボタンは、下から出る画面を開くときに付ける）
-const HAPTIC_TARGETS = '.life-btns .btn, .t3-side [data-action="new-log"], #top-menu';
+const HAPTIC_TARGETS = '.life-btns .btn, .t3-side [data-action="new-log"], #top-menu, .sw-opt, .sw-foot .btn'; // はじめの質問（アンケート）の選択肢・次へ／戻るも
 function hapticizeTargets() { $$(HAPTIC_TARGETS).forEach(hapticizeKeep); }
 // まわりの並び方がくずれないように、ボタンの置き場所・幅をそのまま包む箱に写して、見えないスイッチを重ねる
 function hapticizeKeep(btn) {
@@ -2203,7 +2203,7 @@ function hapticizeSegs(root) {
 }
 // 画面やシートが描き直されたら、新しく出た選ぶボタンにも付ける
 let hapSegQueued = false;
-new MutationObserver(() => { if (hapSegQueued) return; hapSegQueued = true; requestAnimationFrame(() => { hapSegQueued = false; hapticizeSegs(); }); }).observe(document.documentElement, {childList:true, subtree:true});
+new MutationObserver(() => { if (hapSegQueued) return; hapSegQueued = true; requestAnimationFrame(() => { hapSegQueued = false; hapticizeSegs(); hapticizeTargets(); }); }).observe(document.documentElement, {childList:true, subtree:true});
 // 画面を開いている間、後ろのページが動かないように固定する（閉じたら元の位置に戻す）
 let lockedY = null;
 function lockScroll() { if (lockedY != null) return; lockedY = window.scrollY; document.body.style.top = `-${lockedY}px`; document.body.classList.add('no-scroll'); }
