@@ -640,7 +640,7 @@ details.acc-cmp{margin-top:14px}
 @media (max-width:380px){.home-tabs{gap:14px}.log-tabs .ht{font-size:12px}}
 @media (max-width:330px){.home-tabs{gap:10px}.log-tabs .ht{font-size:11.5px}}
 /* 記録の画面の上のバー：ホームと同じ形（画面の上にくっつく・緑の線が動く）。文字だけで大きめに */
-.log-tabs .ht{font-size:12.5px;font-weight:700;letter-spacing:-.01em;min-width:0}
+.log-tabs .ht,.home-tabs .ht{font-size:12.5px;font-weight:700;letter-spacing:-.01em;min-width:0}
 @media (min-width:900px){.home-tabs{margin:0 0 16px;border-radius:14px;border:1px solid var(--line)}}
 @media (prefers-reduced-motion:reduce){.ht-ind{transition:none}}
 .my-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 14px}
@@ -1010,6 +1010,18 @@ a.used-tile{color:inherit;text-decoration:none}
 .mn-pick{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
 .mn-pb{border:1px solid var(--line2);background:var(--surface);color:var(--muted);border-radius:999px;padding:5px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 .mn-pb.on{background:var(--green-d);border-color:var(--green-d);color:#fff}
+.qf-chips{display:flex;flex-wrap:wrap;gap:8px}
+.qf-c{border:1px solid var(--line2);background:var(--surface);color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
+.qf-c:active{background:var(--green-s)}
+.mn-dish{display:inline-flex;align-items:center;gap:4px;border:0;background:none;padding:0;font:inherit;font-size:14px;color:var(--ink);text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:var(--line2);text-underline-offset:3px}
+.mn-dish span{color:var(--muted);font-size:15px;text-decoration:none}
+.mn-src{font-size:11px;color:var(--muted);margin:6px 0 0;line-height:1.55}
+.mn-src a{color:var(--green-d)}
+.rc-h{font-size:13px;margin:12px 0 6px;color:var(--green-d)}
+.rc-ing{list-style:none;margin:0;padding:0}
+.rc-ing li{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
+.rc-ing b{font-weight:600;color:var(--ink2,#444);white-space:nowrap}
+.rc-steps{margin:0;padding-left:1.3em;display:grid;gap:7px;font-size:14px;line-height:1.6}
 .mn-point{font-size:12px;color:var(--muted);margin:6px 0 0;line-height:1.55}
 .adv-basis{font-size:11.5px;color:var(--muted);background:var(--surface2);border-radius:10px;padding:6px 9px;margin:6px 0 0;line-height:1.55}
 .adv-basis b{display:inline-block;font-size:10.5px;color:var(--green-d);margin-right:6px}
@@ -1812,7 +1824,8 @@ function normalize(d) {
       source:String(p.source||''), checkedAt:isValidYmd(p.checkedAt) ? p.checkedAt : '', offers:Array.isArray(p.offers) ? p.offers.filter(o => o && o.shop && !o.isSample).map(normOffer) : []};
   }) : [];
   // 第1版からの移行時だけ、新しく追加したサンプル商品を補う（削除済みのサンプルは第2版以降は復活させない）
-  out.myProducts = Array.isArray(d.myProducts) ? d.myProducts.filter(p => p && p.id && p.name && isValidYmd(p.startDate)).map(p => ({
+  // 以前のデモで入った架空の商品（【サンプル】）は外す
+  out.myProducts = Array.isArray(d.myProducts) ? d.myProducts.filter(p => p && p.id && p.name && isValidYmd(p.startDate) && !(p.demo && /^【サンプル】/.test(String(p.name)))).map(p => ({
     id:String(p.id), catalogId:p.catalogId ? String(p.catalogId) : '', name:String(p.name), brand:String(p.brand||''), category:CATEGORIES.includes(p.category) ? p.category : 'その他',
     purposes:strArr(p.purposes, PURPOSES), ingredients:String(p.ingredients||''),
     timing:TIMINGS.includes(p.timing) ? p.timing : '朝・夜', frequency:FREQS.includes(p.frequency) ? p.frequency : '毎日', startDate:p.startDate,
@@ -1829,7 +1842,7 @@ function normalize(d) {
     faceV:l.faceV === 2 ? 2 : 0, // 2＝顔のマス目で入力した記録（空でもマス目の表示にする）
     cellMarks:(() => { const o = {}; if (l.cellMarks && typeof l.cellMarks === 'object') Object.entries(l.cellMarks).forEach(([k, m]) => { if (!/^\d{1,3},\d{1,3}$/.test(k) || !m || typeof m !== 'object') return; const v = {}; AREA_CONCERNS.forEach(c => { const n = Math.round(Number(m[c])); if (n >= 1 && n <= 5) v[c] = n; }); if (m['ニキビ']) v['ニキビ'] = 1; if (Object.keys(v).length) o[k] = v; }); return o; })(),
     areaNotes:(() => { const o = {}; if (l.areaNotes && typeof l.areaNotes === 'object') AREAS.forEach(a => { const v = strArr(l.areaNotes[a.id], AREA_CONCERNS); if (v.length) o[a.id] = v; }); return o; })(),
-    areas:strArr(l.areas, AREAS.map(a => a.id)), usedProducts:strArr(l.usedProducts), usageRecorded:!!l.usageRecorded,
+    areas:strArr(l.areas, AREAS.map(a => a.id)), usedProducts:strArr(l.usedProducts).filter(id => out.myProducts.some(p => p.id === id)), usageRecorded:!!l.usageRecorded,
     memo:String(l.memo||''), photo:safeImg(l.photo), demo:!!l.demo
   })) : [];
   out.lifeLogs = Array.isArray(d.lifeLogs) ? d.lifeLogs.filter(l => l && l.id && isValidYmd(l.date)).map(l => ({
@@ -2661,7 +2674,7 @@ function viewHome() {
 
   const onboard = !state.settings.concerns.length ? `<div class="notice green" style="margin-bottom:16px"><b>はじめに：あなたの肌悩みを教えてください。</b>手持ちの化粧品と予算をふまえて、ケアの考え方と候補を整理します。<br><button type="button" class="btn btn-primary btn-sm" style="margin-top:10px" data-action="setup">質問に答える（1分）</button></div>` : '';
   const tab = HOME_TABS.some(x => x.k === ui.homeTab) ? ui.homeTab : 'today';
-  const tabs = `<nav class="home-tabs" role="tablist" aria-label="ホームの表示">${HOME_TABS.map(x => `<button type="button" class="ht ${tab === x.k ? 'active' : ''}" role="tab" aria-selected="${tab === x.k}" data-action="home-tab" data-id="${x.k}" aria-label="${x.l}" title="${x.l}">${icon(x.i)}</button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
+  const tabs = `<nav class="home-tabs" role="tablist" aria-label="ホームの表示">${HOME_TABS.map(x => `<button type="button" class="ht ${tab === x.k ? 'active' : ''}" role="tab" aria-selected="${tab === x.k}" data-action="home-tab" data-id="${x.k}"><span>${x.l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
   // 3つのタブ：画面の上にくっついたまま、押すと中身だけ切り替わる
   // 中身は .home-pane に入れる（横にスワイプしたとき、タブのバーは動かさずに中身だけ動かすため）
   if (tab === 'today') { html = tabs + '<div class="home-pane">' + html + onboard + todayCard + '</div>'; }
@@ -2671,7 +2684,7 @@ function viewHome() {
   html += `<p class="small muted" style="margin-top:20px;text-align:center">スキンロードは、肌の状態やスキンケアを記録・管理し、自分に合ったケアを効率よく選ぶための肌サポートアプリです。病気の診断や、化粧品の効果の保証は行いません。</p>`;
   return html;
 }
-const HOME_TABS = [{k:'today', l:'今日の記録', i:'note'}, {k:'care', l:'ケアポイント', i:'spark'}, {k:'sc', l:'ショートカット', i:'grid'}];
+const HOME_TABS = [{k:'today', l:'今日の記録', i:'note'}, {k:'care', l:'おすすめケア', i:'spark'}, {k:'sc', l:'ショートカット', i:'grid'}];
 function meter(label, v) {
   return `<div class="meter"><span class="muted">${esc(label)}</span><span class="bar"><i style="width:${v / 5 * 100}%"></i></span><span>${v}</span></div>`;
 }
@@ -2946,7 +2959,17 @@ function searchCount() { const t = document.createElement('div'); t.innerHTML = 
 function filterSelect(id, opts, v, ph) {
   return `<select class="select" id="${id}" aria-label="${esc(ph)}"><option value="">${esc(ph)}</option>${opts.map(o => `<option value="${esc(o)}" ${o === v ? 'selected' : ''}>${esc(o)}</option>`).join('')}</select>`;
 }
-function searchResults() { return searchResultsCore() + webSearchCard(ui.q); }
+// 何も入れていないとき：種類を押すだけで、実際に売られている商品（楽天市場・Yahoo!ショッピング）を探せる
+const QUICK_FIND = ['化粧水', '乳液', '美容液', 'クリーム', '日焼け止め', '洗顔', 'クレンジング', 'シートマスク', 'オールインワン', 'ニキビケア', '敏感肌', 'セラミド'];
+function quickFindHtml() {
+  return `<div class="card"><div class="card-h"><h2>種類から探す</h2></div><div class="qf-chips">${QUICK_FIND.map(w => `<button type="button" class="qf-c" data-qfind="${esc(w)}">${esc(w)}</button>`).join('')}</div>
+    <p class="small muted" style="margin:10px 0 0">押すと、楽天市場・Yahoo!ショッピングで実際に売られている商品が出てきます。商品名やブランド名でも検索できます。</p></div>`;
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-qfind]'); if (!b) return;
+  ui.q = b.dataset.qfind; render(); netSearchSoon(ui.q, true); window.scrollTo({top:0, behavior:'smooth'});
+});
+function searchResults() { return (!ui.q.trim() && state.catalog.length ? quickFindHtml() : '') + searchResultsCore() + webSearchCard(ui.q); }
 function webSearchCard(q) {
   q = String(q||'').trim();
   if (!q) return '';
@@ -2972,7 +2995,7 @@ function searchResultsCore() {
   if (ui.sort === 'new') list = list.slice().reverse();
   if (ui.sort === 'price') list = list.slice().sort((a,b) => (a.price || Infinity) - (b.price || Infinity));
   if (ui.sort === 'unit') list = list.slice().sort((a,b) => (perUnitValue(a.price, a.volume) ?? Infinity) - (perUnitValue(b.price, b.volume) ?? Infinity));
-  if (!state.catalog.length) return ui.q.trim().length >= 2 ? '' : `<div class="card">${emptyBox('search', '商品名で検索してください', '上の検索バーに商品名やブランド名を入れると、楽天市場・Yahoo!ショッピングで実際に売られている商品が出てきます。')}</div>`;
+  if (!state.catalog.length) return ui.q.trim() ? '' : quickFindHtml();
   if (!list.length && ui.q.trim().length >= 2) return '';
   if (!list.length) return `<div class="card">${emptyBox('search', '条件に合う商品が見つかりません', '検索条件を変えるか、新しく商品を登録してください。', '<button class="btn btn-soft btn-sm" data-action="new-cat">商品を追加</button>')}</div>`;
   const maxNote = typeof max === 'number' && isNaN(max) ? '<p class="small" style="color:var(--danger);margin-bottom:8px">予算の上限は半角数字で入力してください（条件から外しています）。</p>' : '';
@@ -5707,18 +5730,20 @@ function menuInput() {
 }
 function menuCache() { try { return JSON.parse(localStorage.getItem(MENU_KEY) || 'null'); } catch (e) { return null; } }
 function menuHtml() {
-  const head = `<div class="card-h"><h3 style="margin:0">献立の提案</h3>${isPremium() ? '' : '<span class="badge-premium">プレミアム</span>'}</div>`;
+  const head = `<div class="card-h"><h3 style="margin:0">献立の提案</h3>${isPremium() ? `<button class="btn btn-ghost btn-sm" data-action="menu-ai" ${menuBusy ? 'disabled' : ''}>別の献立にする</button>` : '<span class="badge-premium">プレミアム</span>'}</div>`;
   if (!isPremium()) return head + `<p class="small muted" style="margin:0">今日食べたものと肌の状態から、昼・夜（夜まで食べたら明日の朝）の献立をAIが自動で作ります。</p><a class="link small" style="display:inline-block;margin-top:8px" href="#/plan">プランを見る →</a>`;
   const d = menuInput(), sig = adviceSig(d), c = menuCache(), res = c && c.sig === sig && c.res && (c.res.meals || []).every(m => Array.isArray(m.plans)) ? c.res : null; // 前の形（1パターン）の結果は使わない
-  if (menuBusy) return head + skelHtml(3, {dots:true, label:'献立を作成中'});
+  if (menuBusy) return head + skelHtml(3, {dots:true, label:'献立を作成中', note:'コンビニ3社のいま売っている商品も調べています（30秒〜1分ほど）'});
   const eaten = Object.entries(d.eatenToday).map(([k, v]) => `${k}：${v.join('、')}`).join(' ／ ');
   const ROLE_C = {主食:'r1', 主菜:'r2', 副菜:'r3', 汁物:'r4', 果物:'r5', 飲み物:'r5'};
   // 1食ごとに2〜3パターン。上のボタンで切り替える
-  const plan = pl => `<ul class="mn-list">${pl.dishes.map(x => `<li>${x.role ? `<span class="mn-role ${ROLE_C[x.role] || ''}">${esc(x.role)}</span>` : ''}${esc(x.name)}</li>`).join('')}</ul>${pl.point ? `<p class="mn-point">${esc(pl.point)}</p>` : ''}`;
+  // 家で作る献立は、料理名を押すと作り方が出る。コンビニの組み合わせは、調べた公式サイトを出す
+  const plan = pl => `<ul class="mn-list">${pl.dishes.map(x => `<li>${x.role ? `<span class="mn-role ${ROLE_C[x.role] || ''}">${esc(x.role)}</span>` : ''}${pl.store ? `<span>${esc(x.name)}</span>` : `<button type="button" class="mn-dish" data-recipe="${esc(x.name)}">${esc(x.name)}<span aria-hidden="true">›</span></button>`}</li>`).join('')}</ul>${pl.point ? `<p class="mn-point">${esc(pl.point)}</p>` : ''}
+    ${pl.store ? `<p class="mn-src">${esc(pl.store)}の公式サイトで調べた商品です（${(pl.sources || []).map(s => s.url ? `<a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.title)}</a>` : esc(s.title)).join('・')}）。地域・時期によって売っていないことがあります。</p>` : '<p class="mn-src">料理名を押すと、作り方が出ます。</p>'}`;
   const body = res ? res.meals.map((m, mi) => { const k = Math.min(ui.menuPick[mi] || 0, m.plans.length - 1);
-    return `<div class="mn-meal"><b class="mn-h">${esc(m.when)}の${esc(m.meal)}</b>${m.plans.length > 1 ? `<div class="mn-pick" role="tablist">${m.plans.map((pl, i) => `<button type="button" class="mn-pb ${i === k ? 'on' : ''}" role="tab" aria-selected="${i === k}" data-mpick="${mi}:${i}">${'ABC'[i]}　${esc(pl.label)}</button>`).join('')}</div>` : ''}${plan(m.plans[k])}</div>`; }).join('')
+    return `<div class="mn-meal"><b class="mn-h">${esc(m.when)}の${esc(m.meal)}</b>${m.plans.length > 1 ? `<div class="mn-pick" role="tablist">${m.plans.map((pl, i) => `<button type="button" class="mn-pb ${i === k ? 'on' : ''}" role="tab" aria-selected="${i === k}" data-mpick="${mi}:${i}">${esc(pl.label)}</button>`).join('')}</div>` : ''}${plan(m.plans[k])}</div>`; }).join('')
     : `<p class="small muted" style="margin:0">${menuErr ? esc(menuErr) : 'まだ献立がありません。'}</p>`;
-  return head + body + `<div class="adv-foot"><span class="small muted">${eaten ? `今日食べたもの（${esc(Object.keys(d.eatenToday).join('・'))}）と肌の状態から作りました。` : '今日の食事の記録がまだないので、肌の状態から作りました。'}カロリーなどの数字は出しません。</span><button class="btn btn-ghost btn-sm" data-action="menu-ai">${res ? '別の献立にする' : '献立を作る'}</button></div>`;
+  return head + body + `<div class="adv-foot"><span class="small muted">${eaten ? `今日食べたもの（${esc(Object.keys(d.eatenToday).join('・'))}）と肌の状態から作りました。` : '今日の食事の記録がまだないので、肌の状態から作りました。'}カロリーなどの数字は出しません。</span></div>`;
 }
 // 記録が変わったとき・食事の時間帯が変わったときだけ、自動で作り直す（同じなら前の献立を使う）
 async function runMenu(force) {
@@ -5740,7 +5765,26 @@ async function runMenu(force) {
   }
   menuBusy = false; ui.menuPick = {}; box();
 }
-// 献立のパターン（A・B・C）を切り替える
+// 料理名を押したら、作り方を出す（一度調べた料理は、このブラウザに保存して使い回す）
+const RECIPE_KEY = 'skinwise_recipes';
+async function openRecipe(dish) {
+  let saved = {}; try { saved = JSON.parse(localStorage.getItem(RECIPE_KEY) || '{}') || {}; } catch (e) { saved = {}; }
+  const show = r => `<p class="small muted" style="margin:0 0 10px">1人分${r.time ? `・${esc(r.time)}` : ''}</p>
+    <h4 class="rc-h">材料</h4><ul class="rc-ing">${r.ingredients.map(x => `<li><span>${esc(x.name)}</span><b>${esc(x.amount || '')}</b></li>`).join('')}</ul>
+    <h4 class="rc-h">作り方</h4><ol class="rc-steps">${r.steps.map(x => `<li>${esc(x)}</li>`).join('')}</ol>
+    ${r.tip ? `<p class="notice green" style="margin:12px 0 0">${esc(r.tip)}</p>` : ''}<p class="small muted" style="margin:10px 0 0">AIが書いた一般的な作り方です。火の通りなどは様子を見て調整してください。</p>`;
+  openModal({title:dish, body:`<div id="rc-body">${saved[dish] ? show(saved[dish]) : skelHtml(4, {dots:true, label:'作り方を調べています'})}</div>`, footer:'<button type="button" class="btn btn-primary" data-action="close-modal">閉じる</button>'});
+  if (saved[dish]) return;
+  try {
+    const r = (await callVision('recipe', null, {dish})).result;
+    if (!r || !r.steps || !r.steps.length) throw new Error('作り方を出せませんでした');
+    saved[dish] = r; const ks = Object.keys(saved); if (ks.length > 40) delete saved[ks[0]];
+    try { localStorage.setItem(RECIPE_KEY, JSON.stringify(saved)); } catch (e) { /* 何もしない */ }
+    const b = document.getElementById('rc-body'); if (b) b.innerHTML = show(r);
+  } catch (e) { const b = document.getElementById('rc-body'); if (b) b.innerHTML = `<div class="notice warn" style="margin:0">${esc(String(e.message || e))}</div>`; }
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-recipe]'); if (b) openRecipe(b.dataset.recipe); });
+// 献立のパターンを切り替える
 document.addEventListener('click', e => {
   const b = e.target.closest && e.target.closest('[data-mpick]'); if (!b) return;
   const [mi, i] = b.dataset.mpick.split(':').map(Number); ui.menuPick[mi] = i; hapticTick();
@@ -6427,7 +6471,7 @@ async function callVision(mode, image, payload) {
   if (!acct.client) await initCloud();
   if (!acct.client || !acct.user) throw new Error('ログインしてからお使いください。');
   // 返事が来ないまま「読み取り中」で止まらないように、90秒で打ち切る
-  const call = acct.client.functions.invoke('vision', {body:mode === 'advice' || mode === 'menu' ? {mode, data:payload} : mode === 'diag' ? {mode} : {mode, image}});
+  const call = acct.client.functions.invoke('vision', {body:mode === 'advice' || mode === 'menu' || mode === 'recipe' ? {mode, data:payload} : mode === 'diag' ? {mode} : {mode, image}});
   const {data, error} = await Promise.race([call, new Promise((_, rej) => setTimeout(() => rej(new Error('時間がかかりすぎたため中止しました。電波のよい場所で、もう一度お試しください。')), 90000))]);
   if (error) {
     let msg = 'サーバーに接続できませんでした。時間をおいてお試しください。';
@@ -7064,7 +7108,7 @@ function viewSettings() {
       <div class="page-actions"><button class="btn btn-ghost btn-sm" data-action="export">バックアップを書き出す（.json）</button><button class="btn btn-ghost btn-sm" data-action="export-csv">記録を表計算用に書き出す（.csv）</button><button class="btn btn-ghost btn-sm" data-action="import">バックアップから復元</button></div>
       <input type="file" id="import-file" accept="application/json,.json" hidden></div>
     <div class="card"><div class="card-h"><h2>動作確認用データ</h2></div>
-      <p class="small muted" style="margin-bottom:12px">グラフやレポートの見え方を試すために、架空の「デモ」記録（約4週間分）・食事睡眠・マイ化粧品を追加できます。デモデータには「デモ」と表示され、まとめて削除できます。</p>
+      <p class="small muted" style="margin-bottom:12px">グラフやレポートの見え方を試すために、架空の「デモ」記録（約4週間分）・食事睡眠の記録を追加できます（架空の商品は入れません）。デモデータには「デモ」と表示され、まとめて削除できます。</p>
       <div class="page-actions">${hasDemo ? '<button class="btn btn-danger-ghost btn-sm" data-action="demo-remove">デモデータを削除</button>' : '<button class="btn btn-soft btn-sm" data-action="demo-add">デモデータを追加</button>'}
 </div></div>
     <div class="card"><div class="card-h"><h2>すべてのデータを削除</h2></div>
@@ -7103,8 +7147,9 @@ function addDemo() {
     mk('sample-4','【サンプル】セラミド バリアクリーム','クリーム',['保湿'],'夜','週4〜6回',55,'使用終了',21,[[55,2800]],'デモデータ：しっとりしていて冬向き'),
     mk('sample-6','【サンプル】ナイアシンアミド セラム','美容液・アンプル',['皮脂・毛穴ケア'],'朝','毎日',3,STOCK,null,[[3,2200]])
   ];
-  state.myProducts.push(...P);
-  const usedIds = P.filter(p => p.status === '使用中');
+  // 架空の商品はマイ化粧品に入れない（実際にある商品だけを扱うため）。デモは肌・食事・睡眠の記録だけ
+  P.length = 0;
+  const usedIds = [];
   const existing = new Set(state.skinLogs.map(l => l.date)), existingLife = new Set(state.lifeLogs.map(l => l.date));
   for (let i = 27; i >= 0; i--) {
     const date = addDays(t, -i);
@@ -7471,7 +7516,7 @@ const actions = {
     inp.click();
   },
   'demo-add': () => {
-    if (state.myProducts.some(p => p.demo)) { toast('デモデータはすでに追加されています'); return; }
+    if (state.skinLogs.some(l => l.demo)) { toast('デモデータはすでに追加されています'); return; }
     addDemo();
   },
   'demo-remove': async () => {
