@@ -1000,9 +1000,19 @@ a.used-tile{color:inherit;text-decoration:none}
 .ldc-d.sel{background:var(--surface2);color:var(--ink);box-shadow:inset 0 0 0 2px var(--green-d)}
 .ldc-d.sel::after{background:var(--green-d)}
 .ldc-note{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 8px;font-size:10.5px;color:var(--muted);margin:8px 0 0}
+.mn-meal{padding:10px 0;border-top:1px solid var(--line)}
+.card-h + .mn-meal{border-top:0;padding-top:4px}
+.mn-h{display:block;font-size:14px;margin-bottom:6px}
+.mn-list{list-style:none;margin:0;padding:0;display:grid;gap:5px}
+.mn-list li{display:flex;align-items:center;gap:8px;font-size:14px}
+.mn-role{flex:none;font-size:10.5px;font-weight:700;border-radius:6px;padding:1px 6px;background:var(--surface2);color:var(--muted)}
+.mn-role.r1{background:#F4EBDA;color:#8A6420}.mn-role.r2{background:#FBE9E4;color:#B04A32}.mn-role.r3{background:#E3F0E6;color:var(--green-d)}.mn-role.r4{background:#E6EEF6;color:#3C6390}.mn-role.r5{background:#F6E8F0;color:#9A4677}
+.mn-point{font-size:12px;color:var(--muted);margin:6px 0 0;line-height:1.55}
 .adv-basis{font-size:11.5px;color:var(--muted);background:var(--surface2);border-radius:10px;padding:6px 9px;margin:6px 0 0;line-height:1.55}
 .adv-basis b{display:inline-block;font-size:10.5px;color:var(--green-d);margin-right:6px}
 .adv-chips{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:6px}
+.adv-chips + .adv-text,.adv-chips + .adv-chips + .adv-text{margin-top:8px}
+.advice .adv-text{display:block;font-size:13px;color:var(--muted);line-height:1.6}
 .adv-chips small{font-size:11px;color:var(--muted);margin-right:2px;width:100%}
 .adv-c{font-size:12px;font-weight:600;border-radius:999px;padding:2px 9px}
 .adv-c.good{background:#E3F0E6;color:var(--green-d)}
@@ -1254,7 +1264,8 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
    ========================================================= */
 
 /* ---------- 定数 ---------- */
-const SERVICE = 'スキンロード'; // サービス名（英語表記：SkinRoad）
+const SERVICE = 'スキンロード';
+const SITE_HOME = /^https?:/.test(location.protocol) && location.host ? location.origin + location.pathname : 'https://hadatomo.github.io/hadatomo/'; // 公開しているURL（名前を変えて引っ越しても、自動で新しいURLになる） // サービス名（英語表記：SkinRoad）
 const COMPANY = 'はだとも'; // 企業名（変更する場合はここだけ書き換えます） 
 const STORE_KEY = 'skinwise_data_v1'; // 第1版と同じ保存場所（データを引き継ぐため。サービス名を変えても変更しない）
 const CATEGORIES = ['クレンジング','洗顔','化粧水・トナー','美容液・アンプル','乳液','クリーム','シートマスク・パック','日焼け止め','スポットケア','その他'];
@@ -2610,7 +2621,7 @@ function viewHome() {
   const todayCard = `<div class="card"><div class="card-h"><h2>今日の肌記録</h2>${L ? `<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(L.id)}">編集</button>` : ''}</div>
       <div class="t3-grid">${side}<div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div></div>
       ${lifeLine}</div>`;
-  const careCard = `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div>`;
+  const careCard = `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div><div class="card"><div class="menu-box" id="menu-box">${menuHtml()}</div></div>`;
 
   let activeCard;
   if (active.length) {
@@ -3735,7 +3746,7 @@ const GEO_STEPS = {
   android_site: ['Android（Chrome）', ['アドレスバーの左のマークを押す', '「権限」→「位置情報」を「許可」にする']],
   android_os:   ['Android（端末の設定）', ['「設定」→「位置情報」をオンにする', '「アプリの位置情報の権限」→「Chrome」を「アプリの使用中のみ許可」にする']],
   chrome_site:  ['パソコン（Chrome・Edge）', ['アドレスバーの左のマーク（つまみ・鍵のアイコン）を押す', '「位置情報」をオン（許可）にする', '見つからなければ「サイトの設定」→「位置情報」→「許可」']],
-  safari_site:  ['パソコン（Mac の Safari）', ['画面上のメニュー「Safari」→「設定…」→「Webサイト」タブを開く', '左の「位置情報」を選び、hadatomo.github.io を「確認」か「許可」にする']],
+  safari_site:  ['パソコン（Mac の Safari）', ['画面上のメニュー「Safari」→「設定…」→「Webサイト」タブを開く', `左の「位置情報」を選び、${location.host || 'このサイト'} を「確認」か「許可」にする`]],
   mac_os:       ['パソコン（Mac の設定）', ['りんごマーク →「システム設定」→「プライバシーとセキュリティ」→「位置情報サービス」を開く', '「位置情報サービス」と、使っているブラウザをオンにして、ブラウザを開き直す']],
   win_os:       ['パソコン（Windows の設定）', ['「設定」→「プライバシーとセキュリティ」→「位置情報」を開く', '「位置情報サービス」と「デスクトップアプリに位置情報へのアクセスを許可する」をオンにして、ブラウザを開き直す']]
 };
@@ -3776,7 +3787,7 @@ function geoHelpHtml(kind) {
   if (kind === 'blocked-os-maybe') return geoHelpHtml('blocked-os').replace('ブラウザの位置情報がオフになっています。', 'ブラウザの位置情報がオフになっている可能性があります（屋内や地下では、現在地を取れないこともあります）。');
   if (kind === 'unavailable') return '<div class="notice warn" style="margin:10px 0 0">現在地を特定できませんでした。屋内や地下では取得しにくいことがあります。少し場所を変えてもう一度試すか、下の欄に駅名・地名を入力してください。</div>';
   if (kind === 'timeout') return '<div class="notice warn" style="margin:10px 0 0">現在地の取得に時間がかかっています。もう一度ボタンを押すか、下の欄に駅名・地名を入力してください。</div>';
-  if (kind === 'insecure') return '<div class="notice warn" style="margin:10px 0 0">ファイルを直接開いている場合は、位置情報を使えません。公開しているURL（https://hadatomo.github.io/hadatomo/）から開いてください。</div>';
+  if (kind === 'insecure') return '<div class="notice warn" style="margin:10px 0 0">ファイルを直接開いている場合は、位置情報を使えません。公開しているURL（${esc(SITE_HOME)}）から開いてください。</div>';
   return '<div class="notice warn" style="margin:10px 0 0">このブラウザでは位置情報を使えません。下の欄に駅名・地名・住所を入力して探してください。</div>';
 }
 function viewStores() {
@@ -5642,13 +5653,13 @@ function adviceLocal(d) {
   else move = {title:'運動を続けよう', text:`1週間で${ex.activeDays}日・${ex.totalMin}分。汗をかいたら早めに洗顔を。`, good:['運動後すぐの洗顔・保湿', '屋外では日焼け止め'], avoid:['汗をそのままにする']};
   // ④ 食事（足りない栄養と、おすすめの食べ物）
   let meal;
-  if (!ml.days) meal = {title:'食事も記録を', text:'記録すると、足りない栄養がわかります。', good:[], avoid:[]};
-  else if (ml.avgProtein != null && ml.avgProtein < ml.proteinGoal * 0.8) meal = {title:'たんぱく質が足りません', text:`たんぱく質が1日${ml.avgProtein}g（目安${ml.proteinGoal}g）。毎食、手のひら1枚分を足しましょう。`, good:['卵', '納豆', '鶏むね肉', '鮭', '豆腐', 'ギリシャヨーグルト'], avoid:[]};
-  else if (ml.foodDays >= 3 && ml.vitCDays < 3) meal = {title:'ビタミンCが少なめかも', text:`ビタミンCの多い物を食べた日は${ml.vitCDays}日。毎日少しずつとりましょう。`, good:['キウイ', 'ブロッコリー', 'パプリカ', 'いちご', 'みかん'], avoid:[]};
-  else if (ml.avgVeg != null && ml.avgVeg < 250) meal = {title:'野菜をもう一品', text:`野菜が1日${ml.avgVeg}g（目安350g）。あと1品足しましょう。`, good:['ブロッコリー', 'ほうれん草', 'にんじん', 'トマト', 'きのこ'], avoid:[]};
-  else if (ml.snackDays >= 4) meal = {title:'甘い間食を控えめに', text:`間食した日が${ml.snackDays}日。ナッツやヨーグルトに替えましょう。`, good:['ナッツ', 'ヨーグルト', 'バナナ'], avoid:['甘いお菓子', 'ジュース・甘い飲み物']};
-  else if (topArea && topArea[1] >= 2) meal = {title:'ビタミンB群でニキビ予防', text:'皮脂を整えるビタミンB2・B6を意識しましょう。', good:['納豆', '卵', 'まぐろ', 'バナナ', 'レバー'], avoid:['揚げ物の食べすぎ', '甘いお菓子']};
-  else meal = {title:'食事はいい調子', text:'たんぱく質も野菜もとれています。', good:['水をこまめに'], avoid:[]};
+  if (!ml.days) meal = {title:'食事も記録を', text:'記録すると、足りない栄養がわかります。', good:['納豆', '鮭', 'ブロッコリー'], avoid:['菓子パン', '甘い飲み物']};
+  else if (ml.avgProtein != null && ml.avgProtein < ml.proteinGoal * 0.8) meal = {title:'たんぱく質が足りません', text:`たんぱく質が1日${ml.avgProtein}g（目安${ml.proteinGoal}g）。毎食、手のひら1枚分を足しましょう。`, good:['卵', '納豆', '鶏むね肉', '鮭', '豆腐', 'ギリシャヨーグルト'], avoid:['菓子パンだけの食事', 'カップ麺だけの食事']};
+  else if (ml.foodDays >= 3 && ml.vitCDays < 3) meal = {title:'ビタミンCが少なめかも', text:`ビタミンCの多い物を食べた日は${ml.vitCDays}日。毎日少しずつとりましょう。`, good:['キウイ', 'ブロッコリー', 'パプリカ', 'いちご', 'みかん'], avoid:['果汁の少ないジュース', 'スナック菓子']};
+  else if (ml.avgVeg != null && ml.avgVeg < 250) meal = {title:'野菜をもう一品', text:`野菜が1日${ml.avgVeg}g（目安350g）。あと1品足しましょう。`, good:['ブロッコリー', 'ほうれん草', 'にんじん', 'トマト', 'きのこ'], avoid:['丼もの・麺だけの単品', 'ポテトチップス']};
+  else if (ml.snackDays >= 4) meal = {title:'甘い間食を控えめに', text:`間食した日が${ml.snackDays}日。ナッツやヨーグルトに替えましょう。`, good:['ナッツ', 'ヨーグルト', 'バナナ'], avoid:['チョコ菓子', 'スナック菓子', '甘い缶コーヒー']};
+  else if (topArea && topArea[1] >= 2) meal = {title:'ビタミンB群でニキビ予防', text:'皮脂を整えるビタミンB2・B6を意識しましょう。', good:['納豆', '卵', 'まぐろ', 'バナナ', 'レバー'], avoid:['唐揚げ・フライドポテト', '菓子パン', 'ケーキ']};
+  else meal = {title:'食事はいい調子', text:'たんぱく質も野菜もとれています。', good:['水・お茶', '納豆', '季節の野菜'], avoid:['甘い清涼飲料水']};
   return [skin, sleep, move, meal].map((x, i) => Object.assign({area:ADVICE_AREAS[i]}, x));
 }
 // おすすめ・控えたいもののラベル（角度ごと）
@@ -5668,14 +5679,59 @@ function adviceHtml() {
   const local = adviceLocal(d);
   const pts = ai ? ADVICE_AREAS.map((a, i) => ai.points.find(x => x.area === a) || local[i]) : local; // AIが出さなかった角度は、ルールの結果でうめる
   const prem = isPremium();
-  const head = `<h3>おすすめケアポイント${ai ? '<span class="ai-badge">AI分析</span>' : ''}</h3>${ai && ai.summary ? `<p class="small muted" style="margin:0">${esc(ai.summary)}</p>` : ''}`;
-  const list = adviceBusy ? skelHtml(4, {dots:true, label:'AIが分析中'}) : `<ol class="adv4">${pts.map((x, i) => `<li><i>${'①②③④'[i] || i + 1}</i><div><em class="adv-area">${esc(x.area || ADVICE_AREAS[i] || '')}</em><b>${esc(x.title)}</b><span>${esc(x.text)}</span>${ai && x.basis ? `<p class="adv-basis"><b>根拠</b>${esc(x.basis)}</p>` : ''}${ai ? advChips(Object.assign({area:ADVICE_AREAS[i]}, x)) : ''}</div></li>`).join('')}</ol>`;
+  const head = `<h3>おすすめケアポイント</h3>${ai && ai.summary ? `<p class="small muted" style="margin:0">${esc(ai.summary)}</p>` : ''}`;
+  const list = adviceBusy ? skelHtml(4, {dots:true, label:'AIが分析中'}) : `<ol class="adv4">${pts.map((x, i) => `<li><i>${'①②③④'[i] || i + 1}</i><div><em class="adv-area">${esc(x.area || ADVICE_AREAS[i] || '')}</em><b>${esc(x.title)}</b>${prem ? advChips(Object.assign({area:ADVICE_AREAS[i]}, x)) : ''}<span class="adv-text">${esc(x.text)}</span>${ai && x.basis ? `<p class="adv-basis"><b>根拠</b>${esc(x.basis)}</p>` : ''}</div></li>`).join('')}</ol>`;
   let foot;
   if (adviceBusy) foot = '<span class="small muted">AIが記録を分析しています…</span>';
   else if (ai) foot = `<span class="small muted">直近7日の記録をAI（Google Gemini）が分析しました。目安としてご覧ください。</span><button class="btn btn-ghost btn-sm" data-action="advice-ai" data-id="again">もう一度分析</button>`;
   else if (prem) foot = `<span class="small muted">${adviceErr ? esc(adviceErr) : '直近7日の記録から表示しています。'}</span><button class="btn btn-ghost btn-sm" data-action="advice-ai">AIで分析する</button>`;
   else foot = `<span class="small muted">直近7日の記録から表示しています。プレミアムでは、AIがあなたの記録を詳しく分析します。</span><a class="link small" href="#/plan">プランを見る →</a>`;
   return head + list + `<div class="adv-foot">${foot}</div>`;
+}
+// ---------- 献立の提案（プレミアム）：今日食べたものと肌の状態から、これからの食事の献立をAIが作る ----------
+const MENU_KEY = 'skinwise_menu';
+let menuBusy = false, menuErr = '';
+function menuInput() {
+  const t = todayStr(), L = lifeMap()[t] || {}, foods = L.foods || [], meals = L.meals || {};
+  const has = k => foods.some(x => x.meal === k) || !!(meals[k] && meals[k].ate);
+  const eaten = {}; FOOD_MEALS.forEach(m => { const f = foods.filter(x => x.meal === m.k).map(x => String(x.name).slice(0, 24)); if (f.length || has(m.k)) eaten[m.l] = f.length ? f : ['食べた（内容は記録なし）']; });
+  // これから作る食事：記録と時刻から決める（朝を食べたら昼・夜、昼を食べたら夜、夜を食べたら明日の朝）
+  const h = new Date().getHours();
+  const targets = has('dinner') || h >= 21 ? [{meal:'朝', when:'明日'}] : has('lunch') || h >= 15 ? [{meal:'夜', when:'今日'}] : has('breakfast') || h >= 10 ? [{meal:'昼', when:'今日'}, {meal:'夜', when:'今日'}] : [{meal:'朝', when:'今日'}, {meal:'昼', when:'今日'}, {meal:'夜', when:'今日'}];
+  const a = adviceInput(), tot = nutTotals(foods), g = lifeGoals();
+  return {targets, eatenToday:eaten, todaySoFar:foods.length ? {proteinG:Math.round(tot.p), vegG:Math.round(tot.veg)} : null, goalsPerDay:{proteinG:g.protein, vegG:350},
+    skin:{skinType:a.profile.skinType, sensitive:a.profile.sensitive, concerns:a.profile.concerns, acneWeek:a.skin.acneTotal, redness:a.skin.redness, dryness:a.skin.dryness, oil:a.skin.oil}, recentFoods:(a.meal.foods || []).slice(0, 12)};
+}
+function menuCache() { try { return JSON.parse(localStorage.getItem(MENU_KEY) || 'null'); } catch (e) { return null; } }
+function menuHtml() {
+  const head = `<div class="card-h"><h3 style="margin:0">献立の提案</h3>${isPremium() ? '' : '<span class="badge-premium">プレミアム</span>'}</div>`;
+  if (!isPremium()) return head + `<p class="small muted" style="margin:0">今日食べたものと肌の状態から、昼・夜（夜まで食べたら明日の朝）の献立をAIが自動で作ります。</p><a class="link small" style="display:inline-block;margin-top:8px" href="#/plan">プランを見る →</a>`;
+  const d = menuInput(), sig = adviceSig(d), c = menuCache(), res = c && c.sig === sig ? c.res : null;
+  if (menuBusy) return head + skelHtml(3, {dots:true, label:'献立を作成中'});
+  const eaten = Object.entries(d.eatenToday).map(([k, v]) => `${k}：${v.join('、')}`).join(' ／ ');
+  const ROLE_C = {主食:'r1', 主菜:'r2', 副菜:'r3', 汁物:'r4', 果物:'r5', 飲み物:'r5'};
+  const body = res ? res.meals.map(m => `<div class="mn-meal"><b class="mn-h">${esc(m.when)}の${esc(m.meal)}</b><ul class="mn-list">${m.dishes.map(x => `<li>${x.role ? `<span class="mn-role ${ROLE_C[x.role] || ''}">${esc(x.role)}</span>` : ''}${esc(x.name)}</li>`).join('')}</ul>${m.point ? `<p class="mn-point">${esc(m.point)}</p>` : ''}</div>`).join('')
+    : `<p class="small muted" style="margin:0">${menuErr ? esc(menuErr) : 'まだ献立がありません。'}</p>`;
+  return head + body + `<div class="adv-foot"><span class="small muted">${eaten ? `今日食べたもの（${esc(Object.keys(d.eatenToday).join('・'))}）と肌の状態から作りました。` : '今日の食事の記録がまだないので、肌の状態から作りました。'}カロリーなどの数字は出しません。</span><button class="btn btn-ghost btn-sm" data-action="menu-ai">${res ? '別の献立にする' : '献立を作る'}</button></div>`;
+}
+// 記録が変わったとき・食事の時間帯が変わったときだけ、自動で作り直す（同じなら前の献立を使う）
+async function runMenu(force) {
+  if (menuBusy || !isPremium()) return;
+  const d = menuInput(), sig = adviceSig(d), c = menuCache();
+  if (!force && c && (c.sig === sig || (c.failSig === sig && Date.now() - (c.failAt || 0) < 10 * 60 * 1000))) return;
+  menuBusy = true; menuErr = '';
+  const box = () => { const b = document.getElementById('menu-box'); if (b) b.innerHTML = menuHtml(); };
+  box();
+  try {
+    const r = await callVision('menu', null, d);
+    if (r && r.result && r.result.meals && r.result.meals.length) { try { localStorage.setItem(MENU_KEY, JSON.stringify({sig, at:Date.now(), res:r.result})); } catch (e) { /* 何もしない */ } }
+    else menuErr = '献立を作れませんでした。';
+  } catch (e) {
+    const m = String(e.message || e);
+    menuErr = /種類が正しくありません/.test(m) ? '献立を作れませんでした。サーバーの関数「vision」が古いままです（5_関数_vision.txt を貼り付けて Deploy してください）。' : '献立を作れませんでした（' + m.slice(0, 80) + '）';
+    try { localStorage.setItem(MENU_KEY, JSON.stringify(Object.assign(c || {}, {failSig:sig, failAt:Date.now()}))); } catch (er) { /* 何もしない */ }
+  }
+  menuBusy = false; box();
 }
 function refreshAdvice() { const b = document.getElementById('advice-box'); if (b) b.innerHTML = adviceHtml(); if (isPremium()) runAdvice(false); }
 // プレミアムの人は、記録が変わったときだけ自動でAIに分析してもらう（同じ記録なら前の結果を使う）
@@ -6358,7 +6414,7 @@ async function callVision(mode, image, payload) {
   if (!acct.client) await initCloud();
   if (!acct.client || !acct.user) throw new Error('ログインしてからお使いください。');
   // 返事が来ないまま「読み取り中」で止まらないように、90秒で打ち切る
-  const call = acct.client.functions.invoke('vision', {body:mode === 'advice' ? {mode, data:payload} : mode === 'diag' ? {mode} : {mode, image}});
+  const call = acct.client.functions.invoke('vision', {body:mode === 'advice' || mode === 'menu' ? {mode, data:payload} : mode === 'diag' ? {mode} : {mode, image}});
   const {data, error} = await Promise.race([call, new Promise((_, rej) => setTimeout(() => rej(new Error('時間がかかりすぎたため中止しました。電波のよい場所で、もう一度お試しください。')), 90000))]);
   if (error) {
     let msg = 'サーバーに接続できませんでした。時間をおいてお試しください。';
@@ -7164,6 +7220,7 @@ const actions = {
     st.user = true; st.auto = false; st.target = {yaw:base + t[0], pitch:t[1]}; st.dirty = true;
   },
   'advice-ai': () => runAdvice(true),
+  'menu-ai': () => runMenu(true),
   'sc-edit': () => openShortcutEdit(),
   'sc-reset': () => { const m = $('#modal-root .modal'); if (m && m._setSel) m._setSel(SC_DEFAULT.slice()); },
   'sc-save': () => {
@@ -7366,7 +7423,7 @@ const actions = {
     const end = (() => { const [h, m] = tm.split(':').map(Number); const t = h * 60 + m + 5; return String(Math.floor(t / 60) % 24).padStart(2, '0') + String(t % 60).padStart(2, '0') + '00'; })();
     const url = location.origin + location.pathname + '#/home';
     const ics = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//skinwise//reminder//JA','CALSCALE:GREGORIAN','BEGIN:VTIMEZONE','TZID:Asia/Tokyo','BEGIN:STANDARD','DTSTART:19700101T000000','TZOFFSETFROM:+0900','TZOFFSETTO:+0900','TZNAME:JST','END:STANDARD','END:VTIMEZONE',
-      'BEGIN:VEVENT', `UID:skinwise-reminder-${Date.now()}@hadatomo.github.io`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z')}`,
+      'BEGIN:VEVENT', `UID:skinwise-reminder-${Date.now()}@${location.host || 'skinroad'}`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z')}`,
       `DTSTART;TZID=Asia/Tokyo:${d}T${hm}`, `DTEND;TZID=Asia/Tokyo:${d}T${end}`, 'RRULE:FREQ=DAILY', `SUMMARY:${SERVICE}：今日の肌を記録しよう`,
       `DESCRIPTION:1分で記録できます。 ${url}`, `URL:${url}`, 'BEGIN:VALARM','ACTION:DISPLAY',`DESCRIPTION:${SERVICE}：今日の肌を記録しよう`,'TRIGGER:PT0M','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([ics], {type:'text/calendar'})); a.download = 'skin-reminder.ics'; document.body.appendChild(a); a.click(); a.remove();
@@ -7789,7 +7846,7 @@ function render() {
     else stopMomentumTop();
   }
   navRestoreY = null;
-  if (r.name === 'home') { placeHomeTabInd(); slideHomePane(); }
+  if (r.name === 'home') { placeHomeTabInd(); slideHomePane(); if (ui.homeTab === 'care' && isPremium()) setTimeout(() => runMenu(false), 0); }
   if (r.name === 'log') { placeHomeTabInd(); slideHomePane(); }
   hapticizeTargets();
   drawCharts();
@@ -7851,7 +7908,7 @@ async function ptrRefresh(noRender) {
 // 新しいデータで今の画面を描き直す（指が画面に触れている間は描き直さない：触れている部分が消えると、指を離したことが伝わらなくなるため）
 function ptrRepaint() {
   render();
-  if (isPremium()) setTimeout(() => runAdvice(false), 0); // プレミアム：記録が変わっていれば、AIのケアポイントも新しくする
+  if (isPremium()) setTimeout(() => { runAdvice(false); if (parseRoute().name === 'home' && ui.homeTab === 'care') runMenu(false); }, 0); // プレミアム：記録が変わっていれば、AIのケアポイントも新しくする
 }
 // 状態を4つに分けて管理する：idle（ふだん）→ pulling（引っぱり中）→ refreshing（更新中：画面の位置を保つ）→ settling（更新後に元へ戻る）
 // 画面の動きは、CSSのトランジションではなく、毎フレーム自分で位置を計算して動かす（iPhoneでも途中で飛ばないように）
