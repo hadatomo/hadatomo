@@ -1020,6 +1020,31 @@ a.used-tile{color:inherit;text-decoration:none}
 .mn-pb{border:1px solid var(--line2);background:var(--surface);color:var(--muted);border-radius:999px;padding:5px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 .mn-pb.on{background:var(--green-d);border-color:var(--green-d);color:#fff}
 .ld-life{margin-top:12px}
+/* 商品と肌状態の比較 */
+.cmp-lbl{display:flex;align-items:center;gap:8px;margin:0 0 6px;font-size:13px;font-weight:700}
+.cmp-a,.cmp-b{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;color:#fff;font-size:12px;font-style:normal;font-weight:800;flex:none}
+.cmp-a{background:var(--green-d)}.cmp-b{background:#C27C3B}
+.cmp-pick{display:flex;gap:6px;flex-wrap:wrap}
+.cmp-pick::-webkit-scrollbar{display:none}
+.cmp-chip{flex:none;border:1.5px solid var(--line2);background:var(--surface);color:var(--ink);border-radius:12px;padding:7px 11px;font:inherit;font-size:13px;font-weight:600;cursor:pointer;text-align:left;max-width:180px}
+.cmp-chip small{display:block;font-size:10.5px;color:var(--muted);font-weight:500}
+.cmp-chip.on{border-color:var(--green-d);background:var(--green-p,#EEF5EF)}
+.cmp-chip.dim{opacity:.45}
+.cmp-m{display:grid;grid-template-columns:76px 1fr 1fr;gap:6px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}
+.cmp-m b{font-size:18px;text-align:center;border-radius:10px;padding:4px 0;font-variant-numeric:tabular-nums}
+.cmp-m b small{font-size:11px;color:var(--muted);font-weight:500}
+.cmp-m b.win{background:#E3F0E6;color:var(--green-d)}
+.cmp-mh b{font-size:12px;display:flex;align-items:center;justify-content:center;gap:5px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmp-ml{font-size:12.5px;color:var(--muted)}
+.cmp-detail summary{cursor:pointer}
+/* 成分の組み合わせ：結果のまとめ */
+.combo-sum .cs-big{display:flex;flex-direction:column;gap:2px}
+.combo-sum .cs-big b{font-size:20px}
+.combo-sum .cs-big span{font-size:12.5px;color:var(--muted)}
+.combo-sum.ok .cs-big b{color:var(--green-d)}
+.combo-sum.warn .cs-big b{color:#B4562F}
+.combo-sum .cs-miss{margin-top:12px;display:flex;flex-wrap:wrap;gap:6px}
+.combo-sum .cs-miss p{width:100%;margin:0 0 2px}
 .pd-img{display:block;width:100%;max-width:300px;aspect-ratio:3/4;object-fit:cover;border-radius:16px;margin:36px auto 8px;background:var(--surface2)}
 .pd-miss{text-align:center;padding:90px 0 70px;font-size:15px;line-height:1.8}
 .pd-miss b{font-size:18px}
@@ -1086,7 +1111,8 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 :root[data-theme="dark"] .ld-stage{background:transparent}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ld-stage{background:transparent}}
 .ld-card{touch-action:pan-y;position:relative}
-.ld-card .ld-top{position:absolute;top:10px;right:10px;margin:0;z-index:6}
+.ld-card .ld-top{position:absolute;top:10px;left:10px;right:auto;margin:0;z-index:6}
+.ld-card .ld-cal{left:0;right:auto}
 /* 3Dの顔は、顔とそのまわり少しだけを触れる大きさにする（その外では、ふつうにページをスクロールできる） */
 .ld-card .ld-stage{max-width:240px;width:100%;aspect-ratio:auto;height:190px;margin:0 auto}
 .ld-swipe{display:grid;grid-template-columns:40px 1fr 40px;align-items:center;gap:6px;margin-top:8px;user-select:none;-webkit-user-select:none}
@@ -4418,6 +4444,11 @@ function openPurchaseForm(pid) {
 /* =========================================================
    画面：商品と肌状態の比較
    ========================================================= */
+document.addEventListener('click', e => {
+  const b = e.target.closest && e.target.closest('[data-cmp]'); if (!b) return;
+  const [k, id] = b.dataset.cmp.split(':'); if (k === 'A') { if (id === ui.cmpB) ui.cmpB = ui.cmpA; ui.cmpA = id; } else { if (id === ui.cmpA) ui.cmpA = ui.cmpB; ui.cmpB = id; }
+  hapticTick(); render();
+});
 function viewCompare() {
   if (locked()) return `<a class="back" href="#/charts">← 肌の変化・比較</a>` + pageHead('商品と肌状態の比較', '過去の商品と今の商品、商品を変えた前後の肌記録を並べて確認します。') + lockCard('商品と肌状態の比較は' + PREMIUM_NAME + 'の機能です', '使っていた商品ごとの肌記録の比較や、商品を変えた時期の前後の振り返りができます。');
   const used = state.myProducts.filter(isUsedType).sort((a,b) => b.startDate.localeCompare(a.startDate));
@@ -4426,11 +4457,11 @@ function viewCompare() {
   if (!getMy(ui.cmpA) || !isUsedType(getMy(ui.cmpA))) ui.cmpA = (used.find(p => p.status === '使用終了') || used[0]).id;
   if (!getMy(ui.cmpB) || !isUsedType(getMy(ui.cmpB)) || ui.cmpB === ui.cmpA) { const a = getMy(ui.cmpA); ui.cmpB = ((used.find(p => p.id !== ui.cmpA && p.category === a.category && p.status !== '使用終了')) || used.find(p => p.id !== ui.cmpA) || {id:''}).id; }
   const opts = sel => used.map(p => `<option value="${esc(p.id)}" ${p.id === sel ? 'selected' : ''}>${esc(truncate(p.name, 30))}（${p.status === '使用終了' ? '過去' : p.status}）</option>`).join('');
+  // 商品を押して選ぶ（A・Bの2つ）。プルダウンより選びやすいように、商品名のボタンを並べる
+  const pick = (key, sel) => `<div class="cmp-pick" role="radiogroup">${used.map(p => `<button type="button" class="cmp-chip ${p.id === sel ? 'on' : ''} ${key === 'B' && p.id === ui.cmpA || key === 'A' && p.id === ui.cmpB ? 'dim' : ''}" data-cmp="${key}:${esc(p.id)}" role="radio" aria-checked="${p.id === sel}">${esc(truncate(shortName(p.name), 18))}<small>${p.status === '使用終了' ? '過去' : esc(p.status)}</small></button>`).join('')}</div>`;
+  html += `<div class="card cmp-sel"><p class="cmp-lbl"><b class="cmp-a">A</b>くらべる商品</p>${pick('A', ui.cmpA)}<p class="cmp-lbl" style="margin-top:12px"><b class="cmp-b">B</b>くらべる商品</p>${ui.cmpB ? pick('B', ui.cmpB) : '<p class="small muted">ほかに比べられる商品がありません。</p>'}</div>`;
   html += `<div class="notice green">同じ時期に肌の変化があっても、その商品や成分が原因とは限りません。季節・睡眠・体調・生理周期・ほかの商品なども影響します。比較は記録の整理として使ってください。</div>
-    <div class="card"><div class="form-grid two">
-      <div class="field"><label class="lbl" for="cmp-a">商品A</label><select class="select" id="cmp-a" data-ui="cmpA">${opts(ui.cmpA)}</select></div>
-      <div class="field"><label class="lbl" for="cmp-b">商品B</label><select class="select" id="cmp-b" data-ui="cmpB">${ui.cmpB ? opts(ui.cmpB) : '<option>比較する商品がありません</option>'}</select></div>
-    </div></div>`;
+`;
   const A = getMy(ui.cmpA), B = getMy(ui.cmpB);
   const col = p => {
     if (!p) return {};
@@ -4454,10 +4485,20 @@ function viewCompare() {
     ['1日あたり', x => x.spent ? yen(x.spent / x.days) : '—'],
     ['メモ', x => esc(truncate(x.p.memo, 60) || '—')]
   ];
-  html += `<div class="card"><div class="card-h"><h2>使用期間ごとの比較</h2><span class="chip">ルールに基づく集計</span></div><div class="table-wrap"><table class="table">
+  // ひと目でわかる比較：肌の調子・ニキビ・赤み・乾燥・皮脂を、A と B で並べ、良いほうに色を付ける
+  const metric = (label, ka, kb, betterLow, fmt) => {
+    const va = enough(a) ? ka(a.s) : null, vb = enough(b) ? kb(b.s) : null;
+    const win = va == null || vb == null || Math.abs(va - vb) < 0.05 ? '' : (betterLow ? (va < vb ? 'a' : 'b') : (va > vb ? 'a' : 'b'));
+    return `<div class="cmp-m"><span class="cmp-ml">${label}</span><b class="${win === 'a' ? 'win' : ''}">${va == null ? '<small>記録不足</small>' : fmt(va)}</b><b class="${win === 'b' ? 'win' : ''}">${vb == null ? '<small>記録不足</small>' : fmt(vb)}</b></div>`;
+  };
+  html += `<div class="card"><div class="card-h"><h2>肌の状態をくらべる</h2><span class="chip">記録の平均</span></div>
+    <div class="cmp-m cmp-mh"><span></span><b><i class="cmp-a">A</i>${A ? esc(truncate(shortName(A.name), 12)) : ''}</b><b><i class="cmp-b">B</i>${B ? esc(truncate(shortName(B.name), 12)) : ''}</b></div>
+    ${metric('肌の調子', s => s.cond, s => s.cond, false, f1)}${metric('ニキビ/日', s => s.acneAvg, s => s.acneAvg, true, f1)}${metric('赤み', s => s.red, s => s.red, true, f1)}${metric('乾燥', s => s.dry, s => s.dry, true, f1)}${metric('皮脂', s => s.oil, s => s.oil, true, f1)}
+    <p class="small muted" style="margin-top:8px">色が付いているほうが、その期間の肌の状態が良かった数字です（調子は高いほど、ほかは低いほど良い）。記録が3件未満の期間は出しません。</p></div>`;
+  html += `<details class="card fold cmp-detail"><summary><b>くわしい表（期間・使用回数・金額など）</b></summary><div class="table-wrap" style="margin-top:10px"><table class="table">
     <thead><tr><th></th><th>${A ? esc(truncate(A.name, 20)) : 'A'}</th><th>${B ? esc(truncate(B.name, 20)) : 'B'}</th></tr></thead>
     <tbody>${rows.map(([l, fn]) => `<tr><td class="small muted">${l}</td><td>${show(a, fn)}</td><td>${show(b, fn)}</td></tr>`).join('')}</tbody></table></div>
-    <p class="small muted" style="margin-top:10px">期間が重なっている場合、同じ肌記録が両方に含まれます。記録が3件未満の期間は数値を出しません。</p></div>`;
+    <p class="small muted" style="margin-top:10px">期間が重なっている場合、同じ肌記録が両方に含まれます。記録が3件未満の期間は数値を出しません。</p></details>`;
   // 商品を変えた時期の振り返り
   const t = todayStr();
   const events = [];
@@ -4485,10 +4526,14 @@ function viewCombo() {
   html += `<div class="notice">成分名が含まれているかどうかだけで判定しています。濃度・処方・使用量・個人差は考慮できないため、<b>安全性や効果を判断するものではありません</b>。各製品の使用方法・注意事項を優先し、気になる症状がある場合は皮膚科医や薬剤師に相談してください。</div>`;
   if (!active.length) return html + `<div class="card">${emptyBox('flask', '使用中の化粧品がありません', 'マイ化粧品で「使用中」の商品を登録し、全成分を入力すると、ここにまとめが表示されます。', '<button class="btn btn-primary btn-sm" data-action="new-my">化粧品を登録</button>')}</div>`;
   const r = comboReport(active);
-  html += `<div class="card"><div class="card-h"><h2>対象の化粧品（使用中 ${active.length}件）</h2></div>
+  // まず結果のまとめ：注意の数・全成分が足りない商品（押すとすぐ入力できる）
+  const nAl = r.alerts.length + (r.uvNote ? 1 : 0);
+  html += `<div class="card combo-sum ${nAl ? 'warn' : 'ok'}"><div class="cs-big"><b>${nAl ? `注意 ${nAl}件` : '注意はありません'}</b><span>使用中の化粧品 ${active.length}件を確認しました</span></div>
+    ${r.missing.length ? `<div class="cs-miss"><p class="small"><b>全成分がまだの商品（${r.missing.length}件）</b>：入れると、もっと正しく確かめられます</p>${r.missing.map(x => x.p).map(p => `<button type="button" class="btn btn-soft btn-sm" data-action="edit-my" data-id="${esc(p.id)}">${esc(truncate(shortName(p.name), 16))}の全成分を入れる</button>`).join('')}</div>` : ''}</div>`;
+  const productsCard = `<details class="card fold"><summary><b>対象の化粧品（使用中 ${active.length}件）</b></summary><div style="margin-top:8px">
     ${r.items.map(x => `<div style="padding:8px 0;border-bottom:1px solid var(--line)"><a href="#/my/${encodeURIComponent(x.p.id)}" style="font-weight:600;color:inherit">${esc(x.p.name)}</a> <span class="chip">${esc(x.p.timing)}</span>
       <div class="chips" style="margin-top:6px">${!x.ings ? '<span class="chip warn">全成分が未登録（判断できません）</span>' : x.known.length ? x.known.map(k => `<a class="chip green" href="#/ingredients/${k.entry.key}">${esc(k.entry.name)}</a>`).join('') : '<span class="chip gray">辞典に収録した成分なし</span>'}</div></div>`).join('')}
-    ${r.missing.length ? `<p class="small" style="color:var(--warn);margin-top:10px">全成分が未登録の商品が${r.missing.length}件あります。情報が不足しているため、これらを含む組み合わせは判断していません。</p>` : ''}</div>`;
+    ${r.missing.length ? `<p class="small" style="color:var(--warn);margin-top:10px">全成分が未登録の商品が${r.missing.length}件あります。情報が不足しているため、これらを含む組み合わせは判断していません。</p>` : ''}</div></details>`;
   html += `<div class="card"><div class="card-h"><h2>組み合わせの注意点</h2><span class="chip">ルールに基づく表示</span></div>`;
   if (!r.alerts.length && !r.uvNote) html += '<p class="small muted">登録された成分の範囲では、この辞典で注意を表示している組み合わせは見つかりませんでした。これは安全であることを意味するものではありません。</p>';
   r.alerts.forEach(al => {
@@ -4499,6 +4544,7 @@ function viewCombo() {
   });
   if (r.uvNote) html += `<div class="alert-card"><b>日中の紫外線対策</b>レチノール類や角質ケア成分を含む商品を使う場合、日中の紫外線対策が一般的に勧められています。使用中の日焼け止めが登録されていません（登録していないだけの場合は問題ありません）。</div>`;
   html += '</div>';
+  html += productsCard; // 対象の化粧品（たたんでおく）
   // 使用頻度
   const t = todayStr();
   const fcs = active.map(p => ({p, fc:freqCheck(p, addDays(t, -13), t)}));
