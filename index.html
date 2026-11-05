@@ -1552,7 +1552,7 @@ const PLAN_ROWS = [
   ['化粧品・成分の管理、成分の注意点', '○', '○'],
   ['食事・運動・睡眠の記録', '○', '○'],
   ['基本の週次レポート', '○', '○'],
-  ['ケアの提案・支出管理・お気に入り', '○', '○'],
+  ['ケアの提案・支出管理', '○', '○'],
   ['店舗検索・価格比較', '○', '○'],
   ['受診用まとめ（医師に見せる記録の整理）', '○', '○'],
   ['詳細な分析（商品と肌の比較・90日グラフ・生活習慣との比較など）', '—', '○'],
@@ -3428,8 +3428,6 @@ function viewProduct(id) {
         ${mine.length ? `<p class="small" style="margin-top:12px;color:var(--green-d)">マイ化粧品に登録済み（${mine.length}件）</p>` : ''}
         <div class="page-actions" style="margin-top:16px">
           <button class="btn btn-primary" data-action="new-my-from" data-id="${esc(p.id)}">${icon('plus')}マイ化粧品に登録</button>
-          <a class="btn btn-soft" href="#/prices/${encodeURIComponent(p.id)}">${icon('tag')}価格・店舗を比較</a>
-          <button class="btn btn-ghost fav-btn ${isFav(p.id) ? 'on' : ''}" data-action="fav" data-id="${esc(p.id)}" aria-pressed="${isFav(p.id)}">${icon('heart')}<span>${isFav(p.id) ? 'お気に入り済み' : 'お気に入りに追加'}</span></button>
         </div>
         <div class="page-actions" style="margin-top:8px">
           <button class="btn btn-ghost btn-sm" data-action="edit-cat" data-id="${esc(p.id)}">商品情報を編集</button>
@@ -8502,7 +8500,7 @@ function render() {
     setTimeout(() => { if (what === 'skin') actions['new-log'](); else if (LIFE_PARTS[what]) actions['life-part'](what); }, 50);
     return;
   }
-  if (['search', 'favorites', 'stores', 'cart'].includes(r.name)) { location.replace('#/my'); return; } // 商品検索は試作の段階ではなくした
+  if (['search', 'favorites', 'stores', 'cart', 'prices'].includes(r.name)) { location.replace('#/my'); return; } // 商品検索は試作の段階ではなくした
   const views = {home:viewHome, search:viewSearch, product:() => viewProduct(r.id), prices:() => viewPrices(r.id), cart:viewCart, stores:viewStores,
     ingredients:() => viewIngredients(r.id), scan:viewScan, my:() => r.id ? viewMyDetail(r.id) : viewMy(), compare:viewCompare, combo:viewCombo,
     log:viewLog, charts:viewCharts, report:viewReport, spending:viewSpending, check:() => viewCheck(r.id), settings:viewSettings, account:viewAccount, favorites:viewFavorites, terms:viewTerms, privacy:viewPrivacy, law:viewLaw, plan:() => viewPlan(r.query), suggest:viewSuggest, visit:viewVisit};
