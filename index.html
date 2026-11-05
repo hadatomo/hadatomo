@@ -863,6 +863,36 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .mpt-mid svg{color:#fff}
 .mpt-locked{flex-direction:column;gap:6px;min-height:76px;border-radius:18px;padding:10px 8px}
 .mpt-l{display:inline-flex;align-items:center;gap:6px}
+.start-bar{height:6px;border-radius:3px;background:var(--surface2);overflow:hidden;margin:-2px 0 6px}
+.start-bar i{display:block;height:100%;background:var(--green-d);border-radius:3px;transition:width .4s}
+.start-row{display:grid;grid-template-columns:28px minmax(0,1fr) 10px;gap:10px;align-items:center;width:100%;padding:10px 2px;border:0;border-top:1px solid var(--line);background:none;font-family:inherit;text-align:left;color:var(--ink);cursor:pointer}
+.start-row:first-of-type{border-top:0}
+.start-n{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--green-d);color:var(--green-d);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.start-n svg{width:15px;height:15px}
+.start-row.done .start-n{background:var(--green-d);color:#fff}
+.start-row.done b{color:var(--muted);text-decoration:line-through}
+.start-t{display:flex;flex-direction:column}
+.start-t b{font-size:14px}
+.start-t small{font-size:11.5px;color:var(--muted)}
+.start-row i{font-style:normal;color:var(--muted)}
+.start-close{display:block;margin:6px 0 0 auto;background:none;border:0;padding:0;font-family:inherit;color:var(--muted);text-decoration:underline;cursor:pointer}
+.a2hs-steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:10px}
+.a2hs-steps li b{display:block;font-size:14px}
+.a2hs-steps li small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.fac-list{display:flex;flex-direction:column}
+.fac-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:13px;align-items:baseline}
+.fac-row:first-child{border-top:0}
+.fac-row b small{font-weight:400;color:var(--muted);font-size:11px;margin-left:2px}
+.fac-row span{text-align:right;color:var(--ink2)}
+.fac-row .bad{color:#C0563B}
+.rv-links{display:flex;flex-direction:column}
+.rv-links a{display:grid;grid-template-columns:20px minmax(0,1fr) 10px;gap:10px;align-items:center;padding:11px 2px;border-top:1px solid var(--line);color:inherit;text-decoration:none}
+.rv-links a:first-child{border-top:0}
+.rv-links svg{width:18px;height:18px;color:var(--green-d)}
+.rv-links span{display:flex;flex-direction:column}
+.rv-links b{font-size:14px}
+.rv-links small{font-size:11.5px;color:var(--muted)}
+.rv-links i{font-style:normal;color:var(--muted)}
 .nut-rwrap{display:flex;justify-content:center;margin:2px 0 4px}
 .nut-radar{display:block;max-width:100%;height:auto;overflow:visible}
 .nut-vals{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
@@ -1421,6 +1451,9 @@ function acneTypeMap(logs) {
 const ACNE_SIZES = ['小（〜2mm）','中（2〜5mm）','大（5mm〜）'];
 const ACNE_STATUS = ['新しくできた','変化なし','改善傾向','悪化傾向'];
 const OTHER_CONCERNS = ['くすみ','ざらつき','毛穴の目立ち','かゆみ','ヒリヒリ感','つっぱり','肌あれ'];
+// 肌に影響しやすい、その日の体と生活のこと（記録すると「最近の肌状態」で、あった日・なかった日の肌を比べる）
+const FACTORS = ['生理中','生理前','ストレス','お酒','紫外線を多く浴びた'];
+const factorList = () => state.settings.gender === '男性' ? FACTORS.filter(f => !/生理/.test(f)) : FACTORS;
 const AREA_CONCERNS = ['赤み','乾燥','テカリ','くすみ','ざらつき','毛穴の目立ち','かゆみ','ヒリヒリ感','肌あれ']; // 顔を押して選べる、部位ごとの状態
 // 状態ごとの色（3Dの顔のマス目と、ボタンの色）
 const CONCERN_COLORS = {'赤み':'#E2523C', '乾燥':'#E9B949', 'テカリ':'#F08A24', 'くすみ':'#8C8C8C', 'ざらつき':'#A0724F', '毛穴の目立ち':'#7E57C2', 'かゆみ':'#E46FA0', 'ヒリヒリ感':'#D84315', '肌あれ':'#3E92CC'};
@@ -1519,7 +1552,7 @@ const CLOUD = {
 /* ---------- 広告（無料プランだけに表示。プレミアムでは表示しない） ----------
    ・肌の記録・グラフ・レポート・食事などの「健康に関わる画面」には表示しません
    ・広告サービスと契約するまでは enabled:false のままにします（preview:true の間は「広告枠」の位置だけ表示） */
-const ADS = {enabled:false, preview:true, client:'', slot:''};
+const ADS = {enabled:false, preview:false, client:'', slot:''};
 const AD_PLACES = ['home', 'search', 'ingredients', 'stores'];
 function adSlot(place) {
   if (isPremium() || !AD_PLACES.includes(place)) return '';
@@ -1947,7 +1980,7 @@ function normalize(d) {
     acneSpots:Array.isArray(l.acneSpots) ? l.acneSpots.filter(s => s && AREAS.some(a => a.id === s.area)).map(s => ({id:String(s.id||uid()), area:s.area, count:clamp(Math.round(num(s.count,1)),1,99),
       type:ACNE_TYPES.includes(s.type) ? s.type : '赤ニキビ', size:ACNE_SIZES.includes(s.size) ? s.size : ACNE_SIZES[0], status:ACNE_STATUS.includes(s.status) ? s.status : ACNE_STATUS[0], onset:isValidYmd(s.onset) ? s.onset : ''})) : [],
     redness:clamp(Math.round(num(l.redness)),0,5), dryness:clamp(Math.round(num(l.dryness)),0,5), oil:clamp(Math.round(num(l.oil)),0,5),
-    otherConcerns:strArr(l.otherConcerns, OTHER_CONCERNS),
+    otherConcerns:strArr(l.otherConcerns, OTHER_CONCERNS), factors:strArr(l.factors, FACTORS),
     faceV:l.faceV === 2 ? 2 : 0, // 2＝顔のマス目で入力した記録（空でもマス目の表示にする）
     cellMarks:(() => { const o = {}; if (l.cellMarks && typeof l.cellMarks === 'object') Object.entries(l.cellMarks).forEach(([k, m]) => { if (!/^\d{1,3},\d{1,3}$/.test(k) || !m || typeof m !== 'object') return; const v = {}; AREA_CONCERNS.forEach(c => { const n = Math.round(Number(m[c])); if (n >= 1 && n <= 5) v[c] = n; }); if (m['ニキビ']) v['ニキビ'] = 1; if (Object.keys(v).length) o[k] = v; }); return o; })(),
     areaNotes:(() => { const o = {}; if (l.areaNotes && typeof l.areaNotes === 'object') AREAS.forEach(a => { const v = strArr(l.areaNotes[a.id], AREA_CONCERNS); if (v.length) o[a.id] = v; }); return o; })(),
@@ -1979,12 +2012,15 @@ function normalize(d) {
   out.settings.ageBand = ds.ageBand === '18〜19歳' ? '10代' : AGE_BANDS.includes(ds.ageBand) ? ds.ageBand : ''; // 以前の「18〜19歳」は「10代」にまとめる // 年代（任意）
   out.settings.gender = ['女性', '男性'].includes(ds.gender) ? ds.gender : ''; // 性別（3Dの顔の形に使う。任意）
   out.settings.recoBudget = num(ds.recoBudget) === -1 ? -1 : clamp(Math.round(num(ds.recoBudget) || 0), 0, 100000); // あなたに合う化粧品：1つあたりの上限金額（0：未設定、-1：上限なし）
+  out.settings.startHidden = !!ds.startHidden; out.settings.a2hsDone = !!ds.a2hsDone; // はじめにやること
+  out.settings.cloudSync = !!ds.cloudSync; // クラウドに保存する（ログインしている人だけ）
   out.settings.hideHelp = !!ds.hideHelp; // ボタン・入力欄の説明文を隠す（設定の「画面の表示」）
   out.settings.onboarded = !!ds.onboarded; // はじめの質問に答えた（またはあとでにした）
   const rs = ds.research || {}; // 研究への協力（任意・初めはオフ）
   out.settings.research = {on:!!rs.on && !!rs.adult, adult:!!rs.adult, cid:/^[0-9a-f-]{36}$/.test(rs.cid || '') ? rs.cid : '', lastSent:isValidYmd(rs.lastSent) ? rs.lastSent : '', lastHash:String(rs.lastHash || '').slice(0, 20)};
   out.favorites = Array.isArray(d.favorites) ? Array.from(new Set(d.favorites.map(String))).filter(id => out.catalog.some(p => p.id === id)) : [];
   out.cart = Array.isArray(d.cart) ? [...new Set(d.cart.filter(x => typeof x === 'string' && out.catalog.some(c => c.id === x)))].slice(0, 50) : []; // 買い物リスト（商品のID）
+  out.savedAt = Number(d.savedAt) || 0; // 最後に保存した時刻（クラウドとどちらが新しいかを比べる）
   out.customFoods = Array.isArray(d.customFoods) ? d.customFoods.filter(x => x && x.name).map(x => { const n = normFood(Object.assign({meal:'snack', qty:1}, x)); return {id:n.id, name:n.name, kcal:n.kcal, p:n.p, f:n.f, c:n.c, veg:n.veg}; }) : [];
   return out;
 }
@@ -2002,7 +2038,8 @@ function load() {
 }
 function save() {
   if (!storageOK) return false;
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); widgetSoon(); return true; }
+  state.savedAt = Date.now();
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); widgetSoon(); setTimeout(syncSoon, 0); return true; }
   catch (e) { toast('保存できませんでした。容量が不足している可能性があります（写真を減らしてください）。', 'error'); return false; }
 }
 // ---------- ウィジェット（スマホのホーム画面に置く小さな表示）用のデータ ----------
@@ -2266,7 +2303,7 @@ function hapticize(btn) {
 
 // 押したときにバイブを付けるボタン：今日の肌を記録／睡眠・運動・食事／記録する（ホームの小さいボタン）／メニュー
 // （保存する・記録するの保存ボタンは、下から出る画面を開くときに付ける）
-const HAPTIC_TARGETS = '.life-btns .btn, .t3-side [data-action="new-log"], #top-menu, .sw-opt, .sw-foot .btn, .my-add, [data-action="add-sheet"], .add-opt'; // はじめの質問（アンケート）の選択肢・次へ／戻るも
+const HAPTIC_TARGETS = '.life-btns .btn, .t3-side [data-action="new-log"], #top-menu, .sw-opt, .sw-foot .btn, .my-add, [data-action="add-sheet"], .add-opt, .start-row:not(.done)'; // はじめの質問（アンケート）の選択肢・次へ／戻るも
 function hapticizeTargets() { $$(HAPTIC_TARGETS).forEach(hapticizeKeep); }
 // まわりの並び方がくずれないように、ボタンの置き場所・幅をそのまま包む箱に写して、見えないスイッチを重ねる
 function hapticizeKeep(btn) {
@@ -2720,12 +2757,12 @@ const SHORTCUTS = [
   {k:'log', h:'#/log', ic:'note', l:'肌の記録一覧'}, {k:'scan', h:'#/scan', ic:'camera', l:'カメラで化粧品を登録'},
   {k:'charts', h:'#/charts', ic:'chart', l:'肌の変化・比較'}, {k:'report', h:'#/report', ic:'calendar', l:'週次レポート'},
   {k:'combo', h:'#/combo', ic:'flask', l:'成分の組み合わせ'}, {k:'visit', h:'#/visit', ic:'note', l:'受診用まとめ'},
-  {k:'suggest', h:'#/suggest', ic:'leaf', l:'ケアの提案'}, 
+
   {k:'ingredients', h:'#/ingredients', ic:'book', l:'成分辞典'}, {k:'my', h:'#/my', ic:'bottle', l:'マイ化粧品'},
   {k:'spending', h:'#/spending', ic:'wallet', l:'支出'}, {k:'plan', h:'#/plan', ic:'user', l:'プラン・アカウント'},
   {k:'settings', h:'#/settings', ic:'gear', l:'設定'}
 ];
-const SC_DEFAULT = ['log', 'scan', 'charts', 'suggest', 'visit', 'combo'];
+const SC_DEFAULT = ['log', 'scan', 'charts', 'report', 'visit', 'combo'];
 function myShortcuts() {
   const ks = Array.isArray(state.settings.shortcuts) && state.settings.shortcuts.length ? state.settings.shortcuts : SC_DEFAULT;
   return ks.map(k => SHORTCUTS.find(x => x.k === k)).filter(Boolean).slice(0, 6);
@@ -2803,12 +2840,12 @@ function viewHome() {
 
   const shortcuts = `<div class="card" id="sc-card"><div class="card-h"><h2>ショートカット</h2><button class="link small sc-edit" data-action="sc-edit">${icon('gear')}変更</button></div><div class="shortcuts">${myShortcuts().map(x => `<a class="shortcut" href="${x.h}">${icon(x.ic)}${esc(x.l)}</a>`).join('')}</div></div>`;
 
-  const onboard = !state.settings.concerns.length ? `<div class="notice green" style="margin-bottom:16px"><b>はじめに：あなたの肌悩みを教えてください。</b>手持ちの化粧品と予算をふまえて、ケアの考え方と候補を整理します。<br><button type="button" class="btn btn-primary btn-sm" style="margin-top:10px" data-action="setup">質問に答える（1分）</button></div>` : '';
+  const onboard = !state.settings.concerns.length ? `<div class="notice green" style="margin-bottom:16px"><b>はじめに：あなたの肌悩みを教えてください。</b>答えた内容から、あなたに合うケアと成分を「おすすめケア」に出します。<br><button type="button" class="btn btn-primary btn-sm" style="margin-top:10px" data-action="setup">質問に答える（1分）</button></div>` : '';
   const tab = HOME_TABS.some(x => x.k === ui.homeTab) ? ui.homeTab : 'today';
   const tabs = `<nav class="home-tabs" role="tablist" aria-label="ホームの表示">${HOME_TABS.map(x => `<button type="button" class="ht ${tab === x.k ? 'active' : ''}" role="tab" aria-selected="${tab === x.k}" data-action="home-tab" data-id="${x.k}"><span>${x.l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
   // 3つのタブ：画面の上にくっついたまま、押すと中身だけ切り替わる
   // 中身は .home-pane に入れる（横にスワイプしたとき、タブのバーは動かさずに中身だけ動かすため）
-  if (tab === 'today') { html = tabs + '<div class="home-pane">' + html + onboard + todayCard + '</div>'; }
+  if (tab === 'today') { html = tabs + '<div class="home-pane">' + html + onboard + startHtml() + todayCard + '</div>'; }
   else if (tab === 'care') { html = tabs + '<div class="home-pane">' + (loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '') + careCard + '</div>'; }
   else { html = tabs + '<div class="home-pane">' + (loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '') + shortcuts + '</div>'; }
   html += adSlot('home');
@@ -4403,7 +4440,7 @@ function viewSuggest() {
         .sort((a, b) => (perUnitValue(a.price, a.volume) ?? Infinity) - (perUnitValue(b.price, b.volume) ?? Infinity) || a.price - b.price).slice(0, 3);
       body = `<p class="small" style="color:var(--warn)">この目的の商品は、手持ち（使用中・ストック）にありません。</p>` +
         (cands.length ? `<p class="small muted" style="margin:6px 0 4px">登録済みの商品から、${remain != null ? `今月の残り予算（${yen(Math.max(0, remain))}）以内で、` : ''}単価が安い順の候補：</p>` + cands.map(c => `<div style="padding:4px 0"><a href="#/product/${encodeURIComponent(c.id)}">${esc(c.name)}</a> ${c.isSample ? '<span class="badge-sample">サンプル</span>' : verifyBadge(c)}<div class="small muted">${yen(c.price)}${c.volume ? '／' + esc(c.volume) : ''}${perUnitText(c.price, c.volume) ? '・' + esc(perUnitText(c.price, c.volume)) : ''}</div></div>`).join('')
-          : `<p class="small muted" style="margin-top:4px">${remain != null && remain <= 0 ? '今月の予算を使い切っています。来月まで待つことも選択肢です。' : '条件に合う登録商品がありません。「商品検索」から登録できます。'}</p>`);
+          : `<p class="small muted" style="margin-top:4px">${remain != null && remain <= 0 ? '今月の予算を使い切っています。来月まで待つことも選択肢です。' : '条件に合う登録商品がありません。'}</p>`);
     }
     return `<div style="padding:12px 0;border-top:1px solid var(--line)"><div style="margin-bottom:6px"><b>${esc(pu)}</b>${basic ? ' <span class="chip">基本のケア</span>' : ''}</div>${body}</div>`;
   }).join('');
@@ -4508,9 +4545,9 @@ function viewMy() {
     .sort((a,b) => (useN[b.id] || 0) - (useN[a.id] || 0) || FREQS.indexOf(a.frequency) - FREQS.indexOf(b.frequency) || b.startDate.localeCompare(a.startDate));
   let html = `<button class="btn btn-primary my-add" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button>`;
   html += `<div class="my-filters" role="tablist">${filters.map(f => `<button class="btn btn-ghost btn-sm my-f ${ui.myFilter === f ? 'active' : ''}" role="tab" aria-selected="${ui.myFilter === f}" data-action="my-filter" data-id="${esc(f)}">${esc(label(f))}<span>${f === 'すべて' ? state.myProducts.length : counts[f]}</span></button>`).join('')}</div>`;
-  const tools = state.myProducts.length ? `<div class="mtools"><a href="#/compare">${icon('compare')}商品と肌状態の比較<i>›</i></a><a href="#/combo">${icon('flask')}成分の組み合わせ<i>›</i></a></div>` : '';
+  const tools = `<div class="mtools">${state.myProducts.length ? `<a href="#/compare">${icon('compare')}商品と肌状態の比較<i>›</i></a><a href="#/combo">${icon('flask')}成分の組み合わせ<i>›</i></a>` : ''}<a href="#/spending">${icon('wallet')}支出<i>›</i></a><a href="#/check">${icon('check')}買う前チェック<i>›</i></a></div>`;
   if (!state.myProducts.length) {
-    html += `<div class="card">${emptyBox('bottle', 'まだ化粧品が登録されていません', '使っている化粧品を登録すると、使用期間・成分・支出をまとめて管理できます。商品検索から選んで登録することもできます。')}</div>`;
+    html += `<div class="card">${emptyBox('bottle', 'まだ化粧品が登録されていません', '使っている化粧品を登録すると、使用期間・成分・支出をまとめて管理できます。上の「化粧品を追加」から登録できます。')}</div>`;
   } else if (!list.length) {
     html += `<div class="card">${emptyBox('bottle', `「${label(ui.myFilter)}」はありません`, '他のタブも確認してください。')}</div>`;
   } else {
@@ -4886,6 +4923,52 @@ function comboMap(r) {
    画面：肌の記録（記録一覧／写真／食事・睡眠）
    ========================================================= */
 // 最近の肌の状態＋今週のまとめ（肌の記録の画面に表示）
+// 体と生活のこと（生理・ストレス・お酒など）があった日と、なかった日の肌を比べる（直近60日・決めた計算だけ。原因とは断定しない）
+function factorCardHtml() {
+  const since = addDays(todayStr(), -60), logs = state.skinLogs.filter(l => l.date >= since);
+  const head = '<div class="card"><div class="card-h"><h2>体と生活のことと肌</h2><span class="small muted">直近60日</span></div>';
+  if (!logs.some(l => (l.factors || []).length)) return head + '<p class="small muted" style="margin:0">肌の記録で「今日の体と生活」（生理・ストレス・お酒など）を選ぶと、あった日となかった日の肌をここで比べます。</p></div>';
+  const avg = (a, k) => a.length ? a.reduce((s, l) => s + (Number(l[k]) || 0), 0) / a.length : 0, r1 = v => Math.round(v * 10) / 10;
+  const rows = factorList().map(f => { const on = logs.filter(l => (l.factors || []).includes(f)), off = logs.filter(l => !(l.factors || []).includes(f)); return {f, on, off}; }).filter(x => x.on.length >= 2 && x.off.length >= 2);
+  if (!rows.length) return head + '<p class="small muted" style="margin:0">同じことがあった日が2日以上たまると、比べて表示します。</p></div>';
+  return head + `<div class="fac-list">${rows.map(({f, on, off}) => { const da = avg(on, 'acneCount') - avg(off, 'acneCount'), dc = avg(on, 'condition') - avg(off, 'condition');
+    const msg = da >= 0.5 ? `ニキビが<b class="bad">平均${r1(da)}個多め</b>` : da <= -0.5 ? `ニキビが平均${r1(-da)}個少なめ` : 'ニキビの数はほぼ同じ';
+    return `<div class="fac-row"><b>${esc(f)}<small>（${on.length}日）</small></b><span>${msg}・調子 ${dc <= -0.3 ? `<b class="bad">${r1(dc)}</b>` : dc >= 0.3 ? `+${r1(dc)}` : 'ほぼ同じ'}</span></div>`; }).join('')}</div>
+    <p class="small muted" style="margin:8px 0 0">あった日となかった日の平均を比べた目安です。これだけで原因とは言えません。</p></div>`;
+}
+// ===== はじめにやること（4つ。全部終わるか「閉じる」で消える） =====
+function startItems() {
+  const life = state.lifeLogs.filter(l => !l.demo);
+  return [
+    {k:'skin', l:'肌を記録する', s:'1分ほど。毎日の調子を残します', done:state.skinLogs.some(l => !l.demo), a:'new-log'},
+    {k:'my', l:'化粧品を1つ登録する', s:'使っている化粧水などを1つ', done:state.myProducts.some(p => !p.isSample), a:'add-sheet', id:'my'},
+    {k:'meal', l:'食事を記録する', s:'食べたものから、栄養のバランスがわかります', done:life.some(l => (l.foods || []).length || MEALS.some(m => l.meals && l.meals[m.k] && l.meals[m.k].ate)), a:'life-edit', id:'meal'},
+    {k:'a2hs', l:'ホーム画面に追加する', s:'アプリのように開けて、記録が消えにくくなります', done:isStandalone() || !!state.settings.a2hsDone, a:'a2hs-guide'},
+  ];
+}
+function startHtml() {
+  if (state.settings.startHidden) return '';
+  const it = startItems(), n = it.filter(x => x.done).length; if (n === it.length) return '';
+  return `<div class="card start-card"><div class="card-h"><h2>はじめにやること</h2><span class="small muted">${n} / ${it.length}</span></div>
+    <div class="start-bar"><i style="width:${n / it.length * 100}%"></i></div>
+    ${it.map((x, i) => `<button type="button" class="start-row ${x.done ? 'done' : ''}" ${x.done ? 'disabled' : `data-action="${x.a}"${x.id ? ` data-id="${x.id}"` : ''}`}><span class="start-n">${x.done ? icon('check') : i + 1}</span><span class="start-t"><b>${esc(x.l)}</b><small>${esc(x.s)}</small></span>${x.done ? '' : '<i>›</i>'}</button>`).join('')}
+    <button type="button" class="link small start-close" data-action="start-hide">この案内を閉じる</button></div>`;
+}
+function openA2hsGuide() {
+  const ios = DEV.ios, steps = ios ? [['画面の下の「共有」ボタン（四角から上向きの矢印）を押す', 'Safariで開いているときです。ほかのアプリの中で開いているときは、先にSafariで開きます'], ['「ホーム画面に追加」を押す', '見つからないときは、下に少しスクロールします'], ['右上の「追加」を押す', 'ホーム画面にナカカラモのアイコンができます。次からはそこから開いてください']]
+    : DEV.android ? [['右上の「︙」（メニュー）を押す', 'Chromeで開いているときです'], ['「ホーム画面に追加」または「アプリをインストール」を押す', ''], ['「追加」を押す', 'ホーム画面にナカカラモのアイコンができます']]
+    : [['スマホのブラウザでこのページを開く', 'パソコンでは、ブックマークに追加しておくと便利です'], ['ブラウザのメニューから「ホーム画面に追加」を選ぶ', ''], ['「追加」を押す', '']];
+  openModal({title:'ホーム画面に追加する', dismissable:true, body:`<p class="small" style="margin:0 0 10px">アプリのように1回で開けるようになります。iPhoneでは、ホーム画面から開くと、記録が消えにくくなります。</p>
+    <ol class="a2hs-steps">${steps.map(([t, s]) => `<li><b>${esc(t)}</b>${s ? `<small>${esc(s)}</small>` : ''}</li>`).join('')}</ol>`,
+    footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">あとで</button><button type="button" class="btn btn-primary" data-action="a2hs-done">追加した</button>`});
+}
+// 振り返りの画面（グラフ・週のまとめ・受診用）は、記録タブの「最近の肌状態」からまとめて開く
+function reviewLinksHtml() {
+  return `<div class="card"><div class="card-h"><h2>振り返り</h2></div><div class="rv-links">
+    <a href="#/charts">${icon('chart')}<span><b>肌の変化・比較</b><small>グラフで推移を見る</small></span><i>›</i></a>
+    <a href="#/report">${icon('calendar')}<span><b>週のまとめ</b><small>1週間の記録をまとめる</small></span><i>›</i></a>
+    <a href="#/visit">${icon('note')}<span><b>受診用まとめ</b><small>皮膚科で見せる1枚・PDF</small></span><i>›</i></a></div></div>`;
+}
 function recentCardHtml() {
   const t = todayStr(), map = logMap(), ws = weekStart(t);
   const weekLogs = logsInRange(ws, addDays(ws, 6)), prevLogs = logsInRange(addDays(ws, -7), addDays(ws, -1));
@@ -4917,7 +5000,7 @@ function viewLogInner() {
   html += `<nav class="home-tabs log-tabs" role="tablist" aria-label="記録の表示">${tabs.map(([k, l]) => `<button type="button" class="ht ${ui.logTab === k ? 'active' : ''}" role="tab" aria-selected="${ui.logTab === k}" data-action="log-tab" data-id="${k}"><span>${l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
   if (ui.logTab === 'photos') return html + viewPhotos();
   if (ui.logTab === 'life') ui.logTab = 'recent'; // 以前の「食事・運動・睡眠」タブは、記録一覧の中に入れた
-  if (ui.logTab === 'recent') return html + recentCardHtml();
+  if (ui.logTab === 'recent') return html + recentCardHtml() + factorCardHtml() + reviewLinksHtml();
   const logs = logsDesc();
   if (!logs.length) return html + `<div class="card">${emptyBox('note', 'まだ肌の記録がありません', 'ニキビ・赤み・乾燥・皮脂などを、数タップで記録できます。', '<button class="btn btn-primary btn-sm" data-action="new-log">最初の記録をつける</button>')}</div>`;
   const lm = lifeMap();
@@ -5188,6 +5271,7 @@ function openLogForm(id) {
     ${field('乾燥', seg('dryness', lv, d.dryness) + '<div class="scale-cap"><span>0 なし</span><span>5 強い</span></div>', {name:'dryness', required:true})}
     ${field('皮脂', seg('oil', lv, d.oil) + '<div class="scale-cap"><span>0 気にならない</span><span>5 とても多い</span></div>', {name:'oil', required:true})}
     ${field('その他の気になる状態', checksHtml('otherConcerns', OTHER_CONCERNS, d.otherConcerns), {name:'otherConcerns', optLabel:'任意・複数選択可'})}
+    ${field('今日の体と生活', checksHtml('factors', factorList(), d.factors || []), {name:'factors', optLabel:'任意・複数選択可', hint:'あった日となかった日の肌を、「最近の肌状態」で比べられます'})}
     </div>
     <div class="field" style="display:none" aria-hidden="true"><span class="lbl">気になる部位</span>
       <div class="face-wrap">${faceSvg()}<div><div class="checks">${AREAS.map(a => `<label class="check"><input type="checkbox" name="areas" value="${a.id}" ${d.areas.includes(a.id) ? 'checked' : ''}>${esc(a.name)}</label>`).join('')}</div>
@@ -5499,6 +5583,7 @@ function openLogForm(id) {
       acneTypes:$$('input[name="acneTypes"]:checked', form).map(i => i.value), acneSpots:spots,
       redness:Number(fe.redness.value), dryness:Number(fe.dryness.value), oil:Number(fe.oil.value),
       otherConcerns:$$('input[name="otherConcerns"]:checked', form).map(i => i.value),
+      factors:$$('input[name="factors"]:checked', form).map(i => i.value),
       areas:$$('input[name="areas"]:checked', form).map(i => i.value), ...(form._fpData ? form._fpData() : {}), usedProducts:used, usageRecorded:used.length > 0 || noneUsed,
       memo:fe.memo.value.trim(), photo:(pendingPhoto && saveChk && saveChk.checked ? pendingPhoto : photo) || null};
     let backup = null;
@@ -6877,7 +6962,8 @@ function viewReport() {
       </div><p class="small muted" style="margin-top:10px">前週の記録：${p.n}日分。記録日数が少ない場合、平均値は大きく変わります。</p></div>`
     : `<div class="card">${emptyBox('calendar', 'この週の肌記録はありません', '記録をつけると、ニキビ数や自己評価の変化がここに集計されます。', ui.reportOffset === 0 ? '<button class="btn btn-primary btn-sm" data-action="new-log">記録する</button>' : '')}</div>`;
 
-  html += `<div class="card"><div class="card-h"><h2>使用した商品と使用頻度の振り返り</h2></div>
+  // 記録がない項目のカードは出さない（短く見やすくする）
+  if (used.length) html += `<div class="card"><div class="card-h"><h2>使用した商品と使用頻度の振り返り</h2></div>
     ${used.length ? used.map(x => { const fc = freqCheck(x, ws, effEnd); return `<div style="padding:8px 0;border-bottom:1px solid var(--line)">
       <div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><a href="#/my/${encodeURIComponent(x.id)}" style="color:inherit;font-weight:600">${esc(x.name)}</a><span class="small muted">${esc(x.timing)}・予定 ${esc(x.frequency)}</span></div>
       <div class="chips" style="margin-top:4px">${started.includes(x) ? '<span class="chip green">この週に開始</span>' : ''}${ended.includes(x) ? '<span class="chip gray">この週に終了</span>' : ''}${x.status === '一時停止' ? '<span class="chip warn">一時停止中</span>' : ''}</div>
@@ -6885,13 +6971,13 @@ function viewReport() {
       : '<p class="small muted">この週に使用期間が重なる商品は登録されていません。</p>'}</div>`;
 
   const cr = comboReport(used);
-  html += `<div class="card"><div class="card-h"><h2>成分の特徴と注意点</h2><a class="link" href="#/combo">詳しく見る →</a></div>
+  if (used.length) html += `<div class="card"><div class="card-h"><h2>成分の特徴と注意点</h2><a class="link" href="#/combo">詳しく見る →</a></div>
     ${!used.length ? '<p class="small muted">記録なし</p>'
       : `<p class="small" style="margin-bottom:8px">解説のある成分：${cr.byIng.length ? cr.byIng.map(x => `<a href="#/ingredients/${x.entry.key}">${esc(x.entry.name)}</a>`).join('、') : 'なし'}</p>
       ${cr.missing.length ? `<p class="small" style="color:var(--warn)">全成分が未登録の商品：${cr.missing.length}件（情報不足のため判断していません）</p>` : ''}
       ${cr.alerts.length ? cr.alerts.map(a => `<div class="alert-card" style="margin-top:8px"><b>${esc(a.rule.title)}</b>${esc(a.rule.note)}</div>`).join('') : '<p class="small muted">この辞典で注意を表示している組み合わせは見つかりませんでした（安全を意味するものではありません）。</p>'}`}</div>`;
 
-  html += `<div class="card"><div class="card-h"><h2>食事・睡眠</h2></div>
+  if (lifeW.length) html += `<div class="card"><div class="card-h"><h2>食事・睡眠</h2></div>
     ${lifeW.length ? `<dl class="kv"><dt>記録した日</dt><dd>${lifeW.length}日</dd><dt>平均睡眠</dt><dd>${sleepW.length ? esc(fmtHM(avg(sleepW))) : '記録なし'}${sleepW.length && sleepP.length ? `（前週 ${esc(fmtHM(avg(sleepP)))}）` : ''}</dd>
       <dt>6時間未満の日</dt><dd>${sleepW.length ? sleepW.filter(m => m < 360).length + '日' : '記録なし'}</dd>
       <dt>朝食を食べた日</dt><dd>${lifeW.filter(l => l.meals.breakfast.ate).length}日</dd>
@@ -6902,7 +6988,7 @@ function viewReport() {
       <dt>栄養（目安・1日平均）</dt><dd>${(() => { const n = lifeW.filter(l => l.foods.length); if (!n.length) return '記録なし'; const tt = n.map(l => nutTotals(l.foods)); const a = k => avg(tt.map(x => x[k])); return esc(nutLine({kcal:a('kcal'), p:a('p'), f:a('f'), c:a('c'), veg:a('veg')})) + `<div class="small muted">${n.length}日分の記録から計算した概算です</div>`; })()}</dd></dl>`
       : '<p class="small muted">記録なし</p>'}</div>`;
 
-  html += `<div class="card"><div class="card-h"><h2>化粧品への支出</h2></div><div class="big-stat">${yen(spent)}</div>
+  if (buys.length) html += `<div class="card"><div class="card-h"><h2>化粧品への支出</h2></div><div class="big-stat">${yen(spent)}</div>
     ${buys.length ? `<table class="table" style="margin-top:10px"><tbody>${buys.map(b => `<tr><td>${esc(b.name)}<div class="small muted">${fmtShort(b.date)}</div></td><td class="r">${yen(b.price)}</td></tr>`).join('')}</tbody></table>` : '<p class="small muted" style="margin-top:6px">この週の購入記録はありません。</p>'}</div>`;
 
   // 翌週に確認するとよいポイント（ルールに基づく）
@@ -7044,6 +7130,76 @@ function loadScript(src) {
 }
 function hasSavedLogin() { try { return !!localStorage.getItem(CLOUD.storageKey); } catch (e) { return false; } }
 function rerenderAcct() { const n = parseRoute().name; if (n === 'plan' || n === 'settings') render(); else if (n === 'account') { refreshAccPanel('plan'); refreshAccPanel('settings'); } else if (n === 'home') refreshAdvice(); }
+// ===== クラウド保存（ログインして「クラウドに保存する」をオンにした人だけ） =====
+// 記録・化粧品・設定をSupabaseに保存し、機種変更やブラウザのデータ削除のあとでも続きから使えるようにする
+// 写真（肌写真・化粧品の写真）はクラウドに送らない（この端末の中だけ）
+const SYNC = {busy:false, timer:null, at:'', err:'', pending:false};
+const SYNC_ARRAYS = ['catalog', 'myProducts', 'skinLogs', 'lifeLogs', 'customFoods'];
+const isDataImg = v => typeof v === 'string' && v.startsWith('data:');
+function syncPayload() {
+  const d = JSON.parse(JSON.stringify(state));
+  SYNC_ARRAYS.forEach(k => (d[k] || []).forEach(x => Object.keys(x).forEach(f => { if (isDataImg(x[f])) x[f] = null; })));
+  return d;
+}
+// クラウドのデータを使うとき、この端末にだけある写真は残す
+function syncKeepPhotos(remote) {
+  SYNC_ARRAYS.forEach(k => { const loc = new Map((state[k] || []).map(x => [x.id, x]));
+    (remote[k] || []).forEach(x => { const l = loc.get(x.id); if (l) Object.keys(l).forEach(f => { if (isDataImg(l[f]) && !x[f]) x[f] = l[f]; }); }); });
+  return remote;
+}
+const syncOn = () => !!(state.settings.cloudSync && acct.client && acct.user);
+const hasRecords = s => !!(s && ((s.skinLogs || []).some(l => !l.demo) || (s.lifeLogs || []).some(l => !l.demo) || (s.myProducts || []).some(p => !p.isSample)));
+function syncSoon() { if (!syncOn()) return; clearTimeout(SYNC.timer); SYNC.timer = setTimeout(syncPush, 2500); }
+async function syncPush() {
+  if (!syncOn()) return;
+  if (SYNC.busy) { SYNC.pending = true; return; }
+  SYNC.busy = true; SYNC.err = '';
+  try {
+    const now = new Date().toISOString();
+    const {error} = await acct.client.from('user_data').upsert({user_id:acct.user.id, data:syncPayload(), updated_at:now});
+    if (error) throw error;
+    SYNC.at = now; try { localStorage.setItem('nakakaramo_sync_at', now); } catch (e) {}
+  } catch (e) { SYNC.err = 'クラウドに保存できませんでした（電波のよい場所で自動でやり直します）'; }
+  SYNC.busy = false; syncPaint();
+  if (SYNC.pending) { SYNC.pending = false; syncSoon(); }
+}
+// 起動・ログインのとき：クラウドのほうが新しければ、この端末のデータを置き換える（写真は残す）
+async function syncPull(ask) {
+  if (!syncOn()) return;
+  try {
+    const {data, error} = await acct.client.from('user_data').select('data, updated_at').eq('user_id', acct.user.id).maybeSingle();
+    if (error) throw error;
+    if (!data) { syncPush(); return; } // まだクラウドに何もない → この端末のデータを保存
+    const last = (() => { try { return localStorage.getItem('nakakaramo_sync_at') || ''; } catch (e) { return ''; } })();
+    const localNewer = (state.savedAt || 0) > Date.parse(last || 0) + 1000; // 最後にクラウドに保存したあと、この端末で変更した
+    if (data.updated_at <= last && localNewer) { syncPush(); return; }
+    if (data.updated_at <= last) return; // 同じ
+    if (ask && hasRecords(state) && localNewer) { syncAsk(data); return; } // 両方に新しい記録がある → どちらを使うか聞く
+    syncApply(data);
+  } catch (e) { SYNC.err = 'クラウドのデータを読み込めませんでした'; syncPaint(); }
+}
+function syncApply(row) {
+  const keepSync = state.settings.cloudSync;
+  state = normalize(syncKeepPhotos(row.data || {})); state.settings.cloudSync = keepSync;
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); localStorage.setItem('nakakaramo_sync_at', row.updated_at); } catch (e) {}
+  SYNC.at = row.updated_at; toast('クラウドのデータを読み込みました'); render();
+}
+function syncAsk(row) {
+  ui.syncRow = row;
+  openModal({title:'どちらのデータを使いますか？', body:`<p class="small" style="margin:0 0 8px">この端末とクラウドの両方に、新しい記録があります。</p>
+    <ul class="points small"><li><b>クラウド</b>：${esc(fmtShort(row.updated_at.slice(0, 10)))}に保存したデータ</li><li><b>この端末</b>：いま表示しているデータ</li></ul>
+    <p class="small muted">選ばなかったほうのデータは上書きされます。写真はどちらを選んでもこの端末に残ります。</p>`,
+    footer:`<button type="button" class="btn btn-ghost" data-action="sync-use-local">この端末</button><button type="button" class="btn btn-primary" data-action="sync-use-cloud">クラウド</button>`});
+}
+function syncPaint() { const b = document.getElementById('sync-card'); if (b) b.outerHTML = syncCardHtml(); }
+function syncCardHtml() {
+  const st = state.settings, on = !!st.cloudSync;
+  const status = !acct.user ? '<p class="small muted" style="margin:8px 0 0">使うには、先に<a href="#/plan">ログイン</a>してください（無料）。</p>'
+    : on ? `<p class="small" style="margin:8px 0 0;color:${SYNC.err ? 'var(--warn)' : 'var(--green-d)'}">${SYNC.err ? esc(SYNC.err) : SYNC.busy ? 'クラウドに保存しています…' : SYNC.at ? `クラウドに保存済み（${esc(new Date(SYNC.at).toLocaleString('ja-JP', {month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'}))}）` : 'オン'}</p>` : '';
+  return `<div class="card" id="sync-card"><div class="card-h"><h2>クラウドに保存</h2></div>
+    <p class="small muted" style="margin:0 0 10px">オンにすると、記録・化粧品・設定をあなたのアカウントに保存します。機種変更したときや、ブラウザのデータが消えたときも、ログインすれば続きから使えます。<b>写真はクラウドに送らず、この端末の中だけ</b>に保存します。</p>
+    <label class="check"><input type="checkbox" id="f_cloudSync" ${on ? 'checked' : ''} ${acct.user ? '' : 'disabled'}> クラウドに保存する</label>${status}</div>`;
+}
 async function initCloud() {
   if (acct.status === 'loading' || acct.status === 'ready') return;
   acct.status = 'loading'; rerenderAcct();
@@ -7054,11 +7210,12 @@ async function initCloud() {
       const before = acct.user && acct.user.id;
       acct.user = session ? session.user : null;
       if (event === 'PASSWORD_RECOVERY') { acct.recovery = true; location.hash = '#/plan'; }
-      if ((acct.user && acct.user.id) !== before) { acct.sub = null; acct.subLoaded = false; setTimeout(refreshSub, 0); }
+      if ((acct.user && acct.user.id) !== before) { acct.sub = null; acct.subLoaded = false; setTimeout(refreshSub, 0); if (acct.user) setTimeout(() => syncPull(true), 0); }
     });
     const {data} = await acct.client.auth.getSession();
     acct.user = data && data.session ? data.session.user : null;
     acct.status = 'ready';
+    if (acct.user) syncPull(true);
     await refreshSub();
   } catch (e) { acct.status = 'error'; rerenderAcct(); }
 }
@@ -7526,7 +7683,7 @@ function accSectionHtml(k) {
 function viewAccount() {
   ui.budgetEdit = false; ui.accOpen = ui.accOpen || {};
   if (ui.accOpen.plan && acct.status === 'idle') setTimeout(initCloud, 0);
-  return ['spend', 'plan', 'settings'].map(accSectionHtml).join('');
+  return ['plan', 'settings'].map(accSectionHtml).join(''); // 支出はマイ化粧品の中へ移した
 }
 // 設定・プライバシー（アカウントの中）：並びを整え、データ関係を1つにまとめ、プライバシーは押すと開く形にする
 // 設定：ウィジェットの見た目（アプリ版でホーム画面に置けるもの）のプレビュー
@@ -7626,13 +7783,15 @@ function researchPreviewHtml() {
 }
 function skinProfileCardHtml() {
   const st = state.settings;
-  return `<div class="card"><div class="card-h"><h2>肌質・年代</h2></div>
+  return `<div class="card"><div class="card-h"><h2>肌質・年代・肌悩み</h2></div>
     <div class="form-grid two" style="gap:12px">
       <div class="field"><label class="lbl" for="f_skinType">肌質</label><select class="select" id="f_skinType"><option value="">未設定</option>${SKIN_TYPES.map(x => `<option ${st.skinType === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
       <div class="field"><label class="lbl" for="f_ageBand">年代<span class="opt">任意</span></label><select class="select" id="f_ageBand"><option value="">答えない</option>${AGE_BANDS.map(x => `<option ${st.ageBand === x ? 'selected' : ''}>${x}</option>`).join('')}</select></div>
     </div>
     <label class="check" style="margin-top:10px"><input type="checkbox" id="f_sensitive" ${st.sensitive ? 'checked' : ''}> 敏感肌（刺激を感じやすい）</label>
-    <p class="small muted" style="margin:8px 0 0">このブラウザ内にだけ保存されます。「研究への協力」をオンにした場合だけ、統計のために送られます。</p>
+    <p class="lbl" style="margin:14px 0 6px">肌悩み<span class="opt">いくつでも</span></p>
+    <div class="checks">${CONCERNS.map(c => `<label class="check"><input type="checkbox" name="st-concern" value="${esc(c)}" ${st.concerns.includes(c) ? 'checked' : ''}>${esc(c)}</label>`).join('')}</div>
+    <p class="small muted" style="margin:8px 0 0">肌悩みは、ホームの「おすすめケア」に使います。このブラウザ内に保存されます。「研究への協力」をオンにした場合だけ、統計のために送られます。</p>
     <button type="button" class="btn btn-soft btn-sm" style="margin-top:10px" data-action="setup">はじめの質問に答え直す</button></div>`;
 }
 function researchCardHtml() {
@@ -7675,6 +7834,7 @@ function viewSettings() {
       <p class="small muted" style="margin:6px 0 0">運動の消費カロリーや、たんぱく質の目安の計算に使います。このブラウザ内にだけ保存されます。</p>
       <button class="btn btn-soft btn-sm" style="margin-top:10px" data-action="life-goal">身長・体重を設定する</button></div>
     ${skinProfileCardHtml()}
+    ${syncCardHtml()}
     ${researchCardHtml()}
     <div class="card"><div class="card-h"><h2>画面の表示</h2></div>
       <p class="small muted" style="margin-bottom:10px">暗い場所でも見やすい「ダーク」表示に切り替えられます。「自動」は、スマホ・パソコンの設定（ダークモード）に合わせます。</p>
@@ -7690,10 +7850,10 @@ function viewSettings() {
       <form id="budget-form" novalidate><div class="form-grid">${field('1か月のスキンケア予算（円）', `<input class="input" id="f_budget" name="budget" inputmode="numeric" value="${state.settings.monthlyBudget || ''}" placeholder="例：5000">`, {name:'budget', hint:'0または空欄で、予算を使わない設定になります'})}</div>
       <button type="submit" class="btn btn-primary btn-sm" style="margin-top:12px">保存する</button></form></div>
     <div class="card"><div class="card-h"><h2>プライバシー</h2></div>
-      <p class="small" style="margin:0">記録は<b>この端末のブラウザの中だけ</b>に保存されます。外部に送るのは、あなたがボタンを押したときだけです。</p>
+      <p class="small" style="margin:0">記録は<b>この端末のブラウザの中</b>に保存されます。「クラウドに保存」をオンにした場合だけ、写真以外の記録をあなたのアカウントに保存します。</p>
       <details class="fold" style="margin-top:10px"><summary>詳しく見る</summary>
       <ul class="points small">
-        <li><b>保存場所</b>：すべてのデータは<b>このブラウザの中（localStorage）だけ</b>に保存されます。サーバーへの送信、クラウド同期、ほかの端末との共有は行いません。</li>
+        <li><b>保存場所</b>：データは<b>このブラウザの中（localStorage）</b>に保存されます。設定で「クラウドに保存」をオンにした場合だけ、写真を除く記録・化粧品・設定を、あなたのアカウント（Supabase・東京リージョン）に保存します。本人以外は読めません。オフにすると、クラウドに保存したデータは消えます。</li>
         <li><b>肌写真</b>：保存は任意です。「ブラウザ内に保存する」にチェックした写真だけを保存し、外部には送信しません。</li>
         <li><b>位置情報</b>：「現在地の近くを探す」を押し、確認画面とブラウザの許可の両方で同意した場合だけ使います。保存はしません。地図のリンクを開くと、地図サービスに位置が送られます。</li>
         <li><b>アカウント</b>：有料プランの申し込み・管理のため、ログインした場合だけ、メールアドレスと契約状況をサーバー（Supabase・東京リージョン）に保存します。決済はStripeの画面で行い、カード情報はナカカラモに保存されません。ログイン機能の部品は、プラン・アカウントの画面を開いたときに jsDelivr から読み込みます。</li>
@@ -7705,7 +7865,7 @@ function viewSettings() {
         <li><b>オフライン用の保存</b>：電波が弱い場所でも開けるように、アプリ本体・アイコン・薬局データをこの端末のブラウザに保存します（記録の内容は含みません）。画面の表示（ダーク・ライト）の設定も、この端末にだけ保存します。</li>
         <li><b>おすすめケアポイント（AI分析・${PREMIUM_NAME}）</b>：直近7日の記録の<b>まとめだけ</b>（睡眠時間の平均、ニキビの数、食べた物の名前と回数、使っている化粧品の種類と主な成分の名前など。商品名・メモ・写真は送りません）を${esc(SERVICE)}のサーバーを通してGoogleのAI（Gemini API）に送ります。メモ・写真・名前は送りません。</li>
         <li><b>外部リンク</b>：通販サイト・地図のリンクを開くと、そのサイトの利用規約・プライバシーポリシーが適用されます。</li>
-        <li><b>広告</b>：無料プランでは、ホーム・商品検索・成分辞典・店舗検索の画面に広告を表示する予定です（現在は準備中で、広告は配信していません）。肌の記録・グラフ・レポート・食事などの画面には表示しません。広告はナカカラモのおすすめや価格比較の結果とは関係がなく、広告であることを明示します。広告を配信するときは、広告サービスに送られる情報（Cookieなど）について、この画面でお知らせします。プレミアムプランでは広告を表示しません。</li>
+        <li><b>広告</b>：無料プランでは、ホーム・成分辞典などの画面に広告を表示する予定です（現在は準備中で、広告は配信していません）。肌の記録・グラフ・レポート・食事などの画面には表示しません。広告はナカカラモのおすすめや価格比較の結果とは関係がなく、広告であることを明示します。広告を配信するときは、広告サービスに送られる情報（Cookieなど）について、この画面でお知らせします。プレミアムプランでは広告を表示しません。</li>
       </ul></details>
       <div class="ext-links" style="margin-top:12px"><a class="btn btn-ghost btn-sm" href="#/terms">利用規約</a><a class="btn btn-ghost btn-sm" href="#/privacy">プライバシーポリシー</a><a class="btn btn-ghost btn-sm" href="#/law">特定商取引法に基づく表記</a></div></div>
     <div class="card"><div class="card-h"><h2>データの保存状況</h2></div>
@@ -7906,6 +8066,11 @@ const actions = {
   'reco-cap-save': () => { const f = document.getElementById('f_recoCap'), v = Math.round(Number(f && f.value) || 0); if (v < 300 || v > 100000) { toast('300〜100,000円の間で入力してください'); return; } dismissModal(); recoSetCap(v); },
   'reco-retry': () => { RECO.err = ''; recoRun(true); },
   'reco-add': id => recoAdd(id),
+  'a2hs-guide': () => { hapticTick(); openA2hsGuide(); },
+  'a2hs-done': () => { state.settings.a2hsDone = true; save(); dismissModal(); hapticSaved(); render(); },
+  'start-hide': () => { state.settings.startHidden = true; save(); render(); toast('「はじめにやること」を閉じました'); },
+  'sync-use-cloud': () => { const r = ui.syncRow; dismissModal(); if (r) syncApply(r); },
+  'sync-use-local': () => { dismissModal(); syncPush(); toast('この端末のデータをクラウドに保存します'); },
   'cart-toggle': id => cartToggle(id),
   'reco-view': id => { const [gi, i] = String(id).split(':').map(Number), g = RECO.res && RECO.res[gi], x = g && g.items[i]; if (x) prodOpenFrom(x, g.items); },
   'net-view': i => { const x = ui.net && ui.net.items && ui.net.items[Number(i)]; if (x) prodOpenFrom(x, ui.net.items); },
@@ -8201,7 +8366,7 @@ document.addEventListener('keydown', e => {
 // ---------- ハンバーガーメニュー（右から出てくるメニュー） ----------
 function drawerHtml() {
   let g = null, body = '';
-  NAV.filter(n => !BOTTOM_NAV.includes(n.r) && !['stores', 'search'].includes(n.r) && !ACCOUNT_PAGES.includes(n.r)).forEach(n => { // 取扱店舗は「商品検索」の中のタブ、お金・設定は「アカウント」
+  NAV.filter(n => !BOTTOM_NAV.includes(n.r) && !['stores', 'search', 'suggest', 'charts', 'report', 'visit'].includes(n.r) && !ACCOUNT_PAGES.includes(n.r)).forEach(n => { // 取扱店舗は「商品検索」の中のタブ、お金・設定は「アカウント」
     if (n.g !== g) { g = n.g; if (g) body += `<div class="grp">${esc(g)}</div>`; }
     body += `<a href="#/${n.r}">${icon(n.icon)}${esc(n.label)}</a>`;
   });
@@ -8290,6 +8455,20 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'Escape') { acClose(); }
 });
 // 入力欄（フォーカスを保つため、結果部分だけを更新）
+// クラウドに保存：オンにしたら、クラウドと比べて読み込み／保存。オフにしたら、クラウドのデータを消す
+document.addEventListener('change', async e => {
+  if (e.target.id !== 'f_cloudSync') return;
+  const on = e.target.checked;
+  state.settings.cloudSync = on; save(); hapticSaved();
+  if (on) { toast('クラウドに保存します'); await syncPull(true); syncPush(); }
+  else { clearTimeout(SYNC.timer); try { if (acct.client && acct.user) await acct.client.from('user_data').delete().eq('user_id', acct.user.id); localStorage.removeItem('nakakaramo_sync_at'); } catch (err) {} SYNC.at = ''; toast('クラウドのデータを消しました（この端末のデータは残ります）'); }
+  syncPaint();
+});
+// 設定の肌悩み：押したらすぐ保存
+document.addEventListener('change', e => {
+  if (e.target.name !== 'st-concern') return;
+  state.settings.concerns = $$('input[name="st-concern"]:checked').map(i => i.value).filter(x => CONCERNS.includes(x)); save(); hapticSaved();
+});
 // 説明文を隠す／表示する
 function applyHelpPref() { document.body.classList.toggle('no-help', !!(state.settings && state.settings.hideHelp)); }
 document.addEventListener('change', e => {
@@ -8500,11 +8679,12 @@ function render() {
     setTimeout(() => { if (what === 'skin') actions['new-log'](); else if (LIFE_PARTS[what]) actions['life-part'](what); }, 50);
     return;
   }
-  if (['search', 'favorites', 'stores', 'cart', 'prices'].includes(r.name)) { location.replace('#/my'); return; } // 商品検索は試作の段階ではなくした
+  if (['search', 'favorites', 'stores', 'cart', 'prices'].includes(r.name)) { location.replace('#/my'); return; }
+  if (r.name === 'suggest') { location.replace('#/settings'); return; } // ケアの提案は「おすすめケア」と重なるのでなくした（肌悩みは設定へ） // 商品検索は試作の段階ではなくした
   const views = {home:viewHome, search:viewSearch, product:() => viewProduct(r.id), prices:() => viewPrices(r.id), cart:viewCart, stores:viewStores,
     ingredients:() => viewIngredients(r.id), scan:viewScan, my:() => r.id ? viewMyDetail(r.id) : viewMy(), compare:viewCompare, combo:viewCombo,
     log:viewLog, charts:viewCharts, report:viewReport, spending:viewSpending, check:() => viewCheck(r.id), settings:viewSettings, account:viewAccount, favorites:viewFavorites, terms:viewTerms, privacy:viewPrivacy, law:viewLaw, plan:() => viewPlan(r.query), suggest:viewSuggest, visit:viewVisit};
-  const alias = {account:'account', product:'search', prices:'search', cart:'search', stores:'search', favorites:'search', spending:'account', plan:'account', settings:'account', compare:'charts', check:'account', terms:'account', privacy:'account', law:'account'};
+  const alias = {account:'account', product:'search', prices:'search', cart:'search', stores:'search', favorites:'search', spending:'my', plan:'account', settings:'account', compare:'log', charts:'log', report:'log', visit:'log', check:'my', terms:'account', privacy:'account', law:'account'};
   const navName = alias[r.name] || (views[r.name] ? r.name : 'home');
   if (r.name !== 'check') ui._checkFrom = '';
   if (r.name === 'plan' && acct.status === 'idle') setTimeout(initCloud, 0);
