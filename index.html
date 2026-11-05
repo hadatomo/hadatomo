@@ -33,8 +33,7 @@
   --beige:#4A4232;--beige-s:#29251D;--gold:#C9A877;
   --danger:#E3907C;--danger-s:#3A2420;--warn:#D9A955;--warn-s:#33291A;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.25);color-scheme:dark}
-:root[data-theme="dark"] .topbar{background:rgba(18,22,20,.55)!important}
-:root[data-theme="dark"] .home-tabs{background:rgba(18,22,20,.55)!important}
+:root[data-theme="dark"] .topbar{background:#121614!important}
 :root[data-theme="dark"] .bottom-nav{background:rgba(27,32,29,.96)!important;border-color:var(--line)!important}
 :root[data-theme="dark"] .input,:root[data-theme="dark"] .select,:root[data-theme="dark"] .textarea,:root[data-theme="dark"] .checks .check,:root[data-theme="dark"] .used-list .check{background:var(--surface2);color:var(--ink)}
 :root[data-theme="dark"] .field.has-error .input,:root[data-theme="dark"] .field.has-error .select,:root[data-theme="dark"] .field.has-error .textarea{background:#2A1D1A}
@@ -64,8 +63,7 @@
   --beige:#4A4232;--beige-s:#29251D;--gold:#C9A877;
   --danger:#E3907C;--danger-s:#3A2420;--warn:#D9A955;--warn-s:#33291A;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 28px rgba(0,0,0,.25);color-scheme:dark}
-:root:not([data-theme="light"]) .topbar{background:rgba(18,22,20,.55)!important}
-:root:not([data-theme="light"]) .home-tabs{background:rgba(18,22,20,.55)!important}
+:root:not([data-theme="light"]) .topbar{background:#121614!important}
 :root:not([data-theme="light"]) .bottom-nav{background:rgba(27,32,29,.96)!important;border-color:var(--line)!important}
 :root:not([data-theme="light"]) .input,:root:not([data-theme="light"]) .select,:root:not([data-theme="light"]) .textarea,:root:not([data-theme="light"]) .checks .check,:root:not([data-theme="light"]) .used-list .check{background:var(--surface2);color:var(--ink)}
 :root:not([data-theme="light"]) .field.has-error .input,:root:not([data-theme="light"]) .field.has-error .select,:root:not([data-theme="light"]) .field.has-error .textarea{background:#2A1D1A}
@@ -91,7 +89,7 @@
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;background:var(--bg)}
-/* 上の帯も背景のグラデーションを見せる（透明）。引っぱったときも同じグラデーションが見える */
+/* 画面の上を下に引っぱったとき、「ナカカラモ」の上に背景のグラデーションが見えないように、上の帯と同じ色で埋める */
 .topbar::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:400px;background:inherit;pointer-events:none}
 /* 下に引っぱって更新：ふつうのバウンドは止めて、上に出る部分は「ナカカラモ」の帯と同じ色にする */
 html,body{overscroll-behavior-y:none}
@@ -122,8 +120,7 @@ body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 input,textarea,[contenteditable="true"],.selectable{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
 @media(max-width:959px){
   /* 上の帯（ナカカラモ）とタブのバーを、いつもくっつけたまま上に固定する（離れないように） */
-  .topbar{position:sticky!important;top:0;background:rgba(255,255,255,.38)!important;-webkit-backdrop-filter:blur(18px) saturate(1.15)!important;backdrop-filter:blur(18px) saturate(1.15)!important;border-bottom:0!important}
-  .topbar::before{display:none}
+  .topbar{position:sticky!important;top:0;background:var(--bg)!important;-webkit-backdrop-filter:none!important;backdrop-filter:none!important;border-bottom:0!important}
   .home-tabs{top:var(--tbh,0px)!important}
   .bottom-nav{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:var(--surface)!important}
   .hero::after{display:none}
@@ -472,14 +469,11 @@ label.btn{position:relative}
 .f3-views{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px}
 .f3-load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--muted);padding:20px;text-align:center}
 .f3-tip{position:absolute;transform:translateX(-50%);background:var(--ink);color:var(--bg);font-size:12.5px;padding:4px 10px;border-radius:8px;pointer-events:none;white-space:nowrap}
-/* ホームの「今日の肌を記録・睡眠・運動・食事」：うしろの枠はなくして、4つのボタンを大きく */
+/* ホームの「今日の肌を記録・睡眠・運動・食事」：うしろの枠はなくして、ボタンは「化粧品を追加」と同じ大きさ */
 .hero.hero-plain{background:none;border:0;padding:0;border-radius:0;animation:none;overflow:visible;box-shadow:none}
 .hero.hero-plain::after{display:none}
 .hero-plain .life-btns{max-width:none;margin-top:0;gap:10px}
-.hero-plain .life-btns .life-main{min-height:58px;font-size:16.5px;border-radius:999px}
-.hero-plain .life-btns .life-main svg{width:20px;height:20px}
-.hero-plain .life-btns .btn-sm{min-height:52px;font-size:15px;border-radius:999px;background:var(--surface);gap:6px}
-.hero-plain .life-btns .btn-sm svg{width:19px;height:19px}
+.hero-plain .life-btns .btn-sm{min-height:44px;font-size:14px;background:var(--surface)} /* マイ化粧品の「化粧品を追加」と同じ大きさ */
 .hero-plain .life-btns .hap-keep{width:100%;display:block}
 .hero-plain .life-btns .hap-keep>.btn{width:100%}
 .life-btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px;max-width:420px}
@@ -687,7 +681,7 @@ details.acc-cmp{margin-top:14px}
 .home-pane{will-change:transform;touch-action:pan-y pinch-zoom}
 .home-pane.hp-in{animation:hpIn .46s cubic-bezier(.22,.7,.2,1)}
 @keyframes hpIn{from{transform:translateX(var(--hp-from,0));opacity:.4}to{transform:none;opacity:1}}
-.home-tabs{position:sticky;top:0;z-index:12;display:grid;grid-template-columns:repeat(3,minmax(0,124px));justify-content:center;gap:0;margin:-20px -16px 14px;padding:0 8px;background:rgba(255,255,255,.38);-webkit-backdrop-filter:blur(18px) saturate(1.15);backdrop-filter:blur(18px) saturate(1.15);border-bottom:1px solid var(--line)}
+.home-tabs{position:sticky;top:0;z-index:12;display:grid;grid-template-columns:repeat(3,minmax(0,124px));justify-content:center;gap:0;margin:-20px -16px 14px;padding:0 8px;background:var(--bg);border-bottom:1px solid var(--line)}
 .ht-ind{position:absolute;left:0;bottom:-1px;width:48px;height:3px;border-radius:3px;background:var(--green-d);transition:transform .44s cubic-bezier(.3,.8,.25,1);pointer-events:none}
 .ht{display:flex;align-items:center;justify-content:center;gap:5px;min-height:38px;min-width:0;padding:0 6px!important;border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;position:relative;white-space:nowrap;padding:0 4px}
 .ht svg{width:19px;height:19px;flex:none}
