@@ -1020,6 +1020,12 @@ a.used-tile{color:inherit;text-decoration:none}
 .mn-pb{border:1px solid var(--line2);background:var(--surface);color:var(--muted);border-radius:999px;padding:5px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 .mn-pb.on{background:var(--green-d);border-color:var(--green-d);color:#fff}
 .ld-life{margin-top:12px}
+.ng-list{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
+.ng-h{display:block;font-size:13.5px;color:#B4562F;margin-bottom:6px}
+.ng-row{padding:8px 10px;border-radius:10px;background:#FBF1EC;margin-bottom:6px}
+.ng-row b{display:block;font-size:13px}
+.ng-row span{display:block;font-size:12px;color:var(--ink2,#444);line-height:1.6;margin-top:2px}
+.ng-row em{display:block;font-style:normal;font-size:12px;font-weight:700;color:#B4562F;margin-top:4px}
 /* 商品と肌状態の比較 */
 .cmp-lbl{display:flex;align-items:center;gap:8px;margin:0 0 6px;font-size:13px;font-weight:700}
 .cmp-a,.cmp-b{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;color:#fff;font-size:12px;font-style:normal;font-weight:800;flex:none}
@@ -1869,7 +1875,9 @@ function normalize(d) {
       origin:ORIGINS.includes(p.origin) ? p.origin : 'その他', price:Math.max(0, num(p.price)), volume:String(p.volume||''), image:safeImg(p.image), imageUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.imageUrl || '')) ? String(p.imageUrl) : '', shopUrl:safeUrl(p.shopUrl), imgClean:!!p.imgClean,
       purposes:strArr(p.purposes, PURPOSES), ingredients:String(p.ingredients||''), features:String(p.features||''), usage:String(p.usage||''), caution:String(p.caution||''),
       jan:/^(\d{8}|\d{13})$/.test(String(p.jan||'')) ? String(p.jan) : '',
-      source:String(p.source||''), checkedAt:isValidYmd(p.checkedAt) ? p.checkedAt : '', offers:Array.isArray(p.offers) ? p.offers.filter(o => o && o.shop && !o.isSample).map(normOffer) : []};
+      source:String(p.source||''), checkedAt:isValidYmd(p.checkedAt) ? p.checkedAt : '',
+      offChecked:isValidYmd(p.offChecked) ? p.offChecked : '', offUrl:/^https:\/\/[^\s"'<>]+$/.test(String(p.offUrl || '')) ? String(p.offUrl) : '', // 公式情報を調べた日・調べたページ
+      offers:Array.isArray(p.offers) ? p.offers.filter(o => o && o.shop && !o.isSample).map(normOffer) : []};
   }) : [];
   // 第1版からの移行時だけ、新しく追加したサンプル商品を補う（削除済みのサンプルは第2版以降は復活させない）
   // 以前のデモで入った架空の商品（【サンプル】）は外す
@@ -3180,6 +3188,50 @@ function pcardHtml(p) {
       ${perUnitText(p.price, p.volume) ? `<span class="small muted">${esc(perUnitText(p.price, p.volume))}</span>` : ''}</div>
     </a>`;
 }
+// ---------- 商品の公式情報：空の項目は、メーカー公式サイトの情報を自動で調べて入れる。公式が出していなければ「未公開」 ----------
+const offBusy = {};
+function offVal(p, v) {
+  if (String(v || '').trim()) return esc(v);
+  if (offBusy[p.id]) return '<span class="muted">公式サイトの情報を調べています…</span>';
+  if (p.offChecked) return '<span class="muted">未公開（メーカーの公式サイトに記載がありません）</span>';
+  if (p.offErr) return `<span class="muted">${esc(p.offErr)}</span>`;
+  return '<span class="muted">未確認</span>';
+}
+function offInfoNote(p) {
+  if (offBusy[p.id]) return '<div class="notice" style="margin-top:12px">メーカーの公式サイトで、特徴・使用方法・全成分・注意事項を調べています（10〜30秒）。</div>';
+  if (p.offChecked) return `<p class="small muted" style="margin:12px 0 0">特徴・使用方法・全成分・注意事項は、メーカー公式の情報です${p.offUrl ? `（<a href="${esc(p.offUrl)}" target="_blank" rel="noopener noreferrer">公式ページ</a>・${esc(fmtShort(p.offChecked))}確認）` : `（${esc(fmtShort(p.offChecked))}確認）`}。記載がない項目は「未公開」と表示しています。</p>`;
+  if (!acct.user) return '<p class="small muted" style="margin:12px 0 0">ログインすると、空の項目をメーカー公式サイトの情報で自動で埋めます。</p>';
+  return '';
+}
+async function offFetch(p) {
+  if (!p || p.isSample || p.offChecked || offBusy[p.id] || p.offTried || !acct.user) return;
+  if (['features', 'usage', 'ingredients', 'caution'].every(k => String(p[k] || '').trim())) return;
+  offBusy[p.id] = true; p.offTried = true; if (location.hash.includes(encodeURIComponent(p.id)) || location.hash.includes(p.id)) render();
+  try {
+    const r = (await callVision('prodinfo', null, {name:p.name, brand:p.brand, jan:p.jan, volume:p.volume})).info || {};
+    const c = getCat(p.id); if (!c) return;
+    ['features', 'usage', 'ingredients', 'caution'].forEach(k => { if (!String(c[k] || '').trim() && r[k]) c[k] = r[k]; }); // 自分で入れた内容は上書きしない
+    c.offChecked = todayStr(); if (r.url) c.offUrl = r.url; delete c.offErr;
+    save();
+  } catch (e) { const c = getCat(p.id); if (c) c.offErr = String(e.message || e).slice(0, 80); }
+  delete offBusy[p.id];
+  if (parseRoute().name === 'product') render();
+}
+// 併用に注意する成分：この商品に入っている成分と、組み合わせの注意（ルール）を照らし合わせる。使用中の化粧品と重なれば、その商品名も出す
+function comboNgHtml(p) {
+  const g = new Set(knownIngs(p.ingredients).flatMap(k => k.entry.groups));
+  if (!String(p.ingredients || '').trim()) return '<p class="small muted" style="margin-top:10px"><b>併用に注意</b>：全成分がわからないため、判断できません。</p>';
+  const NAME = {retinoid:'レチノール類', acid:'角質ケア成分（AHA・BHA・PHA）', vitc:'ビタミンC', fragrance:'香料'};
+  const act = state.myProducts.filter(m => m.status === '使用中' && m.catalogId !== p.id);
+  const actG = act.map(m => ({m, g:new Set(knownIngs(ingsOfMy(m)).flatMap(k => k.entry.groups))}));
+  const rows = [];
+  COMBO_RULES.forEach(r => {
+    if (r.self) { if (!g.has(r.self)) return; const hit = actG.filter(x => x.g.has(r.self)).map(x => x.m); rows.push({t:`${NAME[r.self] || r.title}を含む商品を重ねる`, note:r.note, hit}); return; }
+    [[r.a, r.b], [r.b, r.a]].forEach(([mine, other]) => { if (!g.has(mine)) return; const hit = actG.filter(x => x.g.has(other)).map(x => x.m); rows.push({t:`${NAME[mine]} × ${NAME[other]}`, note:r.note, hit}); });
+  });
+  if (!rows.length) return '<p class="small muted" style="margin-top:10px"><b>併用に注意</b>：この商品の成分では、注意している組み合わせはありません（すべての組み合わせを確かめたものではありません）。</p>';
+  return `<div class="ng-list"><b class="ng-h">併用に注意（同じタイミングで重ねない）</b>${rows.map(r => `<div class="ng-row"><b>${esc(r.t)}</b><span>${esc(r.note)}</span>${r.hit.length ? `<em>使用中の「${r.hit.map(m => esc(truncate(shortName(m.name), 16))).join('」「')}」と重なります</em>` : ''}</div>`).join('')}<p class="small muted" style="margin:6px 0 0">成分名からの一般的な注意です。製品の使用方法・注意事項を優先してください。</p></div>`;
+}
 function viewProduct(id) {
   const p = getCat(id);
   if (!p) return notFound('商品が見つかりません', '#/search', '商品検索に戻る');
@@ -3212,17 +3264,18 @@ function viewProduct(id) {
         </div>
       </div>
     </div>
+    ${offInfoNote(p)}
     <div class="grid g2 mt">
-      <div class="card"><div class="card-h"><h2>商品の特徴</h2></div><p class="prose">${val(p.features)}</p></div>
-      <div class="card"><div class="card-h"><h2>使用方法</h2></div><p class="prose">${val(p.usage)}</p></div>
+      <div class="card"><div class="card-h"><h2>商品の特徴</h2></div><p class="prose">${offVal(p, p.features)}</p></div>
+      <div class="card"><div class="card-h"><h2>使用方法</h2></div><p class="prose">${offVal(p, p.usage)}</p></div>
     </div>
     <div class="card mt"><div class="card-h"><h2>全成分</h2><span class="small muted">${ings.length ? ings.length + '成分（緑色は解説あり）' : ''}</span></div>
-      ${ings.length ? `<div class="ing-list">${ings.map(s => knownMap[s] ? `<a href="#/ingredients/${knownMap[s]}">${esc(s)}</a>` : `<span>${esc(s)}</span>`).join('')}</div>` : '<p class="na">未確認です。パッケージの全成分表示を確認して登録してください。</p>'}</div>
+      ${ings.length ? `<div class="ing-list">${ings.map(s => knownMap[s] ? `<a href="#/ingredients/${knownMap[s]}">${esc(s)}</a>` : `<span>${esc(s)}</span>`).join('')}</div>` : `<p class="na">${offVal(p, '')}</p>`}</div>
     ${known.length ? `<div class="card"><div class="card-h"><h2>成分の解説</h2><span class="chip">一般的な情報</span></div>
       ${known.map(k => ingCard(k.entry, k.items)).join('')}
       <p class="small muted" style="margin-top:12px">成分が含まれていることは、効果を保証するものではありません。濃度・処方・使用頻度・個人差によって、感じ方は異なります。</p></div>` : ''}
     ${activeCompareCard(p)}
-    <div class="card"><div class="card-h"><h2>注意事項</h2></div><p class="prose">${val(p.caution)}</p></div>
+    <div class="card"><div class="card-h"><h2>注意事項</h2></div><p class="prose">${offVal(p, p.caution)}</p>${comboNgHtml(p)}</div>
     <p class="small muted" style="margin-top:16px">掲載情報は効果を保証するものではありません。肌に異常が出た場合は使用を中止し、皮膚科医に相談してください。</p>`;
 }
 /* 手持ちの化粧品と、役割（カテゴリ・目的・成分）が重なっていないかを並べる */
@@ -6768,7 +6821,7 @@ async function callVision(mode, image, payload) {
   if (!acct.client) await initCloud();
   if (!acct.client || !acct.user) throw new Error('ログインしてからお使いください。');
   // 返事が来ないまま「読み取り中」で止まらないように、90秒で打ち切る
-  const call = acct.client.functions.invoke('vision', {body:mode === 'advice' || mode === 'menu' || mode === 'recipe' ? {mode, data:payload} : mode === 'diag' || mode === 'storefill' ? {mode} : {mode, image}});
+  const call = acct.client.functions.invoke('vision', {body:mode === 'advice' || mode === 'menu' || mode === 'recipe' || mode === 'prodinfo' ? {mode, data:payload} : mode === 'diag' || mode === 'storefill' ? {mode} : {mode, image}});
   const {data, error} = await Promise.race([call, new Promise((_, rej) => setTimeout(() => rej(new Error('時間がかかりすぎたため中止しました。電波のよい場所で、もう一度お試しください。')), 90000))]);
   if (error) {
     let msg = 'サーバーに接続できませんでした。時間をおいてお試しください。';
@@ -8208,6 +8261,7 @@ function render() {
   navRestoreY = null;
   if (r.name === 'home') { placeHomeTabInd(); slideHomePane(); if (ui.homeTab === 'care' && isPremium()) setTimeout(() => { runMenu(false); storeLoad(false); }, 0); }
   if (r.name === 'log') { placeHomeTabInd(); slideHomePane(); }
+  if (r.name === 'product') { const pc = getCat(r.id); if (pc) setTimeout(() => offFetch(pc), 0); }
   hapticizeTargets();
   drawCharts();
   if (routeChanged) motionIn(r.name + (r.id ? '/' + r.id : '')); // 画面を移ったときだけ、動きのある表示にする
@@ -8345,13 +8399,21 @@ function ptrRepaint() {
   const page = document.getElementById('page'); if (!page) return;
   let y0 = null, on = false, d = 0, raf = 0;
   const atBottom = () => window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
-  const setY = v => { d = v; page.style.transform = v > 0.25 ? `translate3d(0,${(-v).toFixed(2)}px,0)` : ''; };
+  // 上にくっついているタブのバー（今日の記録・おすすめケア…）は、ページといっしょに動かさない（iPhoneでバーだけずれて動くのを防ぐ）
+  let bar = null;
+  const setY = v => {
+    d = v; const on2 = v > 0.25;
+    page.style.transform = on2 ? `translate3d(0,${(-v).toFixed(2)}px,0)` : '';
+    if (bar) bar.style.transform = on2 ? `translate3d(0,${v.toFixed(2)}px,0)` : '';
+    if (!on2) bar = null;
+  };
   const blocked = t => $('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full') || (t && t.closest && t.closest('input,textarea,select,canvas'));
   window.addEventListener('touchstart', e => { cancelAnimationFrame(raf); if (e.touches.length !== 1 || blocked(e.target) || page.style.transform && !on) { y0 = null; return; } y0 = e.touches[0].clientY; on = false; }, {passive:true});
   window.addEventListener('touchmove', e => {
     if (y0 == null) return;
     const dy = y0 - e.touches[0].clientY; // 上に動かした量
-    if (!on) { if (dy <= 0) return; if (!atBottom()) { y0 = e.touches[0].clientY; return; } on = true; y0 = e.touches[0].clientY; return; }
+    if (!on) { if (dy <= 0) return; if (!atBottom()) { y0 = e.touches[0].clientY; return; } on = true; y0 = e.touches[0].clientY;
+      const tb = document.querySelector('.home-tabs'); bar = tb && tb.getBoundingClientRect().top <= 1 ? tb : null; return; } // バーが上にくっついている（止まっている）ときだけ
     if (dy <= 0) { setY(0); return; }
     e.preventDefault(); setY(90 * (1 - Math.exp(-dy / 200)));
   }, {passive:false});
