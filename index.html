@@ -601,15 +601,15 @@ details.acc-cmp{margin-top:14px}
 .credit{margin-top:4px;font-size:10.5px}
 .sbig{position:relative}
 .sbig>svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);width:20px;height:20px;color:var(--muted);pointer-events:none;z-index:1}
-.sbig .input{min-height:54px;padding-left:46px;padding-right:58px;font-size:17px;border-radius:999px;background:var(--surface);box-shadow:var(--shadow);width:100%}
+.sbig .input{min-height:44px;height:44px;padding-left:44px;padding-right:50px;font-size:16px;border-radius:999px;background:var(--surface);box-shadow:var(--shadow);width:100%}
 .sbig .input::-webkit-search-cancel-button{display:none}
-.sbar-in{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;border:0;background:var(--surface2);color:var(--ink2);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;-webkit-tap-highlight-color:transparent}
-.sbar-in svg{width:19px;height:19px}
+.sbar-in{position:absolute;right:5px;top:50%;transform:translateY(-50%);width:34px;height:34px;border-radius:50%;border:0;background:var(--surface2);color:var(--ink2);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;-webkit-tap-highlight-color:transparent}
+.sbar-in svg{width:17px;height:17px}
 .sbar-in.on{background:var(--green-d);color:#fff}
 .sbar-in b{position:absolute;top:-3px;right:-3px;min-width:18px;height:18px;border-radius:9px;background:#D9473A;color:#fff;font-size:11px;line-height:18px;text-align:center;padding:0 4px}
 .sort-seg .seg-opt{flex:1 1 calc(50% - 6px)}
 .sbig .input::placeholder{color:var(--muted);opacity:.55;font-weight:400}
-.sbar-top .sbar-f{min-height:54px;width:54px;padding:0;border-radius:50%;justify-content:center}
+.sbar-top .sbar-f{min-height:44px;width:44px;padding:0;border-radius:50%;justify-content:center}
 .top-actions{display:flex;gap:8px;margin:0 0 12px}
 .my-add{width:100%;justify-content:center}
 /* ウィジェットのプレビュー */
@@ -673,7 +673,7 @@ details.acc-cmp{margin-top:14px}
 .pcard .fav-heart{top:50%;right:8px;transform:translateY(-50%);width:34px;height:34px;box-shadow:none;background:var(--surface2)}
 /* 追加の選択 */
 .add-opts{display:flex;flex-direction:column;gap:10px}
-.add-opt{display:grid;grid-template-columns:26px 1fr 12px;gap:12px;align-items:center;text-align:left;padding:16px;border:1px solid var(--line2);border-radius:16px;background:var(--surface);color:var(--ink);font-family:inherit;cursor:pointer}
+.add-opt{display:grid;grid-template-columns:26px 1fr 12px;gap:12px;align-items:center;text-align:left;padding:11px 16px;border:1px solid var(--line2);border-radius:16px;background:var(--surface);color:var(--ink);font-family:inherit;cursor:pointer}
 .add-opt svg{width:24px;height:24px;color:var(--green-d)}
 .add-opt.main{border-color:var(--green);background:var(--green-p,#EEF5EF)}
 /* 大きさの比率 3：2（自分で入力する：カメラで登録） */
@@ -2717,8 +2717,8 @@ function searchTabs(cur) { const n = (state.favorites || []).length; return `<di
 function openAddSheet(kind) {
   const my = kind === 'my';
   openModal({title:my ? '化粧品を追加' : '商品を追加', size:'small', dismissable:true, body:`<div class="add-opts">
-    <button class="add-opt main big" data-action="add-camera" data-id="${my ? 'my' : 'cat'}">${icon('camera')}<span><b>カメラで登録</b><small>バーコードか商品の写真から、商品を見つける</small></span><i>›</i></button>
-    <button class="add-opt main big" data-action="add-manual" data-id="${my ? 'my' : 'cat'}">${icon('note')}<span><b>自分で入力</b><small>バーコードの数字か商品名を入れると、候補が出ます</small></span><i>›</i></button></div>`});
+    <button class="add-opt main" data-action="add-manual" data-id="${my ? 'my' : 'cat'}">${icon('note')}<span><b>自分で入力</b><small>バーコードの数字か商品名を入れると、候補が出ます</small></span><i>›</i></button>
+    <button class="add-opt main" data-action="add-camera" data-id="${my ? 'my' : 'cat'}">${icon('camera')}<span><b>カメラで登録${isPremium() ? '' : `<span class="prem-sub">${PREMIUM_NAME}</span>`}</b><small>バーコードか商品の写真から、商品を見つける</small></span><i>›</i></button></div>`});
 }
 // 実際の商品（楽天市場・Yahoo!ショッピング）を名前で探して、そのまま追加する
 let findState = null;
@@ -4177,7 +4177,7 @@ function viewMy() {
   html += `<div class="my-filters" role="tablist">${filters.map(f => `<button class="btn btn-ghost btn-sm my-f ${ui.myFilter === f ? 'active' : ''}" role="tab" aria-selected="${ui.myFilter === f}" data-action="my-filter" data-id="${esc(f)}">${esc(label(f))}<span>${f === 'すべて' ? state.myProducts.length : counts[f]}</span></button>`).join('')}</div>`;
   const tools = state.myProducts.length ? `<div class="mtools"><a href="#/compare">${icon('compare')}商品と肌状態の比較<i>›</i></a><a href="#/combo">${icon('flask')}成分の組み合わせ<i>›</i></a></div>` : '';
   if (!state.myProducts.length) {
-    html += `<div class="card">${emptyBox('bottle', 'まだ化粧品が登録されていません', '使っている化粧品を登録すると、使用期間・成分・支出をまとめて管理できます。商品検索から選んで登録することもできます。', '<div class="page-actions" style="justify-content:center"><button class="btn btn-primary btn-sm" data-action="new-my">直接登録する</button><a class="btn btn-ghost btn-sm" href="#/search">商品検索から選ぶ</a></div>')}</div>`;
+    html += `<div class="card">${emptyBox('bottle', 'まだ化粧品が登録されていません', '使っている化粧品を登録すると、使用期間・成分・支出をまとめて管理できます。商品検索から選んで登録することもできます。')}</div>`;
   } else if (!list.length) {
     html += `<div class="card">${emptyBox('bottle', `「${label(ui.myFilter)}」はありません`, '他のタブも確認してください。')}</div>`;
   } else {
@@ -7507,7 +7507,10 @@ const actions = {
   'setup-finish': () => { swSave(true); hapticSaved(); },
   'add-full': kind => { findState = null; closeModal(); setTimeout(() => (actions[kind === 'my' ? 'new-my' : 'new-cat'])(), 200); },
   'find-pick': i => findPick(i),
-  'add-camera': kind => { closeModal(); setTimeout(() => openCamSheet(kind || 'my'), 200); },
+  'add-camera': kind => {
+    if (!isPremium()) { toast(`カメラで登録は${PREMIUM_NAME}プランの機能です`); closeModal(); location.hash = '#/plan'; return; }
+    closeModal(); setTimeout(() => openCamSheet(kind || 'my'), 200);
+  },
   'add-manual': kind => { closeModal(); setTimeout(() => openFindSheet(kind || 'my'), 200); },
   'acc-toggle': (k, el) => {
     ui.accOpen = ui.accOpen || {}; ui.accOpen[k] = !ui.accOpen[k];
