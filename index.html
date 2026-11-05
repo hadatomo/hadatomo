@@ -631,9 +631,9 @@ details.acc-cmp{margin-top:14px}
 .home-pane{will-change:transform;touch-action:pan-y pinch-zoom}
 .home-pane.hp-in{animation:hpIn .46s cubic-bezier(.22,.7,.2,1)}
 @keyframes hpIn{from{transform:translateX(var(--hp-from,0));opacity:.4}to{transform:none;opacity:1}}
-.home-tabs{position:sticky;top:0;z-index:12;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:-20px -16px 14px;padding:0 8px;background:var(--bg);border-bottom:1px solid var(--line)}
+.home-tabs{position:sticky;top:0;z-index:12;display:flex;justify-content:center;gap:2px;margin:-20px -16px 14px;padding:0 8px;background:var(--bg);border-bottom:1px solid var(--line)}
 .ht-ind{position:absolute;left:0;bottom:-1px;width:48px;height:3px;border-radius:3px;background:var(--green-d);transition:transform .44s cubic-bezier(.3,.8,.25,1);pointer-events:none}
-.ht{display:flex;align-items:center;justify-content:center;gap:6px;min-height:46px;border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;position:relative;white-space:nowrap;padding:0 4px}
+.ht{display:flex;align-items:center;justify-content:center;gap:5px;min-height:46px;flex:0 1 auto;padding:0 12px!important;border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;position:relative;white-space:nowrap;padding:0 4px}
 .ht svg{width:17px;height:17px;flex:none}
 .ht.active{color:var(--ink)}
 
@@ -988,14 +988,18 @@ a.used-tile{color:inherit;text-decoration:none}
 .ldc-nav:disabled{opacity:.3}
 .ldc-w,.ldc-g{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
 .ldc-w span{font-size:11px;color:var(--muted);padding:2px 0}
-.ldc-d{position:relative;aspect-ratio:1/1;border:0;border-radius:50%;background:none;color:var(--ink);font:inherit;font-size:13.5px;cursor:pointer}
+.ldc-d{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:1px;min-height:42px;padding:4px 0 3px;border:0;border-radius:10px;background:none;color:var(--ink);font:inherit;font-size:13px;line-height:1.15;cursor:pointer}
+.ldc-m{display:flex;height:16px}
+.ldc-m svg,.ldc-lg svg{width:16px;height:16px}
+.ldc-lg{display:inline-flex;align-items:center;gap:2px;white-space:nowrap}
+.ldc-lg svg{width:13px;height:13px}
 .ldc-d:disabled{color:var(--line2);cursor:default}
 .ldc-d.has{font-weight:700;color:var(--green-d)}
-.ldc-d.has::after{content:"";position:absolute;left:50%;bottom:3px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--green)}
+.ldc-d.has:not(:has(.ldc-m))::after{content:"";position:absolute;left:50%;bottom:6px;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--green)}
 .ldc-d.today{box-shadow:inset 0 0 0 1.5px var(--line2)}
-.ldc-d.sel{background:var(--green-d);color:#fff}
-.ldc-d.sel::after{background:#fff}
-.ldc-note{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin:6px 0 0}
+.ldc-d.sel{background:var(--surface2);color:var(--ink);box-shadow:inset 0 0 0 2px var(--green-d)}
+.ldc-d.sel::after{background:var(--green-d)}
+.ldc-note{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 8px;font-size:10.5px;color:var(--muted);margin:8px 0 0}
 .adv-basis{font-size:11.5px;color:var(--muted);background:var(--surface2);border-radius:10px;padding:6px 9px;margin:6px 0 0;line-height:1.55}
 .adv-basis b{display:inline-block;font-size:10.5px;color:var(--green-d);margin-right:6px}
 .adv-chips{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:6px}
@@ -4450,14 +4454,15 @@ function logDayCardHtml(logs) {
 let ldCalYM = '';
 function ldCalHtml() {
   const t = todayStr(), have = new Set(logDayList().map(l => l.date));
+  const cond = {}; state.skinLogs.forEach(l => { if (l.condition) cond[l.date] = l.condition; }); // その日の肌の調子（1〜5）
   const [y, m] = ldCalYM.split('-').map(Number), first = new Date(y, m - 1, 1), days = new Date(y, m, 0).getDate(), lead = first.getDay();
   const ymd = d => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
   const lst = logDayList(), canNext = ymd(days) < t, cur = (lst[logDayIdx(lst)] || {}).date;
   let cells = ''; for (let i = 0; i < lead; i++) cells += '<span></span>';
   for (let d = 1; d <= days; d++) { const k = ymd(d), fut = k > t;
-    cells += `<button type="button" class="ldc-d ${have.has(k) ? 'has' : ''} ${k === t ? 'today' : ''} ${k === cur ? 'sel' : ''}" data-ldc="${k}" ${fut ? 'disabled' : ''}>${d}</button>`; }
+    cells += `<button type="button" class="ldc-d ${have.has(k) ? 'has' : ''} ${k === t ? 'today' : ''} ${k === cur ? 'sel' : ''}" data-ldc="${k}" ${fut ? 'disabled' : ''} ${cond[k] ? `aria-label="${m}月${d}日 ${COND_LABELS[cond[k]]}"` : ''}><span class="ldc-n">${d}</span>${cond[k] ? `<span class="ldc-m" style="color:${COND_COLORS[cond[k]]}">${condMarkSvg(cond[k])}</span>` : ''}</button>`; }
   return `<div class="ldc-h"><button type="button" class="ldc-nav" data-ldcm="-1" aria-label="前の月">‹</button><b>${y}年${m}月</b><button type="button" class="ldc-nav" data-ldcm="1" aria-label="次の月" ${canNext ? '' : 'disabled'}>›</button></div>
-    <div class="ldc-w">${['日','月','火','水','木','金','土'].map(w => `<span>${w}</span>`).join('')}</div><div class="ldc-g">${cells}</div><p class="ldc-note"><i></i>記録がある日</p>`;
+    <div class="ldc-w">${['日','月','火','水','木','金','土'].map(w => `<span>${w}</span>`).join('')}</div><div class="ldc-g">${cells}</div><p class="ldc-note">${[5,4,3,2,1].map(v => `<span class="ldc-lg"><b style="display:flex;color:${COND_COLORS[v]}">${condMarkSvg(v)}</b>${COND_LABELS[v]}</span>`).join('')}</p>`;
 }
 function ldCalOpen(on) {
   const box = document.getElementById('ld-cal'), btn = document.getElementById('ld-calbtn'); if (!box) return;
