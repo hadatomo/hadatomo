@@ -629,15 +629,18 @@ details.acc-cmp{margin-top:14px}
 .wg-rem{grid-column:1/-1;font-size:11.5px;font-weight:600;color:var(--green-d);text-decoration:none;border-top:1px solid var(--line);padding-top:6px}
 /* ホームの上の3つのタブ（Xのように画面の上にくっつく） */
 .home-pane{will-change:transform;touch-action:pan-y pinch-zoom}
-.home-pane.hp-in{animation:hpIn .32s cubic-bezier(.2,.8,.2,1)}
+.home-pane.hp-in{animation:hpIn .46s cubic-bezier(.22,.7,.2,1)}
 @keyframes hpIn{from{transform:translateX(var(--hp-from,0));opacity:.4}to{transform:none;opacity:1}}
 .home-tabs{position:sticky;top:0;z-index:12;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:-20px -16px 14px;padding:0 8px;background:var(--bg);border-bottom:1px solid var(--line)}
-.ht-ind{position:absolute;left:0;bottom:-1px;width:48px;height:3px;border-radius:3px;background:var(--green-d);transition:transform .32s cubic-bezier(.3,.8,.25,1);pointer-events:none}
+.ht-ind{position:absolute;left:0;bottom:-1px;width:48px;height:3px;border-radius:3px;background:var(--green-d);transition:transform .44s cubic-bezier(.3,.8,.25,1);pointer-events:none}
 .ht{display:flex;align-items:center;justify-content:center;gap:6px;min-height:46px;border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;position:relative;white-space:nowrap;padding:0 4px}
 .ht svg{width:17px;height:17px;flex:none}
 .ht.active{color:var(--ink)}
 
 @media (max-width:360px){.ht span{font-size:12px}.ht svg{display:none}}
+/* 記録の画面の上のバー：ホームと同じ形（画面の上にくっつく・緑の線が動く）。文字だけで大きめに */
+.log-tabs .ht{font-size:14px;font-weight:700}
+@media (max-width:360px){.log-tabs .ht{font-size:12.5px}}
 @media (min-width:900px){.home-tabs{margin:0 0 16px;border-radius:14px;border:1px solid var(--line)}}
 @media (prefers-reduced-motion:reduce){.ht-ind{transition:none}}
 .my-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 14px}
@@ -2587,7 +2590,6 @@ function viewHome() {
 
   let html = loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '';
   html += `<section class="hero">
-    <div class="hero-top"><p class="hero-date">${fmtDate(t)}</p></div>
     <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${icon('plus')}今日の肌を記録</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('chart')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('note')}食事</button></div></section>`;
 
   const lifeLine = lifeSumHtml(todayLife);
@@ -4376,7 +4378,7 @@ function recentCardHtml() {
 function viewLog() {
   const tabs = [['list','記録一覧'],['life','食事・運動・睡眠'],['photos','肌写真']];
   let html = '';
-  html += `<div class="tabs">${tabs.map(([k, l]) => `<button class="tab ${ui.logTab === k ? 'active' : ''}" data-action="log-tab" data-id="${k}">${l}</button>`).join('')}</div>`;
+  html += `<nav class="home-tabs log-tabs" role="tablist" aria-label="記録の表示">${tabs.map(([k, l]) => `<button type="button" class="ht ${ui.logTab === k ? 'active' : ''}" role="tab" aria-selected="${ui.logTab === k}" data-action="log-tab" data-id="${k}"><span>${l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
   if (ui.logTab === 'photos') return html + viewPhotos();
   if (ui.logTab === 'life') return html + viewLife();
   const logs = logsDesc();
@@ -7072,7 +7074,7 @@ const actions = {
     state.lifeLogs = state.lifeLogs.filter(x => x.id !== id);
     if (save()) { toast('削除しました'); render(); }
   },
-  'log-tab': v => { ui.logTab = v; render(); },
+  'log-tab': v => { if (ui.logTab === v) { window.scrollTo({top:0, behavior:'smooth'}); return; } ui.ltFrom = ui.logTab; ui.logTab = v; render(); window.scrollTo(0, 0); },
   'log-day-step': v => logDayStep(Number(v)),
   'new-my': () => openMyForm(),
   'new-my-from': id => openMyForm(null, id),
@@ -7658,7 +7660,8 @@ function stopMomentumTop() {
 function placeHomeTabInd() {
   const nav = document.querySelector('.home-tabs'), ind = nav && nav.querySelector('.ht-ind'); if (!ind) return;
   const at = k => { const b = nav.querySelector(`.ht[data-id="${k}"]`); if (!b) return 0; return b.offsetLeft + b.offsetWidth / 2 - 24; };
-  const to = at(ui.homeTab), from = ui.htFrom ? at(ui.htFrom) : to; ui.htFrom = '';
+  const log = nav.classList.contains('log-tabs'), cur = log ? ui.logTab : ui.homeTab, prev = log ? ui.ltFrom : ui.htFrom;
+  const to = at(cur), from = prev ? at(prev) : to; ui.htFrom = ''; ui.ltFrom = '';
   ind.style.transition = 'none'; ind.style.transform = `translateX(${from}px)`; void ind.offsetWidth;
   ind.style.transition = ''; ind.style.transform = `translateX(${to}px)`;
 }
@@ -7696,7 +7699,7 @@ function placeHomeTabInd() {
     const v = edge ? dx / 3 : dx; // 端のタブでは、ゴムのように重くする
     pane.style.transform = `translateX(${v.toFixed(1)}px)`; pane.style.opacity = String(1 - Math.min(0.35, Math.abs(v) / 900));
   }, {passive:false});
-  const back = () => { if (!pane) return; pane.style.transition = 'transform .28s cubic-bezier(.2,.8,.2,1),opacity .28s'; pane.style.transform = ''; pane.style.opacity = ''; };
+  const back = () => { if (!pane) return; pane.style.transition = 'transform .38s cubic-bezier(.2,.8,.2,1),opacity .38s'; pane.style.transform = ''; pane.style.opacity = ''; };
   const end = () => {
     if (x0 == null || lock !== 'x') { x0 = null; return; }
     x0 = null; lock = '';
@@ -7767,6 +7770,7 @@ function render() {
   }
   navRestoreY = null;
   if (r.name === 'home') { placeHomeTabInd(); slideHomePane(); }
+  if (r.name === 'log') placeHomeTabInd();
   hapticizeTargets();
   drawCharts();
   if (routeChanged) motionIn(r.name + (r.id ? '/' + r.id : '')); // 画面を移ったときだけ、動きのある表示にする
