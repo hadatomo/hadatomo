@@ -862,6 +862,15 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .mpt-mid svg{color:#fff}
 .mpt-locked{flex-direction:column;gap:6px;min-height:76px;border-radius:18px;padding:10px 8px}
 .mpt-l{display:inline-flex;align-items:center;gap:6px}
+.nut-rwrap{display:flex;justify-content:center;margin:2px 0 4px}
+.nut-radar{display:block;max-width:100%;height:auto;overflow:visible}
+.nut-vals{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}
+.nut-vals span{background:var(--surface);border-radius:10px;padding:6px 4px;font-size:9.5px;text-align:center;align-items:center;white-space:nowrap;color:var(--muted);display:flex;flex-direction:column;line-height:1.35}
+.nut-vals small{font-size:10px;color:var(--ink2);font-weight:600}
+.nut-vals b{font-size:15px;color:var(--ink)}
+.ls-radar{display:flex;flex-direction:column;align-items:center;width:100%;border:0;background:none;padding:0 12px 10px;font-family:inherit;cursor:pointer;margin-top:-4px}
+.ls-rnote{font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;margin-top:-4px}
+.ls-rkey{display:inline-block;width:16px;border-top:1.6px dashed var(--green-d)}
 .nut-card{background:var(--surface2);border-radius:16px;padding:14px}
 .nut-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
 .nut-row{display:grid;grid-template-columns:5.2em minmax(0,1fr) 7.6em 2.8em;align-items:center;gap:8px;font-size:12.5px;margin-top:7px}
@@ -2255,7 +2264,7 @@ function hapticize(btn) {
 
 // 押したときにバイブを付けるボタン：今日の肌を記録／睡眠・運動・食事／記録する（ホームの小さいボタン）／メニュー
 // （保存する・記録するの保存ボタンは、下から出る画面を開くときに付ける）
-const HAPTIC_TARGETS = '.life-btns .btn, .t3-side [data-action="new-log"], #top-menu, .sw-opt, .sw-foot .btn'; // はじめの質問（アンケート）の選択肢・次へ／戻るも
+const HAPTIC_TARGETS = '.life-btns .btn, .t3-side [data-action="new-log"], #top-menu, .sw-opt, .sw-foot .btn, .my-add, [data-action="add-sheet"], .add-opt'; // はじめの質問（アンケート）の選択肢・次へ／戻るも
 function hapticizeTargets() { $$(HAPTIC_TARGETS).forEach(hapticizeKeep); }
 // まわりの並び方がくずれないように、ボタンの置き場所・幅をそのまま包む箱に写して、見えないスイッチを重ねる
 function hapticizeKeep(btn) {
@@ -2639,12 +2648,28 @@ const EX_METS = {'ウォーキング':3.5, 'ランニング':8, '筋トレ':5, '
 // 1日に必要な栄養の目安（体重から計算。身長・体重は設定で変えられる）
 // エネルギー＝体重×30kcal、たんぱく質＝目標（なければ体重×1.0g）、脂質＝エネルギーの25%、炭水化物＝55%、野菜＝350g（健康日本21の目標）
 function nutNeeds() { const g = lifeGoals(), kcal = Math.round(g.weight * 30 / 10) * 10; return {kcal, p:g.protein, f:Math.round(kcal * 0.25 / 9), c:Math.round(kcal * 0.55 / 4), veg:350}; }
+// 栄養のレーダーチャート：5つの栄養が、1日の目安（緑の点線＝100%）にどれだけ届いているかを形で見る
+const NUT_AX = [['エネルギー', 'kcal', 'kcal'], ['たんぱく質', 'p', 'g'], ['脂質', 'f', 'g'], ['炭水化物', 'c', 'g'], ['野菜', 'veg', 'g']];
+function nutRadarSvg(t, size, labels) {
+  const n = nutNeeds(), need = {kcal:n.kcal, p:n.p, f:n.f, c:n.c, veg:n.veg};
+  const W = size, pad = labels ? 46 : 6, cx = W / 2, cy = W / 2 + (labels ? 4 : 0), R = W / 2 - pad, MAX = 150;
+  const pt = (i, r) => { const a = -Math.PI / 2 + i * 2 * Math.PI / 5; return [cx + Math.cos(a) * r, cy + Math.sin(a) * r]; };
+  const poly = f => NUT_AX.map((_, i) => pt(i, f(i)).map(v => v.toFixed(1)).join(',')).join(' ');
+  const pcts = NUT_AX.map(([, k]) => need[k] ? Math.round((t[k] || 0) / need[k] * 100) : 0);
+  const rings = [150, 50, 100].map(v => `<polygon points="${poly(() => R * v / MAX)}" fill="${v === 150 ? 'var(--surface)' : 'none'}" stroke="${v === 100 ? 'var(--green-d)' : 'var(--line2)'}" stroke-width="${v === 100 ? 1.4 : 1}" ${v === 100 ? 'stroke-dasharray="4 3"' : ''}/>`).join('');
+  const spokes = NUT_AX.map((_, i) => { const [x, y] = pt(i, R); return `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--line2)" stroke-width="1"/>`; }).join('');
+  const dr = i => R * Math.min(MAX, Math.max(0, pcts[i])) / MAX;
+  const data = `<polygon points="${poly(dr)}" fill="rgba(90,138,105,.28)" stroke="var(--green-d)" stroke-width="2" stroke-linejoin="round"/>` + NUT_AX.map((_, i) => { const [x, y] = pt(i, dr(i)); return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${labels ? 3 : 2}" fill="${pcts[i] > 120 ? '#C0503C' : 'var(--green-d)'}"/>`; }).join('');
+  const lab = labels ? NUT_AX.map(([l], i) => { const [x, y] = pt(i, R + 14), anc = Math.abs(x - cx) < 4 ? 'middle' : x > cx ? 'start' : 'end', p = pcts[i];
+    return `<text x="${x.toFixed(1)}" y="${(y + (i === 0 ? -8 : 2)).toFixed(1)}" text-anchor="${anc}" font-size="11" fill="var(--ink2)" font-weight="600">${l}</text><text x="${x.toFixed(1)}" y="${(y + (i === 0 ? 6 : 16)).toFixed(1)}" text-anchor="${anc}" font-size="11.5" font-weight="800" fill="${p > 120 ? '#C0503C' : p >= 70 ? 'var(--green-d)' : 'var(--muted)'}">${p}%</text>`; }).join('') : '';
+  return `<svg class="nut-radar" viewBox="0 0 ${W} ${W + (labels ? 8 : 0)}" width="${W}" height="${W + (labels ? 8 : 0)}" role="img" aria-label="今日の栄養：${NUT_AX.map(([l], i) => `${l}${pcts[i]}%`).join('、')}">${rings}${spokes}${data}${lab}</svg>`;
+}
 function nutBarsHtml(t, has) {
-  const n = nutNeeds();
-  const rows = [['エネルギー', t.kcal, n.kcal, 'kcal', '#E9A23B'], ['たんぱく質', t.p, n.p, 'g', '#D2603C'], ['脂質', t.f, n.f, 'g', '#C9A227'], ['炭水化物', t.c, n.c, 'g', '#8C7A5B'], ['野菜', t.veg, n.veg, 'g', '#5A8A69']];
+  const n = nutNeeds(), need = {kcal:n.kcal, p:n.p, f:n.f, c:n.c, veg:n.veg};
   return `<div class="nut-h"><b>今日の栄養</b><span class="small muted">1日の目安に対して</span></div>
-    ${rows.map(([l, v, need, u, col]) => { const pct = need ? Math.round(v / need * 100) : 0; return `<div class="nut-row"><span class="nut-l">${l}</span><span class="nut-bar"><i style="width:${Math.min(100, pct)}%;background:${col}"></i></span><span class="nut-v"><b>${Math.round(v)}</b>/${need}${u}</span><span class="nut-p ${pct > 120 ? 'over' : pct >= 70 ? 'ok' : ''}">${pct}%</span></div>`; }).join('')}
-    <p class="small muted" style="margin:6px 0 0">${has ? '' : '食べたものを追加すると、バーが伸びます。'}目安は体重${lifeGoals().weight}kgから計算しています（${lifeGoals().weightSet ? '設定の体重' : '体重が未設定のため55kgで計算'}）。</p>`;
+    <div class="nut-rwrap">${nutRadarSvg(t, 250, true)}</div>
+    <div class="nut-vals">${NUT_AX.map(([l, k, u]) => `<span><small>${l}</small><b>${Math.round(t[k] || 0)}</b>/${need[k]}${u}</span>`).join('')}</div>
+    <p class="small muted" style="margin:8px 0 0">緑の点線が1日の目安（100%）です。${has ? '' : '食べたものを追加すると、形が広がります。'}目安は体重${lifeGoals().weight}kgから計算しています（${lifeGoals().weightSet ? '設定の体重' : '体重が未設定のため55kgで計算'}）。</p>`;
 }
 const lifeGoals = () => { const st = state.settings, w = st.weight || 55; return {sleep:st.sleepNeed || 420, weight:w, weightSet:!!st.weight, protein:st.proteinGoal || Math.round(w * 1.0)}; };
 const exKcal = (l, w) => Math.round(l.exercise.reduce((a, e) => a + (EX_METS[e.type] || 4) * w * e.minutes / 60 * 1.05, 0));
@@ -2667,9 +2692,12 @@ function lifeSumHtml(lf, date) {
     fMain = `${Math.round(t.kcal).toLocaleString()}kcal`;
     fSub = lack > 0 ? `＋${lack}g<small>（たんぱく質があと${lack}g・目標${g.protein}g）</small>` : `たんぱく質 ${p}g<small>（目標${g.protein}g クリア）</small>`; fCls = lack > 0 ? 'bad' : 'good';
   } else if (lf && MEALS.some(m => lf.meals[m.k] && lf.meals[m.k].ate)) { fMain = `${MEALS.filter(m => lf.meals[m.k].ate).length}回`; fSub = '食べた物を追加するとkcalを表示'; }
+  // 食事の行の下に、栄養のレーダーチャート（押すと食事の記録が開く）
+  const ft = lf && lf.foods && lf.foods.length ? nutTotals(lf.foods) : {kcal:0, p:0, f:0, c:0, veg:0};
+  const mealRadar = `<button type="button" class="ls-radar" data-action="${date ? 'life-day' : 'life-edit'}" data-id="${date ? date + '|meal' : 'meal'}" aria-label="栄養のバランスを見る">${nutRadarSvg(ft, 210, true)}<span class="ls-rnote"><i class="ls-rkey"></i>緑の点線が1日の目安（100%）</span></button>`;
   // 記録一覧（date あり）では見出しを出さない
   return `<div class="life-sum">${date ? '' : `<div class="ls-head"><b>今日の睡眠・運動・食事</b><button class="link small" data-action="life-goal">目安を変更</button></div>`}
-    ${row('sleep', 'moon', '睡眠', sMain, sSub, sCls)}${row('exercise', 'chart', '運動', eMain, eSub, eCls)}${row('meal', 'note', '食事', fMain, fSub, fCls)}</div>`;
+    ${row('sleep', 'moon', '睡眠', sMain, sSub, sCls)}${row('exercise', 'chart', '運動', eMain, eSub, eCls)}${row('meal', 'note', '食事', fMain, fSub, fCls).replace('</button></div>', `</button>${mealRadar}</div>`)}</div>`;
 }
 function openLifeGoal() {
   const st = state.settings, opts = []; for (let m = 300; m <= 600; m += 30) opts.push(m);
