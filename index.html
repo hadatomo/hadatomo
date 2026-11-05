@@ -8,12 +8,12 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="SkinRoad">
+<meta name="apple-mobile-web-app-title" content="ナカカラモ">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#FAF9F6" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#121614" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem("skinwise_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
-<title>SkinRoad（スキンロード）｜最小限で最大限を</title>
+<title>ナカカラモ（NAKAKARAMO）</title>
 <style>
 :root{
   --bg:#FAF9F6;--surface:#FFFFFF;--surface2:#F6F3EE;
@@ -89,9 +89,9 @@
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%;background:var(--bg)}
-/* 画面の上を下に引っぱったとき、「スキンロード」の上に背景のグラデーションが見えないように、上の帯と同じ色で埋める */
+/* 画面の上を下に引っぱったとき、「ナカカラモ」の上に背景のグラデーションが見えないように、上の帯と同じ色で埋める */
 .topbar::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:400px;background:inherit;pointer-events:none}
-/* 下に引っぱって更新：ふつうのバウンドは止めて、上に出る部分は「スキンロード」の帯と同じ色にする */
+/* 下に引っぱって更新：ふつうのバウンドは止めて、上に出る部分は「ナカカラモ」の帯と同じ色にする */
 html,body{overscroll-behavior-y:none}
 #page{position:relative}
 #page{will-change:auto}
@@ -1259,7 +1259,7 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 <div class="app">
   <aside class="sidebar" aria-label="メインメニュー">
     <div class="sn-brand">
-      <a class="wordmark" href="#/home">SkinRoad</a>
+      <a class="wordmark" href="#/home">ナカカラモ</a>
       <div class="sn-copy">最小限で最大限を</div>
     </div>
     <nav id="side-nav"></nav>
@@ -1267,7 +1267,7 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
   </aside>
   <div id="page">
     <header class="topbar">
-      <a class="wordmark" data-t="SkinRoad" href="#/home">SkinRoad</a>
+      <a class="wordmark" data-t="ナカカラモ" href="#/home">ナカカラモ</a>
       <button class="icon-btn" id="top-menu" data-action="open-menu" aria-label="メニュー" title="メニュー"></button><div class="ptr" id="ptr" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".18" stroke-width="2.6"/><circle class="ptr-arc" cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="56.5" stroke-dashoffset="56.5" transform="rotate(-90 12 12)"/></svg></div>
     </header>
     <main id="main" tabindex="-1"></main>
@@ -1282,14 +1282,14 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 <script>
 'use strict';
 /* =========================================================
-   スキンロード 第2版（単一HTMLファイル / localStorage保存）
+   ナカカラモ 第2版（単一HTMLファイル / localStorage保存）
    ・外部ライブラリ、外部API、AIは使っていません
    ・データはこのブラウザ内（localStorage）にのみ保存します
    ========================================================= */
 
 /* ---------- 定数 ---------- */
-const SERVICE = 'スキンロード';
-const SITE_HOME = /^https?:/.test(location.protocol) && location.host ? location.origin + location.pathname : 'https://hadatomo.github.io/hadatomo/'; // 公開しているURL（名前を変えて引っ越しても、自動で新しいURLになる） // サービス名（英語表記：SkinRoad）
+const SERVICE = 'ナカカラモ';
+const SITE_HOME = /^https?:/.test(location.protocol) && location.host ? location.origin + location.pathname : 'https://hadatomo.github.io/hadatomo/'; // 公開しているURL（名前を変えて引っ越しても、自動で新しいURLになる） // サービス名（英語表記：ナカカラモ）
 const COMPANY = 'はだとも'; // 企業名（変更する場合はここだけ書き換えます） 
 const STORE_KEY = 'skinwise_data_v1'; // 第1版と同じ保存場所（データを引き継ぐため。サービス名を変えても変更しない）
 const CATEGORIES = ['クレンジング','洗顔','化粧水・トナー','美容液・アンプル','乳液','クリーム','シートマスク・パック','日焼け止め','スポットケア','その他'];
@@ -1431,7 +1431,7 @@ function adSlot(place) {
       <ins class="adsbygoogle" style="display:block" data-ad-client="${esc(ADS.client)}" data-ad-slot="${esc(ADS.slot)}" data-ad-format="auto" data-full-width-responsive="true"></ins></div>`;
   }
   if (!ADS.preview) return '';
-  return `<div class="ad-box"><div class="ad-label"><span>広告</span><a href="#/plan">${PREMIUM_NAME}で広告なし</a></div><div class="ad-ph">広告枠（準備中・テスト表示）<br>広告はスキンロードのおすすめとは関係ありません</div></div>`;
+  return `<div class="ad-box"><div class="ad-label"><span>広告</span><a href="#/plan">${PREMIUM_NAME}で広告なし</a></div><div class="ad-ph">広告枠（準備中・テスト表示）<br>広告はナカカラモのおすすめとは関係ありません</div></div>`;
 }
 let adsScriptLoaded = false;
 function fillAds() {
@@ -2690,7 +2690,7 @@ function viewHome() {
   else if (tab === 'care') { html = tabs + '<div class="home-pane">' + (loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '') + careCard + '</div>'; }
   else { html = tabs + '<div class="home-pane">' + (loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '') + shortcuts + '</div>'; }
   html += adSlot('home');
-  html += `<p class="small muted" style="margin-top:20px;text-align:center">スキンロードは、肌の状態やスキンケアを記録・管理し、自分に合ったケアを効率よく選ぶための肌サポートアプリです。病気の診断や、化粧品の効果の保証は行いません。</p>`;
+  html += `<p class="small muted" style="margin-top:20px;text-align:center">ナカカラモは、肌の状態やスキンケアを記録・管理し、自分に合ったケアを効率よく選ぶための肌サポートアプリです。病気の診断や、化粧品の効果の保証は行いません。</p>`;
   return html;
 }
 const HOME_TABS = [{k:'today', l:'今日の記録', i:'note'}, {k:'care', l:'おすすめケア', i:'spark'}, {k:'sc', l:'ショートカット', i:'grid'}];
@@ -2772,7 +2772,7 @@ function swPaint() {
   const step = SW_STEPS[s.i], v = s.v;
   const dots = `<div class="sw-dots">${SW_STEPS.map((_, k) => `<i class="${k === s.i ? 'on' : ''}"></i>`).join('')}</div>`;
   let h = '';
-  if (step === 'hello') h = `<div class="sw-hello">🌿</div><p class="sw-q">スキンロードへようこそ</p><p class="sw-sub">はじめに、いくつか質問させてください（1分ほど）。<br>答えた内容は、ケアの提案や栄養の目安に使います。<br>このスマホの中にだけ保存され、あとから設定でいつでも変えられます。</p>`;
+  if (step === 'hello') h = `<div class="sw-hello">🌿</div><p class="sw-q">ナカカラモへようこそ</p><p class="sw-sub">はじめに、いくつか質問させてください（1分ほど）。<br>答えた内容は、ケアの提案や栄養の目安に使います。<br>このスマホの中にだけ保存され、あとから設定でいつでも変えられます。</p>`;
   if (step === 'gender') h = `<p class="sw-q">性別を教えてください</p><p class="sw-sub">記録に使う3Dの顔を、性別に合わせた形にします</p>` + swOpts('gender', [['女性', '女性'], ['男性', '男性'], ['', '答えない', 1]], v.gender);
   if (step === 'age') h = `<p class="sw-q">年代を教えてください</p><p class="sw-sub">年代に合ったケアの考え方に使います</p>` + swOpts('ageBand', AGE_BANDS.map(x => [x, x]).concat([['', '答えない', 1]]), v.ageBand);
   if (step === 'body') h = `<p class="sw-q">身長と体重を教えてください</p><p class="sw-sub">1日のたんぱく質の目安（体重×1g）などに使います。空欄でも大丈夫です</p>
@@ -2787,7 +2787,7 @@ function swPaint() {
   if (step === 'done') h = `<div class="sw-hello">✨</div><p class="sw-q">準備ができました</p><p class="sw-sub">さっそく今日の肌を記録してみましょう。<br>答えた内容は「設定」の「肌質・年代」から答え直せます。</p>`;
   b.innerHTML = dots + h + '<p class="sw-err" id="sw-err" hidden></p>';
   f.innerHTML = step === 'hello' ? `<button type="button" class="btn btn-ghost" data-action="setup-later">あとで</button><button type="button" class="btn btn-primary" data-swgo="1">はじめる</button>`
-    : step === 'done' ? `<button type="button" class="btn btn-primary" data-action="setup-finish">スキンロードをはじめる</button>`
+    : step === 'done' ? `<button type="button" class="btn btn-primary" data-action="setup-finish">ナカカラモをはじめる</button>`
     : `<button type="button" class="btn btn-ghost" data-swgo="-1">戻る</button><button type="button" class="btn btn-primary" data-swgo="1">${['gender', 'age', 'skin', 'concerns'].includes(step) && !swHas(step) ? 'スキップ' : '次へ'}</button>`;
 }
 const swHas = step => { const v = swState.v; return step === 'gender' ? !!v.gender : step === 'age' ? !!v.ageBand : step === 'skin' ? !!(v.skinType || v.sensitive) : step === 'concerns' ? v.concerns.length > 0 : true; };
@@ -5677,14 +5677,14 @@ function adviceLocal(d) {
   else skin = {title:'守りのケアを続ける', text:`${sk.cond != null && sk.condPrevWeek != null && sk.cond > sk.condPrevWeek ? `調子は上向き（${sk.condPrevWeek}→${sk.cond}）。` : '大きなトラブルはありません。'}日焼け止めと保湿を続けましょう。`, good:['セラミド', '日焼け止め（毎朝）', 'ビタミンC誘導体'], avoid:[]};
   // ② 睡眠
   let sleep;
-  if (!sl.days) sleep = {title:'睡眠も記録を', text:'記録すると、睡眠と肌の関係がわかります。', good:[], avoid:[]};
+  if (!sl.days) sleep = {title:'睡眠も記録を', text:'記録すると、睡眠と肌の関係がわかります。', good:['毎日同じ時刻に起きる', '寝る1時間前にお風呂'], avoid:['寝る前のスマホ', '夜のカフェイン']};
   else if (sl.avgHours < need - 0.5) sleep = {title:'睡眠をあと少し', text:`平均${sl.avgHours}時間（目安${need}時間）。まず30分早く寝ましょう。`, good:['寝る1時間前にお風呂', '毎日同じ時刻に起きる'], avoid:['寝る前のスマホ', '夜のカフェイン']};
   else if (sl.avgBedtime && /^(1|2|3|4):/.test(sl.avgBedtime)) sleep = {title:'寝る時刻を早めに', text:`寝る時刻が平均${sl.avgBedtime}ごろ。0時までに寝る日を増やしましょう。`, good:['0時までに寝る', '朝に日光を浴びる'], avoid:['寝る前のスマホ']};
   else sleep = {title:'睡眠はいい調子', text:`平均${sl.avgHours}時間。この調子で続けましょう。`, good:['今のリズムを続ける'], avoid:['寝る前のスマホ']};
   // ③ 運動
   let move;
-  if (!ex.recordedDays) move = {title:'運動も記録を', text:'記録すると、運動と肌の関係がわかります。', good:[], avoid:[]};
-  else if (ex.activeDays < 3) move = {title:'体を少し動かす', text:`運動した日は${ex.activeDays}日。10分の散歩からで大丈夫です。`, good:['10分の散歩', 'ストレッチ', '階段を使う'], avoid:[]};
+  if (!ex.recordedDays) move = {title:'運動も記録を', text:'記録すると、運動と肌の関係がわかります。', good:['10分の散歩', 'ストレッチ'], avoid:['汗をそのままにする']};
+  else if (ex.activeDays < 3) move = {title:'体を少し動かす', text:`運動した日は${ex.activeDays}日。10分の散歩からで大丈夫です。`, good:['10分の散歩', 'ストレッチ', '階段を使う'], avoid:['長時間座りっぱなし']};
   else move = {title:'運動を続けよう', text:`1週間で${ex.activeDays}日・${ex.totalMin}分。汗をかいたら早めに洗顔を。`, good:['運動後すぐの洗顔・保湿', '屋外では日焼け止め'], avoid:['汗をそのままにする']};
   // ④ 食事（足りない栄養と、おすすめの食べ物）
   let meal;
@@ -6637,7 +6637,7 @@ function viewPlan(query) {
   let html = pageHead('プラン・アカウント', '有料プラン（プレミアム）の申し込み・管理と、アカウントの設定です。');
   let notes = ''; // アカウントの画面の中では、お知らせは下にまとめる
   if (CLOUD.testMode) notes += `<div class="notice warn"><b>現在はテスト中です。実際の請求は発生しません。</b><br>申し込みの確認には、テスト用のカード番号 <b>4242 4242 4242 4242</b>（有効期限は未来の日付、セキュリティコードは好きな3桁）を使ってください。</div>`;
-  notes += `<div class="notice green">アカウントは、有料プランの申し込み・管理のためだけに使います。肌の記録・写真・食事などのデータは、これまでどおり<b>この端末の中だけ</b>に保存し、サーバーには送りません。カード情報はStripeの画面で入力し、スキンロードには保存されません。</div>`;
+  notes += `<div class="notice green">アカウントは、有料プランの申し込み・管理のためだけに使います。肌の記録・写真・食事などのデータは、これまでどおり<b>この端末の中だけ</b>に保存し、サーバーには送りません。カード情報はStripeの画面で入力し、ナカカラモには保存されません。</div>`;
   const cmpCard = `<div class="card"><div class="card-h"><h2>プランの比較</h2><span class="chip ${isPremium() ? 'beige' : 'green'}">現在：${isPremium() ? PREMIUM_NAME : '無料プラン'}</span></div>${planTable()}
     <p class="small muted" style="margin-top:10px">無料プランだけでも、すべての記録・管理機能を使えます。${PREMIUM_NAME}の写真読み取りは、AI（Google Gemini）による推定です。結果は必ず確認・修正してからお使いください（1日30回まで）。</p></div>`;
   // アカウントの画面の中では、プランの比較は一番下に、押すと開く形で出す
@@ -6991,7 +6991,7 @@ function viewAccount() {
 function widgetPreviewCard() {
   const w = widgetData(), rec = w.records;
   const dot = (on, l, link) => `<a class="wg-rec ${on ? 'on' : ''}" href="${link}"><i></i>${l}</a>`;
-  const small = `<a class="wg wg-s" href="${w.skin.recorded ? '#/home' : w.links.skin}"><span class="wg-h">SkinRoad</span>${w.skin.recorded ? `<b class="wg-score" style="color:${w.skin.color}">${w.skin.score}</b><span class="wg-l">${esc(w.skin.label)}</span>` : `<b class="wg-score muted">—</b><span class="wg-l">肌を記録</span>`}<span class="wg-f">記録 ${w.recordCount}/${w.recordTotal}</span></a>`;
+  const small = `<a class="wg wg-s" href="${w.skin.recorded ? '#/home' : w.links.skin}"><span class="wg-h">ナカカラモ</span>${w.skin.recorded ? `<b class="wg-score" style="color:${w.skin.color}">${w.skin.score}</b><span class="wg-l">${esc(w.skin.label)}</span>` : `<b class="wg-score muted">—</b><span class="wg-l">肌を記録</span>`}<span class="wg-f">記録 ${w.recordCount}/${w.recordTotal}</span></a>`;
   const medium = `<div class="wg wg-m"><div class="wg-mc"><span class="wg-h">今日の肌</span>${w.skin.recorded ? `<b class="wg-score" style="color:${w.skin.color}">${w.skin.score}</b><span class="wg-l">${esc(w.skin.label)}</span>` : `<a class="wg-l" href="${w.links.skin}">＋ 記録する</a>`}</div>
     <div class="wg-mc"><span class="wg-h">今日の記録</span><div class="wg-recs">${dot(rec.skin, '肌', w.links.skin)}${dot(rec.meal, '食事', w.links.meal)}${dot(rec.sleep, '睡眠', w.links.sleep)}${dot(rec.exercise, '運動', w.links.exercise)}</div>
       <span class="wg-f">${w.nutrition.kcal}kcal・たんぱく質 ${w.nutrition.protein}/${w.nutrition.proteinGoal}g</span><span class="wg-f">スキンケア ${w.skincare.recorded ? `${w.skincare.used}品` : '未記録'}</span></div>
@@ -7154,7 +7154,7 @@ function viewSettings() {
         <li><b>保存場所</b>：すべてのデータは<b>このブラウザの中（localStorage）だけ</b>に保存されます。サーバーへの送信、クラウド同期、ほかの端末との共有は行いません。</li>
         <li><b>肌写真</b>：保存は任意です。「ブラウザ内に保存する」にチェックした写真だけを保存し、外部には送信しません。</li>
         <li><b>位置情報</b>：「現在地の近くを探す」を押し、確認画面とブラウザの許可の両方で同意した場合だけ使います。保存はしません。地図のリンクを開くと、地図サービスに位置が送られます。</li>
-        <li><b>アカウント</b>：有料プランの申し込み・管理のため、ログインした場合だけ、メールアドレスと契約状況をサーバー（Supabase・東京リージョン）に保存します。決済はStripeの画面で行い、カード情報はスキンロードに保存されません。ログイン機能の部品は、プラン・アカウントの画面を開いたときに jsDelivr から読み込みます。</li>
+        <li><b>アカウント</b>：有料プランの申し込み・管理のため、ログインした場合だけ、メールアドレスと契約状況をサーバー（Supabase・東京リージョン）に保存します。決済はStripeの画面で行い、カード情報はナカカラモに保存されません。ログイン機能の部品は、プラン・アカウントの画面を開いたときに jsDelivr から読み込みます。</li>
         <li><b>薬局のデータ</b>：「医療情報ネット」オープンデータ（厚生労働省）を加工して、アプリと一緒に置いています。検索のときに外部に送る情報はありません。</li>
         <li><b>店舗検索</b>：「検索」ボタンを押したときだけ、入力した駅名・地名・住所と、検索する場所（または許可した現在地）を、店舗検索サービスGeoapifyと国土地理院の地名検索に送ります（Geoapifyが使えないときは、予備としてOpenStreetMapのサーバーに送ります）。検索結果の地図には、国土地理院の地図・航空写真を読み込みます（地図の部品は cdnjs・unpkg から読み込みます）。</li>
         <li><b>食事の写真</b>：撮影した写真は端末内だけで使い、「保存する」にチェックしたものだけをこのブラウザ内に保存します。</li>
@@ -7163,7 +7163,7 @@ function viewSettings() {
         <li><b>オフライン用の保存</b>：電波が弱い場所でも開けるように、アプリ本体・アイコン・薬局データをこの端末のブラウザに保存します（記録の内容は含みません）。画面の表示（ダーク・ライト）の設定も、この端末にだけ保存します。</li>
         <li><b>おすすめケアポイント（AI分析・${PREMIUM_NAME}）</b>：直近7日の記録の<b>まとめだけ</b>（睡眠時間の平均、ニキビの数、食べた物の名前と回数、使っている化粧品の種類と主な成分の名前など。商品名・メモ・写真は送りません）を${esc(SERVICE)}のサーバーを通してGoogleのAI（Gemini API）に送ります。メモ・写真・名前は送りません。</li>
         <li><b>外部リンク</b>：通販サイト・地図のリンクを開くと、そのサイトの利用規約・プライバシーポリシーが適用されます。</li>
-        <li><b>広告</b>：無料プランでは、ホーム・商品検索・成分辞典・店舗検索の画面に広告を表示する予定です（現在は準備中で、広告は配信していません）。肌の記録・グラフ・レポート・食事などの画面には表示しません。広告はスキンロードのおすすめや価格比較の結果とは関係がなく、広告であることを明示します。広告を配信するときは、広告サービスに送られる情報（Cookieなど）について、この画面でお知らせします。プレミアムプランでは広告を表示しません。</li>
+        <li><b>広告</b>：無料プランでは、ホーム・商品検索・成分辞典・店舗検索の画面に広告を表示する予定です（現在は準備中で、広告は配信していません）。肌の記録・グラフ・レポート・食事などの画面には表示しません。広告はナカカラモのおすすめや価格比較の結果とは関係がなく、広告であることを明示します。広告を配信するときは、広告サービスに送られる情報（Cookieなど）について、この画面でお知らせします。プレミアムプランでは広告を表示しません。</li>
       </ul></details>
       <div class="ext-links" style="margin-top:12px"><a class="btn btn-ghost btn-sm" href="#/terms">利用規約</a><a class="btn btn-ghost btn-sm" href="#/privacy">プライバシーポリシー</a><a class="btn btn-ghost btn-sm" href="#/law">特定商取引法に基づく表記</a></div></div>
     <div class="card"><div class="card-h"><h2>データの保存状況</h2></div>
@@ -7182,7 +7182,7 @@ function viewSettings() {
     <div class="card"><div class="card-h"><h2>すべてのデータを削除</h2></div>
       <p class="small muted" style="margin-bottom:12px">肌の記録・食事睡眠・マイ化粧品・支出・登録した商品をすべて削除します。削除した直後（数秒間）だけ「元に戻す」で取り消せます。心配な場合は、先にバックアップを書き出してください。</p>
       <button class="btn btn-danger btn-sm" data-action="delete-all">すべて削除する</button></div>
-    <div class="card"><div class="card-h"><h2>スキンロードについて</h2></div>
+    <div class="card"><div class="card-h"><h2>ナカカラモについて</h2></div>
       <dl class="kv" style="margin-bottom:12px"><dt>サービス名</dt><dd>${esc(SERVICE)}</dd><dt>バージョン</dt><dd>第2版（試作）</dd></dl><p class="small">肌の状態・化粧品・成分・生活習慣・購入金額をまとめて管理し、スキンケアにかける時間と無駄な出費を減らすことを目指すアプリです。</p>
       <ul class="small muted" style="padding-left:18px;margin:10px 0 0">
         <li>医師の診断を代わりに行うものではありません。症状が強い・長引く場合は医療機関に相談してください。</li>
@@ -7549,7 +7549,7 @@ const actions = {
     const end = (() => { const [h, m] = tm.split(':').map(Number); const t = h * 60 + m + 5; return String(Math.floor(t / 60) % 24).padStart(2, '0') + String(t % 60).padStart(2, '0') + '00'; })();
     const url = location.origin + location.pathname + '#/home';
     const ics = ['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//skinwise//reminder//JA','CALSCALE:GREGORIAN','BEGIN:VTIMEZONE','TZID:Asia/Tokyo','BEGIN:STANDARD','DTSTART:19700101T000000','TZOFFSETFROM:+0900','TZOFFSETTO:+0900','TZNAME:JST','END:STANDARD','END:VTIMEZONE',
-      'BEGIN:VEVENT', `UID:skinwise-reminder-${Date.now()}@${location.host || 'skinroad'}`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z')}`,
+      'BEGIN:VEVENT', `UID:skinwise-reminder-${Date.now()}@${location.host || 'nakakaramo'}`, `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z')}`,
       `DTSTART;TZID=Asia/Tokyo:${d}T${hm}`, `DTEND;TZID=Asia/Tokyo:${d}T${end}`, 'RRULE:FREQ=DAILY', `SUMMARY:${SERVICE}：今日の肌を記録しよう`,
       `DESCRIPTION:1分で記録できます。 ${url}`, `URL:${url}`, 'BEGIN:VALARM','ACTION:DISPLAY',`DESCRIPTION:${SERVICE}：今日の肌を記録しよう`,'TRIGGER:PT0M','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([ics], {type:'text/calendar'})); a.download = 'skin-reminder.ics'; document.body.appendChild(a); a.click(); a.remove();
@@ -7574,7 +7574,7 @@ const actions = {
       fr.onload = async () => {
         let d;
         try { d = JSON.parse(fr.result); if (!d || typeof d !== 'object' || !Array.isArray(d.skinLogs)) throw new Error(); }
-        catch (e) { toast('スキンロードのバックアップファイルではないようです', 'error'); return; }
+        catch (e) { toast('ナカカラモのバックアップファイルではないようです', 'error'); return; }
         if (!await confirmDialog('現在のデータをすべて置き換えて、バックアップから復元しますか？', {ok:'復元する', danger:false})) return;
         const old = state; state = normalize(d);
         if (save()) { toast('復元しました'); render(); } else state = old;
@@ -7926,12 +7926,12 @@ function slideHomePane() {
   p.addEventListener('animationend', () => p.classList.remove('hp-in'), {once:true});
 }
 window.addEventListener('resize', () => { if (document.querySelector('.home-tabs')) { const i = document.querySelector('.ht-ind'); if (i) i.style.transition = 'none'; placeHomeTabInd(); } });
-// 左上：ホームでは「スキンロード」、肌の記録・マイ化粧品・商品検索・アカウントでは、その画面の名前を出す
+// 左上：ホームでは「ナカカラモ」、肌の記録・マイ化粧品・商品検索・アカウントでは、その画面の名前を出す
 function setTopTitle(t) {
   const tb = $('.topbar'); if (!tb) return;
-  const cur = tb.firstElementChild, want = t || 'SkinRoad';
+  const cur = tb.firstElementChild, want = t || 'ナカカラモ';
   if (cur && cur.dataset.t === want) return;
-  const html = t ? `<h1 class="wordmark top-title" data-t="${esc(t)}">${esc(t)}</h1>` : `<a class="wordmark" data-t="SkinRoad" href="#/home">SkinRoad</a>`;
+  const html = t ? `<h1 class="wordmark top-title" data-t="${esc(t)}">${esc(t)}</h1>` : `<a class="wordmark" data-t="ナカカラモ" href="#/home">ナカカラモ</a>`;
   if (cur && cur.classList.contains('wordmark')) cur.outerHTML = html; else tb.insertAdjacentHTML('afterbegin', html);
   const el = tb.firstElementChild; if (cur) { el.classList.add('tt-in'); }
 }
@@ -8137,7 +8137,7 @@ const setTimeOfDay = () => { const h = new Date().getHours(); document.documentE
 setTimeOfDay(); setInterval(setTimeOfDay, 10 * 60 * 1000);
 if (researchState() && researchState().on) setTimeout(() => { if (researchState().lastSent !== todayStr()) researchSend(); }, 5000); // 研究に協力中なら、1日1回まで統計を新しくする
 if (hasSavedLogin()) setTimeout(initCloud, 0); // 以前ログインしていた場合だけ、ログイン状態を確認する
-document.title = `${SERVICE}｜最小限で最大限を`;
+document.title = SERVICE;
 render();
 // はじめて開いたときは、先に「はじめの質問」を出す
 if (!state.settings.onboarded && !EMBED) setTimeout(() => { if (!$('#modal-root').innerHTML) openSetupWizard(); }, 400);

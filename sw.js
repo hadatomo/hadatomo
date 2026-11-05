@@ -1,8 +1,8 @@
-// 肌トモ：オフラインでも開けるようにする仕組み（サービスワーカー）
+// ナカカラモ（NAKAKARAMO）：オフラインでも開けるようにする仕組み（サービスワーカー）
 // ・アプリ本体（index.html）は、ネットにつながるときは毎回新しいものを取り、つながらないときは保存しておいたものを使う
 // ・アイコンや薬局データは、一度読み込んだものを保存して使い回す
 // ・ログイン・決済・検索などの外部サービスへの通信には関わらない（保存しない）
-const CACHE = 'skinwise-v4';
+const CACHE = 'skinwise-v6'; // アイコンを変えたら番号を上げる（古いアイコンを消すため）
 const SHELL = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', (e) => {
