@@ -1007,7 +1007,10 @@ a.used-tile{color:inherit;text-decoration:none}
 .mn-list li{display:flex;align-items:center;gap:8px;font-size:14px}
 .mn-role{flex:none;font-size:10.5px;font-weight:700;border-radius:6px;padding:1px 6px;background:var(--surface2);color:var(--muted)}
 .mn-role.r1{background:#F4EBDA;color:#8A6420}.mn-role.r2{background:#FBE9E4;color:#B04A32}.mn-role.r3{background:#E3F0E6;color:var(--green-d)}.mn-role.r4{background:#E6EEF6;color:#3C6390}.mn-role.r5{background:#F6E8F0;color:#9A4677}
-.mn-pick{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin:0 0 8px}
+.mn-pick{display:flex;gap:5px;flex-wrap:nowrap;align-items:center;margin:0 0 10px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.mn-pick::-webkit-scrollbar{display:none}
+.mn-pick .mn-pb{flex:none;padding:5px 9px;font-size:11.5px}
+.mn-sep{flex:none;width:1px;height:18px;background:var(--line2);margin:0 3px}
 .mn-pl{font-size:11px;font-weight:700;color:var(--muted);min-width:52px}
 .mn-item{display:flex;align-items:center;gap:10px;min-width:0}
 .mn-item a{color:var(--ink);font-size:14px;text-decoration:underline;text-decoration-color:var(--line2);text-underline-offset:3px}
@@ -5754,9 +5757,24 @@ async function storeLoad(force) {
     try { localStorage.setItem(CVS_KEY, JSON.stringify({items:STORE.items, at:STORE.at, checked:STORE.checked})); } catch (e) { /* 何もしない */ }
     // 一覧が無い・古いときは、サーバーに作り直してもらう（裏で数分かかる）
     const old = !STORE.checked || Date.now() - new Date(STORE.checked).getTime() > 7 * 86400000;
-    if ((old || STORE_LIST.some(s => STORE.items.filter(x => x.store === s.k).length < 5)) && acct.user && !storeLoad.asked) { storeLoad.asked = true; callVision('storefill').catch(() => {}); }
+    if ((old || STORE_LIST.some(s => STORE.items.filter(x => x.store === s.k).length < 5)) && acct.user && !storeLoad.asked) { storeLoad.asked = true; storeFillLoop(); }
   } catch (e) { STORE.state = 'err'; STORE.err = String(e.message || e); }
   const b = document.getElementById('menu-box'); if (b) b.innerHTML = menuHtml();
+}
+// サーバーに一覧を作ってもらう（1回で6種類ずつ。残りがあれば続けて頼む。最大6回）
+async function storeFillLoop() {
+  for (let round = 0; round < 6; round++) {
+    STORE.filling = true; STORE.note = ''; const b0 = document.getElementById('menu-box'); if (b0) b0.innerHTML = menuHtml();
+    try {
+      const {data, error} = await acct.client.functions.invoke('vision', {body:{mode:'storefill'}});
+      if (error) { let m = error.message; try { const j = await error.context.json(); m = j.error || m; } catch (e) { /* 何もしない */ } throw new Error(m); }
+      STORE.remaining = data.remaining || 0; STORE.note = (data.notes || []).join('／');
+      STORE.at = 0; await storeLoad(true);
+      if (!data.remaining) break;
+      if (!data.done || (data.notes || []).length && round >= 1 && !STORE.items.length) break; // うまくいかないときは、くり返さない
+    } catch (e) { STORE.state = 'err'; STORE.err = 'コンビニの商品の一覧を作れませんでした（' + String(e.message || e).slice(0, 100) + '）'; break; }
+  }
+  STORE.filling = false; const b = document.getElementById('menu-box'); if (b) b.innerHTML = menuHtml();
 }
 // 一覧から、その食事の組み合わせを作る：主食1・主菜1・副菜か汁物1（朝は果物・ヨーグルトも）。今日食べた物と同じ商品は避ける
 function storePlans(meal, d) {
@@ -5783,9 +5801,9 @@ function menuHtml() {
   // パターンの切り替え：「家で作る」と「コンビニ（セブン・ローソン・ファミマ）」に分けて並べる
   const pb = (pl, i, k, mi) => `<button type="button" class="mn-pb ${i === k ? 'on' : ''}" role="tab" aria-selected="${i === k}" data-mpick="${mi}:${i}">${esc(pl.store ? (pl.short || pl.label) : pl.label)}</button>`;
   const pickRow = (m, mi, k) => { const home = m.plans.map((pl, i) => [pl, i]).filter(([pl]) => !pl.store), cv = m.plans.map((pl, i) => [pl, i]).filter(([pl]) => pl.store);
-    return `<div class="mn-pick" role="tablist">${home.length ? `<span class="mn-pl">家で作る</span>${home.map(([pl, i]) => pb(pl, i, k, mi)).join('')}` : ''}</div>${cv.length ? `<div class="mn-pick" role="tablist"><span class="mn-pl">コンビニ</span>${cv.map(([pl, i]) => pb(pl, i, k, mi)).join('')}</div>` : ''}`; };
+    return `<div class="mn-pick" role="tablist">${home.map(([pl, i]) => pb(pl, i, k, mi)).join('')}${cv.length ? `<i class="mn-sep" aria-hidden="true"></i>${cv.map(([pl, i]) => pb(pl, i, k, mi)).join('')}` : ''}</div>`; };
   // 家で作る献立は、料理名を押すと作り方が出る。コンビニの組み合わせは、調べた公式サイトを出す
-  const plan = pl => pl.store && !pl.dishes.length ? `<p class="mn-src" style="margin:4px 0 0">${esc(pl.store)}の商品の一覧を準備しています。${STORE.state === 'err' ? esc(STORE.err) : '初めては数分かかります。あとで開き直してください。'}</p>` : `<ul class="mn-list">${pl.dishes.map(x => `<li>${x.role ? `<span class="mn-role ${ROLE_C[x.role] || ''}">${esc(x.role)}</span>` : ''}${pl.store ? `<span class="mn-item">${x.image ? `<img class="mn-img" src="${esc(x.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}${x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.name)}</a>` : `<span>${esc(x.name)}</span>`}</span>` : `<button type="button" class="mn-dish" data-recipe="${esc(x.name)}">${esc(x.name)}<span aria-hidden="true">›</span></button>`}</li>`).join('')}</ul>${pl.point ? `<p class="mn-point">${esc(pl.point)}</p>` : ''}
+  const plan = pl => pl.store && !pl.dishes.length ? `<p class="mn-src" style="margin:4px 0 0">${STORE.state === 'err' ? esc(STORE.err) : STORE.filling ? `${esc(pl.store)}の公式サイトで、体にいい商品を調べています（1〜3分ほど）${STORE.remaining ? `。残り${STORE.remaining}種類` : ''}…` : !acct.user ? 'ログインすると、コンビニの商品が出ます。' : `${esc(pl.store)}の商品が見つかりませんでした。${STORE.note ? `（${esc(STORE.note)}）` : ''}「別の献立にする」でもう一度調べます。`}</p>` : `<ul class="mn-list">${pl.dishes.map(x => `<li>${x.role ? `<span class="mn-role ${ROLE_C[x.role] || ''}">${esc(x.role)}</span>` : ''}${pl.store ? `<span class="mn-item">${x.image ? `<img class="mn-img" src="${esc(x.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}${x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.name)}</a>` : `<span>${esc(x.name)}</span>`}</span>` : `<button type="button" class="mn-dish" data-recipe="${esc(x.name)}">${esc(x.name)}<span aria-hidden="true">›</span></button>`}</li>`).join('')}</ul>${pl.point ? `<p class="mn-point">${esc(pl.point)}</p>` : ''}
     ${pl.store ? `<p class="mn-src">${esc(pl.store)}の公式サイトで確かめた商品です${STORE.checked ? `（${esc(fmtShort(STORE.checked))}確認）` : ''}。商品名を押すと公式の商品ページが開きます。地域・時期によって売っていないことがあります。</p>` : '<p class="mn-src">料理名を押すと、作り方が出ます。</p>'}`;
   // 家で作る（和食・洋食）はAIの献立、コンビニ（セブン・ローソン・ファミマ）は保存してある商品の一覧から、すぐに組み合わせる
   if (res) res = Object.assign({}, res, {meals:res.meals.map(m => Object.assign({}, m, {plans:m.plans.filter(pl => !pl.store).slice(0, 2).map((pl, i) => Object.assign({}, pl, {label:['和食', '洋食'][i]})).concat(storePlans(m.meal, d))}))});
@@ -7328,7 +7346,7 @@ const actions = {
     st.user = true; st.auto = false; st.target = {yaw:base + t[0], pitch:t[1]}; st.dirty = true;
   },
   'advice-ai': () => runAdvice(true),
-  'menu-ai': () => { ui.menuVariant = (ui.menuVariant || 0) + 1; runMenu(true); },
+  'menu-ai': () => { ui.menuVariant = (ui.menuVariant || 0) + 1; runMenu(true); if (STORE_LIST.some(s => !STORE.items.some(x => x.store === s.k)) && !STORE.filling) { storeLoad.asked = false; STORE.at = 0; storeLoad(true); } },
   'sc-edit': () => openShortcutEdit(),
   'sc-reset': () => { const m = $('#modal-root .modal'); if (m && m._setSel) m._setSel(SC_DEFAULT.slice()); },
   'sc-save': () => {
