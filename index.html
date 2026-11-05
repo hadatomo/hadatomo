@@ -143,7 +143,7 @@ button{font-family:inherit}
 @media (prefers-reduced-motion:reduce){.tt-in{animation:none}}
 .wordmark small{display:block;font-family:var(--font);font-size:10px;letter-spacing:.08em;color:var(--muted);margin-top:2px}
 main{max-width:1100px;margin:0 auto;padding:20px 16px calc(150px + env(safe-area-inset-bottom))} /* 一番下にも余白：最後のカードが下のバーにくっつかないように */
-.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
 .bn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 0 7px;font-size:10.5px;color:var(--muted);text-decoration:none;background:none;border:0;cursor:pointer;min-width:0;white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .bn-item span{max-width:100%;overflow:hidden;text-overflow:clip}
 .bn-item svg{width:23px;height:23px}
@@ -1742,7 +1742,7 @@ const NAV = [
   {r:'plan', label:'プラン・アカウント', icon:'user', g:'アカウント'},
   {r:'settings', label:'設定・プライバシー', icon:'gear', g:'アカウント'}
 ];
-const BOTTOM_NAV = ['home','log','my','search','account'];
+const BOTTOM_NAV = ['home','log','my','account']; // 商品検索は試作の段階ではなくした
 const ACCOUNT_PAGES = ['spending', 'plan', 'settings']; // 下のバーの「アカウント」にまとめる画面
 
 /* ---------- ユーティリティ ---------- */
@@ -2720,13 +2720,12 @@ const SHORTCUTS = [
   {k:'log', h:'#/log', ic:'note', l:'肌の記録一覧'}, {k:'scan', h:'#/scan', ic:'camera', l:'カメラで化粧品を登録'},
   {k:'charts', h:'#/charts', ic:'chart', l:'肌の変化・比較'}, {k:'report', h:'#/report', ic:'calendar', l:'週次レポート'},
   {k:'combo', h:'#/combo', ic:'flask', l:'成分の組み合わせ'}, {k:'visit', h:'#/visit', ic:'note', l:'受診用まとめ'},
-  {k:'suggest', h:'#/suggest', ic:'leaf', l:'ケアの提案'}, {k:'favorites', h:'#/favorites', ic:'heart', l:'お気に入り'}, {k:'cart', h:'#/cart', ic:'cart', l:'買い物リスト'},
-  {k:'search', h:'#/search', ic:'search', l:'商品検索'}, {k:'stores', h:'#/stores', ic:'pin', l:'取扱店舗を探す'},
+  {k:'suggest', h:'#/suggest', ic:'leaf', l:'ケアの提案'}, 
   {k:'ingredients', h:'#/ingredients', ic:'book', l:'成分辞典'}, {k:'my', h:'#/my', ic:'bottle', l:'マイ化粧品'},
   {k:'spending', h:'#/spending', ic:'wallet', l:'支出'}, {k:'plan', h:'#/plan', ic:'user', l:'プラン・アカウント'},
   {k:'settings', h:'#/settings', ic:'gear', l:'設定'}
 ];
-const SC_DEFAULT = ['log', 'scan', 'charts', 'suggest', 'visit', 'favorites'];
+const SC_DEFAULT = ['log', 'scan', 'charts', 'suggest', 'visit', 'combo'];
 function myShortcuts() {
   const ks = Array.isArray(state.settings.shortcuts) && state.settings.shortcuts.length ? state.settings.shortcuts : SC_DEFAULT;
   return ks.map(k => SHORTCUTS.find(x => x.k === k)).filter(Boolean).slice(0, 6);
@@ -2769,7 +2768,7 @@ function viewHome() {
   const todayCard = `<div class="card"><div class="card-h"><h2>今日の肌記録</h2>${L ? `<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(L.id)}">編集</button>` : ''}</div>
       <div class="t3-grid">${side}<div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div></div>
       ${lifeLine}</div>`;
-  const careCard = `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div><div class="card"><div class="reco-box" id="reco-box">${recoHtml()}</div></div><div class="card"><div class="menu-box" id="menu-box">${menuHtml()}</div></div>`;
+  const careCard = `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div><div class="card"><div class="menu-box" id="menu-box">${menuHtml()}</div></div>`;
 
   let activeCard;
   if (active.length) {
@@ -3407,7 +3406,7 @@ function comboNgHtml(p) {
 }
 function viewProduct(id) {
   const p = getCat(id);
-  if (!p) return notFound('商品が見つかりません', '#/search', '商品検索に戻る');
+  if (!p) return notFound('商品が見つかりません', '#/my', 'マイ化粧品に戻る');
   const ings = splitIngs(p.ingredients);
   const known = knownIngs(p.ingredients);
   const knownMap = {};
@@ -3415,7 +3414,7 @@ function viewProduct(id) {
   const mine = state.myProducts.filter(m => m.catalogId === p.id);
   const unit = perUnitText(p.price, p.volume);
   const bk = ui.prodBack && ui.prodBack.id === p.id ? ui.prodBack : null;
-  return `<a class="back" href="${bk ? esc(bk.hash) : '#/search'}">← ${bk ? esc(bk.label) : '商品検索'}</a>
+  return `<a class="back" href="${bk ? esc(bk.hash) : '#/my'}">← ${bk ? esc(bk.label) : 'マイ化粧品'}</a>
     ${p.isSample ? '<div class="notice warn">この商品は動作確認用の<b>架空のサンプル</b>です。実在の商品・価格・成分ではありません。</div>' : p.verify !== 'verified' ? '<div class="notice">この商品の情報は<b>未確認</b>です。購入前に、パッケージや公式サイトの表示を確認してください。</div>' : ''}
     <div class="card detail-top">
       ${thumbHtml(p)}
@@ -3430,7 +3429,6 @@ function viewProduct(id) {
         <div class="page-actions" style="margin-top:16px">
           <button class="btn btn-primary" data-action="new-my-from" data-id="${esc(p.id)}">${icon('plus')}マイ化粧品に登録</button>
           <a class="btn btn-soft" href="#/prices/${encodeURIComponent(p.id)}">${icon('tag')}価格・店舗を比較</a>
-          ${/^https:\/\//.test(p.shopUrl || '') ? `<a class="btn btn-ghost" href="${esc(p.shopUrl)}" target="_blank" rel="noopener sponsored">${icon('tag')}お店のページで買う<span class="pr-badge" style="margin-left:6px">PR</span></a>` : ''}
           <button class="btn btn-ghost fav-btn ${isFav(p.id) ? 'on' : ''}" data-action="fav" data-id="${esc(p.id)}" aria-pressed="${isFav(p.id)}">${icon('heart')}<span>${isFav(p.id) ? 'お気に入り済み' : 'お気に入りに追加'}</span></button>
         </div>
         <div class="page-actions" style="margin-top:8px">
@@ -3439,7 +3437,6 @@ function viewProduct(id) {
         </div>
       </div>
     </div>
-    ${pcmpHtml(p)}
     ${offInfoNote(p)}
     <div class="grid g2 mt">
       <div class="card"><div class="card-h"><h2>商品の特徴</h2></div><p class="prose">${offVal(p, p.features)}</p></div>
@@ -3726,7 +3723,7 @@ function viewCart() {
 function mapLink(query) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`; }
 function viewPrices(id) {
   const p = getCat(id);
-  if (!p) return notFound('商品が見つかりません', '#/search', '商品検索に戻る');
+  if (!p) return notFound('商品が見つかりません', '#/my', 'マイ化粧品に戻る');
   const online = p.offers.filter(o => o.kind === 'online'), stores = p.offers.filter(o => o.kind === 'store');
   const eligible = online.filter(o => offerIssues(o, p).length === 0 && offerTotal(o) != null);
   const best = eligible.slice().sort((a,b) => offerTotal(a) - offerTotal(b))[0];
@@ -6244,7 +6241,7 @@ function advChips(x) {
   const lb = ADV_LABELS[x.area] || ['おすすめ', '控えたいもの'], g = advClean(x.good), a = advClean(x.avoid, 24);
   // スキンケアのおすすめ成分は、押すとその成分の人気商品（楽天市場・Yahoo!ショッピングのレビューの多い順）を出す
   const skin = x.area === 'スキンケア';
-  return (g.length ? `<div class="adv-chips"><small>${lb[0]}${skin ? '<em class="adv-tap">押すと人気の商品</em>' : ''}</small>${g.map(v => skin && !/日焼け止め|洗顔|こすらない/.test(v) ? `<button type="button" class="adv-c good adv-link" data-ingfind="${esc(v)}">${esc(v)}<i aria-hidden="true">›</i></button>` : skin && /日焼け止め/.test(v) ? `<button type="button" class="adv-c good adv-link" data-ingfind="日焼け止め">${esc(v)}<i aria-hidden="true">›</i></button>` : `<span class="adv-c good">${esc(v)}</span>`).join('')}</div>` : '')
+  return (g.length ? `<div class="adv-chips"><small>${lb[0]}</small>${g.map(v => `<span class="adv-c good">${esc(v)}</span>`).join('')}</div>` : '')
     + (a.length ? `<div class="adv-chips"><small>${lb[1]}</small>${a.map(v => `<span class="adv-c bad">${esc(v)}</span>`).join('')}</div>` : '');
 }
 const ADVICE_KEY = 'skinwise_advice';
@@ -7856,7 +7853,7 @@ const actions = {
     if (!await confirmDialog(`「${p.name}」を商品データベースから削除しますか？\n登録した価格・店舗の情報も削除されます。${linked ? `\nマイ化粧品（${linked}件）は残りますが、商品情報へのリンクは外れます。` : ''}`)) return;
     state.myProducts.forEach(m => { if (m.catalogId === id) { if (!m.ingredients) m.ingredients = p.ingredients; m.catalogId = ''; } });
     state.catalog = state.catalog.filter(x => x.id !== id);
-    if (save()) { toast('商品を削除しました'); location.hash = '#/search'; }
+    if (save()) { toast('商品を削除しました'); location.hash = '#/my'; }
   },
   'price-search': id => priceSearch(id),
   'price-set-jan': async v => {
@@ -8206,7 +8203,7 @@ document.addEventListener('keydown', e => {
 // ---------- ハンバーガーメニュー（右から出てくるメニュー） ----------
 function drawerHtml() {
   let g = null, body = '';
-  NAV.filter(n => !BOTTOM_NAV.includes(n.r) && n.r !== 'stores' && !ACCOUNT_PAGES.includes(n.r)).forEach(n => { // 取扱店舗は「商品検索」の中のタブ、お金・設定は「アカウント」
+  NAV.filter(n => !BOTTOM_NAV.includes(n.r) && !['stores', 'search'].includes(n.r) && !ACCOUNT_PAGES.includes(n.r)).forEach(n => { // 取扱店舗は「商品検索」の中のタブ、お金・設定は「アカウント」
     if (n.g !== g) { g = n.g; if (g) body += `<div class="grp">${esc(g)}</div>`; }
     body += `<a href="#/${n.r}">${icon(n.icon)}${esc(n.label)}</a>`;
   });
@@ -8505,6 +8502,7 @@ function render() {
     setTimeout(() => { if (what === 'skin') actions['new-log'](); else if (LIFE_PARTS[what]) actions['life-part'](what); }, 50);
     return;
   }
+  if (['search', 'favorites', 'stores', 'cart'].includes(r.name)) { location.replace('#/my'); return; } // 商品検索は試作の段階ではなくした
   const views = {home:viewHome, search:viewSearch, product:() => viewProduct(r.id), prices:() => viewPrices(r.id), cart:viewCart, stores:viewStores,
     ingredients:() => viewIngredients(r.id), scan:viewScan, my:() => r.id ? viewMyDetail(r.id) : viewMy(), compare:viewCompare, combo:viewCombo,
     log:viewLog, charts:viewCharts, report:viewReport, spending:viewSpending, check:() => viewCheck(r.id), settings:viewSettings, account:viewAccount, favorites:viewFavorites, terms:viewTerms, privacy:viewPrivacy, law:viewLaw, plan:() => viewPlan(r.query), suggest:viewSuggest, visit:viewVisit};
@@ -8536,7 +8534,7 @@ function render() {
   navRestoreY = null;
   if (r.name === 'home') { placeHomeTabInd(); slideHomePane(); if (ui.homeTab === 'care' && isPremium()) setTimeout(() => { runMenu(false); storeLoad(false); }, 0); }
   if (r.name === 'log') { placeHomeTabInd(); slideHomePane(); }
-  if (r.name === 'product') { const pc = getCat(r.id); if (pc) setTimeout(() => { offFetch(pc); if (!pc.isSample && !ui.priceRes[pc.id]) priceSearch(pc.id, true); }, 0); }
+  if (r.name === 'product') { const pc = getCat(r.id); if (pc) setTimeout(() => offFetch(pc), 0); }
   hapticizeTargets();
   drawCharts();
   if (routeChanged) motionIn(r.name + (r.id ? '/' + r.id : '')); // 画面を移ったときだけ、動きのある表示にする
