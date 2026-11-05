@@ -584,6 +584,36 @@ details.acc-cmp{margin-top:14px}
 .net-h{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px}
 .net-h b{display:flex;align-items:center;gap:6px;font-size:15px}
 .net-h svg{width:16px;height:16px;color:var(--green-d)}
+.pcmp-best{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;border-radius:12px;background:var(--green-s)}
+.pcmp-best>div{display:flex;flex-direction:column;min-width:0}
+.pcmp-best small{font-size:11px;color:var(--green-d);font-weight:700}
+.pcmp-best b{font-size:22px;line-height:1.3}
+.pcmp-best span{font-size:11.5px;color:var(--ink2);display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.pcmp-best .btn{flex:none}
+.pcmp-best i.chip,.cart-ph i.chip{font-style:normal}
+.pcmp-sites{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.pcmp-sites>div{border:1px solid var(--line);border-radius:10px;padding:6px 10px;display:flex;flex-direction:column}
+.pcmp-sites small{font-size:11px;color:var(--muted)}
+.pcmp-list{margin-top:8px}
+.pcmp-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 2px;border-top:1px solid var(--line);color:inherit;text-decoration:none}
+.pcmp-row>span{display:flex;flex-direction:column;min-width:0}
+.pcmp-row b{font-size:13px;font-weight:600;overflow-wrap:anywhere}
+.pcmp-row small{font-size:11px;color:var(--muted)}
+.pcmp-row em{font-style:normal;font-weight:700;white-space:nowrap;text-align:right;display:flex;flex-direction:column}
+.pcmp-row em i{font-style:normal;font-size:11px;color:var(--green-d);font-weight:700}
+.cart-row{display:grid;grid-template-columns:52px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.cart-row .thumb,.cart-row img{width:52px;height:52px}
+.cart-t{display:flex;flex-direction:column;min-width:0;color:inherit;text-decoration:none}
+.cart-t b{font-size:13px;font-weight:600}
+.cart-t small{font-size:11.5px;color:var(--muted)}
+.cart-plan{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-top:10px}
+.cart-plan.best{border-color:var(--green-d);box-shadow:0 0 0 1px var(--green-d) inset}
+.cart-ph{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:4px}
+.cart-ph>span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.cart-ph small{font-size:11px;color:var(--muted)}
+.cart-ph .chip{align-self:flex-start}
+.cart-ph em{font-style:normal;font-weight:800;font-size:18px;white-space:nowrap;display:flex;flex-direction:column;align-items:flex-end}
+.cart-ph em small{font-weight:400}
 .net-tap{cursor:pointer}
 .net-tap:active{opacity:.7}
 .pr-badge{font-size:10.5px;font-weight:700;color:var(--muted);border:1px solid var(--line2);border-radius:4px;padding:0 5px;line-height:17px}
@@ -1654,6 +1684,7 @@ const COMBO_RULES = [
 
 /* ---------- アイコン ---------- */
 const ICONS = {
+  cart:'<circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/><path d="M2.5 3.5h3l2.4 11.2a1 1 0 0 0 1 .8h9.2a1 1 0 0 0 1-.8L21 7.5H6.4"/>',
   home:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
   search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   bottle:'<path d="M9.5 2h5v4l2.5 3v12a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1V9l2.5-3z"/><path d="M7 13h10"/>',
@@ -1942,6 +1973,7 @@ function normalize(d) {
   const rs = ds.research || {}; // 研究への協力（任意・初めはオフ）
   out.settings.research = {on:!!rs.on && !!rs.adult, adult:!!rs.adult, cid:/^[0-9a-f-]{36}$/.test(rs.cid || '') ? rs.cid : '', lastSent:isValidYmd(rs.lastSent) ? rs.lastSent : '', lastHash:String(rs.lastHash || '').slice(0, 20)};
   out.favorites = Array.isArray(d.favorites) ? Array.from(new Set(d.favorites.map(String))).filter(id => out.catalog.some(p => p.id === id)) : [];
+  out.cart = Array.isArray(d.cart) ? [...new Set(d.cart.filter(x => typeof x === 'string' && out.catalog.some(c => c.id === x)))].slice(0, 50) : []; // 買い物リスト（商品のID）
   out.customFoods = Array.isArray(d.customFoods) ? d.customFoods.filter(x => x && x.name).map(x => { const n = normFood(Object.assign({meal:'snack', qty:1}, x)); return {id:n.id, name:n.name, kcal:n.kcal, p:n.p, f:n.f, c:n.c, veg:n.veg}; }) : [];
   return out;
 }
@@ -2658,7 +2690,7 @@ const SHORTCUTS = [
   {k:'log', h:'#/log', ic:'note', l:'肌の記録一覧'}, {k:'scan', h:'#/scan', ic:'camera', l:'カメラで化粧品を登録'},
   {k:'charts', h:'#/charts', ic:'chart', l:'肌の変化・比較'}, {k:'report', h:'#/report', ic:'calendar', l:'週次レポート'},
   {k:'combo', h:'#/combo', ic:'flask', l:'成分の組み合わせ'}, {k:'visit', h:'#/visit', ic:'note', l:'受診用まとめ'},
-  {k:'suggest', h:'#/suggest', ic:'leaf', l:'ケアの提案'}, {k:'favorites', h:'#/favorites', ic:'heart', l:'お気に入り'},
+  {k:'suggest', h:'#/suggest', ic:'leaf', l:'ケアの提案'}, {k:'favorites', h:'#/favorites', ic:'heart', l:'お気に入り'}, {k:'cart', h:'#/cart', ic:'cart', l:'買い物リスト'},
   {k:'search', h:'#/search', ic:'search', l:'商品検索'}, {k:'stores', h:'#/stores', ic:'pin', l:'取扱店舗を探す'},
   {k:'ingredients', h:'#/ingredients', ic:'book', l:'成分辞典'}, {k:'my', h:'#/my', ic:'bottle', l:'マイ化粧品'},
   {k:'spending', h:'#/spending', ic:'wallet', l:'支出'}, {k:'plan', h:'#/plan', ic:'user', l:'プラン・アカウント'},
@@ -2763,7 +2795,7 @@ function meter(label, v) {
    画面：商品検索 / 商品詳細
    ========================================================= */
 // 商品検索の画面の上のタブ（商品を探す／取扱店舗を探す）
-function searchTabs(cur) { const n = (state.favorites || []).length; return `<div class="tabs"><a class="tab ${cur === 'search' ? 'active' : ''}" href="#/search">商品を探す</a><a class="tab ${cur === 'favorites' ? 'active' : ''}" href="#/favorites">${icon('heart')}お気に入り${n ? `（${n}）` : ''}</a><a class="tab ${cur === 'stores' ? 'active' : ''}" href="#/stores">取扱店舗を探す</a></div>`; }
+function searchTabs(cur) { const n = (state.favorites || []).length; return `<div class="tabs"><a class="tab ${cur === 'search' ? 'active' : ''}" href="#/search">商品を探す</a><a class="tab ${cur === 'favorites' ? 'active' : ''}" href="#/favorites">${icon('heart')}お気に入り${n ? `（${n}）` : ''}</a><a class="tab ${cur === 'cart' ? 'active' : ''}" href="#/cart">${icon('cart')}買い物リスト${(state.cart || []).length ? `（${state.cart.length}）` : ''}</a><a class="tab ${cur === 'stores' ? 'active' : ''}" href="#/stores">取扱店舗を探す</a></div>`; }
 // 「化粧品を追加」を押したら：カメラで登録（バーコード・商品の写真）か、自分で入力（バーコードの数字・商品名から候補を選ぶ）
 // 実際の商品を名前で探して追加するのは「商品検索」でできるので、ここには置かない
 function openAddSheet(kind) {
@@ -3372,6 +3404,7 @@ function viewProduct(id) {
         </div>
       </div>
     </div>
+    ${pcmpHtml(p)}
     ${offInfoNote(p)}
     <div class="grid g2 mt">
       <div class="card"><div class="card-h"><h2>商品の特徴</h2></div><p class="prose">${offVal(p, p.features)}</p></div>
@@ -3510,10 +3543,10 @@ function searchLinks(p) {
   ];
 }
 const PRICE_SHIP = {included:'送料込み', conditional:'条件付き送料無料', extra:'送料別'};
-async function priceSearch(pid) {
+async function priceSearch(pid, quiet) {
   const p = getCat(pid); if (!p) return;
   const st = ui.priceRes[pid] = {loading:true, items:[], errors:[], msg:''};
-  render();
+  if (!quiet) render();
   try {
     const ctrl = new AbortController(), tm = setTimeout(() => ctrl.abort(), 30000); // 30秒で打ち切る（「調べています」のまま止まらないように）
     const res = await fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', signal:ctrl.signal, headers:{'Content-Type':'application/json', apikey:CLOUD.key},
@@ -3525,7 +3558,7 @@ async function priceSearch(pid) {
     st.msg = e && e.name === 'AbortError' ? '時間がかかりすぎたため中止しました。もう一度お試しください。' : /fetch|network|Failed/i.test(String(e && e.message)) ? 'サーバーに接続できませんでした。インターネットの接続を確認して、もう一度お試しください。' : String((e && e.message) || e);
   }
   st.loading = false;
-  if (location.hash.startsWith('#/prices/')) render();
+  if (location.hash.startsWith('#/prices/') || location.hash.startsWith('#/cart') || location.hash.startsWith('#/product/' + encodeURIComponent(pid))) render();
 }
 // ミニ・セット・お試し・詰め替えなど、元の商品と違う可能性が高いものを見分ける（元の商品名に含まれる言葉は対象外）
 const PRICE_SET_WORDS = [['セット', /セット/], ['ミニ', /ミニ|mini/i], ['お試し', /お試し|トライアル|サンプル|試供/], ['まとめ買い', /まとめ買い|(\d+)\s*(個|本|点|袋)\s*(セット|組)|[×x✕]\s*\d+\s*(個|本|袋)?(?!\s*(ml|g))/i], ['詰め替え', /詰め?替え?|つめかえ|レフィル|refill/i]];
@@ -3577,6 +3610,82 @@ function priceHitsHtml(p) {
     }
   }
   return h + '<p class="small muted" style="margin-top:8px">Supported by Rakuten Developers ／ Web Services by Yahoo! JAPAN</p></div>';
+}
+// ===== 値段の比較（商品ページの中）と、買い物リスト =====
+// 楽天市場・Yahoo!ショッピングの価格を、アプリの中でまとめて比べる。買うときだけ、そのお店のページを開く
+function pcmpItems(p) {
+  const st = ui.priceRes[p.id]; if (!st || st.loading || st.msg) return null;
+  let rows = st.items.filter(x => x && Number(x.price) > 0 && safeUrl(x.url) && !priceSetWord(x.name, p.name) && priceVolMatch(x.name, p.volume) !== 'diff');
+  if (p.jan && rows.some(x => x.byJan)) rows = rows.filter(x => x.byJan);
+  return rows.slice().sort((a, b) => a.price - b.price);
+}
+function pcmpHtml(p) {
+  if (p.isSample) return '';
+  const st = ui.priceRes[p.id], inCart = cartHas(p.id);
+  const head = `<div class="card mt" id="pcmp"><div class="card-h"><h2>値段の比較</h2><span class="small muted">楽天市場・Yahoo!ショッピング</span></div>`;
+  const cartBtn = `<button class="btn ${inCart ? 'btn-ghost' : 'btn-soft'} btn-sm" data-action="cart-toggle" data-id="${esc(p.id)}">${icon(inCart ? 'check' : 'cart')}${inCart ? '買い物リストに入っています' : '買い物リストに入れる'}</button>`;
+  if (!st || st.loading) return head + skelHtml(3, {dots:true, label:'値段を比べています'}) + '</div>';
+  if (st.msg) return head + `<p class="small muted">${esc(st.msg)}</p><button class="btn btn-ghost btn-sm" data-action="price-search" data-id="${esc(p.id)}">もう一度調べる</button></div>`;
+  const rows = pcmpItems(p);
+  if (!rows.length) return head + `<p class="small muted">同じ商品が見つかりませんでした。</p><div class="page-actions" style="margin-top:8px">${cartBtn}<a class="btn btn-ghost btn-sm" href="#/prices/${encodeURIComponent(p.id)}">くわしく比較する</a></div></div>`;
+  const low = rows[0], lowInc = rows.find(x => x.shipping === 'included');
+  const sites = ['楽天市場', 'Yahoo!ショッピング'].map(s => ({s, x:rows.find(x => x.site === s)})).filter(v => v.x);
+  return head + `<div class="pcmp-best"><div><small>いちばん安い</small><b>${yen(low.price)}</b><span>${esc(low.site)}・${esc(truncate(low.shop || '', 16))}<i class="chip ${low.shipping === 'included' ? 'green' : 'gray'}">${esc(PRICE_SHIP[low.shipping] || '送料別')}</i></span></div>
+      <a class="btn btn-primary btn-sm" href="${esc(safeUrl(low.url))}" target="_blank" rel="noopener sponsored">このお店で買う</a></div>
+    ${lowInc && lowInc !== low ? `<p class="small" style="margin:8px 0 0">送料込みでいちばん安い：<b>${yen(lowInc.price)}</b>（${esc(lowInc.site)}・${esc(truncate(lowInc.shop || '', 16))}）<a class="link" href="${esc(safeUrl(lowInc.url))}" target="_blank" rel="noopener sponsored" style="margin-left:6px">買う</a></p>` : ''}
+    <div class="pcmp-sites">${sites.map(v => `<div><small>${esc(v.s)}の最安</small><b>${yen(v.x.price)}</b></div>`).join('')}</div>
+    <div class="pcmp-list">${rows.slice(0, 6).map((x, i) => `<a class="pcmp-row" href="${esc(safeUrl(x.url))}" target="_blank" rel="noopener sponsored"><span><b>${esc(truncate(x.shop || 'ショップ', 22))}</b><small>${esc(x.site)}・${esc(PRICE_SHIP[x.shipping] || '送料別')}${x.byJan && p.jan ? '・JAN一致' : ''}</small></span><em>${yen(x.price)}</em></a>`).join('')}</div>
+    <div class="page-actions" style="margin-top:10px">${cartBtn}<a class="btn btn-ghost btn-sm" href="#/prices/${encodeURIComponent(p.id)}">すべての価格を見る</a></div>
+    <p class="small muted" style="margin-top:8px"><span class="pr-badge">PR</span> 商品価格の安い順（送料は「送料別」のお店で別にかかります）。リンクから購入されると、運営者に紹介料が入ることがあります。価格は調べた時点のものです。</p></div>`;
+}
+// ---- 買い物リスト：気になる商品を入れて、どのお店でまとめて買うと安いかを比べる ----
+const cartHas = id => (state.cart || []).includes(id);
+function cartToggle(id) {
+  state.cart = state.cart || [];
+  if (cartHas(id)) { state.cart = state.cart.filter(x => x !== id); toast('買い物リストから外しました'); }
+  else { state.cart.push(id); toast('買い物リストに入れました'); const p = getCat(id); if (p && !ui.priceRes[id]) priceSearch(id, true); }
+  save(); hapticTick(); render();
+}
+function cartPlans(ps) {
+  const lists = ps.map(p => ({p, rows:pcmpItems(p)}));
+  if (lists.some(l => l.rows === null)) return null; // まだ調べている
+  const ok = lists.filter(l => l.rows.length);
+  const out = [];
+  // 1つのお店でぜんぶ買える（送料が1回で済む）
+  const shops = {};
+  ok.forEach(l => { const seen = new Set(); l.rows.forEach(x => { const k = x.site + '|' + (x.shop || ''); if (seen.has(k)) return; seen.add(k); (shops[k] = shops[k] || {site:x.site, shop:x.shop || 'ショップ', picks:[]}).picks.push({p:l.p, x}); }); });
+  Object.values(shops).filter(s => s.picks.length === ok.length && ok.length >= 2).map(s => ({kind:'shop', title:`${s.shop}でまとめて買う`, sub:`${s.site}・1つのお店なので送料が1回で済みます`, picks:s.picks, total:s.picks.reduce((a, v) => a + v.x.price, 0)}))
+    .sort((a, b) => a.total - b.total).slice(0, 2).forEach(v => out.push(v));
+  // サイトごと（楽天市場だけ／Yahoo!だけ）で、いちばん安いお店を組み合わせる
+  ['楽天市場', 'Yahoo!ショッピング'].forEach(site => {
+    const picks = ok.map(l => ({p:l.p, x:l.rows.find(x => x.site === site)})).filter(v => v.x);
+    if (picks.length) out.push({kind:'site', title:`${site}だけで買う`, sub:picks.length < ok.length ? `${ok.length - picks.length}つは${site}にありません` : `${new Set(picks.map(v => v.x.shop)).size}つのお店から買います`, picks, total:picks.reduce((a, v) => a + v.x.price, 0), missing:ok.length - picks.length});
+  });
+  // それぞれ、いちばん安いお店で買う
+  if (ok.length) out.push({kind:'low', title:'それぞれいちばん安いお店で買う', sub:`${new Set(ok.map(l => l.rows[0].site + l.rows[0].shop)).size}つのお店から買います（お店ごとに送料がかかることがあります）`, picks:ok.map(l => ({p:l.p, x:l.rows[0]})), total:ok.reduce((a, l) => a + l.rows[0].price, 0)});
+  const seen = new Set(), plans = out.filter(v => { const k = v.picks.map(({x}) => x.url).join('|'); if (seen.has(k)) return false; seen.add(k); return true; }) // 同じ買い方は1つにまとめる
+    .map(v => { const n = new Set(v.picks.map(({x}) => x.site + '|' + x.shop)).size; if (n === 1 && v.kind !== 'shop' && v.picks.length >= 2) Object.assign(v, {title:`${v.picks[0].x.shop}でまとめて買う`, sub:`${v.picks[0].x.site}・1つのお店なので送料が1回で済みます`}); return v; })
+    .sort((a, b) => (a.missing || 0) - (b.missing || 0) || a.total - b.total);
+  return {plans, none:lists.filter(l => !l.rows.length).map(l => l.p)};
+}
+function viewCart() {
+  const ps = (state.cart || []).map(getCat).filter(Boolean);
+  ps.forEach(p => { if (!ui.priceRes[p.id] && !p.isSample) setTimeout(() => priceSearch(p.id, true), 0); });
+  let html = searchTabs('cart') + pageHead('買い物リスト', '気になる商品を入れておくと、どのお店でまとめて買うと安いかを比べます。');
+  if (!ps.length) return html + `<div class="card">${emptyBox('cart', '買い物リストは空です', '商品の詳しいページで「買い物リストに入れる」を押すと、ここに入ります。', '<a class="btn btn-primary btn-sm" href="#/search">商品を探す</a>')}</div>`;
+  html += `<div class="card"><div class="card-h"><h2>リストの商品</h2><span class="small muted">${ps.length}点</span></div>${ps.map(p => { const r = pcmpItems(p);
+    return `<div class="cart-row">${thumbHtml(p)}<a class="cart-t" href="#/product/${encodeURIComponent(p.id)}"><b>${esc(truncate(p.name, 50))}</b><small>${r === null ? '値段を調べています…' : r.length ? `最安 ${yen(r[0].price)}（${esc(r[0].site)}）` : 'ネットで見つかりませんでした'}</small></a><button class="btn btn-ghost btn-sm" data-action="cart-toggle" data-id="${esc(p.id)}">外す</button></div>`; }).join('')}</div>`;
+  const cp = cartPlans(ps);
+  if (!cp) return html + `<div class="card">${skelHtml(3, {dots:true, label:'お店ごとの合計を計算中'})}</div>`;
+  if (!cp.plans.length) return html + '<div class="card"><p class="small muted">ネットで買えるお店が見つかりませんでした。</p></div>';
+  const best = cp.plans.filter(v => !v.missing).sort((a, b) => a.total - b.total)[0];
+  html += `<div class="card"><div class="card-h"><h2>どこで買うと安い？</h2><span class="pr-badge">PR</span></div>${cp.plans.map(v => `<div class="cart-plan ${v === best ? 'best' : ''}">
+      <div class="cart-ph"><span><b>${esc(v.title)}</b>${v === best ? '<i class="chip green">いちばん安い</i>' : ''}<small>${esc(v.sub)}</small></span><em>${yen(v.total)}${v.missing ? '<small>（一部のみ）</small>' : ''}</em></div>
+      ${v.picks.map(({p, x}) => `<a class="pcmp-row" href="${esc(safeUrl(x.url))}" target="_blank" rel="noopener sponsored"><span><b>${esc(truncate(p.name, 28))}</b><small>${esc(x.site)}・${esc(truncate(x.shop || '', 16))}・${esc(PRICE_SHIP[x.shipping] || '送料別')}</small></span><em>${yen(x.price)}<i>買う ›</i></em></a>`).join('')}</div>`).join('')}
+    ${cp.none.length ? `<p class="small muted" style="margin-top:8px">ネットで見つからなかった商品：${cp.none.map(p => esc(truncate(p.name, 20))).join('、')}</p>` : ''}
+    <p class="small muted" style="margin-top:8px">合計は商品価格の合計です（送料は「送料別」のお店で別にかかります）。支払いはそれぞれのお店のページで行います。リンクから購入されると、運営者に紹介料が入ることがあります。価格は調べた時点のものです。</p>
+    <p class="credit small muted">Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p></div>`;
+  return html;
 }
 function mapLink(query) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`; }
 function viewPrices(id) {
@@ -7755,6 +7864,7 @@ const actions = {
   'reco-cap-save': () => { const f = document.getElementById('f_recoCap'), v = Math.round(Number(f && f.value) || 0); if (v < 300 || v > 100000) { toast('300〜100,000円の間で入力してください'); return; } dismissModal(); recoSetCap(v); },
   'reco-retry': () => { RECO.err = ''; recoRun(true); },
   'reco-add': id => recoAdd(id),
+  'cart-toggle': id => cartToggle(id),
   'reco-view': id => { const [gi, i] = String(id).split(':').map(Number), g = RECO.res && RECO.res[gi], x = g && g.items[i]; if (x) prodOpenFrom(x, g.items); },
   'net-view': i => { const x = ui.net && ui.net.items && ui.net.items[Number(i)]; if (x) prodOpenFrom(x, ui.net.items); },
   'flt-sheet': () => openFilterSheet(),
@@ -8348,10 +8458,10 @@ function render() {
     setTimeout(() => { if (what === 'skin') actions['new-log'](); else if (LIFE_PARTS[what]) actions['life-part'](what); }, 50);
     return;
   }
-  const views = {home:viewHome, search:viewSearch, product:() => viewProduct(r.id), prices:() => viewPrices(r.id), stores:viewStores,
+  const views = {home:viewHome, search:viewSearch, product:() => viewProduct(r.id), prices:() => viewPrices(r.id), cart:viewCart, stores:viewStores,
     ingredients:() => viewIngredients(r.id), scan:viewScan, my:() => r.id ? viewMyDetail(r.id) : viewMy(), compare:viewCompare, combo:viewCombo,
     log:viewLog, charts:viewCharts, report:viewReport, spending:viewSpending, check:() => viewCheck(r.id), settings:viewSettings, account:viewAccount, favorites:viewFavorites, terms:viewTerms, privacy:viewPrivacy, law:viewLaw, plan:() => viewPlan(r.query), suggest:viewSuggest, visit:viewVisit};
-  const alias = {account:'account', product:'search', prices:'search', stores:'search', favorites:'search', spending:'account', plan:'account', settings:'account', compare:'charts', check:'account', terms:'account', privacy:'account', law:'account'};
+  const alias = {account:'account', product:'search', prices:'search', cart:'search', stores:'search', favorites:'search', spending:'account', plan:'account', settings:'account', compare:'charts', check:'account', terms:'account', privacy:'account', law:'account'};
   const navName = alias[r.name] || (views[r.name] ? r.name : 'home');
   if (r.name !== 'check') ui._checkFrom = '';
   if (r.name === 'plan' && acct.status === 'idle') setTimeout(initCloud, 0);
@@ -8379,7 +8489,7 @@ function render() {
   navRestoreY = null;
   if (r.name === 'home') { placeHomeTabInd(); slideHomePane(); if (ui.homeTab === 'care' && isPremium()) setTimeout(() => { runMenu(false); storeLoad(false); }, 0); }
   if (r.name === 'log') { placeHomeTabInd(); slideHomePane(); }
-  if (r.name === 'product') { const pc = getCat(r.id); if (pc) setTimeout(() => offFetch(pc), 0); }
+  if (r.name === 'product') { const pc = getCat(r.id); if (pc) setTimeout(() => { offFetch(pc); if (!pc.isSample && !ui.priceRes[pc.id]) priceSearch(pc.id, true); }, 0); }
   hapticizeTargets();
   drawCharts();
   if (routeChanged) motionIn(r.name + (r.id ? '/' + r.id : '')); // 画面を移ったときだけ、動きのある表示にする
