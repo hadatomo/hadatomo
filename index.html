@@ -1020,6 +1020,7 @@ a.used-tile{color:inherit;text-decoration:none}
 .mn-pb{border:1px solid var(--line2);background:var(--surface);color:var(--muted);border-radius:999px;padding:5px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
 .mn-pb.on{background:var(--green-d);border-color:var(--green-d);color:#fff}
 .ld-life{margin-top:12px}
+.sns-links{display:flex;flex-wrap:wrap;gap:6px 12px}
 .ng-list{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}
 .ng-h{display:block;font-size:13.5px;color:#B4562F;margin-bottom:6px}
 .ng-row{padding:8px 10px;border-radius:10px;background:#FBF1EC;margin-bottom:6px}
@@ -7043,11 +7044,13 @@ async function handlePwSubmit(form) {
    画面：利用規約・プライバシーポリシー・特定商取引法に基づく表記
    ※ 名前・連絡先が決まったら LEGAL を書き換えます
    ========================================================= */
+// 公式SNS（ユーザー名を変えたら、ここを直す）
+const SNS_LINKS = [{l:'Instagram', url:'https://www.instagram.com/nakakaramo/'}, {l:'TikTok', url:'https://www.tiktok.com/@nakakaramo'}, {l:'X', url:'https://x.com/nakakaramo'}];
 const LEGAL = {
   draft: true,               // 下書きのあいだは true（画面に「下書き」と表示）
   updated: '2026年10月30日',  // 最終改定日
   operator: '',              // 運営責任者の氏名（空欄なら「請求があれば開示」と表示）
-  email: '',                 // 問い合わせ用メールアドレス
+  email: 'nakakaramo@gmail.com', // 問い合わせ用メールアドレス（運営用のGmail）
   price: '月額1,200円（税込）'
 };
 function legalWrap(title, body) {
@@ -7465,7 +7468,8 @@ function viewSettings() {
       <p class="small muted" style="margin-bottom:12px">肌の記録・食事睡眠・マイ化粧品・支出・登録した商品をすべて削除します。削除した直後（数秒間）だけ「元に戻す」で取り消せます。心配な場合は、先にバックアップを書き出してください。</p>
       <button class="btn btn-danger btn-sm" data-action="delete-all">すべて削除する</button></div>
     <div class="card"><div class="card-h"><h2>ナカカラモについて</h2></div>
-      <dl class="kv" style="margin-bottom:12px"><dt>サービス名</dt><dd>${esc(SERVICE)}</dd><dt>バージョン</dt><dd>第2版（試作）</dd></dl><p class="small">肌の状態・化粧品・成分・生活習慣・購入金額をまとめて管理し、スキンケアにかける時間と無駄な出費を減らすことを目指すアプリです。</p>
+      <dl class="kv" style="margin-bottom:12px"><dt>サービス名</dt><dd>${esc(SERVICE)}</dd><dt>バージョン</dt><dd>第2版（試作）</dd><dt>お問い合わせ</dt><dd><a href="mailto:${esc(LEGAL.email)}">${esc(LEGAL.email)}</a></dd>
+        <dt>SNS</dt><dd class="sns-links">${SNS_LINKS.map(s => `<a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.l)}</a>`).join('')}</dd></dl><p class="small">肌の状態・化粧品・成分・生活習慣・購入金額をまとめて管理し、スキンケアにかける時間と無駄な出費を減らすことを目指すアプリです。</p>
       <ul class="small muted" style="padding-left:18px;margin:10px 0 0">
         <li>医師の診断を代わりに行うものではありません。症状が強い・長引く場合は医療機関に相談してください。</li>
         <li>商品や成分の効果、組み合わせの安全性を保証するものではありません。</li>
