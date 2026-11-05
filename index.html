@@ -5750,7 +5750,7 @@ async function storeLoad(force) {
     if (!acct.client) await initCloud();
     if (!acct.client) throw new Error('サーバーにつながりません');
     const {data, error} = await acct.client.from('store_items').select('store,role,name,url,image,checked_at').limit(2000);
-    if (error) throw new Error(/relation|does not exist|schema cache/i.test(error.message) ? 'コンビニ商品の表がまだありません（7_コンビニ商品_SQL.txt を実行してください）。' : error.message);
+    if (error) throw new Error(/relation|does not exist|schema cache/i.test(error.message) ? 'コンビニ商品の表がまだありません（7_コンビニ商品_SQL.txt を実行してください）。' : /permission denied/i.test(error.message) ? 'コンビニ商品の表を読む権限がありません（8_コンビニ商品_権限_SQL.txt を実行してください）。' : error.message);
     STORE.items = (data || []).map(x => ({store:x.store, role:x.role, name:x.name, url:x.url || '', image:x.image || ''}));
     STORE.checked = (data || []).reduce((a, x) => x.checked_at > a ? x.checked_at : a, '').slice(0, 10);
     STORE.at = Date.now(); STORE.state = 'ok'; STORE.err = '';
