@@ -763,20 +763,27 @@ details.acc-cmp{margin-top:14px}
 .mrow-go{color:var(--muted);font-size:18px}
 .my-adds{margin:0 0 12px}
 .my-kinds{display:grid;grid-template-columns:1fr 1fr;margin:0 0 12px;border-bottom:1px solid var(--line)}
-.my-kind{background:none;border:0;border-bottom:2.5px solid transparent;margin-bottom:-1px;padding:10px 0;font:inherit;font-size:15px;font-weight:700;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.my-kind{background:none;border:0;border-bottom:2.5px solid transparent;margin-bottom:-1px;padding:6px 0;font:inherit;font-size:14.5px;font-weight:700;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
 .my-kind span{font-size:12px;font-weight:600;background:var(--surface2,#F4F1EC);border-radius:999px;padding:1px 8px}
 .my-kind.on{color:var(--ink);border-bottom-color:var(--green-d)}.my-kind.on span{background:var(--green-l,#E5F2EA);color:var(--green-d)}.my-adds .btn{justify-content:center;gap:4px}.my-adds svg{width:16px;height:16px}
-.mrow-w{display:flex;align-items:center}.mrow-w+.mrow-w{border-top:1px solid var(--line)}
-.mrow-w .mrow{flex:1;min-width:0;grid-template-columns:52px 1fr;padding-right:6px}
+.mrow-w{display:flex;align-items:center;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;position:relative;transition:box-shadow .15s,transform .05s}.mrow-w+.mrow-w{border-top:1px solid var(--line)}
+.mrow-w .mrow{flex:1;min-width:0;grid-template-columns:44px 1fr;gap:10px;padding:9px 4px 9px 14px;-webkit-touch-callout:none}
+.mrow-w .mrow .thumb{width:44px;height:44px;border-radius:10px}
+.mrow-w .mrow-b{font-size:11px}.mrow-w .mrow-t b{font-size:14px;line-height:1.35;-webkit-line-clamp:2;word-break:normal;overflow-wrap:anywhere;line-break:strict}
+.mrow-w .mrow-t small{font-size:11.5px;margin-top:1px}
+.mrow-w.lift{z-index:5;background:var(--surface);box-shadow:0 10px 28px rgba(0,0,0,.18);border-radius:14px;transition:box-shadow .15s}
+body.m-dragging{overflow:hidden;touch-action:none}
+.m-sw-in{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
 .mrow-w.off .mrow{opacity:.55}
-.m-sw{flex:none;align-self:stretch;justify-content:center;margin-right:10px;min-width:64px;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:6px 4px;font:inherit;cursor:pointer;color:var(--muted)}
-.m-sw i{position:relative;width:46px;height:28px;border-radius:999px;background:#D9D4CC;transition:background .2s}
-.m-sw i::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
-.m-sw.on i{background:var(--green)}.m-sw.on i::after{transform:translateX(18px)}
+.m-sw{flex:none;align-self:stretch;justify-content:center;margin-right:8px;min-width:54px;position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:6px 4px;font:inherit;cursor:pointer;color:var(--muted)}
+.m-sw i{position:relative;width:42px;height:25px;border-radius:999px;background:#D9D4CC;transition:background .2s}
+.m-sw i::after{content:'';position:absolute;top:2.5px;left:2.5px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
+.m-sw.on i{background:var(--green)}.m-sw.on i::after{transform:translateX(17px)}
 .m-sw span{font-size:10.5px;font-weight:700}.m-sw.on span{color:var(--green-d)}
 .sdot{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--muted)}
 .sdot.s-0{background:var(--green)}.sdot.s-1{background:#D6A06A}.sdot.s-2{background:#7FA3C9}.sdot.s-3{background:#B9B3AA}
 .mtools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.mtools a{white-space:nowrap;font-size:13px!important;padding-top:12px!important;padding-bottom:12px!important;gap:6px!important}.mtools a svg{flex:none}
 .mtools a{display:flex;align-items:center;gap:8px;padding:12px;border-radius:14px;background:var(--surface);border:1px solid var(--line);color:var(--ink);text-decoration:none;font-size:13px;font-weight:600}
 .mtools a svg{width:18px;height:18px;color:var(--green-d);flex:none}
 .mtools a i{margin-left:auto;font-style:normal;color:var(--muted)}
@@ -2206,7 +2213,8 @@ function normalize(d) {
     purposes:strArr(p.purposes, PURPOSES), ingredients:String(p.ingredients||''),
     timing:TIMINGS.includes(p.timing) ? p.timing : '朝・夜', frequency:FREQS.includes(p.frequency) ? p.frequency : '毎日', startDate:p.startDate,
     status:STATUSES.includes(p.status) ? p.status : '使用中', endDate:isValidYmd(p.endDate) ? p.endDate : '', memo:String(p.memo||''), demo:!!p.demo, pao:[0, 3, 6, 12, 24].includes(Number(p.pao)) ? Number(p.pao) : 0, // 開封後の使用期限の目安（か月。0＝カテゴリの目安）
-    purchases:Array.isArray(p.purchases) ? p.purchases.filter(x => x && isValidYmd(x.date)).map(x => ({id:String(x.id||uid()), date:x.date, price:Math.max(0, num(x.price)), memo:String(x.memo||'')})) : []
+    purchases:Array.isArray(p.purchases) ? p.purchases.filter(x => x && isValidYmd(x.date)).map(x => ({id:String(x.id||uid()), date:x.date, price:Math.max(0, num(x.price)), memo:String(x.memo||'')})) : [],
+    order:Number.isFinite(Number(p.order)) && p.order !== null && p.order !== '' ? Number(p.order) : null // 長押しで並べ替えた順番
   })) : [];
   out.skinLogs = Array.isArray(d.skinLogs) ? d.skinLogs.filter(l => l && l.id && isValidYmd(l.date)).map(l => ({
     id:String(l.id), date:l.date, condition:clamp(Math.round(num(l.condition,3)),1,5), acneCount:clamp(Math.round(num(l.acneCount)),0,99),
@@ -5029,7 +5037,7 @@ function viewMy() {
   if (!['cos', 'rx'].includes(ui.myKind)) ui.myKind = !nCos && nRx ? 'rx' : 'cos';
   const kind = ui.myKind;
   const list = state.myProducts.filter(p => kind === 'rx' ? isRx(p) : !isRx(p))
-    .sort((a,b) => (useN[b.id] || 0) - (useN[a.id] || 0) || FREQS.indexOf(a.frequency) - FREQS.indexOf(b.frequency) || b.startDate.localeCompare(a.startDate));
+    .sort((a,b) => (a.order == null ? 1e9 : a.order) - (b.order == null ? 1e9 : b.order) || (useN[b.id] || 0) - (useN[a.id] || 0) || FREQS.indexOf(a.frequency) - FREQS.indexOf(b.frequency) || b.startDate.localeCompare(a.startDate));
   let html = `<div class="btn-pair my-adds"><button class="btn btn-primary btn-sm" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button><button class="btn btn-primary btn-sm" data-action="rx-sheet">${icon('plus')}塗り薬を追加</button></div>`;
   const tools = !state.myProducts.length ? '' : `<div class="mtools"><a href="#/compare">${icon('compare')}商品と肌状態の比較<i>›</i></a><a href="#/combo">${icon('flask')}成分の組み合わせ<i>›</i></a></div>`;
   html += `<div class="my-kinds" role="tablist" aria-label="アイテムの種類">${[['cos', '化粧品', nCos], ['rx', '塗り薬', nRx]].map(([k, l, n]) => `<button type="button" class="my-kind ${kind === k ? 'on' : ''}" role="tab" aria-selected="${kind === k}" data-action="my-kind" data-id="${k}">${l}<span>${n}</span></button>`).join('')}</div>`;
@@ -5044,13 +5052,74 @@ function viewMy() {
       const days = diffDays(p.startDate, productEnd(p)) + 1;
       const period = p.status === '使用終了' ? `${fmtShort(p.startDate)}〜${fmtShort(p.endDate)}（${days}日）` : p.status === STOCK ? `${fmtShort(p.startDate)} 購入` : (days > 0 ? `${days}日目` : `${fmtShort(p.startDate)}から`);
       const meta = [useN[p.id] ? `使用${useN[p.id]}回` : '', on ? p.timing : '', on ? p.frequency : '', period].filter(Boolean).join('・');
-      return `<div class="mrow-w ${on ? '' : 'off'}"><a class="mrow" href="#/my/${encodeURIComponent(p.id)}">${thumbHtml(Object.assign({}, cat, {name:p.name, isSample:false}), false)}
+      return `<div class="mrow-w ${on ? '' : 'off'}" data-mid="${esc(p.id)}"><a class="mrow" draggable="false" href="#/my/${encodeURIComponent(p.id)}">${thumbHtml(Object.assign({}, cat, {name:p.name, isSample:false}), false)}
         <span class="mrow-t"><span class="mrow-b">${esc(p.brand)}${cat.category ? '・' + esc(cat.category) : ''}</span><b>${esc(p.name)}</b><small>${esc(meta)}</small>${on && prodLifeChips(p) ? `<span class="mrow-life">${prodLifeChips(p)}</span>` : ''}</span></a>
-        <button type="button" class="m-sw ${on ? 'on' : ''}" role="switch" aria-checked="${on}" data-action="my-toggle" data-id="${esc(p.id)}" aria-label="${esc(p.name)}を${on ? '停止中にする' : '使用中にする'}"><i></i><span>${on ? '使用中' : '停止中'}</span></button></div>`;
+        <label class="m-sw ${on ? 'on' : ''}"><input type="checkbox" switch class="m-sw-in" data-id="${esc(p.id)}" ${on ? 'checked' : ''} aria-label="${esc(p.name)}を使用中にする"><i aria-hidden="true"></i><span>${on ? '使用中' : '停止中'}</span></label></div>`;
     }).join('')}</div>`;
   }
   return html + tools;
 }
+// ===== Myアイテム：使用中／停止中のスイッチ（本物のスイッチなので、iPhoneでも押すと「コツッ」と鳴る） =====
+document.addEventListener('change', e => {
+  const ip = e.target; if (!ip || !ip.classList || !ip.classList.contains('m-sw-in')) return;
+  const p = getMy(ip.dataset.id); if (!p) return;
+  const on = ip.checked;
+  if (on) { p.status = '使用中'; p.endDate = ''; } else p.status = '一時停止';
+  try { if (typeof navigator.vibrate === 'function') navigator.vibrate(12); } catch (err) { /* 何もしない */ }
+  hapticAt = Date.now(); save();
+  const lb = ip.closest('.m-sw'); if (lb) { lb.classList.toggle('on', on); lb.querySelector('span').textContent = on ? '使用中' : '停止中'; }
+  const w = ip.closest('.mrow-w'); if (w) w.classList.toggle('off', !on);
+});
+// ===== Myアイテム：長押しで持ち上げて、上下に動かして並べ替える =====
+(() => {
+  let st = null, blockClick = 0;
+  const rowsOf = el => [...el.parentNode.querySelectorAll(':scope > .mrow-w')];
+  const begin = (w, y) => {
+    st.drag = true; st.w = w; st.base = y; st.dy = 0;
+    w.classList.add('lift'); document.body.classList.add('m-dragging');
+    try { if (typeof navigator.vibrate === 'function') navigator.vibrate(20); else switchTick(); } catch (err) { /* 何もしない */ }
+  };
+  const move = y => {
+    const w = st.w; let dy = y - st.base;
+    const prev = w.previousElementSibling, next = w.nextElementSibling, h = w.offsetHeight;
+    if (dy > 0 && next && next.classList.contains('mrow-w') && dy > next.offsetHeight / 2) { w.parentNode.insertBefore(next, w); st.base += next.offsetHeight; dy = y - st.base; try { navigator.vibrate && navigator.vibrate(6); } catch (err) { /* 何もしない */ } }
+    else if (dy < 0 && prev && prev.classList.contains('mrow-w') && -dy > prev.offsetHeight / 2) { w.parentNode.insertBefore(w, prev); st.base -= prev.offsetHeight; dy = y - st.base; try { navigator.vibrate && navigator.vibrate(6); } catch (err) { /* 何もしない */ } }
+    w.style.transform = `translateY(${Math.max(-h, Math.min(h, dy))}px) scale(1.02)`;
+  };
+  const end = () => {
+    if (!st) return;
+    clearTimeout(st.t);
+    if (st.drag) {
+      const w = st.w; w.classList.remove('lift'); w.style.transform = ''; document.body.classList.remove('m-dragging');
+      rowsOf(w).forEach((r, i) => { const p = getMy(r.dataset.mid); if (p) p.order = i; });
+      save(); blockClick = Date.now();
+      hapticSaved(); // 指を離して置いたとき（iPhoneはここで鳴る）
+    }
+    st = null;
+  };
+  document.addEventListener('touchstart', e => {
+    const w = e.target.closest && e.target.closest('.mrow-w'); if (!w || e.target.closest('.m-sw') || e.touches.length !== 1) return;
+    const y = e.touches[0].clientY, x = e.touches[0].clientX;
+    st = {x, y, drag:false, t:setTimeout(() => { if (st) begin(w, st.y); }, 450)};
+  }, {passive:true});
+  document.addEventListener('touchmove', e => {
+    if (!st) return; const t = e.touches[0];
+    if (!st.drag) { if (Math.abs(t.clientY - st.y) > 8 || Math.abs(t.clientX - st.x) > 8) { clearTimeout(st.t); st = null; } return; }
+    e.preventDefault(); move(t.clientY);
+  }, {passive:false});
+  document.addEventListener('touchend', e => { if (st && st.drag) e.preventDefault(); end(); }, {passive:false});
+  document.addEventListener('touchcancel', end);
+  // パソコン：マウスを押したまま0.45秒で持ち上がる
+  document.addEventListener('mousedown', e => {
+    const w = e.target.closest && e.target.closest('.mrow-w'); if (!w || e.button !== 0 || e.target.closest('.m-sw')) return;
+    st = {x:e.clientX, y:e.clientY, drag:false, t:setTimeout(() => { if (st) begin(w, st.y); }, 450)};
+  });
+  document.addEventListener('mousemove', e => { if (!st) return; if (!st.drag) { if (Math.abs(e.clientY - st.y) > 6) { clearTimeout(st.t); st = null; } return; } e.preventDefault(); move(e.clientY); });
+  document.addEventListener('mouseup', end);
+  // 並べ替えたあとに指を離したとき、詳しい画面が開かないようにする
+  document.addEventListener('click', e => { if (Date.now() - blockClick < 500 && e.target.closest && e.target.closest('.mrow-w')) { e.preventDefault(); e.stopPropagation(); } }, true);
+  document.addEventListener('contextmenu', e => { if (e.target.closest && e.target.closest('.mrow-w')) e.preventDefault(); });
+})();
 function periodStats(s, e) { const logs = s <= e ? logsInRange(s, e) : []; return Object.assign(stats(logs), {logs}); }
 function viewMyDetail(id) {
   const p = getMy(id);
@@ -9839,6 +9908,7 @@ function ptrRepaint() {
     y0 = e.touches[0].clientY; ptrX0 = e.touches[0].clientX; started = false;
   }, {passive:true});
   window.addEventListener('touchmove', e => {
+    if (document.body.classList.contains('m-dragging')) { y0 = null; return; } // Myアイテムを並べ替えている間は、引っぱって更新しない
     if (y0 == null || (phase !== 'idle' && phase !== 'pulling' && !(phase === 'refreshing' && touching))) return;
     const dy = e.touches[0].clientY - y0;
     if (!started) {
