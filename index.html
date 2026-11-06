@@ -144,6 +144,7 @@ button{font-family:inherit}
 @media (prefers-reduced-motion:reduce){.tt-in{animation:none}}
 .topbar .wm-home{position:absolute;left:50%;top:calc(50% + env(safe-area-inset-top) / 2);transform:translate(-50%,-50%);font-family:var(--serif);font-weight:500;font-size:18px;letter-spacing:.06em;color:var(--ink);white-space:nowrap} /* ホームの「ナカカラモ」：丸みのある文字で、まん中に */
 .topbar .wm-home.tt-in{animation:none}
+.topbar .wm-brand{font-size:15px;letter-spacing:.24em;color:var(--ink2,#3B4A41)}
 .topbar .wm-wx{font-family:var(--font);letter-spacing:0;max-width:calc(100% - 24px);display:flex;justify-content:center}
 .twx{display:flex;align-items:center;justify-content:space-between;gap:.8em;background:none;border:0;padding:6px 0;font:inherit;font-size:15px;color:var(--ink);cursor:pointer;white-space:nowrap}
 .twx svg{vertical-align:-.08em;margin-right:.2em;color:var(--green-d);width:.85em;height:.85em}
@@ -703,6 +704,7 @@ details.acc-cmp{margin-top:14px}
 .home-pane{will-change:transform;touch-action:pan-y}
 .home-pane.hp-in{animation:hpIn .46s cubic-bezier(.22,.7,.2,1)}
 @keyframes hpIn{from{transform:translateX(var(--hp-from,0));opacity:.4}to{transform:none;opacity:1}}
+.home-tabs.my-tabs{grid-template-columns:repeat(2,minmax(0,124px))}
 .home-tabs{position:sticky;top:0;z-index:12;display:grid;grid-template-columns:repeat(3,minmax(0,124px));justify-content:center;gap:0;margin:-20px -16px 14px;padding:0 8px;background:var(--bg);border-bottom:1px solid var(--line)}
 .ht-ind{position:absolute;left:0;bottom:-1px;width:48px;height:3px;border-radius:3px;background:var(--green-d);transition:transform .44s cubic-bezier(.3,.8,.25,1);pointer-events:none}
 .ht{display:flex;align-items:center;justify-content:center;gap:5px;min-height:38px;min-width:0;padding:0 6px!important;border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;position:relative;white-space:nowrap;padding:0 4px}
@@ -768,7 +770,7 @@ details.acc-cmp{margin-top:14px}
 .mrow-t b{font-size:14.5px;font-weight:600;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .mrow-t small{font-size:12px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .mrow-go{color:var(--muted);font-size:18px}
-.my-adds{margin:0 0 12px}
+.my-adds{margin:0 0 12px;width:100%}
 .my-kinds{display:grid;grid-template-columns:1fr 1fr;margin:0 0 12px;border-bottom:1px solid var(--line);position:relative}
 .mk-ind{position:absolute;left:0;bottom:-1px;width:50%;height:2.5px;border-radius:2px;background:var(--green-d);transform:translateX(calc(var(--mk,0) * 100%));transition:transform .32s cubic-bezier(.2,.8,.2,1)}
 .mk-pane.mk-in-r{animation:mkInR .32s cubic-bezier(.2,.8,.2,1) both}.mk-pane.mk-in-l{animation:mkInL .32s cubic-bezier(.2,.8,.2,1) both}
@@ -5144,7 +5146,7 @@ function viewMy() {
   let html = `<div class="btn-pair my-adds"><button class="btn btn-primary btn-sm" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button><button class="btn btn-primary btn-sm" data-action="rx-sheet">${icon('plus')}塗り薬を追加</button></div>`;
   const tools = !state.myProducts.length ? '' : `<div class="mtools"><a href="#/compare">${icon('compare')}<span>肌との比較</span><i>›</i></a><a href="#/combo">${icon('flask')}<span>成分の組み合わせ</span><i>›</i></a></div>`;
   const kFrom = ui.myKindFrom || kind, kDir = ui.myKindDir || 0; ui.myKindFrom = ''; ui.myKindDir = 0;
-  html += `<div class="my-kinds" role="tablist" aria-label="アイテムの種類" style="--mk:${kFrom === 'rx' ? 1 : 0}" data-to="${kind === 'rx' ? 1 : 0}">${[['cos', '化粧品', nCos], ['rx', '塗り薬', nRx]].map(([k, l, n]) => `<button type="button" class="my-kind ${kind === k ? 'on' : ''}" role="tab" aria-selected="${kind === k}" data-action="my-kind" data-id="${k}">${l}<span>${n}</span></button>`).join('')}<i class="mk-ind" aria-hidden="true"></i></div><div class="mk-pane ${kDir > 0 ? 'mk-in-r' : kDir < 0 ? 'mk-in-l' : ''}">`;
+  html = `<nav class="home-tabs my-tabs" role="tablist" aria-label="アイテムの種類">${[['cos', '化粧品'], ['rx', '塗り薬']].map(([k, l]) => `<button type="button" class="ht ${kind === k ? 'active' : ''}" role="tab" aria-selected="${kind === k}" data-action="my-kind" data-id="${k}"><span>${l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav><div class="mk-pane ${kDir > 0 ? 'mk-in-r' : kDir < 0 ? 'mk-in-l' : ''}">` + html;
   if (state.myProducts.length && !list.length) {
     html += `<div class="card">${emptyBox(kind === 'rx' ? 'flask' : 'bottle', kind === 'rx' ? 'まだ塗り薬が登録されていません' : 'まだ化粧品が登録されていません', kind === 'rx' ? '皮膚科で出された塗り薬は、上の「塗り薬を追加」から一覧で選べます。' : '使っている化粧品は、上の「化粧品を追加」から登録できます。')}</div>`;
   } else if (!state.myProducts.length) {
@@ -5786,8 +5788,8 @@ function wxFit() {
   if (!T) return;
   b.style.width = 'auto'; b.style.fontSize = '15px';
   const w0 = b.scrollWidth; if (!w0) return;
-  const W = Math.round(T * 0.92), f = Math.max(12, Math.min(18, 15 * W / w0));
-  b.style.fontSize = f.toFixed(2) + 'px'; b.style.width = Math.min(W, Math.round(w0 * f / 15) + 60) + 'px';
+  const W = Math.round(T * 0.92), f = Math.max(12, Math.min(17, 15 * W / w0));
+  b.style.fontSize = f.toFixed(2) + 'px'; b.style.width = T + 'px'; // 下のボタンと同じ横幅（両はしをそろえる）
 }
 window.addEventListener('resize', () => { clearTimeout(wxFit.t); wxFit.t = setTimeout(wxFit, 120); });
 // アプリに戻ってきたとき・開いたままのときも、30分おきに今の湿度・UVを取り直す
@@ -9547,7 +9549,7 @@ const actions = {
   'my-filter': v => { ui.myFilter = v; render(); },
   'my-kind': v => {
     if (ui.myKind === v) return;
-    const from = ui.myKind; ui.myKind = v; ui.myKindDir = v === 'rx' ? 1 : -1; ui.myKindFrom = from;
+    const from = ui.myKind; ui.myKind = v; ui.myKindDir = v === 'rx' ? 1 : -1; ui.myKindFrom = from; ui.mtFrom = from;
     hapticSaved(); render();
   },
   'swipe-del': async id => {
@@ -9922,8 +9924,8 @@ function stopMomentumTop() {
 function placeHomeTabInd() {
   const nav = document.querySelector('.home-tabs'), ind = nav && nav.querySelector('.ht-ind'); if (!ind) return;
   const at = k => { const b = nav.querySelector(`.ht[data-id="${k}"]`); if (!b) return 0; return b.offsetLeft + b.offsetWidth / 2 - 24; };
-  const acc = nav.classList.contains('acc-tabs'), log = !acc && nav.classList.contains('log-tabs'), cur = acc ? ui.accTab : log ? ui.logTab : ui.homeTab, prev = acc ? ui.atFrom : log ? ui.ltFrom : ui.htFrom;
-  const to = at(cur), from = prev ? at(prev) : to; ui.htFrom = ''; ui.ltFrom = ''; ui.atFrom = '';
+  const acc = nav.classList.contains('acc-tabs'), my = nav.classList.contains('my-tabs'), log = !acc && !my && nav.classList.contains('log-tabs'), cur = acc ? ui.accTab : my ? ui.myKind : log ? ui.logTab : ui.homeTab, prev = acc ? ui.atFrom : my ? ui.mtFrom : log ? ui.ltFrom : ui.htFrom;
+  const to = at(cur), from = prev ? at(prev) : to; ui.htFrom = ''; ui.ltFrom = ''; ui.atFrom = ''; ui.mtFrom = '';
   ind.style.transition = 'none'; ind.style.transform = `translateX(${from}px)`; void ind.offsetWidth;
   ind.style.transition = ''; ind.style.transform = `translateX(${to}px)`;
 }
@@ -9996,8 +9998,8 @@ window.addEventListener('resize', setTbh); window.addEventListener('orientationc
 function setTopTitle(t) {
   const tb = $('.topbar'); if (!tb) return;
   const cur = tb.firstElementChild, want = t || 'ナカカラモ';
-  if (cur && cur.dataset.t === want) { if (!t) wxTopRefresh(); return; }
-  const html = t ? `<h1 class="wordmark top-title" data-t="${esc(t)}">${esc(t)}</h1>` : `<div class="wordmark wm-home wm-wx" data-t="ナカカラモ" id="top-wx">${wxTopInner()}</div>`;
+  if (cur && cur.dataset.t === want) return;
+  const html = t ? `<h1 class="wordmark top-title" data-t="${esc(t)}">${esc(t)}</h1>` : `<div class="wordmark wm-home wm-brand" data-t="ナカカラモ">ナカカラモ</div>`; // ホーム：真ん中に小さく「ナカカラモ」
   if (cur && cur.classList.contains('wordmark')) cur.outerHTML = html; else tb.insertAdjacentHTML('afterbegin', html);
   const el = tb.firstElementChild; if (cur) { el.classList.add('tt-in'); }
   setTbh(); requestAnimationFrame(wxFit);
@@ -10039,7 +10041,7 @@ function render() {
   html = html.replace(/<a class="back" href="([^"]*)">([^<]*)<\/a>/g, (m, href, label) => `<a class="back" href="${href}" data-back="1">${prevNav && prevNav !== href ? '← 戻る' : label}</a>`);
   renderingNow = true; try { $('#main').innerHTML = html; } finally { renderingNow = false; } // 作り直しの最中に古い入力欄から来る変更は無視する
   renderNav(navName, ({product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'})[r.name] || r.name);
-  setTopTitle(r.name === 'home' ? 'ホーム' : ({log:'肌の記録', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
+  setTopTitle(r.name === 'home' ? '' : ({log:'肌の記録', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
   const key = r.name + '/' + r.id;
   const routeChanged = key !== lastRoute, prevRoute = lastRoute;
   if (key !== lastRoute) {
@@ -10050,7 +10052,7 @@ function render() {
   navRestoreY = null;
   if (r.name === 'home') { requestAnimationFrame(wxFit); placeHomeTabInd(); slideHomePane(); if (ui.homeTab === 'care' && isPremium()) setTimeout(() => { runMenu(false); storeLoad(false); }, 0); }
   if (r.name === 'log') { placeHomeTabInd(); slideHomePane(); }
-  if (r.name === 'my' && !r.id) myKindsAnimate();
+  if (r.name === 'my' && !r.id) placeHomeTabInd();
   if (r.name === 'product') { const pc = getCat(r.id); if (pc) setTimeout(() => offFetch(pc), 0); }
   hapticizeTargets();
   drawCharts();
