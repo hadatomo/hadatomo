@@ -771,7 +771,10 @@ details.acc-cmp{margin-top:14px}
 .mrow-w .mrow .thumb{width:44px;height:44px;border-radius:10px}
 .mrow-w .mrow-b{font-size:11px}.mrow-w .mrow-t b{font-size:14px;line-height:1.35;-webkit-line-clamp:2;word-break:normal;overflow-wrap:anywhere;line-break:strict}
 .mrow-w .mrow-t small{font-size:11.5px;margin-top:1px}
-.mrow-w.lift{z-index:5;background:var(--surface);box-shadow:0 10px 28px rgba(0,0,0,.18);border-radius:14px;transition:box-shadow .15s}
+.mrow-w{will-change:transform}
+.mrow-w.lift{z-index:20;background:var(--surface);box-shadow:0 14px 34px rgba(0,0,0,.20),0 2px 6px rgba(0,0,0,.08);border-radius:14px}
+.mrow-w.lift.drop{box-shadow:0 2px 6px rgba(0,0,0,.06)}
+body.m-dragging .mrow-w:not(.lift){pointer-events:none}
 body.m-dragging{overflow:hidden;touch-action:none}
 .m-sw-in{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
 .mrow-w.off .mrow{opacity:.55}
@@ -783,7 +786,8 @@ body.m-dragging{overflow:hidden;touch-action:none}
 .sdot{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--muted)}
 .sdot.s-0{background:var(--green)}.sdot.s-1{background:#D6A06A}.sdot.s-2{background:#7FA3C9}.sdot.s-3{background:#B9B3AA}
 .mtools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
-.mtools a{white-space:nowrap;font-size:13px!important;padding-top:12px!important;padding-bottom:12px!important;gap:6px!important}.mtools a svg{flex:none}
+.mtools{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+.mtools a{min-width:0;white-space:nowrap;font-size:12.5px!important;padding:12px 10px!important;gap:6px!important}.mtools a svg{flex:none;width:16px!important;height:16px!important}.mtools a span{min-width:0;overflow:hidden;text-overflow:ellipsis}.mtools a i{flex:none}
 .mtools a{display:flex;align-items:center;gap:8px;padding:12px;border-radius:14px;background:var(--surface);border:1px solid var(--line);color:var(--ink);text-decoration:none;font-size:13px;font-weight:600}
 .mtools a svg{width:18px;height:18px;color:var(--green-d);flex:none}
 .mtools a i{margin-left:auto;font-style:normal;color:var(--muted)}
@@ -5039,7 +5043,7 @@ function viewMy() {
   const list = state.myProducts.filter(p => kind === 'rx' ? isRx(p) : !isRx(p))
     .sort((a,b) => (a.order == null ? 1e9 : a.order) - (b.order == null ? 1e9 : b.order) || (useN[b.id] || 0) - (useN[a.id] || 0) || FREQS.indexOf(a.frequency) - FREQS.indexOf(b.frequency) || b.startDate.localeCompare(a.startDate));
   let html = `<div class="btn-pair my-adds"><button class="btn btn-primary btn-sm" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button><button class="btn btn-primary btn-sm" data-action="rx-sheet">${icon('plus')}塗り薬を追加</button></div>`;
-  const tools = !state.myProducts.length ? '' : `<div class="mtools"><a href="#/compare">${icon('compare')}商品と肌状態の比較<i>›</i></a><a href="#/combo">${icon('flask')}成分の組み合わせ<i>›</i></a></div>`;
+  const tools = !state.myProducts.length ? '' : `<div class="mtools"><a href="#/compare">${icon('compare')}<span>肌との比較</span><i>›</i></a><a href="#/combo">${icon('flask')}<span>成分の組み合わせ</span><i>›</i></a></div>`;
   html += `<div class="my-kinds" role="tablist" aria-label="アイテムの種類">${[['cos', '化粧品', nCos], ['rx', '塗り薬', nRx]].map(([k, l, n]) => `<button type="button" class="my-kind ${kind === k ? 'on' : ''}" role="tab" aria-selected="${kind === k}" data-action="my-kind" data-id="${k}">${l}<span>${n}</span></button>`).join('')}</div>`;
   if (state.myProducts.length && !list.length) {
     html += `<div class="card">${emptyBox(kind === 'rx' ? 'flask' : 'bottle', kind === 'rx' ? 'まだ塗り薬が登録されていません' : 'まだ化粧品が登録されていません', kind === 'rx' ? '皮膚科で出された塗り薬は、上の「塗り薬を追加」から一覧で選べます。' : '使っている化粧品は、上の「化粧品を追加」から登録できます。')}</div>`;
@@ -5070,51 +5074,79 @@ document.addEventListener('change', e => {
   const lb = ip.closest('.m-sw'); if (lb) { lb.classList.toggle('on', on); lb.querySelector('span').textContent = on ? '使用中' : '停止中'; }
   const w = ip.closest('.mrow-w'); if (w) w.classList.toggle('off', !on);
 });
-// ===== Myアイテム：長押しで持ち上げて、上下に動かして並べ替える =====
+// ===== Myアイテム：長押しで持ち上げて、指でつかんだまま動かして並べ替える（iPhoneの標準アプリのような動き） =====
+// ・長押し（0.4秒）で少し大きくなって浮き上がる（影つき・一番手前）
+// ・動かすと、まわりの項目がなめらかに場所をあける。指を離すと、その場所に収まって保存する
+// ・振動：浮いたとき＝軽く／順番が変わったとき＝ごく軽く（変わったときだけ）／置いたとき＝少し強め
+//   Android：本体の振動。iPhone：Safariは「指を離した瞬間」しか振動させられないため、置いたときの「コツッ」だけ鳴る
 (() => {
-  let st = null, blockClick = 0;
-  const rowsOf = el => [...el.parentNode.querySelectorAll(':scope > .mrow-w')];
-  const begin = (w, y) => {
-    st.drag = true; st.w = w; st.base = y; st.dy = 0;
-    w.classList.add('lift'); document.body.classList.add('m-dragging');
-    try { if (typeof navigator.vibrate === 'function') navigator.vibrate(20); else switchTick(); } catch (err) { /* 何もしない */ }
+  let st = null, blockClick = 0, raf = 0;
+  const vib = p => { try { if (typeof navigator.vibrate === 'function') navigator.vibrate(p); } catch (err) { /* 対応していない端末では何もしない */ } };
+  const begin = () => {
+    const w = st.w, rows = [...w.parentNode.querySelectorAll(':scope > .mrow-w')];
+    st.rows = rows; st.idx0 = rows.indexOf(w); st.cur = st.idx0; st.drag = true;
+    st.tops = rows.map(r => r.offsetTop); st.hs = rows.map(r => r.offsetHeight); st.h = w.offsetHeight;
+    st.scroll0 = window.scrollY; st.dy = 0;
+    rows.forEach(r => { if (r !== w) r.style.transition = 'transform .22s cubic-bezier(.2,.8,.2,1)'; });
+    w.style.transition = 'transform .12s ease-out, box-shadow .15s'; w.classList.add('lift'); w.style.transform = 'translateY(0) scale(1.03)';
+    setTimeout(() => { if (st && st.drag) w.style.transition = 'box-shadow .15s'; }, 130);
+    document.body.classList.add('m-dragging');
+    vib(10); // 浮き上がった瞬間：軽く
   };
-  const move = y => {
-    const w = st.w; let dy = y - st.base;
-    const prev = w.previousElementSibling, next = w.nextElementSibling, h = w.offsetHeight;
-    if (dy > 0 && next && next.classList.contains('mrow-w') && dy > next.offsetHeight / 2) { w.parentNode.insertBefore(next, w); st.base += next.offsetHeight; dy = y - st.base; try { navigator.vibrate && navigator.vibrate(6); } catch (err) { /* 何もしない */ } }
-    else if (dy < 0 && prev && prev.classList.contains('mrow-w') && -dy > prev.offsetHeight / 2) { w.parentNode.insertBefore(w, prev); st.base -= prev.offsetHeight; dy = y - st.base; try { navigator.vibrate && navigator.vibrate(6); } catch (err) { /* 何もしない */ } }
-    w.style.transform = `translateY(${Math.max(-h, Math.min(h, dy))}px) scale(1.02)`;
+  const layout = () => {
+    raf = 0; if (!st || !st.drag) return;
+    const {w, rows, idx0, tops, hs, h} = st;
+    const minDy = tops[0] - tops[idx0], maxDy = tops[rows.length - 1] + hs[rows.length - 1] - h - tops[idx0];
+    const dy = Math.max(minDy - 12, Math.min(maxDy + 12, st.y - st.y0 + (window.scrollY - st.scroll0)));
+    w.style.transform = `translateY(${dy}px) scale(1.03)`;
+    // 持ち上げた項目の真ん中が、どの項目の真ん中を越えたかで、新しい場所を決める
+    const c = tops[idx0] + dy + h / 2;
+    let to = idx0;
+    for (let k = idx0 + 1; k < rows.length; k++) if (c > tops[k] + hs[k] / 2) to = k;
+    for (let k = idx0 - 1; k >= 0; k--) if (c < tops[k] + hs[k] / 2) to = k;
+    rows.forEach((r, k) => { if (r === w) return; const sh = (k > idx0 && k <= to) ? -h : (k < idx0 && k >= to) ? h : 0; r.style.transform = sh ? `translateY(${sh}px)` : ''; });
+    if (to !== st.cur) { st.cur = to; vib(5); } // 順番が変わったときだけ、ごく軽く
+    // 画面の上・下のはしに来たら、自動でスクロール
+    const edge = 90, vh = window.innerHeight;
+    if (st.y < edge || st.y > vh - edge - 70) { window.scrollBy(0, st.y < edge ? -8 : 8); raf = requestAnimationFrame(layout); }
   };
+  const moveTo = y => { st.y = y; if (!raf) raf = requestAnimationFrame(layout); };
   const end = () => {
     if (!st) return;
-    clearTimeout(st.t);
-    if (st.drag) {
-      const w = st.w; w.classList.remove('lift'); w.style.transform = ''; document.body.classList.remove('m-dragging');
-      rowsOf(w).forEach((r, i) => { const p = getMy(r.dataset.mid); if (p) p.order = i; });
-      save(); blockClick = Date.now();
-      hapticSaved(); // 指を離して置いたとき（iPhoneはここで鳴る）
-    }
-    st = null;
+    clearTimeout(st.t); if (raf) { cancelAnimationFrame(raf); raf = 0; }
+    const s0 = st; st = null;
+    if (!s0.drag) return;
+    const {w, rows, idx0, cur, tops, hs, h} = s0;
+    // 指を離した瞬間に鳴らす（iPhoneはこの瞬間だけ鳴らせる）：少し強め
+    try { if (typeof navigator.vibrate === 'function') navigator.vibrate(18); else switchTick(); } catch (err) { /* 何もしない */ }
+    hapticAt = Date.now(); blockClick = Date.now();
+    const fin = cur > idx0 ? tops[cur] + hs[cur] - h - tops[idx0] : tops[cur] - tops[idx0];
+    w.style.transition = 'transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .2s'; w.style.transform = `translateY(${fin}px) scale(1)`; w.classList.add('drop');
+    setTimeout(() => {
+      rows.forEach(r => { r.style.transition = 'none'; r.style.transform = ''; });
+      w.classList.remove('lift', 'drop');
+      if (cur !== idx0) { const ref = cur > idx0 ? rows[cur].nextSibling : rows[cur]; w.parentNode.insertBefore(w, ref); }
+      [...w.parentNode.querySelectorAll(':scope > .mrow-w')].forEach((r, k) => { const p = getMy(r.dataset.mid); if (p) p.order = k; });
+      save();
+      requestAnimationFrame(() => rows.forEach(r => { r.style.transition = ''; }));
+      document.body.classList.remove('m-dragging');
+    }, 210);
   };
+  const start = (w, x, y) => { st = {w, x, y, y0:y, drag:false, t:setTimeout(() => { if (st && !st.drag) begin(); }, 400)}; };
   document.addEventListener('touchstart', e => {
-    const w = e.target.closest && e.target.closest('.mrow-w'); if (!w || e.target.closest('.m-sw') || e.touches.length !== 1) return;
-    const y = e.touches[0].clientY, x = e.touches[0].clientX;
-    st = {x, y, drag:false, t:setTimeout(() => { if (st) begin(w, st.y); }, 450)};
+    const w = e.target.closest && e.target.closest('.mrow-w'); if (!w || e.target.closest('.m-sw') || e.touches.length !== 1 || st) return;
+    start(w, e.touches[0].clientX, e.touches[0].clientY);
   }, {passive:true});
   document.addEventListener('touchmove', e => {
     if (!st) return; const t = e.touches[0];
-    if (!st.drag) { if (Math.abs(t.clientY - st.y) > 8 || Math.abs(t.clientX - st.x) > 8) { clearTimeout(st.t); st = null; } return; }
-    e.preventDefault(); move(t.clientY);
+    if (!st.drag) { if (Math.abs(t.clientY - st.y0) > 8 || Math.abs(t.clientX - st.x) > 8) { clearTimeout(st.t); st = null; } return; }
+    e.preventDefault(); moveTo(t.clientY);
   }, {passive:false});
   document.addEventListener('touchend', e => { if (st && st.drag) e.preventDefault(); end(); }, {passive:false});
   document.addEventListener('touchcancel', end);
-  // パソコン：マウスを押したまま0.45秒で持ち上がる
-  document.addEventListener('mousedown', e => {
-    const w = e.target.closest && e.target.closest('.mrow-w'); if (!w || e.button !== 0 || e.target.closest('.m-sw')) return;
-    st = {x:e.clientX, y:e.clientY, drag:false, t:setTimeout(() => { if (st) begin(w, st.y); }, 450)};
-  });
-  document.addEventListener('mousemove', e => { if (!st) return; if (!st.drag) { if (Math.abs(e.clientY - st.y) > 6) { clearTimeout(st.t); st = null; } return; } e.preventDefault(); move(e.clientY); });
+  // パソコン：マウスを押したまま0.4秒で持ち上がる
+  document.addEventListener('mousedown', e => { const w = e.target.closest && e.target.closest('.mrow-w'); if (!w || e.button !== 0 || e.target.closest('.m-sw') || st) return; start(w, e.clientX, e.clientY); });
+  document.addEventListener('mousemove', e => { if (!st) return; if (!st.drag) { if (Math.abs(e.clientY - st.y0) > 6) { clearTimeout(st.t); st = null; } return; } e.preventDefault(); moveTo(e.clientY); });
   document.addEventListener('mouseup', end);
   // 並べ替えたあとに指を離したとき、詳しい画面が開かないようにする
   document.addEventListener('click', e => { if (Date.now() - blockClick < 500 && e.target.closest && e.target.closest('.mrow-w')) { e.preventDefault(); e.stopPropagation(); } }, true);
