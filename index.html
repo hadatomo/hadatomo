@@ -487,6 +487,12 @@ label.btn{position:relative}
 /* ホームの「今日の肌を記録・睡眠・運動・食事」：うしろの枠はなくして、ボタンは「化粧品を追加」と同じ大きさ */
 .hero.hero-plain{background:none;border:0;padding:0;border-radius:0;animation:none;overflow:visible;box-shadow:none}
 .hero.hero-plain::after{display:none}
+.hero.hero-home{padding:12px 14px 14px;overflow:visible}
+.hero-home .hero-wx{display:flex;justify-content:center;margin:0 0 10px;padding:0 0 10px;border-bottom:1px solid rgba(0,0,0,.06);position:relative;z-index:1}
+.hero-home .life-btns{max-width:none;margin-top:0;gap:10px;position:relative;z-index:1}
+.hero-home .life-btns .btn-sm{min-height:44px;font-size:14px;background:var(--surface)}
+.hero-home .life-btns .hap-keep{width:100%;display:block}
+.hero-home .life-btns .hap-keep>.btn{width:100%}
 .hero-plain .life-btns{max-width:none;margin-top:0;gap:10px}
 .hero-plain .life-btns .btn-sm{min-height:44px;font-size:14px;background:var(--surface)} /* Myアイテムの「化粧品を追加」と同じ大きさ */
 .hero-plain .life-btns .hap-keep{width:100%;display:block}
@@ -3112,7 +3118,7 @@ function viewHome() {
   const budget = state.settings.monthlyBudget;
 
   let html = loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '';
-  html += `<section class="hero hero-plain">
+  html += `<section class="hero hero-home"><div class="hero-wx" id="top-wx">${wxTopInner()}</div>
     <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${icon('plus')}今日の肌を記録</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('chart')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('note')}食事</button></div></section>`;
 
   const lifeLine = lifeSumHtml(todayLife);
@@ -5315,7 +5321,6 @@ function viewMyDetail(id) {
     const ingHtml = !ing ? '<span class="muted">未登録</span>' : isRx || ing.length <= 60 ? esc(ing) : `${known.length ? '' : '<span class="muted">解説のある成分はありません</span>'}<details class="fold" style="margin-top:${known.length ? 0 : 6}px"><summary>全成分を表示</summary><p class="prose small">${esc(ing)}</p></details>`;
     return `<a class="back" href="#/my">← Myアイテム</a>
     <div class="card detail-top">
-      ${thumbHtml(Object.assign({}, cat || {category:p.category}, isRx ? {name:p.name, isSample:false} : {isSample:false}), false)}
       <div>
         <div class="chips"><span class="chip">${esc(p.category)}</span>${(isRx ? (use ? [use] : []) : p.purposes).map(x => `<span class="chip green">${esc(x)}</span>`).join('')}</div>
         <div class="small muted" style="margin-top:10px">${esc(p.brand)}</div>
@@ -5777,12 +5782,12 @@ function wxTopRefresh() { const b = document.getElementById('top-wx'); if (b) b.
 // 上の湿度・気温の文字を、下の「今日の肌を記録」の枠と同じ横幅になる大きさにそろえる
 function wxFit() {
   const b = document.querySelector('#top-wx .twx'); if (!b || b.classList.contains('twx-set') || b.querySelector('.twx-load')) { if (b) { b.style.fontSize = ''; b.style.width = ''; } return; }
-  const c = document.querySelector('#main .card'), T = Math.round(c ? c.getBoundingClientRect().width : Math.min(window.innerWidth - 32, 640));
+  const box = b.parentElement, T = box ? box.clientWidth : 0; // 枠の中の横幅に合わせる
   if (!T) return;
   b.style.width = 'auto'; b.style.fontSize = '15px';
   const w0 = b.scrollWidth; if (!w0) return;
-  const W = Math.round(T * 0.86), f = Math.max(12, Math.min(17, 15 * W / w0)); // 枠より少し内側に収まる、見やすい大きさ
-  b.style.fontSize = f.toFixed(2) + 'px'; b.style.width = Math.min(W, Math.round(w0 * f / 15) + 40) + 'px';
+  const W = Math.round(T * 0.92), f = Math.max(12, Math.min(18, 15 * W / w0));
+  b.style.fontSize = f.toFixed(2) + 'px'; b.style.width = Math.min(W, Math.round(w0 * f / 15) + 60) + 'px';
 }
 window.addEventListener('resize', () => { clearTimeout(wxFit.t); wxFit.t = setTimeout(wxFit, 120); });
 // アプリに戻ってきたとき・開いたままのときも、30分おきに今の湿度・UVを取り直す
@@ -10034,7 +10039,7 @@ function render() {
   html = html.replace(/<a class="back" href="([^"]*)">([^<]*)<\/a>/g, (m, href, label) => `<a class="back" href="${href}" data-back="1">${prevNav && prevNav !== href ? '← 戻る' : label}</a>`);
   renderingNow = true; try { $('#main').innerHTML = html; } finally { renderingNow = false; } // 作り直しの最中に古い入力欄から来る変更は無視する
   renderNav(navName, ({product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'})[r.name] || r.name);
-  setTopTitle(r.name === 'home' ? '' : ({log:'肌の記録', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
+  setTopTitle(r.name === 'home' ? 'ホーム' : ({log:'肌の記録', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
   const key = r.name + '/' + r.id;
   const routeChanged = key !== lastRoute, prevRoute = lastRoute;
   if (key !== lastRoute) {
@@ -10043,7 +10048,7 @@ function render() {
     else stopMomentumTop();
   }
   navRestoreY = null;
-  if (r.name === 'home') { placeHomeTabInd(); slideHomePane(); if (ui.homeTab === 'care' && isPremium()) setTimeout(() => { runMenu(false); storeLoad(false); }, 0); }
+  if (r.name === 'home') { requestAnimationFrame(wxFit); placeHomeTabInd(); slideHomePane(); if (ui.homeTab === 'care' && isPremium()) setTimeout(() => { runMenu(false); storeLoad(false); }, 0); }
   if (r.name === 'log') { placeHomeTabInd(); slideHomePane(); }
   if (r.name === 'my' && !r.id) myKindsAnimate();
   if (r.name === 'product') { const pc = getCat(r.id); if (pc) setTimeout(() => offFetch(pc), 0); }
