@@ -894,7 +894,7 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .gcam-view video,.gcam-ghost{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .gcam-view video{transform:scaleX(-1)}
 .gcam-ghost{opacity:.3;pointer-events:none}
-.gcam-fail{padding:24px;text-align:center;color:#fff;display:flex;flex-direction:column;gap:14px;align-items:center;max-width:340px}.gcam-fail p{margin:0;font-size:14px;line-height:1.6}.gcam-fail .small{font-size:12px;color:#ccc}
+.gcam-fail{padding:24px;text-align:center;color:#fff;display:flex;flex-direction:column;gap:14px;align-items:center;max-width:340px}.gcam-fail p{margin:0;font-size:14px;line-height:1.6}.gcam-fail .small{font-size:12px;color:#ccc}.gcam-fail .btn{min-width:240px;justify-content:center}.gcam-back{background:transparent!important;color:#fff!important;border-color:rgba(255,255,255,.5)!important}
 .gcam-guide{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .gcam-msg{position:absolute;top:calc(14px + env(safe-area-inset-top));left:0;right:0;margin:0;text-align:center;color:#fff;font-size:14px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .gcam-msg small{font-weight:400;font-size:11.5px}
@@ -1411,6 +1411,16 @@ details.fold[open] summary{margin-bottom:10px}
 .modal-body .field,.modal-body .form-grid>*{min-width:0}
 .modal-foot{display:flex;gap:10px;justify-content:flex-end;padding:14px 20px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line);background:var(--surface)}
 .modal-foot .btn{flex:1}
+/* 対になったボタン（キャンセルと保存など）は、同じ幅・同じ高さにそろえる */
+.modal-foot,.sw-foot,.btn-pair{display:grid!important;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
+.modal-foot>*,.sw-foot>*,.btn-pair>*{min-width:0!important;width:auto!important}
+.modal-foot>[hidden],.sw-foot>[hidden],.btn-pair>[hidden]{display:none!important}
+.modal-foot>.hap-wrap>.btn,.modal-foot>.hap-keep>.btn,.sw-foot>.hap-wrap>.btn,.sw-foot>.hap-keep>.btn,.btn-pair>.hap-wrap>.btn,.btn-pair>.hap-keep>.btn{width:100%!important}
+.modal-foot .btn,.sw-foot .btn,.btn-pair .btn{justify-content:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn-pair{display:flex;gap:8px;align-items:stretch}
+.page-actions:not(:has(>:nth-child(3))):has(>:nth-child(2)),.ext-links:not(:has(>:nth-child(3))):has(>:nth-child(2)){display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
+.page-actions:not(:has(>:nth-child(3))):has(>:nth-child(2))>*,.ext-links:not(:has(>:nth-child(3))):has(>:nth-child(2))>*{min-width:0;justify-content:center}
+@media(min-width:640px){.modal-foot{grid-auto-columns:minmax(150px,max-content);justify-content:end}}
 @media(min-width:640px){.sheet-grab{display:none}.modal-head{touch-action:auto}.modal{animation:up .2s ease-out}.modal::after{display:none}.modal-backdrop{align-items:center;padding:24px}.modal{max-width:660px;border-radius:22px;max-height:88vh}.modal.small{max-width:440px}.modal-foot .btn{flex:none}.modal-foot{padding-bottom:14px}}
 .confirm-title{font-size:16px;margin-bottom:8px}
 .confirm-msg{white-space:pre-line;font-size:14px;color:var(--ink2)}
@@ -5830,14 +5840,22 @@ async function openGuideCam(done, o = {}) {
     <div class="gcam-bar">${prev ? '<button type="button" class="gcam-sm" data-g="ghost">前回の写真：表示</button>' : '<span></span>'}<button type="button" class="gcam-shot" data-g="shot" aria-label="撮る"></button><button type="button" class="gcam-sm" data-g="close">やめる</button></div>`;
   document.body.appendChild(root); lockScroll();
   const video = root.querySelector('video'); let stream = null;
-  const close = () => { if (stream) stream.getTracks().forEach(t => t.stop()); root.remove(); unlockScroll(); };
+  let closed = false;
+  const close = () => { if (closed) return; closed = true; if (stream) stream.getTracks().forEach(t => t.stop()); root.remove(); unlockScroll(); };
   // アプリ内のカメラが使えないとき（許可していない・対応していない）は、ふつうのカメラを開くボタンを出す（押した指の操作で開くので、iPhoneでも確実に開く）
   const fail = msg => {
     if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
     root.querySelector('.gcam-view').innerHTML = `<div class="gcam-fail"><p>${esc(msg)}</p><label class="btn btn-primary">${icon('camera')}ふつうのカメラで撮る<input type="file" accept="image/*" capture="user" class="vh" id="gcam-file"></label>
       <p class="small">アプリ内のカメラを使うには、iPhoneの「設定」→「Safari」→「カメラ」を「確認」か「許可」にしてください。</p></div>`;
     root.querySelector('.gcam-shot').style.visibility = 'hidden';
-    root.querySelector('#gcam-file').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { const url = await readImage(f, o.w || 640, o.w > 640 ? 0.85 : 0.72); close(); done(url); } catch (err) { toast(err.message, 'error'); } };
+    const gb = root.querySelector('.gcam-bar'); if (gb) gb.style.visibility = 'hidden'; // 下の「やめる」は、真ん中の「やめて戻る」とだぶるので隠す
+    const fv = root.querySelector('.gcam-fail'); if (fv) fv.insertAdjacentHTML('beforeend', '<button type="button" class="btn btn-ghost gcam-back">やめて戻る</button>');
+    const bk = root.querySelector('.gcam-back'); if (bk) bk.onclick = close;
+    // ふつうのカメラを開いて「キャンセル」したら、この画面も閉じて元の画面に戻る
+    const fin = root.querySelector('#gcam-file');
+    fin.addEventListener('cancel', () => close());
+    fin.addEventListener('click', () => { const back = () => { window.removeEventListener('focus', back); setTimeout(() => { if (document.body.contains(root) && !(fin.files && fin.files.length)) close(); }, 1200); }; window.addEventListener('focus', back); });
+    fin.onchange = async e => { const f = e.target.files[0]; if (!f) { close(); return; } try { const url = await readImage(f, o.w || 640, o.w > 640 ? 0.85 : 0.72); close(); done(url); } catch (err) { toast(err.message, 'error'); } };
   };
   try {
     stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:1280}, height:{ideal:1280}}, audio:false});
@@ -6540,9 +6558,9 @@ function openLifeForm(id, part, forDate) {
   };
   const renderPhoto = k => {
     const box = $(`[data-mprev="${k}"]`, form);
-    const pbtn = `<button type="button" class="btn btn-soft btn-sm has-prem" data-premium="${k}" style="margin-top:6px">写真から読み取る${isPremium() ? '' : `<span class="prem-sub">${PREMIUM_NAME}</span>`}</button>`;
-    if (pending[k]) box.innerHTML = `<div class="photo-prev"><img class="meal-thumb" src="${pending[k]}" alt="選んだ写真"><div><label class="check"><input type="checkbox" data-mpsave="${k}"> このブラウザ内に保存する</label><div style="display:flex;gap:6px;flex-wrap:wrap"><button type="button" class="btn btn-ghost btn-sm" data-mpcancel="${k}" style="margin-top:6px">取り消す</button>${pbtn}</div></div></div>`;
-    else if (saved[k]) box.innerHTML = `<div class="photo-prev"><img class="meal-thumb" src="${saved[k]}" alt="保存済みの写真"><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center"><button type="button" class="btn btn-danger-ghost btn-sm" data-mpdel="${k}">写真を削除</button>${pbtn}</div></div>`;
+    const pbtn = `<button type="button" class="btn btn-soft btn-sm has-prem" data-premium="${k}">写真から読み取る${isPremium() ? '' : `<span class="prem-sub">${PREMIUM_NAME}</span>`}</button>`;
+    if (pending[k]) box.innerHTML = `<div class="photo-prev"><img class="meal-thumb" src="${pending[k]}" alt="選んだ写真"><div><label class="check"><input type="checkbox" data-mpsave="${k}"> このブラウザ内に保存する</label><div class="btn-pair" style="margin-top:6px"><button type="button" class="btn btn-ghost btn-sm" data-mpcancel="${k}">取り消す</button>${pbtn}</div></div></div>`;
+    else if (saved[k]) box.innerHTML = `<div class="photo-prev"><img class="meal-thumb" src="${saved[k]}" alt="保存済みの写真"><div class="btn-pair" style="margin-top:6px"><button type="button" class="btn btn-danger-ghost btn-sm" data-mpdel="${k}">写真を削除</button>${pbtn}</div></div>`;
     else box.innerHTML = '';
   };
   FOOD_MEALS.forEach(m => renderPhoto(m.k)); renderFoods(); renderExercise();
