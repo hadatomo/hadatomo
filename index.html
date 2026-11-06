@@ -777,8 +777,14 @@ details.acc-cmp{margin-top:14px}
 .mrows{overflow:hidden}.mrows:has(.lift){overflow:visible}
 .mrows>.mrow-w:first-child,.mrows>.mrow-w:first-child .mrow-in{border-top-left-radius:calc(var(--radius) - 1px);border-top-right-radius:calc(var(--radius) - 1px)}
 .mrows>.mrow-w:last-child,.mrows>.mrow-w:last-child .mrow-in{border-bottom-left-radius:calc(var(--radius) - 1px);border-bottom-right-radius:calc(var(--radius) - 1px)}
-.mrows>.mrow-w.lift,.mrows>.mrow-w.lift .mrow-in{border-radius:14px!important}
-.mrow-w{display:flex;align-items:center;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;position:relative;transition:box-shadow .15s,transform .05s}.mrow-w+.mrow-w{border-top:1px solid var(--line)}
+.mrows>.mrow-w.lift,.mrows>.mrow-w.lift .mrow-in,.mrows>.mrow-w.press,.mrows>.mrow-w.press .mrow-in{border-radius:14px!important}
+.mrow-w{display:flex;align-items:center;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;position:relative;transition:box-shadow .15s,transform .05s}
+.mrow-w+.mrow-w::before{content:'';position:absolute;left:0;right:0;top:0;height:1px;background:var(--line);z-index:3;pointer-events:none;transition:opacity .15s}
+.mrow-w.press::before,.mrow-w.press+.mrow-w::before,.mrow-w.lift::before,.mrow-w.nd::before{opacity:0}
+.mrow-w .mrow:active{background:transparent;transform:none}
+.mrow-w .mrow-in{transition:background .2s ease}
+.mrow-w.press .mrow-in{background:var(--surface2,#F4F1EC)}
+body.m-dragging .mrow-w:not(.lift) .mrow-in{background:transparent}
 .mrow-w .mrow{flex:1;min-width:0;grid-template-columns:44px 1fr;gap:10px;padding:9px 4px 9px 14px;-webkit-touch-callout:none}
 .mrow-w .mrow .thumb{width:44px;height:44px;border-radius:10px}
 .mrow-w .mrow-b{font-size:11px}.mrow-w .mrow-t b{font-size:14px;line-height:1.35;-webkit-line-clamp:2;word-break:normal;overflow-wrap:anywhere;line-break:strict}
@@ -786,8 +792,10 @@ details.acc-cmp{margin-top:14px}
 .mrow-w{will-change:transform}
 .mrow-w.lift{overflow:hidden;z-index:20;background:var(--surface);box-shadow:0 14px 34px rgba(0,0,0,.20),0 2px 6px rgba(0,0,0,.08);border-radius:14px}
 .mrow-w.lift.drop{box-shadow:0 2px 6px rgba(0,0,0,.06)}
-.mrow-w.lift .mrow-in{border-radius:14px}.mrow-w.lift .mrow,.mrow-w.lift .mrow:active{background:transparent}
+.mrow-w.lift .mrow-in{border-radius:14px;background:var(--surface)}.mrow-w.lift .mrow,.mrow-w.lift .mrow:active{background:transparent}
 .mrows>.mk-x{display:none}
+.rx-info{display:flex;align-items:center;gap:10px;margin-top:14px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;color:var(--ink);text-decoration:none;font-size:14px;font-weight:600;background:var(--surface)}
+.rx-info span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rx-info svg{width:18px;height:18px;color:var(--green-d);flex:none}.rx-info span{flex:1;min-width:0}.rx-info i{font-style:normal;color:var(--muted)}
 body.m-dragging .mrow-w:not(.lift){pointer-events:none}
 body.m-dragging{touch-action:none}
 .m-sw-in{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
@@ -3214,6 +3222,10 @@ function rxSvg(name) {
   const ty = form === 'tube' ? 43 : form === 'jar' ? 63 : form === 'can' ? 54 : 56;
   return `<svg class="rx-svg" viewBox="0 0 100 100" role="img" aria-label="${esc(n)}"><rect width="100" height="100" fill="${c}" opacity=".08"/>${body}<text x="50" y="${ty}" text-anchor="middle" font-size="${short.length > 5 ? 7.2 : short.length > 4 ? 8.5 : 10}" font-weight="700" fill="#fff" font-family="sans-serif"${short.length > 5 ? ' textLength="40" lengthAdjust="spacingAndGlyphs"' : ''}>${short}</text>${kind ? `<text x="50" y="${ty + 8}" text-anchor="middle" font-size="6" fill="#fff" opacity=".9" font-family="sans-serif">${kind}</text>` : ''}</svg>`;
 }
+// 薬の使用目的（添付文書の「効能・効果」をもとに、種類ごとにわかりやすく書いたもの）
+const RX_USE = {'ニキビ':'ニキビ（尋常性ざ瘡）','ステロイド（最も強い）':'湿疹・皮膚炎などの炎症やかゆみ','ステロイド（とても強い）':'湿疹・皮膚炎などの炎症やかゆみ','ステロイド（強い）':'湿疹・皮膚炎などの炎症やかゆみ','ステロイド（ふつう）':'湿疹・皮膚炎などの炎症やかゆみ','ステロイド（弱い）':'湿疹・皮膚炎などの炎症やかゆみ','アトピー・湿疹（ステロイド以外）':'アトピー性皮膚炎','保湿・乾燥':'皮膚の乾燥（乾皮症など）','化膿・とびひ（抗菌）':'細菌による皮膚の感染（とびひ・化膿など）','水虫・カビ（抗真菌）':'水虫・カンジダなど、カビによる皮膚の感染','乾癬':'乾癬','かゆみ':'皮膚のかゆみ','酒さ（赤ら顔）':'酒さ（赤ら顔）','汗（多汗症）':'多汗症（汗が多い）','ヘルペス':'ヘルペス（疱疹）','傷・やけど':'やけど・傷の感染を防ぐ'};
+const rxUseOf = name => { const d = RX_DRUGS.find(x => x[1] === name); return d ? (RX_USE[d[0]] || d[0]) : ''; };
+const rxInfoUrl = name => 'https://www.google.com/search?q=' + encodeURIComponent(name + ' 添付文書');
 // 薬の種類から、使用目的を自動で決める
 function rxPurposes(name, ing) {
   const d = RX_DRUGS.find(x => x[1] === name), g = d ? d[0] : '', i = String(ing || (d && d[2]) || '');
@@ -3249,7 +3261,12 @@ function rxPick(name) {
   const id = rxId(d[1]);
   if (!getCat(id)) state.catalog.push({id, isSample:false, verify:'verified', name:d[1], brand:'処方薬', category:'皮膚科の塗り薬', origin:'その他', price:0, volume:'', image:'', imageUrl:'', shopUrl:'', imgClean:false,
     purposes:rxPurposes(d[1], d[2]), ingredients:d[2], features:`${d[0]}の処方薬（有効成分：${d[2]}）`, usage:'医師・薬剤師の指示どおりに使ってください。', caution:'', jan:'', source:'添付文書の一般名', checkedAt:todayStr(), offChecked:'', offUrl:'', offers:[]});
-  ui.myKind = 'rx'; save(); closeModal(); setTimeout(() => openMyForm(null, id), 200);
+  ui.myKind = 'rx';
+  // 登録画面は出さずに、そのまま登録する（使用開始日＝今日、朝・夜／毎日、使用目的は薬の効能どおり）
+  if (state.myProducts.some(x => x.catalogId === id && x.status === '使用中')) { closeModal(); toast('この薬はすでに登録されています'); if (parseRoute().name !== 'my') location.hash = '#/my'; else render(); return; }
+  state.myProducts.push({id:uid(), demo:false, purchases:[], catalogId:id, name:d[1], brand:'処方薬', category:'皮膚科の塗り薬', purposes:rxPurposes(d[1], d[2]), ingredients:d[2],
+    timing:'朝・夜', frequency:'毎日', startDate:todayStr(), status:'使用中', endDate:'', memo:'', pao:0, order:null});
+  if (save()) { closeModal(); hapticSaved(); toast(`「${d[1]}」を登録しました`); if (parseRoute().name !== 'my') location.hash = '#/my'; else render(); }
 }
 // ===== 人気の化粧品（楽天ランキング・毎日自動で入れ替わる popular.json） =====
 let POPULAR = null, popN = 20;
@@ -5185,10 +5202,11 @@ function swipeClose(except) { if (swOpen && swOpen !== except) { const r = swOpe
     st.tops = rows.map(r => r.offsetTop); st.hs = rows.map(r => r.offsetHeight); st.h = w.offsetHeight;
     st.scroll0 = window.scrollY; st.dy = 0;
     rows.forEach(r => { if (r !== w) r.style.transition = 'transform .22s cubic-bezier(.2,.8,.2,1)'; });
-    w.style.transition = 'transform .12s ease-out, box-shadow .15s'; w.classList.add('lift'); w.style.transform = 'translateY(0) scale(1.03)';
+    w.style.transition = 'transform .12s ease-out, box-shadow .15s'; w.classList.remove('press'); w.classList.add('lift'); w.style.transform = 'translateY(0) scale(1.03)';
     setTimeout(() => { if (st && st.drag) w.style.transition = 'box-shadow .15s'; }, 130);
     document.body.classList.add('m-dragging');
     vib(10); // 浮き上がった瞬間：軽く
+    st.y = st.y0; layout();
   };
   const layout = () => {
     raf = 0; if (!st || !st.drag) return;
@@ -5201,7 +5219,9 @@ function swipeClose(except) { if (swOpen && swOpen !== except) { const r = swOpe
     let to = idx0;
     for (let k = idx0 + 1; k < rows.length; k++) if (c > tops[k] + hs[k] / 2) to = k;
     for (let k = idx0 - 1; k >= 0; k--) if (c < tops[k] + hs[k] / 2) to = k;
-    rows.forEach((r, k) => { if (r === w) return; const sh = (k > idx0 && k <= to) ? -h : (k < idx0 && k >= to) ? h : 0; r.style.transform = sh ? `translateY(${sh}px)` : ''; });
+    rows.forEach((r, k) => { if (r === w) return; const sh = (k > idx0 && k <= to) ? -h : (k < idx0 && k >= to) ? h : 0; r.style.transform = sh ? `translateY(${sh}px)` : '';
+      // 見た目の並び順で、いちばん上の項目と、持ち上げた項目のすぐ下の項目は区切り線を出さない
+      const slot = (k > idx0 && k <= to) ? k - 1 : (k < idx0 && k >= to) ? k + 1 : k; r.classList.toggle('nd', slot === 0 || slot === to + 1); });
     if (to !== st.cur) { st.cur = to; vib(5); } // 順番が変わったときだけ、ごく軽く
     // 一覧が画面の外まで続いているときだけ、上・下のはしで自動スクロール
     const vh = window.innerHeight, nav = document.querySelector('.bottom-nav'), navH = nav && nav.offsetHeight ? nav.offsetHeight : 0;
@@ -5216,7 +5236,7 @@ function swipeClose(except) { if (swOpen && swOpen !== except) { const r = swOpe
     if (!st) return;
     clearTimeout(st.t); if (raf) { cancelAnimationFrame(raf); raf = 0; }
     const s0 = st; st = null;
-    if (!s0.drag) return;
+    if (!s0.drag) { s0.w.classList.remove('press'); return; }
     const {w, rows, idx0, cur, tops, hs, h} = s0;
     // 指を離した瞬間に鳴らす（iPhoneはこの瞬間だけ鳴らせる）：少し強め
     try { if (typeof navigator.vibrate === 'function') navigator.vibrate(18); else switchTick(); } catch (err) { /* 何もしない */ }
@@ -5224,7 +5244,7 @@ function swipeClose(except) { if (swOpen && swOpen !== except) { const r = swOpe
     const fin = cur > idx0 ? tops[cur] + hs[cur] - h - tops[idx0] : tops[cur] - tops[idx0];
     w.style.transition = 'transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .2s'; w.style.transform = `translateY(${fin}px) scale(1)`; w.classList.add('drop');
     setTimeout(() => {
-      rows.forEach(r => { r.style.transition = 'none'; r.style.transform = ''; });
+      rows.forEach(r => { r.style.transition = 'none'; r.style.transform = ''; r.classList.remove('nd', 'press'); });
       w.classList.remove('lift', 'drop');
       if (cur !== idx0) { const ref = cur > idx0 ? rows[cur].nextSibling : rows[cur]; w.parentNode.insertBefore(w, ref); }
       [...w.parentNode.querySelectorAll(':scope > .mrow-w')].forEach((r, k) => { const p = getMy(r.dataset.mid); if (p) p.order = k; });
@@ -5233,21 +5253,22 @@ function swipeClose(except) { if (swOpen && swOpen !== except) { const r = swOpe
       document.body.classList.remove('m-dragging');
     }, 210);
   };
-  const start = (w, x, y) => { st = {w, x, y, y0:y, drag:false, t:setTimeout(() => { if (st && !st.drag) begin(); }, 400)}; };
+  const start = (w, x, y) => { w.classList.add('press'); st = {w, x, y, y0:y, drag:false, t:setTimeout(() => { if (st && !st.drag) begin(); }, 400)}; };
+  const cancel = () => { if (st) { clearTimeout(st.t); st.w.classList.remove('press'); st = null; } };
   document.addEventListener('touchstart', e => {
     const w = e.target.closest && e.target.closest('.mrow-w'); if (!w || e.target.closest('.m-sw') || e.target.closest('.m-del') || w.classList.contains('sw-open') || e.touches.length !== 1 || st) return;
     start(w, e.touches[0].clientX, e.touches[0].clientY);
   }, {passive:true});
   document.addEventListener('touchmove', e => {
     if (!st) return; const t = e.touches[0];
-    if (!st.drag) { if (Math.abs(t.clientY - st.y0) > 8 || Math.abs(t.clientX - st.x) > 8) { clearTimeout(st.t); st = null; } return; }
+    if (!st.drag) { if (Math.abs(t.clientY - st.y0) > 8 || Math.abs(t.clientX - st.x) > 8) cancel(); return; }
     e.preventDefault(); moveTo(t.clientY);
   }, {passive:false});
   document.addEventListener('touchend', e => { if (st && st.drag) e.preventDefault(); end(); }, {passive:false});
   document.addEventListener('touchcancel', end);
   // パソコン：マウスを押したまま0.4秒で持ち上がる
   document.addEventListener('mousedown', e => { const w = e.target.closest && e.target.closest('.mrow-w'); if (!w || e.button !== 0 || e.target.closest('.m-sw') || st) return; start(w, e.clientX, e.clientY); });
-  document.addEventListener('mousemove', e => { if (!st) return; if (!st.drag) { if (Math.abs(e.clientY - st.y0) > 6) { clearTimeout(st.t); st = null; } return; } e.preventDefault(); moveTo(e.clientY); });
+  document.addEventListener('mousemove', e => { if (!st) return; if (!st.drag) { if (Math.abs(e.clientY - st.y0) > 6) cancel(); return; } e.preventDefault(); moveTo(e.clientY); });
   document.addEventListener('mouseup', end);
   // 並べ替えたあとに指を離したとき、詳しい画面が開かないようにする
   document.addEventListener('click', e => { if (Date.now() - blockClick < 500 && e.target.closest && e.target.closest('.mrow-w')) { e.preventDefault(); e.stopPropagation(); } }, true);
@@ -5274,6 +5295,33 @@ function viewMyDetail(id) {
       <p class="small muted" style="margin-top:10px">数字は「肌の調子」の平均です（記録が3件以上ある期間のみ表示）。季節・睡眠・体調・ほかの商品なども肌に影響するため、この商品が変化の原因かどうかは判断できません。</p>`;
   }
   const fc = p.status !== STOCK ? freqCheck(p, addDays(t, -27), t) : null;
+  if (p.category === '皮膚科の塗り薬') {
+    const use = rxUseOf(p.name), ing = ingsOfMy(p) || (RX_DRUGS.find(x => x[1] === p.name) || [])[2] || '';
+    return `<a class="back" href="#/my">← Myアイテム</a>
+    <div class="card detail-top">
+      ${thumbHtml(Object.assign({}, cat || {category:p.category}, {name:p.name, isSample:false}), false)}
+      <div>
+        <div class="chips"><span class="chip">${esc(p.category)}</span>${use ? `<span class="chip green">${esc(use)}</span>` : ''}</div>
+        <div class="small muted" style="margin-top:10px">${esc(p.brand)}</div>
+        <h1 class="detail-title">${esc(p.name)}</h1>
+        <dl class="kv">
+          ${use ? `<dt>使用目的</dt><dd>${esc(use)}</dd>` : ''}
+          <dt>使用タイミング</dt><dd>${esc(p.timing === '必要なときだけ' ? '必要な時だけ' : p.timing)}（${esc(p.frequency)}）</dd>
+          <dt>使用開始日</dt><dd>${fmtDate(p.startDate)}</dd>
+          <dt>使用日数</dt><dd>${days}日${p.status === '使用終了' ? '' : '（今日まで）'}</dd>
+          <dt>成分</dt><dd>${ing ? esc(ing) : '未登録'}${known.length ? `<div class="ing-list" style="margin-top:6px">${known.map(k => `<a href="#/ingredients/${k.entry.key}">${esc(k.entry.name)}</a>`).join('')}</div>` : ''}</dd>
+        </dl>
+        <a class="rx-info" href="${rxInfoUrl(p.name)}" target="_blank" rel="noopener">${icon('book')}<span>添付文書（詳しい情報）を見る</span><i>›</i></a>
+        <p class="hint" style="margin-top:8px">使う量・回数・期間は、医師・薬剤師の指示に従ってください。</p>
+        <div class="page-actions" style="margin-top:14px">
+          <button class="btn btn-primary btn-sm" data-action="edit-my" data-id="${esc(p.id)}">編集</button>
+          <button class="btn btn-ghost btn-sm" data-action="compare-with" data-id="${esc(p.id)}">ほかと比較</button>
+        </div>
+      </div>
+    </div>
+    <div class="mt"><div class="card"><div class="card-h"><h2>肌記録との比較（参考）</h2></div>${compareHtml}</div></div>
+    <div class="card"><div class="card-h"><h2>使用感・肌状態のメモ</h2></div><p class="prose">${val(p.memo, 'メモはありません')}</p></div>`;
+  }
   return `<a class="back" href="#/my">← Myアイテム</a>
     <div class="card detail-top">
       ${thumbHtml(Object.assign({}, cat || {category:p.category}, {isSample:false}), false)}
