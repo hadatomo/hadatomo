@@ -766,6 +766,10 @@ details.acc-cmp{margin-top:14px}
 .my-kind{background:none;border:0;border-bottom:2.5px solid transparent;margin-bottom:-1px;padding:6px 0;font:inherit;font-size:14.5px;font-weight:700;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
 .my-kind span{font-size:12px;font-weight:600;background:var(--surface2,#F4F1EC);border-radius:999px;padding:1px 8px}
 .my-kind.on{color:var(--ink);border-bottom-color:var(--green-d)}.my-kind.on span{background:var(--green-l,#E5F2EA);color:var(--green-d)}.my-adds .btn{justify-content:center;gap:4px}.my-adds svg{width:16px;height:16px}
+.mrow-in{display:flex;align-items:center;flex:1;min-width:0;background:var(--surface);position:relative;z-index:1;will-change:transform}
+.m-del{position:absolute;right:0;top:0;bottom:0;width:88px;border:0;background:#D64545;color:#fff;font:inherit;font-size:12px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;visibility:hidden}
+.mrow-w.sw-open .m-del{visibility:visible}.m-del svg{width:20px;height:20px}
+.mrows{overflow:hidden}.mrows:has(.lift){overflow:visible}
 .mrow-w{display:flex;align-items:center;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;position:relative;transition:box-shadow .15s,transform .05s}.mrow-w+.mrow-w{border-top:1px solid var(--line)}
 .mrow-w .mrow{flex:1;min-width:0;grid-template-columns:44px 1fr;gap:10px;padding:9px 4px 9px 14px;-webkit-touch-callout:none}
 .mrow-w .mrow .thumb{width:44px;height:44px;border-radius:10px}
@@ -1026,6 +1030,11 @@ body::before{content:'';position:fixed;left:0;right:0;top:0;height:env(safe-area
 .pop-item .pop-img,.pop-item .xim{flex:none;width:48px;height:48px;border-radius:10px;overflow:hidden;background:#F2F1EE;display:block}.pop-item .xim img{width:100%;height:100%;object-fit:contain;background:#fff}
 .pop-t{flex:1;min-width:0}.pop-t b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:13px;line-height:1.4}.pop-t small{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
 .pop-item i{flex:none;color:var(--green-d)}.pop-item i svg{width:18px;height:18px}
+.tm-pick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tm-opt{display:flex;cursor:pointer;position:relative}.tm-opt input{position:absolute;opacity:0;pointer-events:none}
+.tm-opt span{flex:1;display:flex;align-items:center;justify-content:center;min-height:44px;padding:0 4px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);font-weight:700;font-size:clamp(12px,3.6vw,14.5px);white-space:nowrap;letter-spacing:-.02em;color:var(--ink2)}
+.tm-opt input:checked+span{background:var(--green-l,#E5F2EA);border-color:var(--green);color:var(--green-d)}
+.tm-opt input:focus-visible+span{outline:2px solid var(--green-d);outline-offset:2px}
 .rx-g{font-size:13px;color:var(--green-d);margin:16px 0 6px}
 .rx-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 12px;margin:0 0 6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font:inherit;color:var(--ink);cursor:pointer}
 .rx-item span{flex:1;min-width:0}.rx-item b{display:block;font-size:14px}.rx-item small{display:block;font-size:11.5px;color:var(--muted);overflow-wrap:anywhere}
@@ -1954,6 +1963,7 @@ const ICONS = {
   heart:'<path d="M12 20s-7.5-4.6-9.2-9.2C1.6 7.4 3.9 4.5 7 4.5c2 0 3.4 1.1 5 3 1.6-1.9 3-3 5-3 3.1 0 5.4 2.9 4.2 6.3C19.5 15.4 12 20 12 20z"/>',
   image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-10 9"/>',
   moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+  trash:'<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/><path d="M10 11v6M14 11v6"/>',
   bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
   leaf:'<path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14z"/><path d="M5 19 13 11"/>',
   check:'<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/>',
@@ -3164,6 +3174,18 @@ function rxSvg(name) {
   const ty = form === 'tube' ? 43 : form === 'jar' ? 63 : form === 'can' ? 54 : 56;
   return `<svg class="rx-svg" viewBox="0 0 100 100" role="img" aria-label="${esc(n)}"><rect width="100" height="100" fill="${c}" opacity=".08"/>${body}<text x="50" y="${ty}" text-anchor="middle" font-size="${short.length > 5 ? 7.2 : short.length > 4 ? 8.5 : 10}" font-weight="700" fill="#fff" font-family="sans-serif"${short.length > 5 ? ' textLength="40" lengthAdjust="spacingAndGlyphs"' : ''}>${short}</text>${kind ? `<text x="50" y="${ty + 8}" text-anchor="middle" font-size="6" fill="#fff" opacity=".9" font-family="sans-serif">${kind}</text>` : ''}</svg>`;
 }
+// 薬の種類から、使用目的を自動で決める
+function rxPurposes(name, ing) {
+  const d = RX_DRUGS.find(x => x[1] === name), g = d ? d[0] : '', i = String(ing || (d && d[2]) || '');
+  const out = new Set();
+  if (/ニキビ/.test(g)) out.add('ニキビ対策');
+  if (/アダパレン|過酸化ベンゾイル|イオウ/.test(i)) out.add('角質ケア');
+  if (/ステロイド|アトピー|かゆみ|乾癬|酒さ/.test(g)) out.add('鎮静・肌あれ対策');
+  if (/保湿/.test(g)) out.add('保湿');
+  if (/アトピー/.test(g) && /デルゴシチニブ|ジファミラスト|タクロリムス|タピナロフ/.test(i)) out.add('鎮静・肌あれ対策');
+  if (!out.size) out.add('その他');
+  return [...out];
+}
 const rxId = n => 'rx-' + fnorm(n).replace(/[^0-9a-z぀-ヿ一-龯]/g, '').slice(0, 40);
 function openRxSheet() {
   const groups = [...new Set(RX_DRUGS.map(d => d[0]))];
@@ -3186,7 +3208,7 @@ function rxPick(name) {
   const d = RX_DRUGS.find(x => x[1] === name); if (!d) return;
   const id = rxId(d[1]);
   if (!getCat(id)) state.catalog.push({id, isSample:false, verify:'verified', name:d[1], brand:'処方薬', category:'皮膚科の塗り薬', origin:'その他', price:0, volume:'', image:'', imageUrl:'', shopUrl:'', imgClean:false,
-    purposes:[], ingredients:d[2], features:`${d[0]}の処方薬（有効成分：${d[2]}）`, usage:'医師・薬剤師の指示どおりに使ってください。', caution:'', jan:'', source:'添付文書の一般名', checkedAt:todayStr(), offChecked:'', offUrl:'', offers:[]});
+    purposes:rxPurposes(d[1], d[2]), ingredients:d[2], features:`${d[0]}の処方薬（有効成分：${d[2]}）`, usage:'医師・薬剤師の指示どおりに使ってください。', caution:'', jan:'', source:'添付文書の一般名', checkedAt:todayStr(), offChecked:'', offUrl:'', offers:[]});
   ui.myKind = 'rx'; save(); closeModal(); setTimeout(() => openMyForm(null, id), 200);
 }
 // ===== 人気の化粧品（楽天ランキング・毎日自動で入れ替わる popular.json） =====
@@ -5055,10 +5077,10 @@ function viewMy() {
       const on = p.status === '使用中';
       const days = diffDays(p.startDate, productEnd(p)) + 1;
       const period = p.status === '使用終了' ? `${fmtShort(p.startDate)}〜${fmtShort(p.endDate)}（${days}日）` : p.status === STOCK ? `${fmtShort(p.startDate)} 購入` : (days > 0 ? `${days}日目` : `${fmtShort(p.startDate)}から`);
-      const meta = [useN[p.id] ? `使用${useN[p.id]}回` : '', on ? p.timing : '', on ? p.frequency : '', period].filter(Boolean).join('・');
-      return `<div class="mrow-w ${on ? '' : 'off'}" data-mid="${esc(p.id)}"><a class="mrow" draggable="false" href="#/my/${encodeURIComponent(p.id)}">${thumbHtml(Object.assign({}, cat, {name:p.name, isSample:false}), false)}
+      const meta = [useN[p.id] ? `使用${useN[p.id]}回` : '', on ? (p.timing === '必要なときだけ' ? '必要な時だけ' : p.timing) : '', on ? p.frequency : '', period].filter(Boolean).join('・');
+      return `<div class="mrow-w ${on ? '' : 'off'}" data-mid="${esc(p.id)}"><button type="button" class="m-del" data-action="swipe-del" data-id="${esc(p.id)}" tabindex="-1">${icon('trash')}<span>削除</span></button><div class="mrow-in"><a class="mrow" draggable="false" href="#/my/${encodeURIComponent(p.id)}">${thumbHtml(Object.assign({}, cat, {name:p.name, isSample:false}), false)}
         <span class="mrow-t"><span class="mrow-b">${esc(p.brand)}${cat.category ? '・' + esc(cat.category) : ''}</span><b>${esc(p.name)}</b><small>${esc(meta)}</small>${on && prodLifeChips(p) ? `<span class="mrow-life">${prodLifeChips(p)}</span>` : ''}</span></a>
-        <label class="m-sw ${on ? 'on' : ''}"><input type="checkbox" switch class="m-sw-in" data-id="${esc(p.id)}" ${on ? 'checked' : ''} aria-label="${esc(p.name)}を使用中にする"><i aria-hidden="true"></i><span>${on ? '使用中' : '停止中'}</span></label></div>`;
+        <label class="m-sw ${on ? 'on' : ''}"><input type="checkbox" switch class="m-sw-in" data-id="${esc(p.id)}" ${on ? 'checked' : ''} aria-label="${esc(p.name)}を使用中にする"><i aria-hidden="true"></i><span>${on ? '使用中' : '停止中'}</span></label></div></div>`;
     }).join('')}</div>`;
   }
   return html + tools;
@@ -5074,6 +5096,38 @@ document.addEventListener('change', e => {
   const lb = ip.closest('.m-sw'); if (lb) { lb.classList.toggle('on', on); lb.querySelector('span').textContent = on ? '使用中' : '停止中'; }
   const w = ip.closest('.mrow-w'); if (w) w.classList.toggle('off', !on);
 });
+// ===== Myアイテム：左にスワイプすると「削除」が出る（iPhoneのメールなどと同じ） =====
+let swOpen = null;
+function swipeClose(except) { if (swOpen && swOpen !== except) { const r = swOpen; r.style.transition = 'transform .22s cubic-bezier(.2,.8,.2,1)'; r.style.transform = ''; r.closest('.mrow-w').classList.remove('sw-open'); swOpen = null; } }
+(() => {
+  const W = 88; let sw = null, blockClick = 0;
+  document.addEventListener('touchstart', e => {
+    const w = e.target.closest && e.target.closest('.mrow-w'); if (!w || e.target.closest('.m-del')) { if (!e.target.closest || !e.target.closest('.m-del')) swipeClose(); return; }
+    const inn = w.querySelector('.mrow-in'); if (swOpen && swOpen !== inn) swipeClose();
+    const t = e.touches[0]; sw = {inn, x:t.clientX, y:t.clientY, base:inn === swOpen ? -W : 0, on:false};
+  }, {passive:true});
+  document.addEventListener('touchmove', e => {
+    if (!sw || document.body.classList.contains('m-dragging')) { sw = null; return; }
+    const t = e.touches[0], dx = t.clientX - sw.x, dy = t.clientY - sw.y;
+    if (!sw.on) { if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy) * 1.3) { sw.on = true; sw.inn.style.transition = 'none'; sw.inn.closest('.mrow-w').classList.add('sw-open'); } else if (Math.abs(dy) > 10) { sw = null; return; } else return; }
+    e.preventDefault();
+    let x = sw.base + dx; if (x > 0) x = x / 4; if (x < -W) x = -W + (x + W) / 3;
+    sw.inn.style.transform = `translateX(${x}px)`; sw.x2 = x;
+  }, {passive:false});
+  document.addEventListener('touchend', () => {
+    if (!sw) return; const s0 = sw; sw = null; if (!s0.on) return;
+    blockClick = Date.now();
+    const open = (s0.x2 || 0) < -W / 2;
+    s0.inn.style.transition = 'transform .22s cubic-bezier(.2,.8,.2,1)'; s0.inn.style.transform = open ? `translateX(${-W}px)` : '';
+    if (open) { swOpen = s0.inn; try { navigator.vibrate && navigator.vibrate(8); } catch (err) { /* 何もしない */ } } else { s0.inn.closest('.mrow-w').classList.remove('sw-open'); if (swOpen === s0.inn) swOpen = null; }
+  });
+  // スワイプした直後に、詳しい画面が開かないようにする／開いているときに行を押したら閉じる
+  document.addEventListener('click', e => {
+    const w = e.target.closest && e.target.closest('.mrow-w');
+    if (w && Date.now() - blockClick < 400) { e.preventDefault(); e.stopPropagation(); return; }
+    if (swOpen && w && !e.target.closest('.m-del')) { e.preventDefault(); e.stopPropagation(); swipeClose(); }
+  }, true);
+})();
 // ===== Myアイテム：長押しで持ち上げて、指でつかんだまま動かして並べ替える（iPhoneの標準アプリのような動き） =====
 // ・長押し（0.4秒）で少し大きくなって浮き上がる（影つき・一番手前）
 // ・動かすと、まわりの項目がなめらかに場所をあける。指を離すと、その場所に収まって保存する
@@ -5134,7 +5188,7 @@ document.addEventListener('change', e => {
   };
   const start = (w, x, y) => { st = {w, x, y, y0:y, drag:false, t:setTimeout(() => { if (st && !st.drag) begin(); }, 400)}; };
   document.addEventListener('touchstart', e => {
-    const w = e.target.closest && e.target.closest('.mrow-w'); if (!w || e.target.closest('.m-sw') || e.touches.length !== 1 || st) return;
+    const w = e.target.closest && e.target.closest('.mrow-w'); if (!w || e.target.closest('.m-sw') || e.target.closest('.m-del') || w.classList.contains('sw-open') || e.touches.length !== 1 || st) return;
     start(w, e.touches[0].clientX, e.touches[0].clientY);
   }, {passive:true});
   document.addEventListener('touchmove', e => {
@@ -5177,11 +5231,11 @@ function viewMyDetail(id) {
     <div class="card detail-top">
       ${thumbHtml(Object.assign({}, cat || {category:p.category}, {isSample:false}), false)}
       <div>
-        <div class="chips">${statusChip(p.status)}<span class="chip">${esc(p.category)}</span>${p.purposes.map(x => `<span class="chip green">${esc(x)}</span>`).join('')}${p.demo ? '<span class="badge-sample">デモ</span>' : ''}</div>
+        <div class="chips"><span class="chip">${esc(p.category)}</span>${p.purposes.map(x => `<span class="chip green">${esc(x)}</span>`).join('')}${p.demo ? '<span class="badge-sample">デモ</span>' : ''}</div>
         <div class="small muted" style="margin-top:10px">${esc(p.brand)}</div>
         <h1 class="detail-title">${esc(p.name)}</h1>
         <dl class="kv">
-          ${p.status !== STOCK ? `<dt>使用タイミング</dt><dd>${esc(p.timing)}</dd><dt>使用頻度（予定）</dt><dd>${esc(p.frequency)}</dd>` : ''}
+          ${p.status !== STOCK ? `<dt>使用タイミング</dt><dd>${esc(p.timing === '必要なときだけ' ? '必要な時だけ' : p.timing)}</dd><dt>使用頻度（予定）</dt><dd>${esc(p.frequency)}</dd>` : ''}
           <dt>${p.status === STOCK ? '購入・登録日' : '使用開始日'}</dt><dd>${fmtDate(p.startDate)}</dd>
           ${p.status === '使用終了' ? `<dt>使用終了日</dt><dd>${fmtDate(p.endDate)}</dd>` : ''}
           ${p.status !== STOCK ? `<dt>使用日数</dt><dd>${days}日${p.status === '使用終了' ? '' : '（今日まで）'}</dd>` : ''}
@@ -5190,9 +5244,7 @@ function viewMyDetail(id) {
         </dl>
         <div class="page-actions" style="margin-top:16px">
           <button class="btn btn-primary btn-sm" data-action="edit-my" data-id="${esc(p.id)}">編集</button>
-          ${p.status === '使用中' || p.status === '一時停止' ? `<button class="btn btn-ghost btn-sm" data-action="end-my" data-id="${esc(p.id)}">使用終了にする</button>` : ''}
           ${p.status !== STOCK ? `<button class="btn btn-ghost btn-sm" data-action="compare-with" data-id="${esc(p.id)}">ほかの商品と比較</button>` : ''}
-          <button class="btn btn-danger-ghost btn-sm" data-action="delete-my" data-id="${esc(p.id)}">削除</button>
         </div>
       </div>
     </div>
@@ -5200,15 +5252,7 @@ function viewMyDetail(id) {
       <p style="font-size:14px">${esc(fc.text)}</p>
       ${fc.status === 'none' ? '<p class="small muted" style="margin-top:6px">肌の記録で「今日使った化粧品」にチェックすると、実際の使用回数と比べられます。</p>' : ''}
       ${fc.status === 'over' ? `<div class="alert-card" style="margin-top:10px"><b>使用回数を確認してください</b><span style="white-space:pre-line">${esc(overuseNote(p))}</span></div>` : ''}</div>` : ''}
-    <div class="grid g2 mt">
-      <div class="card"><div class="card-h"><h2>購入記録</h2><button class="btn btn-soft btn-sm" data-action="add-purchase" data-id="${esc(p.id)}">${icon('plus')}追加</button></div>
-        ${p.purchases.length ? `<table class="table"><thead><tr><th>購入日</th><th class="r">金額</th><th></th></tr></thead><tbody>
-          ${p.purchases.slice().sort((a,b) => b.date.localeCompare(a.date)).map(x => `<tr><td>${esc(x.date.replace(/-/g, '/'))}${x.memo ? `<div class="small muted">${esc(x.memo)}</div>` : ''}</td><td class="r">${yen(x.price)}</td><td class="r"><button class="btn btn-ghost btn-sm" data-action="delete-purchase" data-id="${esc(p.id)}|${esc(x.id)}">削除</button></td></tr>`).join('')}
-          </tbody></table>
-          <div class="divider"></div>
-          <dl class="kv"><dt>合計</dt><dd><b>${yen(totalSpent)}</b></dd>${p.status !== STOCK ? `<dt>1日あたりの目安</dt><dd>${days ? yen(totalSpent / days) : '—'}<span class="small muted">（合計 ÷ 使用日数）</span></dd>` : ''}</dl>`
-        : '<p class="small muted">購入記録がありません。買い足したときも「追加」から記録できます。</p>'}
-      </div>
+    <div class="mt">
       <div class="card"><div class="card-h"><h2>肌記録との比較（参考）</h2></div>${compareHtml}</div>
     </div>
     <div class="card mt"><div class="card-h"><h2>成分</h2>${known.length ? '<a class="link" href="#/combo">組み合わせを確認 →</a>' : ''}</div>
@@ -5249,25 +5293,23 @@ function openMyForm(id, fromCatId) {
   const ex = id ? getMy(id) : null;
   const src = fromCatId ? getCat(fromCatId) : null;
   const t = todayStr();
-  const p = ex || {catalogId:src ? src.id : '', name:src ? src.name : '', brand:src ? (src.brand || brandFromName(src.name)) : '', category:src ? (src.category && src.category !== 'その他' ? src.category : guessCat(src.name)) : '化粧水・トナー', purposes:src ? src.purposes.slice() : [], ingredients:'',
+  const p = ex || {catalogId:src ? src.id : '', name:src ? src.name : '', brand:src ? (src.brand || brandFromName(src.name)) : '', category:src ? (src.category && src.category !== 'その他' ? src.category : guessCat(src.name)) : '化粧水・トナー', purposes:src ? (src.category === '皮膚科の塗り薬' && !src.purposes.length ? rxPurposes(src.name, src.ingredients) : src.purposes.slice()) : [], ingredients:'',
     timing:'朝・夜', frequency:'毎日', startDate:t, status:'使用中', endDate:'', memo:''};
   const catOpts = state.catalog.map(c => ({v:c.id, label:`${c.isSample ? '[サンプル] ' : ''}${c.brand}｜${c.name}`}));
   const linkedIngs = p.catalogId && getCat(p.catalogId) ? getCat(p.catalogId).ingredients : '';
   openModal({title: ex ? 'Myアイテムを編集' : 'Myアイテムに登録', body: `<form id="my-form" novalidate><div class="form-grid two">
-    ${field('商品データベースから選ぶ', selectHtml('catalogId', catOpts, p.catalogId, '選ばずに直接入力する'), {name:'catalogId', cls:'span2', hint:'選ぶと商品名・ブランド・カテゴリ・使用目的が自動入力されます'})}
+    <input type="hidden" name="catalogId" value="${esc(p.catalogId)}">
     ${field('商品名', `<input class="input" id="f_name" name="name" maxlength="80" value="${esc(p.name)}" autocomplete="off"><div class="hint name-auto" id="name-auto"></div>`, {name:'name', required:true, cls:'span2'})}
     ${field('ブランド名', `<input class="input" id="f_brand" name="brand" maxlength="40" list="brand-list2" value="${esc(p.brand)}"><datalist id="brand-list2">${BRAND_SUGGEST.map(b => `<option value="${esc(b)}">`).join('')}</datalist>`, {name:'brand', required:true})}
     ${field('カテゴリ', selectHtml('category', CATEGORIES, p.category), {name:'category', required:true})}
     ${field('使用目的', checksHtml('purposes', PURPOSES, p.purposes), {name:'purposes', cls:'span2', optLabel:'任意・複数選択可'})}
-    ${field('ステータス', seg('status', STATUSES.map(x => ({v:x, label:x === STOCK ? 'ストック' : x})), p.status), {name:'status', required:true, cls:'span2', hint:'ストック＝買ったけれど、まだ開けていない商品'})}
     <div class="span2 form-grid two" id="use-wrap" style="gap:16px">
-      ${field('使用タイミング', seg('timing', TIMINGS.map(x => ({v:x, label:x})), p.timing), {name:'timing', required:true, cls:'span2'})}
+      ${field('使用タイミング', `<div class="tm-pick">${[['朝', '朝'], ['夜', '夜'], ['必要なときだけ', '必要な時だけ']].map(([v, l]) => `<label class="tm-opt"><input type="checkbox" name="tm" value="${v}" ${(v === '必要なときだけ' ? p.timing === v : String(p.timing).split('・').includes(v)) ? 'checked' : ''}><span>${l}</span></label>`).join('')}</div>`, {name:'timing', required:true, cls:'span2', hint:'朝と夜の両方に使うときは、2つとも選んでください'})}
       ${field('使用頻度（予定）', selectHtml('frequency', FREQS, p.frequency), {name:'frequency', required:true})}
     </div>
     ${field('使用開始日（開封日）', `<input type="date" class="input" id="f_startDate" name="startDate" value="${esc(p.startDate)}" max="${t}">`, {name:'startDate', required:true, hint:'ストックの場合は購入日'})}
     ${field('開封後の使用期限の目安', selectHtml('pao', [{v:'0', label:`カテゴリの目安（${PAO_DEF[p.category] || 6}か月）`}, {v:'3', label:'3か月'}, {v:'6', label:'6か月'}, {v:'12', label:'12か月'}, {v:'24', label:'24か月'}].map(o => o.v === '0' ? o : o), String(p.pao || 0)), {name:'pao', hint:'パッケージに「開封後◯か月」（缶のふたのようなマーク）が書いてあれば、それを選んでください'})}
-    <div id="end-wrap" ${p.status === '使用終了' ? '' : 'hidden'}>${field('使用終了日', `<input type="date" class="input" id="f_endDate" name="endDate" value="${esc(p.endDate)}" max="${t}">`, {name:'endDate', required:true})}</div>
-    ${ex ? `<p class="small muted span2">購入価格・購入日は、詳細画面の「購入記録」から追加・削除できます。</p>`
+    ${ex || p.category === '皮膚科の塗り薬' ? ''
       : `${field('購入価格（円）', `<input class="input" id="f_price" name="price" inputmode="numeric" placeholder="例：1800" value="${src && src.price ? esc(src.price) : ''}">`, {name:'price', hint:'入力すると支出管理に集計されます'})}
          ${field('購入日', `<input type="date" class="input" id="f_purchaseDate" name="purchaseDate" value="${t}" max="${t}">`, {name:'purchaseDate'})}`}
     ${field('全成分', `<textarea class="textarea" id="f_ingredients" name="ingredients" maxlength="4000" placeholder="${linkedIngs ? '空欄の場合は、商品データベースの全成分を使います' : '読点（、）で区切って入力'}">${esc(p.ingredients)}</textarea><button type="button" class="btn btn-ghost btn-sm" id="ing-clean2" style="margin-top:8px">貼り付けた文字を整える</button>`, {name:'ingredients', cls:'span2', hint:'成分の組み合わせレポートに使います'})}
@@ -5275,14 +5317,11 @@ function openMyForm(id, fromCatId) {
   </div></form>`,
   footer: `<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="submit" form="my-form" class="btn btn-primary">${ex ? '保存する' : '登録する'}</button>`});
   const form = $('#my-form');
-  const syncStatus = () => {
-    const st = form.elements.status.value;
-    $('#end-wrap').hidden = st !== '使用終了';
-    $('#use-wrap').hidden = st === STOCK;
-    if (st === '使用終了' && !form.elements.endDate.value) form.elements.endDate.value = t;
-  };
-  syncStatus();
-  $$('input[name="status"]', form).forEach(r => r.onchange = syncStatus);
+  // 使用タイミング：「必要な時だけ」を選んだら朝・夜は外す（逆も同じ）
+  $$('input[name="tm"]', form).forEach(c => c.addEventListener('change', () => {
+    if (!c.checked) return;
+    $$('input[name="tm"]', form).forEach(o => { if (o !== c && ((c.value === '必要なときだけ') !== (o.value === '必要なときだけ'))) o.checked = false; });
+  }));
   $('#ing-clean2').onclick = () => { form.elements.ingredients.value = cleanIngText(form.elements.ingredients.value); toast('読点（、）区切りに整えました'); };
   form.elements.catalogId.onchange = e => {
     const c = getCat(e.target.value); if (!c) return;
@@ -5322,14 +5361,12 @@ function openMyForm(id, fromCatId) {
     if (!v('brand')) errors.brand = 'ブランド名を入力してください。';
     if (!isValidYmd(v('startDate'))) errors.startDate = '日付を選択してください。';
     else if (v('startDate') > t) errors.startDate = '未来の日付は選べません。';
-    const status = v('status');
-    if (status === '使用終了') {
-      if (!isValidYmd(v('endDate'))) errors.endDate = '使用終了日を選択してください。';
-      else if (isValidYmd(v('startDate')) && v('endDate') < v('startDate')) errors.endDate = '使用終了日は使用開始日以降にしてください。';
-      else if (v('endDate') > t) errors.endDate = '未来の日付は選べません。';
-    }
+    const status = ex ? ex.status : '使用中';
+    const tms = $$('input[name="tm"]:checked', form).map(i => i.value);
+    const timing = tms.includes('必要なときだけ') ? '必要なときだけ' : tms.length === 2 ? '朝・夜' : tms[0] || '';
+    if (!timing) errors.timing = '使用タイミングを選んでください。';
     let price = '';
-    if (!ex) {
+    if (!ex && form.elements.price) {
       price = parseYen(v('price'));
       if (isNaN(price)) errors.price = '価格は0以上の整数（半角数字）で入力してください。';
       else if (price > 0 && !isValidYmd(v('purchaseDate'))) errors.purchaseDate = '購入日を選択してください。';
@@ -5337,7 +5374,7 @@ function openMyForm(id, fromCatId) {
     }
     if (!showErrors(form, errors)) return;
     const data = {catalogId:v('catalogId'), name:v('name'), brand:v('brand'), category:v('category'), purposes:$$('input[name="purposes"]:checked', form).map(i => i.value),
-      timing:v('timing') || '朝・夜', frequency:v('frequency') || '毎日', startDate:v('startDate'), status, endDate:status === '使用終了' ? v('endDate') : '',
+      timing, frequency:v('frequency') || '毎日', startDate:v('startDate'), status, endDate:ex ? ex.endDate : '',
       ingredients:cleanIngText(v('ingredients')), memo:v('memo'), pao:Number(v('pao')) || 0};
     let target;
     if (ex) { Object.assign(ex, data); target = ex; }
@@ -9343,6 +9380,15 @@ const actions = {
   'clear-filter': () => { const sheet = !!document.getElementById('flt-done'); Object.assign(ui, {q:'', brand:'', cat:'', origin:'', ing:false, ingQ:'', purpose:'', maxPrice:'', sort:'std'}); if (sheet) closeModal(); render(); if (sheet) openFilterSheet(); },
   'my-filter': v => { ui.myFilter = v; render(); },
   'my-kind': v => { ui.myKind = v; render(); },
+  'swipe-del': async id => {
+    const p = getMy(id); if (!p) return;
+    if (!await confirmDialog(`「${p.name}」を削除しますか？`, {ok:'削除する'})) { swipeClose(); return; }
+    state.myProducts = state.myProducts.filter(x => x.id !== id);
+    state.skinLogs.forEach(l => { l.usedProducts = (l.usedProducts || []).filter(x => x !== id); });
+    save(); hapticSaved();
+    const w = document.querySelector(`.mrow-w[data-mid="${CSS.escape(id)}"]`);
+    if (w) { w.style.transition = 'opacity .2s, max-height .25s'; w.style.maxHeight = w.offsetHeight + 'px'; requestAnimationFrame(() => { w.style.opacity = '0'; w.style.maxHeight = '0px'; }); setTimeout(render, 260); } else render();
+  },
   'my-toggle': id => {
     const p = getMy(id); if (!p) return;
     if (p.status === '使用中') p.status = '一時停止'; else { p.status = '使用中'; p.endDate = ''; }
