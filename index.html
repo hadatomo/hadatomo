@@ -152,9 +152,9 @@ main{max-width:1100px;margin:0 auto;padding:20px 16px calc(150px + env(safe-area
 .bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:max(4px,calc(env(safe-area-inset-bottom) - 16px))} /* 下のバーを全体的に下げる（iPhoneの下の線の近くまで） */
 .bn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 0 7px;font-size:10.5px;color:var(--muted);text-decoration:none;background:none;border:0;cursor:pointer;min-width:0;white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .bn-item span{max-width:100%;overflow:hidden;text-overflow:clip}
-.bn-item svg{width:22px;height:22px}
+.bn-item svg{width:20px;height:20px}
 .bn-item{font-weight:600}
-.bn-item span{font-size:13px;font-weight:600;letter-spacing:0;line-height:1.25} /* 上のタブ（今日の記録・おすすめケア…）と同じ文字の感じにそろえる */
+.bn-item span{font-size:11px;font-weight:600;letter-spacing:0;line-height:1.25} /* 上のタブ（今日の記録・おすすめケア…）と同じ文字の感じにそろえる */
 .bn-item.active{color:#E8781E} /* 選んでいる項目はオレンジ（光・太さ・大きさの変化はなし） */
 .bn-item svg,.bn-item span{transition:transform .2s ease}
 .bn-item.active svg{transform:none}
