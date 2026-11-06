@@ -155,7 +155,7 @@ button{font-family:inherit}
 .topbar>#top-menu,.topbar>.hap-keep{margin-left:auto}
 /* メニュー（三本線）はなくした。中の画面は、ホームの「ショートカット」からすべて開ける */
 .topbar #top-menu,.topbar .hap-keep:has(#top-menu){display:none!important}
-.topbar:has(.wm-home){min-height:calc(52px + env(safe-area-inset-top))}
+.topbar{min-height:calc(65px + env(safe-area-inset-top))} /* 上の帯の高さは、どの画面でも同じにする */
 .wordmark small{display:block;font-family:var(--font);font-size:10px;letter-spacing:.08em;color:var(--muted);margin-top:2px}
 main{max-width:1100px;margin:0 auto;padding:20px 16px calc(150px + env(safe-area-inset-bottom))} /* 一番下にも余白：最後のカードが下のバーにくっつかないように */
 .bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:max(4px,calc(env(safe-area-inset-bottom) - 16px))} /* 下のバーを全体的に下げる（iPhoneの下の線の近くまで） */
@@ -975,6 +975,18 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .sc-dots{position:absolute;left:4px;top:3px;display:flex;gap:2px}.sc-dots i,.sc-lg i.dot{width:6px;height:6px;border-radius:50%;display:inline-block}
 .sc-dots i.p,.sc-lg i.p{background:#E86A92}.sc-dots i.w,.sc-lg i.w{background:#4A90D9}
 .sc-lg{display:flex;flex-wrap:wrap;gap:4px 10px;margin:10px 0 0;font-size:11px;color:var(--ink2)}.sc-lg span{display:flex;align-items:center;gap:4px}.sc-lg i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.ps-wrap{position:fixed;inset:0;z-index:4000;display:flex;align-items:flex-end;justify-content:center}
+.ps-bg{position:absolute;inset:0;background:rgba(20,20,20,.45);opacity:0;transition:opacity .2s}
+.ps{position:relative;width:100%;max-width:520px;max-height:92vh;overflow:auto;background:var(--surface);border-radius:24px 24px 0 0;padding:22px 20px calc(20px + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform .22s ease-out}
+.ps-wrap.on .ps-bg{opacity:1}.ps-wrap.on .ps{transform:none}
+@media(min-width:640px){.ps-wrap{align-items:center}.ps{border-radius:24px}}
+.ps-x{position:absolute;top:12px;right:12px;width:36px;height:36px}
+.ps-kicker{margin:0 40px 4px 0;font-size:12px;color:var(--green-d);font-weight:700}
+.ps h2{margin:0;font-size:22px}.ps-price{margin:4px 0 10px;font-size:13px;color:var(--ink2)}.ps-price b{font-size:18px;color:var(--ink)}
+.ps-list{margin:0 0 14px;padding:12px 14px 12px 32px;background:var(--green-l,#E5F2EA);border-radius:14px;font-size:13.5px;line-height:1.7}
+#ps-form{display:flex;flex-direction:column;gap:10px}.ps-note,.ps-me{margin:0}
+.ps-agree{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.6}.ps-agree input{margin-top:3px;width:18px;height:18px;flex:none}
+.ps-go{width:100%;justify-content:center;min-height:50px;font-size:16px}.ps-foot{margin:0;text-align:center}
 .wx-box{display:flex;flex-direction:column;gap:6px;margin:12px 0;padding:12px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);position:relative}
 .wx-box.wx-setup{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;font-size:12.5px;color:var(--ink2)}
 .wx-box.wx-setup svg{width:16px;height:16px;color:var(--green-d)}
@@ -1738,7 +1750,7 @@ const locked = () => PREMIUM_LOCK && !isPremium();
 function lockCard(title, desc) {
   return `<div class="card lock-card"><div class="card-h"><h2>${esc(title)}</h2><span class="badge-premium">${PREMIUM_NAME}</span></div><p class="small" style="color:var(--ink2)">${esc(desc)}</p>
     <p class="small muted" style="margin-top:6px">肌の記録や成分の注意点など、基本の機能と安全に関わる情報は、無料プランでも使えます。</p>
-    <a class="btn btn-soft btn-sm" style="margin-top:12px" href="#/plan">${PREMIUM_NAME}について見る</a></div>`;
+    <a class="btn btn-primary btn-sm" style="margin-top:12px" href="#/plan" data-psheet="${esc(title)}">${PREMIUM_NAME}にする</a></div>`;
 }
 /* 肌悩みと、それに関係する「使用目的」（商品の登録時に選ぶ目的） */
 const CONCERNS = ['ニキビ','乾燥','赤み','皮脂・テカリ','毛穴','くすみ','肌あれ','ハリ・エイジング'];
@@ -2156,6 +2168,7 @@ function normalize(d) {
   out.settings.startHidden = !!ds.startHidden; out.settings.a2hsDone = !!ds.a2hsDone; // はじめにやること
   out.settings.remindDone = !!ds.remindDone; out.settings.remindHide = !!ds.remindHide; out.settings.dermHide = isValidYmd(ds.dermHide) ? ds.dermHide : ''; out.settings.comboHide = typeof ds.comboHide === 'string' ? ds.comboHide.slice(0, 400) : '';
   out.settings.wxPref = typeof ds.wxPref === 'string' && (PREFS_NAMES.includes(ds.wxPref) || ds.wxPref === '現在地') ? ds.wxPref : ''; // 天気の地域（都道府県 or 現在地）
+  out.settings.wxPlace = typeof ds.wxPlace === 'string' ? ds.wxPlace.slice(0, 12) : '';
   out.settings.wxLoc = ds.wxLoc && Number.isFinite(+ds.wxLoc.lat) && Number.isFinite(+ds.wxLoc.lon) ? {lat:+ds.wxLoc.lat, lon:+ds.wxLoc.lon} : null; // 現在地（約1kmに丸めた位置）
   out.settings.cloudSync = !!ds.cloudSync; // クラウドに保存する（ログインしている人だけ）
   out.settings.hideHelp = !!ds.hideHelp; // ボタン・入力欄の説明文を隠す（設定の「画面の表示」）
@@ -5155,11 +5168,22 @@ function factorCardHtml() {
 const PREFS = [['北海道',43.06,141.35],['青森',40.82,140.74],['岩手',39.70,141.15],['宮城',38.27,140.87],['秋田',39.72,140.10],['山形',38.24,140.36],['福島',37.75,140.47],['茨城',36.34,140.45],['栃木',36.57,139.88],['群馬',36.39,139.06],['埼玉',35.86,139.65],['千葉',35.61,140.12],['東京',35.69,139.69],['神奈川',35.45,139.64],['新潟',37.90,139.02],['富山',36.70,137.21],['石川',36.59,136.63],['福井',36.07,136.22],['山梨',35.66,138.57],['長野',36.65,138.18],['岐阜',35.39,136.72],['静岡',34.98,138.38],['愛知',35.18,136.91],['三重',34.73,136.51],['滋賀',35.00,135.87],['京都',35.02,135.76],['大阪',34.69,135.52],['兵庫',34.69,135.18],['奈良',34.69,135.83],['和歌山',34.23,135.17],['鳥取',35.50,134.24],['島根',35.47,133.05],['岡山',34.66,133.93],['広島',34.40,132.46],['山口',34.19,131.47],['徳島',34.07,134.56],['香川',34.34,134.04],['愛媛',33.84,132.77],['高知',33.56,133.53],['福岡',33.61,130.42],['佐賀',33.25,130.30],['長崎',32.74,129.87],['熊本',32.79,130.74],['大分',33.24,131.61],['宮崎',31.91,131.42],['鹿児島',31.56,130.56],['沖縄',26.21,127.68]];
 let WX_BUSY = false;
 // 現在地：許可済みのときだけ聞く（ホームを開くたびに許可の窓が出ないように）。位置は約1kmに丸めて、端末の中だけに保存
-let WX_GEO_ERR = 0, WX_GEO_MSG = '';
+let WX_GEO_ERR = 0, WX_GEO_MSG = '', WX_GEO_TS = 0;
+// 現在地の地名（市区町村）を出す。BigDataCloud の無料の逆ジオコーディング（キー不要）に、丸めた緯度・経度だけを送る
+async function wxPlaceName(g) {
+  try {
+    const r = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${g.lat}&longitude=${g.lon}&localityLanguage=ja`);
+    if (!r.ok) return; const j = await r.json();
+    const adm = (j.localityInfo && j.localityInfo.administrative || []).filter(a => a.adminLevel >= 7).sort((a, b) => b.adminLevel - a.adminLevel);
+    const name = String((adm[0] && adm[0].name) || j.locality || j.city || '').replace(/^日本\s*/, '').slice(0, 12);
+    if (name) { state.settings.wxPlace = name; save(); wxTopRefresh(); }
+  } catch (e) { /* 地名が取れなくても「現在地」と出す */ }
+}
 function wxGeo(ask) {
   return new Promise(res => {
     if (!navigator.geolocation) return res(null);
-    const go = () => navigator.geolocation.getCurrentPosition(p => { WX_GEO_ERR = 0; res({lat:Math.round(p.coords.latitude * 100) / 100, lon:Math.round(p.coords.longitude * 100) / 100}); }, e => { WX_GEO_ERR = (e && e.code) || 2; WX_GEO_MSG = String((e && e.message) || ''); res(null); }, {enableHighAccuracy:false, timeout:15000, maximumAge:3 * 3600 * 1000});
+    // GPSも使って正確に取る（約100mに丸めて保存）。30分以内に取った位置はそのまま使う
+    const go = () => navigator.geolocation.getCurrentPosition(p => { WX_GEO_ERR = 0; res({lat:Math.round(p.coords.latitude * 1000) / 1000, lon:Math.round(p.coords.longitude * 1000) / 1000}); }, e => { WX_GEO_ERR = (e && e.code) || 2; WX_GEO_MSG = String((e && e.message) || ''); res(null); }, {enableHighAccuracy:true, timeout:20000, maximumAge:30 * 60 * 1000});
     if (ask) return go();
     if (navigator.permissions && navigator.permissions.query) navigator.permissions.query({name:'geolocation'}).then(st => st.state === 'granted' ? go() : res(null)).catch(() => res(null)); else res(null);
   });
@@ -5167,10 +5191,20 @@ function wxGeo(ask) {
 async function wxFetch(force, ask) {
   if (WX_BUSY) return;
   const t = todayStr(), useGeo = state.settings.wxPref === '現在地';
-  if (!force && state.wxFetched === t && state.weather[t] && !(useGeo && state.wxGeoAt !== t)) return;
+  const geoStale = useGeo && Date.now() - (WX_GEO_TS || 0) > 30 * 60 * 1000; // 開くたびに（30分おきに）今いる場所を確かめる
+  if (!force && state.wxFetched === t && state.weather[t] && !(useGeo && (state.wxGeoAt !== t || geoStale))) return;
   let pf = PREFS.find(p => p[0] === state.settings.wxPref);
   WX_BUSY = true;
-  if (useGeo) { const g = await wxGeo(ask); if (g) { state.settings.wxLoc = g; state.wxGeoAt = t; } if (state.settings.wxLoc) pf = ['現在地', state.settings.wxLoc.lat, state.settings.wxLoc.lon]; }
+  if (useGeo) {
+    const old = state.settings.wxLoc, g = await wxGeo(ask); WX_GEO_TS = Date.now();
+    if (g) {
+      const moved = !old || Math.hypot(g.lat - old.lat, (g.lon - old.lon) * 0.82) > 0.02; // 約2km以上動いたら天気を取り直す
+      state.settings.wxLoc = g; state.wxGeoAt = t;
+      if (moved || !state.settings.wxPlace) wxPlaceName(g);
+      if (!moved && !force && state.wxFetched === t && state.weather[t]) { WX_BUSY = false; save(); return; }
+    }
+    if (state.settings.wxLoc) pf = ['現在地', state.settings.wxLoc.lat, state.settings.wxLoc.lon];
+  }
   if (useGeo && ask && !state.wxGeoAt) { WX_BUSY = false; openGeoHelp(); return; } // 許可されなかった・取れなかったときは、理由と直し方を出す
   if (!pf) { WX_BUSY = false; return; }
   try {
@@ -5203,7 +5237,8 @@ function wxTopInner() {
   const w = state.weather[todayStr()];
   if (!state.settings.wxPref || (state.settings.wxPref === '現在地' && !state.settings.wxLoc && !w)) return `<button type="button" class="twx twx-set" data-action="wx-geo">${pin}今日の湿度・気温を表示</button>`;
   if (!w) return `<button type="button" class="twx" data-action="wx-setup"><span class="twx-load">${pin}${esc(state.settings.wxPref)}の天気を読み込み中…</span></button>`;
-  return `<button type="button" class="twx" data-action="wx-setup" aria-label="${esc(state.settings.wxPref)}の天気。押すと地域を変えられます"><span class="twx-pl">${pin}${esc(state.settings.wxPref)}</span>
+  const pl = state.settings.wxPref === '現在地' && state.settings.wxPlace ? state.settings.wxPlace : state.settings.wxPref;
+  return `<button type="button" class="twx" data-action="wx-setup" aria-label="${esc(pl)}の天気。押すと地域を変えられます"><span class="twx-pl">${pin}${esc(pl)}</span>
     <span class="twx-n ${w.hum < 50 ? 'warn' : ''}"><small>湿度</small>${Math.round(w.hum)}%</span><span class="twx-n"><small>気温</small>${Math.round(w.tmin)}〜${Math.round(w.tmax)}℃</span><span class="twx-n ${w.uv >= 6 ? 'warn' : ''}"><small>UV</small>${w.uv == null ? '－' : Math.round(w.uv)}</span></button>`;
 }
 function wxTopRefresh() { const b = document.getElementById('top-wx'); if (b) b.innerHTML = wxTopInner(); }
@@ -5234,7 +5269,7 @@ function openGeoHelp() {
   wxTopRefresh();
 }
 function openWxSetup() {
-  openModal({title:'天気の地域', dismissable:true, body:`<p class="small muted" style="margin:0 0 10px">「現在地」にすると、アプリを開いたときの場所の天気を自動で使います（旅行先でもそのまま）。都道府県を選ぶと県庁所在地の天気です。天気サービス（Open-Meteo）に送るのは、約1kmに丸めた緯度・経度だけです。</p>
+  openModal({title:'天気の地域', dismissable:true, body:`<p class="small muted" style="margin:0 0 10px">「現在地」にすると、アプリを開いたときの場所の天気を自動で使います（旅行先でもそのまま）。都道府県を選ぶと県庁所在地の天気です。天気サービス（Open-Meteo）と地名の確認（BigDataCloud）に送るのは、約100mに丸めた緯度・経度だけです。</p>
     <select class="select" id="f_wxPref"><option value="">使わない</option><option ${state.settings.wxPref === '現在地' ? 'selected' : ''}>現在地</option>${PREFS.map(p => `<option ${state.settings.wxPref === p[0] ? 'selected' : ''}>${p[0]}</option>`).join('')}</select>`,
     footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">やめる</button><button type="button" class="btn btn-primary" data-action="wx-save">決定</button>`});
 }
@@ -6066,7 +6101,7 @@ function openLogForm(id) {
   };
   renderPhoto();
   form._setPhoto = url => { pendingPhoto = url; renderPhoto(); $('#modal-root').dataset.dirty = '1'; };
-  $('#photo-guide').onclick = () => { if (!isPremium()) { toast(`ガイド付きで撮るのは${PREMIUM_NAME}の機能です`); return; } openGuideCam(url => form._setPhoto(url)); };
+  $('#photo-guide').onclick = () => { if (!isPremium()) { openPremiumSheet('ガイド付きで撮る'); return; } openGuideCam(url => form._setPhoto(url)); };
   $('#f_photo').onchange = async e => {
     const file = e.target.files[0]; if (!file) return;
     try { pendingPhoto = await readImage(file, 640, 0.72); renderPhoto(); }
@@ -6114,7 +6149,7 @@ function openLogForm(id) {
     } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; }
   };
   // カメラで記録：顔の枠に合わせて撮る（前回の写真もうすく重ねる）。プレミアムはそのままAIが記録を入れ、無料は写真を付けて顔を押して記録
-  const camShot = () => !isPremium() ? toast(`カメラで記録は${PREMIUM_NAME}の機能です`) : openGuideCam(async url => {
+  const camShot = () => !isPremium() ? openPremiumSheet('カメラで肌を記録') : openGuideCam(async url => {
     if (isPremium()) { const bl = await (await fetch(url)).blob(); faceAi(new File([bl], 'face.jpg', {type:'image/jpeg'})); }
     else { form._setPhoto(url); const sv = $('#photo-save'); if (sv) sv.checked = true; toast('写真を付けました。顔を押して今日の肌を記録してください'); }
     setTimeout(() => { const el = $(isPremium() ? '#faceai-info' : '#photo-area', form); if (el && el.scrollIntoView) el.scrollIntoView({block:'center', behavior:'smooth'}); }, 80);
@@ -6123,7 +6158,7 @@ function openLogForm(id) {
   ['f_faceai', 'f_faceai2'].forEach(id => { const inp = $('#' + id, form); if (inp) inp.onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
     if (isPremium()) { faceAi(f); return; }
     try { form._setPhoto(await readImage(f, 640, 0.72)); const sv = $('#photo-save'); if (sv) sv.checked = true; toast('写真を付けました。顔を押して今日の肌を記録してください'); } catch (err) { toast(err.message, 'error'); } }; });
-  $$('[data-faceai-lock]', form).forEach(lk => { lk.onclick = () => { $('#faceai-info', form).innerHTML = `<div class="notice" style="margin:8px 0 0">顔の写真を撮るだけで今日の肌を記録できる機能は、<b>${PREMIUM_NAME}プラン</b>の機能です。AIが写真からニキビの数や、部位ごとの赤み・乾燥・テカリなどの目安を読み取って入れます。<br>無料プランでは、下の顔を押して記録してください。<br><a href="#/plan">プランの詳細を見る</a></div>`; }; });
+  $$('[data-faceai-lock]', form).forEach(lk => { lk.onclick = () => openPremiumSheet('カメラで肌を記録'); lk.onclickOld = () => { $('#faceai-info', form).innerHTML = `<div class="notice" style="margin:8px 0 0">顔の写真を撮るだけで今日の肌を記録できる機能は、<b>${PREMIUM_NAME}プラン</b>の機能です。AIが写真からニキビの数や、部位ごとの赤み・乾燥・テカリなどの目安を読み取って入れます。<br>無料プランでは、下の顔を押して記録してください。<br><a href="#/plan">プランの詳細を見る</a></div>`; }; });
   form.onsubmit = e => {
     e.preventDefault();
     const fe = form.elements, date = fe.date.value;
@@ -7720,6 +7755,7 @@ const isDataImg = v => typeof v === 'string' && v.startsWith('data:');
 function syncPayload() {
   const d = JSON.parse(JSON.stringify(state));
   SYNC_ARRAYS.forEach(k => (d[k] || []).forEach(x => Object.keys(x).forEach(f => { if (isDataImg(x[f])) x[f] = null; })));
+  if (d.settings) { delete d.settings.wxLoc; delete d.settings.wxPlace; } // 今いる場所はクラウドに送らない（端末の中だけ）
   return d;
 }
 // クラウドのデータを使うとき、この端末にだけある写真は残す
@@ -7760,8 +7796,8 @@ async function syncPull(ask) {
   } catch (e) { SYNC.err = 'クラウドのデータを読み込めませんでした'; syncPaint(); }
 }
 function syncApply(row) {
-  const keepSync = state.settings.cloudSync;
-  state = normalize(syncKeepPhotos(row.data || {})); state.settings.cloudSync = keepSync;
+  const keepSync = state.settings.cloudSync, keepLoc = state.settings.wxLoc, keepPlace = state.settings.wxPlace;
+  state = normalize(syncKeepPhotos(row.data || {})); state.settings.cloudSync = keepSync; state.settings.wxLoc = keepLoc; state.settings.wxPlace = keepPlace;
   try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); localStorage.setItem('nakakaramo_sync_at', row.updated_at); } catch (e) {}
   SYNC.at = row.updated_at; toast('クラウドのデータを読み込みました'); render();
 }
@@ -7869,6 +7905,63 @@ async function runVisionDiag() {
 const VISION_VERSION = '2026-11-05-prodinfo'; // サーバーの関数 vision の最新の版
 const AI_NOTE = 'AI（Google Gemini）による推定です。必ず内容を確認・修正してから使ってください。';
 const AI_CAT = {'化粧水':'化粧水・トナー','乳液':'乳液','美容液':'美容液・アンプル','クリーム':'クリーム','日焼け止め':'日焼け止め','洗顔料':'洗顔','クレンジング':'クレンジング','パック':'シートマスク・パック'};
+// ===== かんたん申し込み：プレミアムの機能を押したら、その場で（ログイン→）申し込みまで進める =====
+// 入力中の記録を消さないように、ふつうの画面（モーダル）とは別の窓で出す
+function openPremiumSheet(feature) {
+  if (isPremium()) { toast(`${PREMIUM_NAME}プランはご利用中です`); return; }
+  if (acct.status === 'idle') initCloud();
+  document.getElementById('prem-sheet')?.remove();
+  const logged = !!acct.user;
+  const el = document.createElement('div'); el.id = 'prem-sheet'; el.className = 'ps-wrap';
+  el.innerHTML = `<div class="ps-bg" data-ps="close"></div><div class="ps" role="dialog" aria-modal="true" aria-labelledby="ps-t">
+    <button type="button" class="icon-btn ps-x" data-ps="close" aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button>
+    <p class="ps-kicker">${feature ? esc(feature) + 'は' : ''}${PREMIUM_NAME}プランの機能です</p>
+    <h2 id="ps-t">${PREMIUM_NAME}プラン</h2><p class="ps-price"><b>${esc(LEGAL.price)}</b>　いつでも解約できます</p>
+    <ul class="ps-list"><li>顔の写真を撮るだけで、AIが今日の肌を記録</li><li>化粧品をカメラで登録（パッケージ・バーコード）</li><li>食事の写真から栄養をAIが計算</li><li>記録から、あなた専用のケアと献立をAIが提案</li></ul>
+    <form id="ps-form" novalidate>
+      ${logged ? `<p class="small muted ps-me">${esc(acct.user.email || '')} で申し込みます</p>` : `<p class="small ps-note">メールアドレスとパスワードを決めると、そのまま申し込めます（登録済みの人は、同じメールアドレスとパスワードを入れてください）</p>
+      <input class="input" type="email" name="email" autocomplete="email" inputmode="email" placeholder="メールアドレス" aria-label="メールアドレス">
+      <input class="input" type="password" name="password" autocomplete="new-password" placeholder="パスワード（8文字以上・英字と数字）" aria-label="パスワード">`}
+      <label class="ps-agree"><input type="checkbox" name="agree"> <span><a href="#/terms" target="_blank">利用規約</a>・<a href="#/privacy" target="_blank">プライバシーポリシー</a>・<a href="#/law" target="_blank">特定商取引法の表記</a>を確認し、毎月自動で更新されること（解約はアカウントからいつでも可能）に同意します</span></label>
+      <button type="submit" class="btn btn-primary ps-go">申し込む（カードの入力へ）</button>
+      <p class="small muted ps-foot">支払いは、決済サービスStripeの安全な画面で行います。カード番号はナカカラモには保存されません。</p>
+    </form></div>`;
+  document.body.appendChild(el); requestAnimationFrame(() => el.classList.add('on'));
+  const close = () => { el.classList.remove('on'); setTimeout(() => el.remove(), 220); };
+  el.querySelectorAll('[data-ps="close"]').forEach(b => b.onclick = close);
+  const f = el.querySelector('#ps-form'), btn = el.querySelector('.ps-go');
+  f.onsubmit = async e => {
+    e.preventDefault(); if (btn.disabled) return;
+    if (!f.elements.agree.checked) { toast('内容を確認して、同意のチェックを入れてください', 'error'); return; }
+    let email = '', pw = '';
+    if (!acct.user) {
+      email = String(f.elements.email.value).trim(); pw = f.elements.password.value;
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast('メールアドレスを正しく入力してください', 'error'); return; }
+      if (pw.length < 8 || !/[A-Za-z]/.test(pw) || !/\d/.test(pw)) { toast('パスワードは8文字以上で、英字と数字を組み合わせてください', 'error'); return; }
+    }
+    btn.disabled = true; btn.textContent = '準備しています…';
+    try {
+      if (acct.status !== 'ready') await initCloud();
+      for (let i = 0; i < 20 && !acct.client; i++) await new Promise(r => setTimeout(r, 300));
+      if (!acct.client) throw new Error('サーバーに接続できませんでした。インターネットの接続を確認してください。');
+      if (!acct.user) {
+        const si = await acct.client.auth.signInWithPassword({email, password:pw});
+        if (si.error) {
+          if (!/Invalid login credentials/i.test(si.error.message || '')) throw si.error;
+          const {data, error} = await acct.client.auth.signUp({email, password:pw, options:{emailRedirectTo:appUrl()}});
+          if (error) throw error;
+          if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) throw new Error('このメールアドレスは登録済みです。パスワードが違います。');
+          if (!data.session) throw new Error(`${email} に確認のメールを送りました。メールのリンクを押してから、もう一度申し込んでください。`);
+        }
+        for (let i = 0; i < 10 && !acct.user; i++) await new Promise(r => setTimeout(r, 200));
+        await refreshSub();
+        if (isPremium()) { close(); toast(`${PREMIUM_NAME}プランはご利用中です`); render(); return; }
+      }
+      btn.textContent = 'お支払いの画面へ移動しています…';
+      const d = await callBilling('checkout'); location.href = d.url;
+    } catch (err) { toast(err && /^[　-鿿]/.test(err.message || '') ? err.message : authErrMsg(err), 'error'); btn.disabled = false; btn.textContent = '申し込む（カードの入力へ）'; }
+  };
+}
 async function callBilling(action) {
   const {data, error} = await acct.client.functions.invoke('billing', {body:{action}});
   if (error) {
@@ -8445,7 +8538,7 @@ function viewSettings() {
       <p class="small" style="margin:0">記録は<b>この端末のブラウザの中</b>に保存されます。「クラウドに保存」をオンにした場合だけ、写真以外の記録をあなたのアカウントに保存します。</p>
       <details class="fold" style="margin-top:10px"><summary>詳しく見る</summary>
       <ul class="points small">
-        <li><b>天気</b>：ホームで天気の地域（都道府県）を選んだ場合だけ、その県庁所在地の緯度・経度を天気サービス（Open-Meteo）に送り、湿度・気温・紫外線を受け取ります。あなたの位置情報や記録は送りません。</li><li><b>保存場所</b>：データは<b>このブラウザの中（localStorage）</b>に保存されます。設定で「クラウドに保存」をオンにした場合だけ、写真を除く記録・化粧品・設定を、あなたのアカウント（Supabase・東京リージョン）に保存します。本人以外は読めません。オフにすると、クラウドに保存したデータは消えます。</li>
+        <li><b>天気</b>：天気の地域を選んだ場合だけ、緯度・経度を天気サービス（Open-Meteo）に送り、湿度・気温・紫外線を受け取ります。都道府県を選んだときは県庁所在地の位置、「現在地」を選んで位置情報を許可したときは、約100mに丸めた今いる場所の位置です。現在地のときは、地名を表示するために同じ位置を地名の確認サービス（BigDataCloud）にも送ります。記録やアカウントの情報は送りません。位置はこの端末の中に保存します。</li><li><b>保存場所</b>：データは<b>このブラウザの中（localStorage）</b>に保存されます。設定で「クラウドに保存」をオンにした場合だけ、写真を除く記録・化粧品・設定を、あなたのアカウント（Supabase・東京リージョン）に保存します。本人以外は読めません。オフにすると、クラウドに保存したデータは消えます。</li>
         <li><b>肌写真</b>：保存は任意です。「ブラウザ内に保存する」にチェックした写真だけを保存し、外部には送信しません。</li>
         <li><b>位置情報</b>：「現在地の近くを探す」を押し、確認画面とブラウザの許可の両方で同意した場合だけ使います。保存はしません。地図のリンクを開くと、地図サービスに位置が送られます。</li>
         <li><b>アカウント</b>：有料プランの申し込み・管理のため、ログインした場合だけ、メールアドレスと契約状況をサーバー（Supabase・東京リージョン）に保存します。決済はStripeの画面で行い、カード情報はナカカラモに保存されません。ログイン機能の部品は、プラン・アカウントの画面を開いたときに jsDelivr から読み込みます。</li>
@@ -8703,7 +8796,7 @@ const actions = {
   'add-full': kind => { findState = null; closeModal(); setTimeout(() => (actions[kind === 'my' ? 'new-my' : 'new-cat'])(), 200); },
   'find-pick': i => findPick(i),
   'add-camera': kind => {
-    if (!isPremium()) { toast(`カメラで登録は${PREMIUM_NAME}プランの機能です`); closeModal(); location.hash = '#/plan'; return; }
+    if (!isPremium()) { closeModal(); openPremiumSheet('化粧品のカメラ登録'); return; }
     closeModal(); setTimeout(() => openCamSheet(kind || 'my'), 200);
   },
   'add-manual': kind => { closeModal(); setTimeout(() => openFindSheet(kind || 'my'), 200); },
@@ -8808,7 +8901,7 @@ const actions = {
   'scan-clear-photo': () => { ui.scan.photo = null; ui.scan.photoHi = null; ui.scan.msg = ''; ui.scan.aiMsg = ''; render(); },
   'scan-ai': async () => {
     const sc = ui.scan;
-    if (!isPremium()) { toast(`写真からの読み取りは${PREMIUM_NAME}プランの機能です`); location.hash = '#/plan'; return; }
+    if (!isPremium()) { openPremiumSheet('写真からの読み取り'); return; }
     if (!sc.photo || sc.aiBusy) return;
     sc.aiBusy = true; sc.aiMsg = ''; render();
     try {
@@ -9283,6 +9376,12 @@ function setTopTitle(t) {
   const el = tb.firstElementChild; if (cur) { el.classList.add('tt-in'); }
   setTbh();
 }
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('a[href="#/plan"], [data-premium], .mpt-locked[data-mcam], [data-psheet]');
+  if (!a || isPremium() || a.closest('.sidebar, .sn, nav, .ps-wrap')) return;
+  e.preventDefault(); e.stopPropagation();
+  openPremiumSheet(a.dataset.psheet || (a.dataset.premium || a.dataset.mcam ? '食事の写真の読み取り' : ''));
+}, true);
 function render() {
   applyHelpPref();
   const r = parseRoute();
