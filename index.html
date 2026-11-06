@@ -3059,7 +3059,7 @@ function swPaint() {
   let h = '';
   if (step === 'hello') h = `<div class="sw-hello">🌿</div><p class="sw-q">ナカカラモへようこそ</p><p class="sw-sub">はじめに、いくつか質問させてください（1分ほど）。<br>答えた内容は、ケアの提案や栄養の目安に使います。<br>このスマホの中にだけ保存され、あとから設定でいつでも変えられます。</p>`;
   if (step === 'gender') h = `<p class="sw-q">性別を教えてください</p><p class="sw-sub">記録に使う3Dの顔を、性別に合わせた形にします</p>` + swOpts('gender', [['女性', '女性'], ['男性', '男性'], ['', '答えない', 1]], v.gender);
-  if (step === 'age') h = `<p class="sw-q">年代を教えてください</p><p class="sw-sub">年代に合ったケアの考え方に使います</p>` + swOpts('ageBand', AGE_BANDS.map(x => [x, x]).concat([['', '答えない', 1]]), v.ageBand);
+  if (step === 'age') h = `<p class="sw-q">年代を教えてください</p><p class="sw-sub">年代に合ったケアの考え方に使います</p>` + swOpts('ageBand', AGE_BANDS.map(x => [x, x]).concat([['', '答えない']]), v.ageBand);
   if (step === 'body') h = `<p class="sw-q">身長と体重を教えてください</p><p class="sw-sub">1日のたんぱく質の目安（体重×1g）などに使います。空欄でも大丈夫です</p>
     <div class="sw-nums"><label>身長<span class="unit"><input class="input" id="sw-h" inputmode="decimal" placeholder="例：160" value="${esc(v.height)}">cm</span></label><label>体重<span class="unit"><input class="input" id="sw-w" inputmode="decimal" placeholder="例：52" value="${esc(v.weight)}">kg</span></label></div>`;
   if (step === 'skin') h = `<p class="sw-q">肌質はどれに近いですか？</p><p class="sw-sub">洗顔して何もつけずに1時間ほどたったときの感じで選んでください</p>`
