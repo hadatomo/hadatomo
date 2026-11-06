@@ -484,8 +484,10 @@ label.btn{position:relative}
 .hero-plain .life-btns .hap-keep>.btn{width:100%}
 .life-btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px;max-width:420px}
 .life-btns .btn{justify-content:center;padding-left:6px;padding-right:6px;white-space:nowrap}
-.life-btns .life-main{grid-column:1 / -1;grid-row:1}
-.life-btns>:not(.life-main){grid-row:2}
+.life-btns .life-main{grid-column:1 / 3;grid-row:1}
+.life-btns .life-cam,.life-btns .hap-keep:has(>.life-cam){grid-column:3;grid-row:1}
+.life-btns>:not(.life-main):not(.life-cam):not(:has(>.life-cam)){grid-row:2}
+.hero-plain .life-btns .life-cam{min-height:44px;height:100%}
 .life-links{display:inline-flex;gap:10px;margin-left:6px}
 .life-sum{margin-top:14px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
 .ls-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;background:var(--surface2);font-size:13px}
@@ -942,6 +944,29 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .care-btn b{font-size:13.5px}
 .care-btn small{font-size:11px;color:var(--muted)}
 .care-btn.done{background:var(--green-s);border-color:transparent}
+.wx-bar{display:flex;align-items:center;gap:10px;margin:0 0 10px;padding:6px 12px;min-height:36px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-size:12px;color:var(--ink2);overflow:hidden;white-space:nowrap}
+.wx-bar svg{flex:none;vertical-align:-2px;margin-right:3px;color:var(--green-d)}
+.wx-b-pl{background:none;border:0;padding:0;font:inherit;font-weight:600;color:var(--ink);display:flex;align-items:center;cursor:pointer;flex:none;max-width:72px;overflow:hidden;text-overflow:ellipsis}
+.wx-b-n{display:flex;align-items:baseline;gap:3px;flex:none}.wx-b-n small{font-size:10px;color:var(--muted)}.wx-b-n b{font-size:13px;color:var(--ink)}
+.wx-b-tip{margin-left:auto;font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;min-width:0}.wx-b-tip.warn{color:var(--warn)}
+.wx-bar-setup{white-space:normal;flex-wrap:wrap;gap:6px 10px}.wx-bar-setup>span{flex:1 1 180px;min-width:0}
+.wx-b-btn{border:0;border-radius:999px;padding:5px 12px;background:var(--green-l,#E5F2EA);color:var(--green-d);font:inherit;font-weight:700;font-size:12px;cursor:pointer}
+.wx-b-link{border:0;background:none;padding:0;color:var(--muted);font:inherit;font-size:11.5px;text-decoration:underline;cursor:pointer}
+@media(max-width:360px){.wx-b-tip{display:none}}
+.remind-card .rc-h{display:flex;align-items:center;gap:8px}.remind-card .rc-h svg{width:18px;height:18px;color:var(--green-d)}.remind-card .rc-h b{flex:1;font-size:14px}
+.rc-x{width:30px;height:30px}.rc-row{display:flex;gap:8px;align-items:center}.rc-row .select{width:auto;min-width:90px}
+.combo-hint,.derm-hint{display:flex;gap:8px;align-items:flex-start}.combo-hint>svg,.derm-hint>svg{flex:none;width:18px;height:18px;margin-top:2px}
+.combo-hint small,.derm-hint small{display:block;margin-top:2px}.ch-act{display:flex;gap:14px;margin-top:6px}.ch-act .link{background:none;border:0;padding:0;font:inherit;cursor:pointer}
+.start-demo{margin:10px 0 0}.start-demo .link{background:none;border:0;padding:0;font:inherit;font-size:inherit;color:var(--green-d);text-decoration:underline;cursor:pointer}
+.sc-h{display:flex;align-items:center;justify-content:center;gap:16px;margin:2px 0 8px}
+.sc-w,.sc-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}.sc-w span{text-align:center;font-size:11px;color:var(--muted)}
+.sc-d{position:relative;aspect-ratio:1;border:0;border-radius:10px;background:var(--surface2,#F4F1EC);color:var(--muted);font:inherit;padding:0;display:flex;align-items:center;justify-content:center;cursor:default}
+.sc-d.has{background:color-mix(in srgb,var(--c) 30%,transparent);color:var(--ink);cursor:pointer;box-shadow:inset 0 0 0 2px var(--c)}
+.sc-d.today .sc-n{text-decoration:underline;font-weight:800}.sc-n{font-size:13px;font-weight:600}
+.sc-a{position:absolute;right:3px;bottom:2px;font-size:9px;color:var(--ink2);font-weight:700}
+.sc-dots{position:absolute;left:4px;top:3px;display:flex;gap:2px}.sc-dots i,.sc-lg i.dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.sc-dots i.p,.sc-lg i.p{background:#E86A92}.sc-dots i.w,.sc-lg i.w{background:#4A90D9}
+.sc-lg{display:flex;flex-wrap:wrap;gap:4px 10px;margin:10px 0 0;font-size:11px;color:var(--ink2)}.sc-lg span{display:flex;align-items:center;gap:4px}.sc-lg i{width:10px;height:10px;border-radius:3px;display:inline-block}
 .wx-box{display:flex;flex-direction:column;gap:6px;margin:12px 0;padding:12px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);position:relative}
 .wx-box.wx-setup{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;font-size:12.5px;color:var(--ink2)}
 .wx-box.wx-setup svg{width:16px;height:16px;color:var(--green-d)}
@@ -1856,6 +1881,7 @@ const ICONS = {
   heart:'<path d="M12 20s-7.5-4.6-9.2-9.2C1.6 7.4 3.9 4.5 7 4.5c2 0 3.4 1.1 5 3 1.6-1.9 3-3 5-3 3.1 0 5.4 2.9 4.2 6.3C19.5 15.4 12 20 12 20z"/>',
   image:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-10 9"/>',
   moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+  bell:'<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
   leaf:'<path d="M5 19c0-8 5-13 14-14-1 9-6 14-14 14z"/><path d="M5 19 13 11"/>',
   check:'<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h9"/>',
   compare:'<path d="M8 3v18M16 3v18"/><path d="M3 8h5M16 16h5"/>',
@@ -2120,6 +2146,7 @@ function normalize(d) {
   out.settings.recoBudget = num(ds.recoBudget) === -1 ? -1 : clamp(Math.round(num(ds.recoBudget) || 0), 0, 100000); // あなたに合う化粧品：1つあたりの上限金額（0：未設定、-1：上限なし）
   out.settings.badges = strArr(ds.badges).filter(k => /^[sn][0-9]{1,3}$/.test(k)); // 獲得したバッジ
   out.settings.startHidden = !!ds.startHidden; out.settings.a2hsDone = !!ds.a2hsDone; // はじめにやること
+  out.settings.remindDone = !!ds.remindDone; out.settings.remindHide = !!ds.remindHide; out.settings.dermHide = isValidYmd(ds.dermHide) ? ds.dermHide : ''; out.settings.comboHide = typeof ds.comboHide === 'string' ? ds.comboHide.slice(0, 400) : '';
   out.settings.wxPref = typeof ds.wxPref === 'string' && (PREFS_NAMES.includes(ds.wxPref) || ds.wxPref === '現在地') ? ds.wxPref : ''; // 天気の地域（都道府県 or 現在地）
   out.settings.wxLoc = ds.wxLoc && Number.isFinite(+ds.wxLoc.lat) && Number.isFinite(+ds.wxLoc.lon) ? {lat:+ds.wxLoc.lat, lon:+ds.wxLoc.lon} : null; // 現在地（約1kmに丸めた位置）
   out.settings.cloudSync = !!ds.cloudSync; // クラウドに保存する（ログインしている人だけ）
@@ -2907,7 +2934,7 @@ function viewHome() {
 
   let html = loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '';
   html += `<section class="hero hero-plain">
-    <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${icon('plus')}今日の肌を記録</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('chart')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('note')}食事</button></div></section>`;
+    <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${icon('plus')}今日の肌を記録</button><button class="btn btn-ghost btn-sm life-cam" data-action="cam-log" aria-label="カメラで肌を記録">${icon('camera')}カメラ</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('chart')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('note')}食事</button></div></section>`;
 
   const lifeLine = lifeSumHtml(todayLife);
   // 今日の肌記録：3Dの顔を大きく、記録の数値を横に小さく
@@ -2958,7 +2985,7 @@ function viewHome() {
   const tabs = `<nav class="home-tabs" role="tablist" aria-label="ホームの表示">${HOME_TABS.map(x => `<button type="button" class="ht ${tab === x.k ? 'active' : ''}" role="tab" aria-selected="${tab === x.k}" data-action="home-tab" data-id="${x.k}"><span>${x.l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
   // 3つのタブ：画面の上にくっついたまま、押すと中身だけ切り替わる
   // 中身は .home-pane に入れる（横にスワイプしたとき、タブのバーは動かさずに中身だけ動かすため）
-  if (tab === 'today') { html = tabs + '<div class="home-pane">' + html + careQuickHtml() + periodHintHtml() + prodAlertHtml() + wxTodayHtml() + onboard + startHtml() + todayCard + weekReviewHtml() + '</div>'; setTimeout(() => { wxFetch(false); badgeCheck(); }, 0); }
+  if (tab === 'today') { html = tabs + '<div class="home-pane">' + wxTodayHtml() + html + dermHintHtml() + careQuickHtml() + periodHintHtml() + prodAlertHtml() + comboAlertHtml() + remindCardHtml() + onboard + startHtml() + todayCard + weekReviewHtml() + '</div>'; setTimeout(() => { wxFetch(false); badgeCheck(); }, 0); }
   else if (tab === 'care') { html = tabs + '<div class="home-pane">' + (loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '') + careCard + '</div>'; }
   else { html = tabs + '<div class="home-pane">' + (loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '') + shortcuts + '</div>'; }
   html += adSlot('home');
@@ -5160,13 +5187,16 @@ function wxTags(w) {
 }
 const WX_TAGS = ['乾燥した日', '紫外線が強い日', '寒い日', '暑い日'];
 function wxTodayHtml() {
-  if (!state.settings.wxPref) return `<div class="wx-box wx-setup" id="wx-box">${icon('spark')}<span>位置情報を許可すると、今いる場所の湿度・気温・紫外線を毎日自動で記録して、肌との関係を見られます</span><button type="button" class="btn btn-soft btn-sm" data-action="wx-geo">現在地を使う</button><button type="button" class="btn btn-ghost btn-sm" data-action="wx-setup">地域を選ぶ</button></div>`;
+  const pin = `<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>`;
+  if (!state.settings.wxPref || (state.settings.wxPref === '現在地' && !state.settings.wxLoc && !state.weather[todayStr()]))
+    return `<div class="wx-bar wx-bar-setup" id="wx-box"><span>${pin}${state.settings.wxPref ? '位置情報を許可すると' : '位置情報で'}、湿度・気温・紫外線を自動で記録</span><button type="button" class="wx-b-btn" data-action="wx-geo">現在地を使う</button><button type="button" class="wx-b-link" data-action="wx-setup">地域を選ぶ</button></div>`;
   const w = state.weather[todayStr()];
-  if (!w && state.settings.wxPref === '現在地' && !state.settings.wxLoc) return `<div class="wx-box wx-setup" id="wx-box">${icon('spark')}<span>位置情報がまだ許可されていません。許可すると今いる場所の天気を自動で記録します</span><button type="button" class="btn btn-soft btn-sm" data-action="wx-geo">位置情報を許可</button><button type="button" class="btn btn-ghost btn-sm" data-action="wx-setup">地域を選ぶ</button></div>`;
-  if (!w) return `<div class="wx-box" id="wx-box"><span class="small muted">${esc(state.settings.wxPref)}の今日の天気を読み込み中…</span></div>`;
-  const tags = wxTags(w), tip = w.hum < 40 ? '空気がとても乾燥しています。保湿を少し多めに' : w.hum < 50 ? '乾燥しやすい日です。保湿をしっかり' : w.uv >= 6 ? '紫外線が強い日です。日焼け止めを忘れずに' : w.tmax >= 28 ? '汗と皮脂が出やすい日です。こまめに汗をふいて' : w.tmax < 10 ? '寒さで乾燥しやすい日です。洗顔はぬるま湯で' : '肌に大きな負担のない天気です';
-  return `<div class="wx-box" id="wx-box"><div class="wx-nums"><span><small>湿度</small><b>${Math.round(w.hum)}%</b></span><span><small>気温</small><b>${Math.round(w.tmin)}〜${Math.round(w.tmax)}℃</b></span><span><small>紫外線</small><b>${w.uv == null ? '－' : Math.round(w.uv)}</b></span></div>
-    <p class="wx-tip">${tags.length ? `<i class="chip ${tags.includes('乾燥した日') ? 'warn' : 'gray'}">${esc(tags[0])}</i>` : ''}<span>${esc(tip)}</span><button type="button" class="wx-pref" data-action="wx-setup" aria-label="天気の地域を変える">${esc(state.settings.wxPref)}</button></p></div>`;
+  if (!w) return `<div class="wx-bar" id="wx-box"><span class="muted">${pin}${esc(state.settings.wxPref)}の天気を読み込み中…</span></div>`;
+  const tip = w.hum < 40 ? 'とても乾燥・保湿多めに' : w.hum < 50 ? '乾燥ぎみ・保湿をしっかり' : w.uv >= 6 ? '紫外線が強い・日焼け止めを' : w.tmax >= 28 ? '汗と皮脂に注意' : w.tmax < 10 ? '寒さで乾燥しやすい' : '肌にやさしい天気';
+  const warn = w.hum < 50 || w.uv >= 6;
+  return `<div class="wx-bar" id="wx-box"><button type="button" class="wx-b-pl" data-action="wx-setup" aria-label="天気の地域を変える">${pin}${esc(state.settings.wxPref)}</button>
+    <span class="wx-b-n"><small>湿度</small><b>${Math.round(w.hum)}%</b></span><span class="wx-b-n"><small>気温</small><b>${Math.round(w.tmin)}〜${Math.round(w.tmax)}℃</b></span><span class="wx-b-n"><small>UV</small><b>${w.uv == null ? '－' : Math.round(w.uv)}</b></span>
+    <span class="wx-b-tip ${warn ? 'warn' : ''}">${esc(tip)}</span></div>`;
 }
 function openWxSetup() {
   openModal({title:'天気の地域', dismissable:true, body:`<p class="small muted" style="margin:0 0 10px">「現在地」にすると、アプリを開いたときの場所の天気を自動で使います（旅行先でもそのまま）。都道府県を選ぶと県庁所在地の天気です。天気サービス（Open-Meteo）に送るのは、約1kmに丸めた緯度・経度だけです。</p>
@@ -5292,6 +5322,7 @@ function startHtml() {
   return `<div class="card start-card"><div class="card-h"><h2>はじめにやること</h2><span class="small muted">${n} / ${it.length}</span></div>
     <div class="start-bar"><i style="width:${n / it.length * 100}%"></i></div>
     ${it.map((x, i) => `<button type="button" class="start-row ${x.done ? 'done' : ''}" ${x.done ? 'disabled' : `data-action="${x.a}"${x.id ? ` data-id="${x.id}"` : ''}`}><span class="start-n">${x.done ? icon('check') : i + 1}</span><span class="start-t"><b>${esc(x.l)}</b><small>${esc(x.s)}</small></span>${x.done ? '' : '<i>›</i>'}</button>`).join('')}
+    ${state.skinLogs.some(l => l.demo) ? '<p class="small muted start-demo">見本のデータが入っています。<button type="button" class="link small" data-action="demo-remove">見本を消す</button></p>' : !state.skinLogs.some(l => !l.demo) ? '<p class="small muted start-demo">記録がたまるとどう見えるか先に知りたいときは <button type="button" class="link small" data-action="demo-add">見本のデータで試す</button>（あとで消せます）</p>' : ''}
     <button type="button" class="link small start-close" data-action="start-hide">この案内を閉じる</button></div>`;
 }
 function openA2hsGuide() {
@@ -5308,6 +5339,99 @@ function reviewLinksHtml() {
     <a href="#/charts">${icon('chart')}<span><b>肌の変化・比較</b><small>グラフで推移を見る</small></span><i>›</i></a>
     <a href="#/report">${icon('calendar')}<span><b>週のまとめ</b><small>1週間の記録をまとめる</small></span><i>›</i></a>
     <a href="#/visit">${icon('note')}<span><b>受診用まとめ</b><small>皮膚科で見せる1枚・PDF</small></span><i>›</i></a></div></div>`;
+}
+// ===== 毎晩のお知らせ（カレンダーに毎日の予定を入れて通知する。サーバーなしでiPhoneでも届く） =====
+function remindCardHtml() {
+  if (state.settings.remindDone || state.settings.remindHide || !state.skinLogs.some(l => !l.demo)) return '';
+  const hs = Array.from({length:24}, (_, h) => `<option value="${String(h).padStart(2, '0')}" ${h === 21 ? 'selected' : ''}>${h}時</option>`).join('');
+  return `<div class="card remind-card"><div class="rc-h">${icon('bell')}<b>記録を忘れないように、毎晩お知らせ</b><button type="button" class="icon-btn rc-x" data-action="remind-hide" aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button></div>
+    <p class="small muted" style="margin:4px 0 8px">スマホのカレンダーに毎日の予定を入れて、決まった時間に「今日の肌を記録しよう」と通知します。</p>
+    <div class="rc-row"><select class="select" id="f_remind_h" aria-label="お知らせの時刻">${hs}</select><input type="hidden" id="f_remind_m" value="00"><button type="button" class="btn btn-primary btn-sm" data-action="remind-home">カレンダーに追加</button></div></div>`;
+}
+// ===== 使用中の化粧品の成分の組み合わせで、注意があるときだけホームで知らせる =====
+function comboSig() { return state.myProducts.filter(p => p.status === '使用中').map(p => p.id).sort().join(',').slice(0, 400); }
+function comboAlertHtml() {
+  const active = state.myProducts.filter(p => p.status === '使用中'); if (active.length < 2 || state.settings.comboHide === comboSig()) return '';
+  let r; try { r = comboReport(active); } catch (e) { return ''; }
+  const al = (r.alerts || []).filter(a => !a.pairs.length || a.pairs.some(pp => pp.shared.length)); if (!al.length) return '';
+  return `<div class="notice warn combo-hint">${icon('flask')}<span><b>使っている化粧品の成分の組み合わせに注意（${al.length}件）</b><small>${esc(al[0].rule.title)}${al.length > 1 ? ' ほか' : ''}。朝と夜で分けると刺激を減らせることがあります</small><span class="ch-act"><a class="link small" href="#/combo">くわしく見る ›</a><button type="button" class="link small" data-action="combo-hide">閉じる</button></span></span></div>`;
+}
+// ===== 皮膚科に行く目安（症状が強い・悪くなっているとき。目安で、診断ではない） =====
+function dermHintHtml() {
+  const t = todayStr(); if (state.settings.dermHide && diffDays(state.settings.dermHide, t) < 7) return '';
+  const real = state.skinLogs.filter(l => !l.demo), w1 = real.filter(l => l.date > addDays(t, -7)), w0 = real.filter(l => l.date <= addDays(t, -7) && l.date > addDays(t, -14));
+  if (w1.length < 3) return '';
+  const a = stats(w1), b = stats(w0);
+  let why = '';
+  if (a.acneAvg >= 10) why = `この1週間、ニキビが平均${Math.round(a.acneAvg)}個あります`;
+  else if (a.red >= 4) why = 'この1週間、赤みが強い日が続いています';
+  else if (a.cond <= 1.6) why = 'この1週間、肌の調子が「とても悪い」日が続いています';
+  else if (w0.length >= 3 && a.acneAvg >= 5 && a.acneAvg >= b.acneAvg * 1.8 + 1) why = `ニキビが先週の平均${Math.round(b.acneAvg)}個から${Math.round(a.acneAvg)}個に増えています`;
+  if (!why) return '';
+  return `<div class="notice red derm-hint">${icon('note')}<span><b>皮膚科での相談をおすすめします</b><small>${esc(why)}。痛み・腫れ・跡が残りそうなときは、化粧品を変えるより早めの受診が近道です。これは記録からの目安で、診断ではありません。</small><span class="ch-act"><a class="link small" href="#/visit">受診用まとめを作る ›</a><button type="button" class="link small" data-action="derm-hide">今週は表示しない</button></span></span></div>`;
+}
+// ===== 肌の調子カレンダー（調子の色・生理・乾燥した日を1か月で見る） =====
+function skinCalHtml() {
+  const t = todayStr(), ym = ui.calYM || monthKey(t), [y, m] = ym.split('-').map(Number);
+  const days = new Date(y, m, 0).getDate(), lead = new Date(y, m - 1, 1).getDay();
+  const by = {}; state.skinLogs.forEach(l => { by[l.date] = l; });
+  let cells = ''; for (let i = 0; i < lead; i++) cells += '<span></span>';
+  let n = 0;
+  for (let d = 1; d <= days; d++) {
+    const k = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`, l = by[k], fut = k > t;
+    const per = l && (l.factors || []).includes('生理中'), dry = wxTags(state.weather[k]).includes('乾燥した日');
+    if (l) n++;
+    cells += `<button type="button" class="sc-d ${l ? 'has' : ''} ${k === t ? 'today' : ''}" ${l ? `data-action="cal-day" data-id="${k}"` : 'disabled'} ${fut ? 'aria-hidden="true"' : ''} style="${l ? `--c:${COND_COLORS[l.condition] || '#ccc'}` : ''}" aria-label="${m}月${d}日${l ? ' ' + COND_LABELS[l.condition] : ''}">
+      <span class="sc-n">${d}</span>${l && l.acneCount ? `<small class="sc-a">${l.acneCount}</small>` : ''}<span class="sc-dots">${per ? '<i class="p"></i>' : ''}${dry ? '<i class="w"></i>' : ''}</span></button>`;
+  }
+  const canNext = ym < monthKey(t);
+  return `<div class="card skin-cal"><div class="card-h"><h2>肌の調子カレンダー</h2><span class="small muted">${n}日記録</span></div>
+    <div class="sc-h"><button type="button" class="ldc-nav" data-action="cal-m" data-id="-1" aria-label="前の月">‹</button><b>${y}年${m}月</b><button type="button" class="ldc-nav" data-action="cal-m" data-id="1" aria-label="次の月" ${canNext ? '' : 'disabled'}>›</button></div>
+    <div class="sc-w">${['日','月','火','水','木','金','土'].map(w => `<span>${w}</span>`).join('')}</div><div class="sc-g">${cells}</div>
+    <p class="sc-lg">${[5,4,3,2,1].map(v => `<span><i style="background:${COND_COLORS[v]}"></i>${COND_LABELS[v]}</span>`).join('')}<span><i class="dot p"></i>生理</span><span><i class="dot w"></i>乾燥した日</span></p>
+    <p class="small muted" style="margin:6px 0 0">数字の右下はニキビの数です。日にちを押すと、その日の記録を開きます。</p>
+    <div class="page-actions" style="margin-top:10px"><button type="button" class="btn btn-soft btn-sm" data-action="month-share">${icon('image')}${m}月のまとめを画像にする</button></div></div>`;
+}
+// ===== 1か月のまとめを画像にしてシェア（顔写真は入れない） =====
+async function monthShare() {
+  const t = todayStr(), ym = ui.calYM || monthKey(t), [y, m] = ym.split('-').map(Number), pym = shiftMonth(ym, -1);
+  const logs = state.skinLogs.filter(l => l.date.startsWith(ym)), prev = state.skinLogs.filter(l => l.date.startsWith(pym));
+  if (!logs.length) { toast(`${m}月の肌の記録がまだありません`); return; }
+  const a = stats(logs), b = stats(prev);
+  const W = 1080, H = 1350, cv = document.createElement('canvas'); cv.width = W; cv.height = H; const c = cv.getContext('2d');
+  const g = c.createLinearGradient(0, 0, 0, H); g.addColorStop(0, '#F3EEE6'); g.addColorStop(1, '#E6F1EA'); c.fillStyle = g; c.fillRect(0, 0, W, H);
+  const F = (sz, wt = 600) => `${wt} ${sz}px "Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif`;
+  const rr = (x, yy, w, h, r) => { c.beginPath(); c.moveTo(x + r, yy); c.arcTo(x + w, yy, x + w, yy + h, r); c.arcTo(x + w, yy + h, x, yy + h, r); c.arcTo(x, yy + h, x, yy, r); c.arcTo(x, yy, x + w, yy, r); c.closePath(); };
+  c.fillStyle = '#2F5D46'; c.font = `600 44px "Hiragino Mincho ProN","Noto Serif JP",serif`; c.textAlign = 'left'; c.fillText('ナカカラモ', 80, 120);
+  c.fillStyle = '#333'; c.font = F(76, 800); c.fillText(`${y}年${m}月の肌`, 80, 230);
+  // 数字3つ
+  const boxes = [['記録した日', `${logs.length}日`, ''], ['肌の調子（平均）', a.cond ? a.cond.toFixed(1) : '—', b.n && a.cond && b.cond ? `先月 ${b.cond.toFixed(1)}` : ''], ['ニキビ（1日平均）', `${(Math.round(a.acneAvg * 10) / 10)}個`, b.n ? `先月 ${Math.round(b.acneAvg * 10) / 10}個` : '']];
+  boxes.forEach(([l, v, sub], i) => { const x = 80 + i * 314; c.fillStyle = '#fff'; rr(x, 290, 290, 220, 32); c.fill();
+    c.fillStyle = '#777'; c.font = F(30, 600); c.textAlign = 'center'; c.fillText(l, x + 145, 350); c.fillStyle = '#222'; c.font = F(68, 800); c.fillText(v, x + 145, 440); if (sub) { c.fillStyle = '#888'; c.font = F(26, 500); c.fillText(sub, x + 145, 485); } });
+  // ひとこと
+  let msg = 'コツコツ記録できました';
+  if (b.n && a.acneAvg <= b.acneAvg * 0.6 && b.acneAvg >= 1) msg = `ニキビが先月より${Math.round((1 - a.acneAvg / b.acneAvg) * 100)}%減りました`;
+  else if (b.n && a.cond && b.cond && a.cond - b.cond >= 0.3) msg = '先月より肌の調子が良くなりました';
+  else if (logs.length >= 20) msg = `${logs.length}日も記録できました`;
+  c.fillStyle = '#2F5D46'; c.font = F(46, 800); c.textAlign = 'center'; c.fillText(msg, W / 2, 600);
+  // カレンダー
+  const days = new Date(y, m, 0).getDate(), lead = new Date(y, m - 1, 1).getDay(), by = {}; logs.forEach(l => { by[Number(l.date.slice(8))] = l; });
+  const cx0 = 110, cy0 = 690, cw = 123, ch = 92;
+  c.font = F(28, 600); ['日','月','火','水','木','金','土'].forEach((w, i) => { c.fillStyle = '#999'; c.fillText(w, cx0 + i * cw + cw / 2 - 6, cy0); });
+  for (let d = 1; d <= days; d++) { const p = lead + d - 1, col = p % 7, row = Math.floor(p / 7), x = cx0 + col * cw, yy = cy0 + 24 + row * ch, l = by[d];
+    c.fillStyle = l ? (COND_COLORS[l.condition] || '#ccc') : 'rgba(255,255,255,.7)'; rr(x, yy, cw - 12, ch - 12, 18); c.fill();
+    c.fillStyle = l ? (COND_FG[l.condition] || '#fff') : '#bbb'; c.font = F(30, 700); c.fillText(String(d), x + (cw - 12) / 2, yy + 52); }
+  c.font = F(26, 600); let lx = 110; [5,4,3,2,1].forEach(v => { c.fillStyle = COND_COLORS[v]; rr(lx, 1262, 30, 30, 8); c.fill(); c.fillStyle = '#666'; c.textAlign = 'left'; c.fillText(COND_LABELS[v], lx + 40, 1287); lx += 40 + c.measureText(COND_LABELS[v]).width + 30; });
+  c.fillStyle = '#999'; c.font = F(24, 500); c.textAlign = 'right'; c.fillText('nakakaramo', W - 80, 1320);
+  const blob = await new Promise(r => cv.toBlob(r, 'image/png')); if (!blob) { toast('画像を作れませんでした', 'error'); return; }
+  const file = new File([blob], `nakakaramo-${ym}.png`, {type:'image/png'});
+  const url = URL.createObjectURL(blob);
+  openModal({title:`${m}月のまとめ`, dismissable:true, body:`<img src="${url}" alt="${m}月のまとめの画像" style="width:100%;border-radius:14px;display:block"><p class="small muted" style="margin:8px 0 0">顔の写真は入りません。インスタなどに載せるときは、下のボタンから保存・シェアしてください。</p>`,
+    footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">閉じる</button><button type="button" class="btn btn-primary" id="ms-share">保存・シェア</button>`});
+  const btn = document.getElementById('ms-share'); if (btn) btn.onclick = async () => {
+    try { if (navigator.canShare && navigator.canShare({files:[file]})) { await navigator.share({files:[file], title:`${m}月の肌のまとめ`}); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+    const a2 = document.createElement('a'); a2.href = url; a2.download = file.name; document.body.appendChild(a2); a2.click(); a2.remove(); toast('画像を保存しました');
+  };
 }
 function recentCardHtml() {
   const t = todayStr(), map = logMap(), ws = weekStart(t);
@@ -5340,7 +5464,7 @@ function viewLogInner() {
   html += `<nav class="home-tabs log-tabs" role="tablist" aria-label="記録の表示">${tabs.map(([k, l]) => `<button type="button" class="ht ${ui.logTab === k ? 'active' : ''}" role="tab" aria-selected="${ui.logTab === k}" data-action="log-tab" data-id="${k}"><span>${l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
   if (ui.logTab === 'photos') return html + viewPhotos();
   if (ui.logTab === 'life') ui.logTab = 'recent'; // 以前の「食事・運動・睡眠」タブは、記録一覧の中に入れた
-  if (ui.logTab === 'recent') return html + recentCardHtml() + factorCardHtml() + badgesHtml() + reviewLinksHtml();
+  if (ui.logTab === 'recent') return html + skinCalHtml() + recentCardHtml() + factorCardHtml() + badgesHtml() + reviewLinksHtml();
   const logs = logsDesc();
   if (!logs.length) return html + `<div class="card">${emptyBox('note', 'まだ肌の記録がありません', 'ニキビ・赤み・乾燥・皮脂などを、数タップで記録できます。', '<button class="btn btn-primary btn-sm" data-action="new-log">最初の記録をつける</button>')}</div>`;
   const lm = lifeMap();
@@ -5504,8 +5628,8 @@ function photoDayCardHtml(list) { // list：写真のある記録（古い順）
     <div class="ld-actions" style="justify-content:center">${list.length >= 2 ? `<button class="btn btn-soft btn-sm" data-action="photo-compare">${icon('compare')}2枚を比べる</button>` : ''}<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(l.id)}">この日の記録を開く</button></div></div>`;
 }
 // ===== ガイド付きで撮る：顔の枠と、前回の写真をうすく重ねて、毎回同じ位置で撮れるようにする（写真は外に送らない） =====
-async function openGuideCam(done) {
-  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { toast('この端末ではアプリ内のカメラが使えません。「ファイルを選択」から撮ってください', 'error'); return; }
+async function openGuideCam(done, o = {}) {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { if (o.fallback) o.fallback(); else toast('この端末ではアプリ内のカメラが使えません。「ファイルを選択」から撮ってください', 'error'); return; }
   const prev = photoList().slice(-1)[0], root = document.createElement('div');
   root.className = 'gcam'; root.innerHTML = `<div class="gcam-view"><video playsinline autoplay muted></video>${prev ? `<img class="gcam-ghost" src="${safeImg(prev.photo)}" alt="">` : ''}
     <svg class="gcam-guide" viewBox="0 0 300 400" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><mask id="gm"><rect width="300" height="400" fill="#fff"/><ellipse cx="150" cy="185" rx="78" ry="105" fill="#000"/></mask></defs><rect width="300" height="400" fill="rgba(0,0,0,.35)" mask="url(#gm)"/><ellipse cx="150" cy="185" rx="78" ry="105" fill="none" stroke="#fff" stroke-width="2.5" stroke-dasharray="6 5"/></svg>
@@ -5515,7 +5639,7 @@ async function openGuideCam(done) {
   const video = root.querySelector('video'); let stream = null;
   const close = () => { if (stream) stream.getTracks().forEach(t => t.stop()); root.remove(); unlockScroll(); };
   try { stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:1280}, height:{ideal:1280}}, audio:false}); video.srcObject = stream; }
-  catch (e) { close(); toast('カメラを使えませんでした。設定でカメラを許可するか、「ファイルを選択」から撮ってください', 'error'); return; }
+  catch (e) { close(); if (o.fallback) { toast('アプリ内のカメラを使えなかったので、ふつうのカメラで撮ります'); o.fallback(); } else toast('カメラを使えませんでした。設定でカメラを許可するか、「ファイルを選択」から撮ってください', 'error'); return; }
   root.addEventListener('click', e => {
     const b = e.target.closest('[data-g]'); if (!b) return;
     if (b.dataset.g === 'close') close();
@@ -5524,10 +5648,10 @@ async function openGuideCam(done) {
       const vw = video.videoWidth, vh = video.videoHeight; if (!vw) return;
       const view = root.querySelector('.gcam-view'), ar = view.clientWidth / view.clientHeight; // 画面に見えている範囲（3:4）だけを切り出す
       let sw = vw, sh = vw / ar; if (sh > vh) { sh = vh; sw = vh * ar; }
-      const W = 640, H = Math.round(W / ar), cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      const W = o.w || 640, H = Math.round(W / ar), cv = document.createElement('canvas'); cv.width = W; cv.height = H;
       const c = cv.getContext('2d'); c.translate(W, 0); c.scale(-1, 1); // 鏡のように見えていたまま保存する
       c.drawImage(video, (vw - sw) / 2, (vh - sh) / 2, sw, sh, 0, 0, W, H);
-      hapticTick(); const url = cv.toDataURL('image/jpeg', 0.72); close(); done(url);
+      hapticTick(); const url = cv.toDataURL('image/jpeg', o.w > 640 ? 0.85 : 0.72); close(); done(url);
     }
   });
 }
@@ -5627,7 +5751,7 @@ function openLogForm(id) {
   openModal({title: ex ? '肌の記録を編集' : '肌の記録', body: `<form id="log-form" novalidate><div class="form-grid">
     ${d.date ? `<input type="hidden" id="f_date" name="date" value="${esc(d.date)}">` : field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint: !ex && map[t] ? '今日の記録はすでにあります。別の日付を選ぶか、一覧から今日の記録を編集してください。' : ''})}
     <div class="field face-ai"><span class="lbl">顔の写真で自動で記録<span class="opt opt-d">写真から今日の肌をAIが入れます</span></span><div class="meal-photo-top mpt-even">${isPremium()
-      ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label><label class="btn mpt-btn mpt-mid">${icon('camera')}撮る<input type="file" accept="image/*" capture="user" id="f_faceai" class="vh"></label>`
+      ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label><button type="button" class="btn mpt-btn mpt-mid" data-faceai-cam>${icon('camera')}撮る</button><input type="file" accept="image/*" capture="user" id="f_faceai" class="vh">`
       : `<button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('image')}選ぶ</span><span class="prem-sub">${PREMIUM_NAME}</span></button><button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('camera')}撮る</span><span class="prem-sub">${PREMIUM_NAME}</span></button>`}</div><div id="faceai-info"></div></div>
     ${field('肌の調子', condSeg(d.condition) + `<p class="cond-ai ai-text" id="cond-ai">${ex ? '' : condAiNote(null)}</p>`, {name:'condition', required:true})}
     <div class="field fp-field" id="fp-field"><div class="fp-bighead"><b>顔を押して記録</b><button type="button" class="icon-btn" data-fp-done aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button></div><span class="lbl fp-lbl">顔を押して記録<span class="opt opt-d">ニキビ選択＝ニキビ、肌質選択＝乾燥・テカリなどの状態</span></span>
@@ -5942,6 +6066,14 @@ function openLogForm(id) {
 
     } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; }
   };
+  // カメラで記録：顔の枠に合わせて撮る（前回の写真もうすく重ねる）。プレミアムはそのままAIが記録を入れ、無料は写真を付けて顔を押して記録
+  const camShot = () => openGuideCam(async url => {
+    if (isPremium()) { const bl = await (await fetch(url)).blob(); faceAi(new File([bl], 'face.jpg', {type:'image/jpeg'})); }
+    else { form._setPhoto(url); const sv = $('#photo-save'); if (sv) sv.checked = true; toast('写真を付けました。顔を押して今日の肌を記録してください'); }
+    setTimeout(() => { const el = $(isPremium() ? '#faceai-info' : '#photo-area', form); if (el && el.scrollIntoView) el.scrollIntoView({block:'center', behavior:'smooth'}); }, 80);
+  }, {w:isPremium() ? 1024 : 640, fallback:() => { const inp = $(isPremium() ? '#f_faceai' : '#f_photo', form); if (inp) inp.click(); }});
+  $$('[data-faceai-cam]', form).forEach(b => { b.onclick = camShot; });
+  if (ui.camStart) { ui.camStart = false; setTimeout(camShot, 120); }
   ['f_faceai', 'f_faceai2'].forEach(id => { const inp = $('#' + id, form); if (inp) inp.onchange = e => { const f = e.target.files[0]; e.target.value = ''; faceAi(f); }; });
   $$('[data-faceai-lock]', form).forEach(lk => { lk.onclick = () => { $('#faceai-info', form).innerHTML = `<div class="notice" style="margin:8px 0 0">顔の写真を撮るだけで今日の肌を記録できる機能は、<b>${PREMIUM_NAME}プラン</b>の機能です。AIが写真からニキビの数や、部位ごとの赤み・乾燥・テカリなどの目安を読み取って入れます。<br>無料プランでは、下の顔を押して記録してください。<br><a href="#/plan">プランの詳細を見る</a></div>`; }; });
   form.onsubmit = e => {
@@ -8365,6 +8497,14 @@ const split2 = v => String(v).split('|');
 const actions = {
   'close-modal': () => dismissModal(),
   'close-modal-bg': (id, el, e) => { if (e.target === el) dismissModal(); },
+  'cam-log': () => { const t = state.skinLogs.find(l => l.date === todayStr()); ui.camStart = true; if (t) openLogForm(t.id); else openLogForm(); },
+  'remind-home': () => { actions['reminder-ics'](); state.settings.remindDone = true; save(); setTimeout(render, 400); },
+  'remind-hide': () => { state.settings.remindHide = true; save(); render(); toast('お知らせの案内を閉じました。「設定」からいつでも設定できます'); },
+  'derm-hide': () => { state.settings.dermHide = todayStr(); save(); render(); },
+  'combo-hide': () => { state.settings.comboHide = comboSig(); save(); render(); },
+  'cal-m': v => { const n = Number(v) || 0; ui.calYM = shiftMonth(ui.calYM || monthKey(todayStr()), n); if (ui.calYM > monthKey(todayStr())) ui.calYM = monthKey(todayStr()); render(); },
+  'cal-day': v => { const l = state.skinLogs.find(x => x.date === v); if (l) openLogForm(l.id); },
+  'month-share': () => monthShare(),
   'new-log': v => { const t = v === 'free' ? null : state.skinLogs.find(l => l.date === todayStr()); if (t) { toast('今日の記録はすでにあるので、編集画面を開きました'); openLogForm(t.id); } else openLogForm(); },
   'edit-log': id => openLogForm(id),
   'delete-log': async id => {
