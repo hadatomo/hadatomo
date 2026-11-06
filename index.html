@@ -2127,16 +2127,17 @@ async function offNutrition(jan) {
 // 写真の表示が写っていなかった商品の数字を、メーカー公式の情報で調べる（AIの返事のあとで、裏で調べる）
 async function officialFill(items) {
   const need = (items || []).filter(x => x.needOfficial); if (!need.length) return [];
-  try { const r = (await callVision('official', null, {items:need.map(x => ({name:x.name, maker:x.maker, series:x.series, size:x.size, amount:x.amount}))})).result || {items:[]}; return r.items || []; }
-  catch (e) { return need.map(x => Object.assign({}, x, {basis:'確認できません', needOfficial:false})); }
+  let got = [];
+  try { got = ((await callVision('official', null, {items:need.map(x => ({name:x.name, maker:x.maker, series:x.series, size:x.size, amount:x.amount}))})).result || {}).items || []; } catch (e) { /* 見つからなければ目安のまま */ }
+  return need.map((x, i) => got[i] && got[i].basis === '公式' ? Object.assign({}, got[i], {veg:x.veg || 0}) : Object.assign({}, x, {needOfficial:false}));
 }
 function aiFoodToRec(x, meal) {
   // 数字を使えるのは、パッケージの表示を読めたもの・メーカー公式で確認できたものだけ
-  if (!['表示', '公式'].includes(x.basis) || x.kcal == null) return null;
+  if (!['表示', '公式', '推定'].includes(x.basis) || x.kcal == null) return null;
   return {id:uid(), meal, qty:1, name:String(x.name).slice(0, 40), kcal:x.kcal, p:x.p, f:x.f, c:x.c, veg:x.veg || 0, salt:x.salt,
     basis:x.basis, unit:x.unit || '', src:x.source || '', srcUrl:x.sourceUrl || '', checked:x.checkedAt || '', maker:x.maker || '', series:x.series || '', size:x.size || '', diff:x.diff || ''};
 }
-const AI_BASIS_LABEL = {表示:'パッケージの表示', 公式:'メーカー公表', 推定:'目安（料理）', '確認できません':'確認できません'};
+const AI_BASIS_LABEL = {表示:'パッケージの表示', 公式:'メーカー公表', 推定:'目安', '確認できません':'確認できません'};
 // メーカー・シリーズ・内容量（読めたものだけ）
 const aiProdLine = x => [x.maker, x.series, x.size].filter(Boolean).map(esc).join('・');
 const aiBasisTag = x => x.basis ? ` <span class="ai-basis b-${({表示:'l', 公式:'p', 推定:'e', '確認できません':'n'})[x.basis] || 'e'}">${esc(AI_BASIS_LABEL[x.basis] || x.basis)}</span>` : '';
@@ -3077,7 +3078,7 @@ let findState = null;
 const fnorm = t => String(t || '').normalize('NFKC').toLowerCase().replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60)).replace(/[ー－‐\-・･,，、。．.\/／()（）「」『』!！?？★☆◆◇■□●○※＊*+＋&＆'’"”]/g, '').replace(/\s+/g, '');
 // お店がつける宣伝の言葉を取って、商品そのものの名前にする
 const cleanShopName = n => String(n || '').replace(/[【\[<＜《〔][^】\]>＞》〕]*[】\]>＞》〕]/g, ' ')
-  .replace(/送料無料|送料込み?|公式(ショップ|ストア)?|正規品|国内正規品|あす楽(対応)?|ポイント\s*\d+\s*倍|\d+\s*%\s*(OFF|オフ)|最大\s*\d+|即納|即日発送|メール便|ネコポス|ゆうパケット|クーポン(配布中|あり)?|楽天ランキング\d*位?|ランキング\d*位|1位|SALE|セール|在庫限り|数量限定|送料別|代引不可|★+|☆+/gi, ' ')
+  .replace(/送料無料|送料込み?|公式(ショップ|ストア)?|正規品|国内正規品|あす楽(対応)?|ポイント\s*\d+\s*倍|\d+\s*%\s*(OFF|オフ)|最大\s*\d+|即納|即日発送|メール便|ネコポス|ゆうパケット|クーポン(配布中|あり)?|楽天ランキング\d*位?|ランキング\d*位|1位|SALE|セール|在庫限り|数量限定|送料別|代引不可|※[^ 　]*|お一人様\d+点限り|[○〇◯]{1,3}|★+|☆+/gi, ' ')
   .replace(/\s+/g, ' ').trim();
 // 種類が違うと別の商品（しっとり／さっぱり、化粧水／乳液、容量、詰め替え など）
 const VARIANT_WORDS = ['とてもしっとり', 'しっとり', 'さっぱり', 'ノーマル', 'リッチ', 'ライト', 'ジェル', 'ミルク', '乳液', '化粧水', 'ローション', '美容液', 'セラム', 'クリーム', '洗顔', 'クレンジング', 'オイル', 'パック', 'マスク', '日焼け止め', 'トナー', 'エッセンス', '詰め替え', '詰替', 'つめかえ', 'リフィル', 'レフィル', 'お試し', 'ミニ', 'トライアル', 'セット'].map(fnorm);
@@ -3162,7 +3163,8 @@ async function findRun(q) {
     const odd = n => /セット|詰め?替え?|つめかえ|リフィル|レフィル|お試し|トライアル|サンプル|まとめ買い|\d+個|\d+本組|福袋|業務用/.test(n || '');
     const seenN = new Set();
     fs.items = items.filter(x => x && x.name).filter(x => { const v = variantSig(x.name), k = v.n.slice(0, 40) + '|' + v.vol; if (seenN.has(k)) return false; seenN.add(k); return true; })
-      .map((x, i) => ({x, i, o:odd(x.name)})).sort((a, b) => a.o - b.o || a.i - b.i).map(v => v.x).slice(0, 60);
+      .map((x, i) => ({x, i, o:odd(x.name), sim:jan ? 0 : similarity(fnorm(q), fnorm(cleanShopName(x.name)))})).sort((a, b) => a.o - b.o || b.sim - a.sim || a.i - b.i).map(v => v.x).slice(0, 60);
+    fs.more = false;
   } catch (e) { if (findState === fs && fs.q === q) { fs.items = null; fs.err = '商品を探せませんでした。電波のよい場所で、もう一度お試しください。'; } }
   if (findState === fs && fs.q === q) { fs.loading = false; findPaint(); }
 }
@@ -3172,9 +3174,10 @@ function findPaint() {
   if (fs.err) { box.innerHTML = `<p class="small muted">${esc(fs.err)}</p>`; return; }
   if (!fs.items) { box.innerHTML = fs.cam ? '' : '<p class="small muted">バーコードの数字か商品名を入れると、候補が出ます。</p>'; return; }
   if (!fs.items.length) { box.innerHTML = `<p class="small muted">見つかりませんでした。${fs.cam ? '撮り直すか、' : '別の言葉で探すか、'}<button type="button" class="link" data-action="add-full" data-id="${fs.kind}">すべて自分で入力</button>してください。</p>`; return; }
-  box.innerHTML = (fs.near ? '<p class="small muted" style="margin:0 0 8px">ぴったりの商品が見つからなかったので、近い商品を出しています。言葉を変えると見つかることがあります。</p>' : '') + `<p class="small muted" style="margin:0 0 8px">${fs.items.length}件</p>` + fs.items.map((x, i) => `<div class="net-item">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
+  box.innerHTML = (fs.near ? '<p class="small muted" style="margin:0 0 8px">ぴったりの商品が見つからなかったので、近い商品を出しています。言葉を変えると見つかることがあります。</p>' : '') + fs.items.slice(0, fs.more ? 60 : 3).map((x, i) => `<div class="net-item">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
       <span class="net-t"><b>${esc(truncate(cleanShopName(x.name) || x.name, 70))}</b><small>${esc(x.site)}${x.shop ? '・' + esc(truncate(x.shop, 18)) : ''}</small><em>${yen(x.price)}</em></span>
-      <span class="net-btns"><button class="btn btn-primary btn-sm" data-action="find-pick" data-id="${i}">${icon('plus')}これを選ぶ</button></span></div>`).join('');
+      <span class="net-btns"><button class="btn btn-primary btn-sm" data-action="find-pick" data-id="${i}">${icon('plus')}これを選ぶ</button></span></div>`).join('')
+    + (!fs.more && fs.items.length > 3 ? `<p style="margin:10px 0 0;text-align:center"><button type="button" class="link small" data-action="find-more">ほかの候補も見る（${fs.items.length - 3}件）</button></p>` : '');
 }
 // ---------- カメラで登録：選ぶ／撮る → バーコードを読む（だめなら、プレミアムは商品の写真から商品名を読む）→ 候補から選ぶ ----------
 // バーコード（JAN／EAN-13・EAN-8）を写真から読む（外部のライブラリを使わない、簡単な読み取り）
@@ -3276,7 +3279,8 @@ async function camGot(file) {
     const r = (await callVision('package', hi)).result || {};
     if (findState !== fs) return;
     if (r.jan && /^(\d{8}|\d{13})$/.test(r.jan)) { msg(`バーコード ${r.jan} を読み取りました。`); fs.reading = ''; await findRun(r.jan); return; }
-    const q = [r.brand, r.name].filter(Boolean).join(' ').slice(0, 60);
+    fs.brandHint = String(r.brand || '').slice(0, 30);
+    const q = (r.brand && r.name && fnorm(r.name).includes(fnorm(r.brand)) ? r.name : [r.brand, r.name].filter(Boolean).join(' ')).split(/\s+/).filter((w, i, a) => a.indexOf(w) === i).join(' ').slice(0, 60);
     if (!q) throw new Error('商品名を読み取れませんでした。文字が大きく写るように、商品の正面を撮り直してください。');
     msg(`「${q}」で探しました。当てはまる商品を選んでください。`); fs.reading = ''; await findRun(q);
   } catch (e) { if (findState === fs) { fs.loading = false; fs.reading = ''; findPaint(); msg(String(e.message || e)); } }
@@ -3502,6 +3506,22 @@ function netHtml() {
   }).join('')}</div><p class="small muted" style="margin-top:8px">価格は検索した時点のものです。「追加」すると、この商品を商品一覧に登録して、お気に入りやマイ化粧品に使えます。${n.items.some(x => x.ad) ? '一部のリンクは広告（アフィリエイト）です。' : ''}</p>
     <p class="credit small muted">Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p>`;
 }
+// ブランド名を商品名から自動で入れる：知っているブランド → メーカー名のすぐ後ろの言葉 → 商品名の最初の言葉
+const MAKERS = ['小林製薬','花王','資生堂','コーセー','KOSE','ロート製薬','カネボウ','ライオン','第一三共ヘルスケア','持田ヘルスケア','ポーラ','ファンケル','常盤薬品','明色化粧品','石澤研究所','マンダム','ユースキン製薬','近江兄弟社','ナリス化粧品','クラシエ','ピアス','ちふれ化粧品','イミュ','黒龍堂','ウテナ','pdc','BCL','ジェイ・エム・シー','アモーレパシフィック','ロレアル','ユニリーバ','P&G','ジョンソン・エンド・ジョンソン','大正製薬','佐藤製薬','池田模範堂','久光製薬','新日本製薬','北の快適工房','エスエス製薬','ゼリア新薬','健栄製薬','柳屋本店','ウエルシア','マツキヨ'];
+const BRAND_MORE = ['オードムーゲ','アクネスラボ','ビフナイト','ペアアクネ','クレアラシル','プロアクティブ','メンソレータム','アクアレーベル','ハトムギ','ナイーブ','ソフィーナ','ハダカラ','ちふれ','キュレル','ミノン','ノブ','雪肌精','メラノCC','肌ラボ','イハダ','チョコラBB','トランシーノ','ニベア','セバメド','ロゼット','スキンライフ','ビオレ','ルシード','ギャツビー','ウーノ','オルビス','IPSA','ナチュリエ','アベンヌ','ユースキン','ヒルドイド','ヘパソフト','ケアセラ','ラ ロッシュ ポゼ','無印良品'];
+function brandFromName(name, noGuess) {
+  const n = cleanShopName(name); if (!n) return '';
+  const sq = x => toHalf(x).toLowerCase().replace(/[\s・･\-‐ー_.]/g, '');
+  const known = Array.from(new Set(BRAND_MORE.concat(BRAND_SUGGEST, BRAND_GUESS_EXTRA, state.catalog.map(c => c.brand)).filter(Boolean))).sort((a, b) => b.length - a.length);
+  const k = known.find(b => sq(b).length >= 2 && sq(n).includes(sq(b))); if (k) return k;
+  const words = n.split(/[\s　]+/).filter(Boolean);
+  const mi = words.findIndex(w => MAKERS.some(m => sq(w) === sq(m)));
+  if (mi >= 0 && words[mi + 1] && !/^\d/.test(words[mi + 1])) return words[mi + 1].replace(/[（(].*$/, '').slice(0, 20);
+  if (mi >= 0) return words[mi];
+  if (noGuess) return '';
+  const w0 = (words[0] || '').replace(/[（(].*$/, '');
+  return w0.length >= 2 && w0.length <= 15 && !/^\d/.test(w0) && !/化粧水|乳液|美容液|クリーム|洗顔|薬用|ローション/.test(w0) ? w0 : '';
+}
 function netToCat(x, others) {
   const old = state.catalog.find(c => c.shopUrl && c.shopUrl === x.url); if (old) return old;
   const vol = (x.name.match(/(\d+(?:\.\d+)?)\s*(ml|mL|ML|g|G)(?![a-z])/) || [])[0] || '';
@@ -3509,6 +3529,7 @@ function netToCat(x, others) {
     price:x.price, volume:vol.replace(/\s/g, '').replace(/mL|ML/, 'ml').replace('G', 'g'), image:null, imageUrl:/^https:\/\//.test(x.image || '') ? x.image : '', shopUrl:x.url, purposes:[], ingredients:'', features:'', usage:'', caution:'',
     jan:/^(\d{8}|\d{13})$/.test(x.jan || '') ? x.jan : '', source:`${x.site}（${x.shop || 'ショップ'}）`, checkedAt:todayStr(), offers:[]};
   const g = guessFromName(p.name); if (g && g.brand) p.brand = g.brand; if (g && g.purposes && g.purposes.length) p.purposes = g.purposes.filter(v => PURPOSES.includes(v));
+  if (!p.brand) p.brand = (findState && findState.brandHint) || brandFromName(x.name); // ブランド名も自動で入れる（カメラで読んだブランド名があればそれを使う）
   state.catalog.push(p);
   if (!save()) { state.catalog.pop(); return null; }
   pickCleanImage(p, x, others || []);
@@ -4980,13 +5001,13 @@ function guessFromName(name) {
   const lowSq = sq(n), brand = brands.find(b => sq(b).length >= 2 && lowSq.includes(sq(b))) || '';
   const purposes = PURPOSE_WORDS.filter(([, re]) => re.test(n)).map(([p]) => p);
   const g = guessCat(n);
-  return {brand, purposes, category:g === 'その他' ? '' : g};
+  return {brand:brand || brandFromName(n, true), purposes, category:g === 'その他' ? '' : g};
 }
 function openMyForm(id, fromCatId) {
   const ex = id ? getMy(id) : null;
   const src = fromCatId ? getCat(fromCatId) : null;
   const t = todayStr();
-  const p = ex || {catalogId:src ? src.id : '', name:src ? src.name : '', brand:src ? src.brand : '', category:src ? src.category : '化粧水・トナー', purposes:src ? src.purposes.slice() : [], ingredients:'',
+  const p = ex || {catalogId:src ? src.id : '', name:src ? src.name : '', brand:src ? (src.brand || brandFromName(src.name)) : '', category:src ? (src.category && src.category !== 'その他' ? src.category : guessCat(src.name)) : '化粧水・トナー', purposes:src ? src.purposes.slice() : [], ingredients:'',
     timing:'朝・夜', frequency:'毎日', startDate:t, status:'使用中', endDate:'', memo:''};
   const catOpts = state.catalog.map(c => ({v:c.id, label:`${c.isSample ? '[サンプル] ' : ''}${c.brand}｜${c.name}`}));
   const linkedIngs = p.catalogId && getCat(p.catalogId) ? getCat(p.catalogId).ingredients : '';
@@ -5023,7 +5044,7 @@ function openMyForm(id, fromCatId) {
   $('#ing-clean2').onclick = () => { form.elements.ingredients.value = cleanIngText(form.elements.ingredients.value); toast('読点（、）区切りに整えました'); };
   form.elements.catalogId.onchange = e => {
     const c = getCat(e.target.value); if (!c) return;
-    form.elements.name.value = c.name; form.elements.brand.value = c.brand; form.elements.category.value = c.category;
+    form.elements.name.value = c.name; form.elements.brand.value = c.brand || brandFromName(c.name); form.elements.category.value = c.category;
     $$('input[name="purposes"]', form).forEach(i => i.checked = c.purposes.includes(i.value));
     if (form.elements.price && c.price && !form.elements.price.value) form.elements.price.value = c.price;
     form.elements.ingredients.placeholder = c.ingredients ? '空欄の場合は、商品データベースの全成分を使います' : '読点（、）で区切って入力';
@@ -6397,15 +6418,19 @@ async function quickMealSave(file) {
       else { q.busyLabel = '写真を読み取り中'; redraw(); r = (await callVision('meal', hiImg)).result || {items:[]}; }
       q.sec = ((Date.now() - q.t0) / 1000).toFixed(1);
       const miss = [], later = (r.items || []).filter(x => x.needOfficial);
-      const addOne = x => { const rec = aiFoodToRec(x, q.k); if (!rec) { miss.push(x.name); return false; } const f = normFood(rec); L.foods.push(f); q.added.push(f.id); return true; };
-      (r.items || []).filter(x => !x.needOfficial).forEach(addOne);
-      if (later.length) { // ② 表示が写っていない商品は、名前を先に出して、数字はメーカー公式の情報を裏で調べてから入れる
+      const addOne = x => { const rec = aiFoodToRec(x, q.k); if (!rec) { miss.push(x.name); return null; } const f = normFood(rec); L.foods.push(f); q.added.push(f.id); return f; };
+      const ids = (r.items || []).map(addOne);
+      if (later.length) { // ② 表示が写っていない商品は、目安の数字で先に入れ、メーカー公式の数字が見つかったら差し替える
         q.checking = later.map(x => x.name);
-        officialFill(later).then(got => { q.checking = []; got.forEach(addOne); q.ai = q.added.length ? 'done' : 'err'; if (miss.length) q.aiMsg = `「${miss.join('」「')}」は栄養成分を確認できませんでした。「詳しく編集」から数字を入れてください。`; save(); render(); redraw(); });
+        const lid = (r.items || []).map((x, i) => x.needOfficial ? ids[i] : undefined).filter((v, i) => (r.items || [])[i].needOfficial);
+        officialFill(later).then(got => {
+          q.checking = [];
+          got.forEach((x, i) => { const f = lid[i]; if (!f || x.basis !== '公式') return; const rec = aiFoodToRec(x, q.k); if (!rec) return; const cur = L.foods.find(y => y.id === f.id); if (cur) Object.assign(cur, normFood(Object.assign(rec, {id:f.id}))); });
+          save(); render(); redraw();
+        });
       }
-      q.ai = q.added.length ? 'done' : later.length ? 'wait' : 'err';
-      // 商品で、栄養成分を確かめられなかったものは、推測の数字を入れずに知らせる
-      q.aiMsg = (!q.added.length && !miss.length && !later.length ? (r.note || '食べ物を読み取れませんでした。「詳しく編集」からリストで選べます。') : '') + (miss.length ? `「${miss.join('」「')}」は栄養成分を確認できません（推測の数字は入れていません）。商品なら袋や箱の裏の栄養成分表示を撮るか、「詳しく編集」から入力してください。` : '');
+      q.ai = q.added.length ? 'done' : 'err';
+      q.aiMsg = (!q.added.length && !miss.length ? (r.note || '食べ物を読み取れませんでした。「詳しく編集」からリストで選べます。') : '') + (miss.length ? `「${miss.join('」「')}」は数字を出せませんでした。「詳しく編集」から入力できます。` : '');
       save(); render();
     } catch (err) { q.ai = 'err'; q.aiMsg = err.message; }
     redraw();
@@ -6624,14 +6649,14 @@ function openLifeForm(id, part, forDate) {
         if (file) { const jan = await janFromFile(file), off = jan ? await offNutrition(jan) : null; if (off) r = {items:[off]}; }
         if (!r) { box.innerHTML = skelHtml(3, {dots:true, label:'写真を読み取り中', note:'AIが商品名と栄養成分表示を読み取っています'}); r = (await callVision('meal', file ? await readImage(file, 800, 0.8) : img)).result || {items:[]}; }
         aiRes[k] = r.items || []; const sec = ((Date.now() - t0) / 1000).toFixed(1);
-        if (aiRes[k].some(x => x.needOfficial)) officialFill(aiRes[k]).then(got => { let gi = 0; aiRes[k] = aiRes[k].map(x => x.needOfficial ? (got[gi++] || Object.assign({}, x, {basis:'確認できません', needOfficial:false})) : x); paintAi(); });
+        if (aiRes[k].some(x => x.needOfficial)) officialFill(aiRes[k]).then(got => { let gi = 0; const chk = $$(`[data-aipick="${k}"]`, form).map(c => c.checked); aiRes[k] = aiRes[k].map(x => x.needOfficial ? (got[gi++] || Object.assign({}, x, {needOfficial:false})) : x); paintAi(); $$(`[data-aipick="${k}"]`, form).forEach((c, i) => { if (chk[i] === false) c.checked = false; }); });
         const paintAi = () => {
         if (!document.body.contains(box)) return;
         if (!aiRes[k].length) { box.innerHTML = `<div class="notice" style="margin:8px 0 0">食べ物を読み取れませんでした。${esc(r.note || '全体が写るように撮り直すか、下のリストから選んでください。')}</div>`; return; }
         box.innerHTML = `<div class="notice green" style="margin:8px 0 0"><b>読み取った食べ物</b><span class="small muted">（${sec}秒）</span>
-          ${aiRes[k].map((x, i) => x.needOfficial ? `<div class="check" style="margin-top:6px;align-items:flex-start;opacity:.85"><input type="checkbox" disabled><span>${esc(x.name)}${aiProdLine(x) ? `<br><span class="small muted">${aiProdLine(x)}</span>` : ''}<br><span class="small muted">栄養成分を、メーカーの公式情報で確認しています…</span></span></div>` : x.basis === '確認できません' ? `<div class="check" style="margin-top:6px;align-items:flex-start;opacity:.85"><input type="checkbox" disabled><span>${esc(x.name)}${aiBasisTag(x)}${aiProdLine(x) ? `<br><span class="small muted">${aiProdLine(x)}</span>` : ''}<br><span class="small muted">栄養成分を確認できません。推測の数字は入れていません。${x.kind === 'product' ? '袋や箱の裏の「栄養成分表示」を撮るか、' : '料理は公表された数字がないため、'}下のリストから入力してください。</span></span></div>` : `<label class="check" style="margin-top:6px;align-items:flex-start"><input type="checkbox" data-aipick="${k}" value="${i}" checked><span>${esc(x.name)}${aiBasisTag(x)}${aiProdLine(x) ? `<br><span class="small muted">${aiProdLine(x)}</span>` : ''}${x.unit ? `<br><span class="small muted">${esc(x.unit)}</span>` : ''}${x.sourceUrl ? `<br><a class="small" href="${esc(x.sourceUrl)}" target="_blank" rel="noopener noreferrer">参照元：${esc(x.source || 'メーカー公表情報')}</a>` : ''}${x.checkedAt ? `<span class="small muted">（${esc(fmtShort(x.checkedAt))}確認）</span>` : ''}<br><span class="small muted">${Math.round(x.kcal)}kcal・たんぱく質${x.p}g・脂質${x.f}g・炭水化物${x.c}g${x.salt ? `・食塩相当量${x.salt}g` : ''}${x.veg ? `・野菜${x.veg}g` : ''}</span>${x.diff ? `<br><span class="small" style="color:#b45309">${esc(x.diff)}</span>` : ''}</span></label>`).join('')}
+          ${aiRes[k].map((x, i) => x.basis === '確認できません' ? `<div class="check" style="margin-top:6px;align-items:flex-start;opacity:.85"><input type="checkbox" disabled><span>${esc(x.name)}${aiBasisTag(x)}${aiProdLine(x) ? `<br><span class="small muted">${aiProdLine(x)}</span>` : ''}<br><span class="small muted">数字を出せませんでした。下のリストから選んでください。</span></span></div>` : `<label class="check" style="margin-top:6px;align-items:flex-start"><input type="checkbox" data-aipick="${k}" value="${i}" checked><span>${esc(x.name)}${aiBasisTag(x)}${aiProdLine(x) ? `<br><span class="small muted">${aiProdLine(x)}</span>` : ''}${x.unit ? `<br><span class="small muted">${esc(x.unit)}</span>` : ''}${x.sourceUrl ? `<br><a class="small" href="${esc(x.sourceUrl)}" target="_blank" rel="noopener noreferrer">参照元：${esc(x.source || 'メーカー公表情報')}</a>` : ''}${x.checkedAt ? `<span class="small muted">（${esc(fmtShort(x.checkedAt))}確認）</span>` : ''}<br><span class="small muted">${Math.round(x.kcal)}kcal・たんぱく質${x.p}g・脂質${x.f}g・炭水化物${x.c}g${x.salt ? `・食塩相当量${x.salt}g` : ''}${x.veg ? `・野菜${x.veg}g` : ''}</span>${x.needOfficial ? '<br><span class="small muted">メーカー公式の数字を確認中…</span>' : ''}${x.diff ? `<br><span class="small" style="color:#b45309">${esc(x.diff)}</span>` : ''}</span></label>`).join('')}
           <button type="button" class="btn btn-primary btn-sm" data-aiadd="${k}" style="margin-top:8px">チェックしたものを追加</button>
-          <p class="small muted" style="margin-top:6px">${esc(aiRes[k].every(x => x.jan) ? 'バーコードから、Open Food Facts（食品のパッケージ表示のデータベース）に登録された栄養成分表示を出しています。' : AI_NOTE)}数字は、写真の「栄養成分表示」→ メーカーの公式情報 の順に確かめたものだけを入れます。推測では入れません（料理など確認できないものは「確認できません」と表示します）。量が違う場合は、追加したあとで消して、リストから選び直せます。</p></div>`;
+          <p class="small muted" style="margin-top:6px">${aiRes[k].every(x => x.jan) ? 'バーコードから、パッケージの栄養成分表示を出しています。' : '「目安」は写真からの推定です。違うときは追加したあとで直せます。'}</p></div>`;
         };
         paintAi();
       } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; }
@@ -6640,7 +6665,7 @@ function openLifeForm(id, part, forDate) {
     }
     if (b.dataset.aiadd) {
       const k = b.dataset.aiadd, picks = $$(`[data-aipick="${k}"]:checked`, form).map(x => aiRes[k][Number(x.value)]).filter(Boolean);
-      if (!picks.length) { toast('追加するものにチェックを入れてください', 'error'); return; }
+      if (!picks.length) return;
       picks.forEach(x => { const rec = aiFoodToRec(x, k); if (rec) foods.push(rec); });
       markAte(k); renderFoods(); $(`[data-pinfo="${k}"]`, form).innerHTML = `<p class="small" style="margin-top:6px;color:var(--green-d)">${picks.length}品を追加しました。</p>`;
       return;
@@ -8022,7 +8047,7 @@ async function runVisionDiag() {
   }
   diagBusy = false; upd();
 }
-const VISION_VERSION = '2026-11-06-meal5s'; // サーバーの関数 vision の最新の版
+const VISION_VERSION = '2026-11-06-mealest'; // サーバーの関数 vision の最新の版
 const AI_NOTE = 'AI（Google Gemini）による推定です。必ず内容を確認・修正してから使ってください。';
 const AI_CAT = {'化粧水':'化粧水・トナー','乳液':'乳液','美容液':'美容液・アンプル','クリーム':'クリーム','日焼け止め':'日焼け止め','洗顔料':'洗顔','クレンジング':'クレンジング','パック':'シートマスク・パック'};
 // ===== かんたん申し込み：プレミアムの機能を押したら、その場で（ログイン→）申し込みまで進める =====
@@ -8915,6 +8940,7 @@ const actions = {
   'setup-finish': () => { swSave(true); hapticSaved(); },
   'add-full': kind => { findState = null; closeModal(); setTimeout(() => (actions[kind === 'my' ? 'new-my' : 'new-cat'])(), 200); },
   'find-pick': i => findPick(i),
+  'find-more': () => { if (findState) { findState.more = true; findPaint(); } },
   'add-camera': kind => {
     if (!isPremium()) { closeModal(); openPremiumSheet('化粧品のカメラ登録'); return; }
     closeModal(); setTimeout(() => openCamSheet(kind || 'my'), 200);
