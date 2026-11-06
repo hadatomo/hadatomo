@@ -1,0 +1,30 @@
+name: 人気の化粧品ランキングを毎日入れ替える
+# 毎日 朝4時41分（日本時間）に、楽天のスキンケアのランキング（最大1000位）を取り、popular.json に保存する
+on:
+  schedule:
+    - cron: '41 19 * * *'
+  workflow_dispatch: {}
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ランキングを取る
+        run: |
+          curl -fsS --max-time 170 -X POST 'https://qrcgdukoptqhprhksfou.supabase.co/functions/v1/prices' \
+            -H 'apikey: sb_publishable_xtJnC2PNzWSlbUGFLWcwWQ_DhntVy35' -H 'Content-Type: application/json' \
+            -H 'Origin: https://nakakaramo.github.io' \
+            -d '{"mode":"ranking","pages":34}' -o ranking_raw.json
+          n=$(jq '.items | length' ranking_raw.json)
+          echo "取れた数: $n"
+          if [ "$n" -lt 30 ]; then echo "少なすぎるので保存しません"; cat ranking_raw.json | head -c 500; exit 1; fi
+          jq -c '{updatedAt, genre, credits, items: [.items[] | {rank, name, price, shop, url, image, images, reviews, site}]}' ranking_raw.json > popular.json
+          rm ranking_raw.json
+      - name: 変わっていたら保存する
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add popular.json
+          if git diff --cached --quiet; then echo "変更なし"; else git commit -m "人気の化粧品ランキングを更新" && git push; fi
