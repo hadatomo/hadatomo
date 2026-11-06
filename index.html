@@ -1491,7 +1491,7 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
       <div class="sn-copy">最小限で最大限を</div>
     </div>
     <nav id="side-nav"></nav>
-    <div class="sn-foot">データはこのブラウザ内にのみ保存されます。外部への自動送信は行いません。</div>
+    <div class="sn-foot">データはこのブラウザ内に保存されます。「クラウドに保存」をオンにした場合だけ、写真以外をあなたのアカウントに保存します。</div>
   </aside>
   <div id="page">
     <header class="topbar">
@@ -1518,7 +1518,7 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 /* ---------- 定数 ---------- */
 const SERVICE = 'ナカカラモ';
 const SITE_HOME = /^https?:/.test(location.protocol) && location.host ? location.origin + location.pathname : 'https://nakakaramo.github.io/nakakaramo/'; // 公開しているURL（名前を変えて引っ越しても、自動で新しいURLになる） // サービス名（英語表記：ナカカラモ）
-const COMPANY = 'はだとも'; // 企業名（変更する場合はここだけ書き換えます） 
+const COMPANY = 'ナカカラモ'; // 企業名（変更する場合はここだけ書き換えます） 
 const STORE_KEY = 'skinwise_data_v1'; // 第1版と同じ保存場所（データを引き継ぐため。サービス名を変えても変更しない）
 const CATEGORIES = ['クレンジング','洗顔','化粧水・トナー','美容液・アンプル','乳液','クリーム','シートマスク・パック','日焼け止め','スポットケア','その他'];
 const CAT_EN = {'クレンジング':'CLEANSING','洗顔':'CLEANSER','化粧水・トナー':'TONER','美容液・アンプル':'SERUM','乳液':'EMULSION','クリーム':'CREAM','シートマスク・パック':'MASK','日焼け止め':'SUN CARE','スポットケア':'SPOT CARE','その他':'SKIN CARE'};
@@ -1689,8 +1689,8 @@ const PLAN_ROWS = [
   ['化粧品・成分の管理、成分の注意点', '○', '○'],
   ['食事・運動・睡眠の記録', '○', '○'],
   ['基本の週次レポート', '○', '○'],
-  ['ケアの提案・支出管理', '○', '○'],
-  ['店舗検索・価格比較', '○', '○'],
+  ['おすすめケア・支出管理', '○', '○'],
+  ['天気と肌の関係・生理周期の予告・バッジ', '○', '○'],
   ['受診用まとめ（医師に見せる記録の整理）', '○', '○'],
   ['詳細な分析（商品と肌の比較・90日グラフ・生活習慣との比較など）', '—', '○'],
   ['成分相性マップ（より詳しい成分の重なりの表示）', '—', '○'],
@@ -3005,7 +3005,11 @@ async function findRun(q) {
     const j = await res.json().catch(() => ({})); clearTimeout(tm);
     if (findState !== fs || fs.q !== q) return;
     if (!res.ok || j.error) throw new Error('x');
-    fs.items = (Array.isArray(j.items) ? j.items : []).slice(0, 30);
+    // 候補の並び：ふつうの単品を先に、セット・詰め替え・お試し・まとめ買いは後ろへ。同じ名前は1つにまとめる
+    const odd = n => /セット|詰め?替え?|つめかえ|リフィル|レフィル|お試し|トライアル|サンプル|まとめ買い|\d+個|\d+本組|福袋|業務用/.test(n || '');
+    const seenN = new Set();
+    fs.items = (Array.isArray(j.items) ? j.items : []).filter(x => x && x.name).filter(x => { const k = String(x.name).normalize('NFKC').replace(/【[^】]*】|\[[^\]]*\]|[\s　]/g, '').slice(0, 30); if (seenN.has(k)) return false; seenN.add(k); return true; })
+      .map((x, i) => ({x, i, o:odd(x.name)})).sort((a, b) => a.o - b.o || a.i - b.i).map(v => v.x).slice(0, 30);
   } catch (e) { if (findState === fs && fs.q === q) { fs.items = null; fs.err = '商品を探せませんでした。電波のよい場所で、もう一度お試しください。'; } }
   if (findState === fs && fs.q === q) { fs.loading = false; findPaint(); }
 }
@@ -8676,7 +8680,7 @@ const actions = {
     const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `hadatomo-backup-${todayStr()}.json`;
+    a.download = `nakakaramo-backup-${todayStr()}.json`;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     toast('バックアップファイルを書き出しました');
@@ -8974,7 +8978,7 @@ function parseRoute() {
 }
 function renderNav(active, sideActive) {
   let g = null, side = ''; sideActive = sideActive || active;
-  NAV.forEach(n => { if (n.g !== g) { g = n.g; if (g) side += `<div class="sn-group">${esc(g)}</div>`; } side += `<a class="sn-item ${sideActive === n.r ? 'active' : ''}" href="#/${n.r}">${icon(n.icon)}${esc(n.label)}</a>`; });
+  NAV.filter(n => !['search', 'stores', 'suggest'].includes(n.r)).forEach(n => { if (n.g !== g) { g = n.g; if (g) side += `<div class="sn-group">${esc(g)}</div>`; } side += `<a class="sn-item ${sideActive === n.r ? 'active' : ''}" href="#/${n.r}">${icon(n.icon)}${esc(n.label)}</a>`; });
   $('#side-nav').innerHTML = side;
   const moreActive = !BOTTOM_NAV.includes(active);
   $('#bottom-nav').innerHTML = BOTTOM_NAV.map(r => r === 'account' ? {r:'account', label:'アカウント', icon:'user'} : NAV.find(n => n.r === r)).map(n => `<a class="bn-item ${active === n.r ? 'active' : ''}" href="#/${n.r}">${icon(n.icon)}<span>${esc(({log:'記録'})[n.r] || n.label)}</span></a>`).join('');
