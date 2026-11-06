@@ -2091,6 +2091,45 @@ function normFood(x) {
     ...(isValidYmd(x.checked || '') ? {checked:x.checked} : {})};
 }
 // 写真の読み取り結果（1品）を、記録する食べ物の形にする。「確認できません」のもの（数字がない）は null を返す
+// ===== お菓子などの商品：バーコードから一瞬で栄養成分表示を出す（AIを使わない） =====
+// 写真にバーコードが写っていれば、スマホの機能（なければアプリの中）で読み、Open Food Facts（食品のパッケージ表示を集めた無料のデータベース）で調べる
+async function janFromFile(file) {
+  try {
+    const hi = await readImage(file, 1400, 0.9), img = new Image(); img.src = hi; await img.decode();
+    if ('BarcodeDetector' in window) { try { const r = await new window.BarcodeDetector({formats:['ean_13', 'ean_8']}).detect(img); if (r[0] && /^(\d{8}|\d{13})$/.test(r[0].rawValue)) return r[0].rawValue; } catch (e) { /* 次の方法へ */ } }
+    return eanDecodeImage(img) || '';
+  } catch (e) { return ''; }
+}
+async function offNutrition(jan) {
+  try {
+    const ctrl = new AbortController(), tm = setTimeout(() => ctrl.abort(), 6000);
+    const r = await fetch(`https://world.openfoodfacts.org/api/v2/product/${jan}.json?fields=product_name,product_name_ja,brands,quantity,serving_size,nutriments`, {signal:ctrl.signal});
+    clearTimeout(tm); if (!r.ok) return null;
+    const j = await r.json(); const p = j && j.status === 1 && j.product; if (!p) return null;
+    const n = p.nutriments || {}, g = k => Number(n[k]);
+    const name = String(p.product_name_ja || p.product_name || '').trim(); if (!name) return null;
+    // 1袋（1本）の量がわかれば1袋分に、わからなければ100g（100ml）当たりのまま
+    const q = String(p.quantity || '').normalize('NFKC').match(/(\d+(?:\.\d+)?)\s*(g|ml)/i), base = q ? Number(q[1]) : 0, u = q ? q[2].toLowerCase() : 'g';
+    const per100 = ['energy-kcal_100g', 'proteins_100g', 'fat_100g', 'carbohydrates_100g'].every(k => Number.isFinite(g(k)));
+    const perSv = Number.isFinite(g('energy-kcal_serving'));
+    let unit, f;
+    if (per100 && base > 0 && base <= 2000) { f = base / 100; unit = `1袋（${base}${u}）分（100${u}当たりの表示から計算）`; }
+    else if (perSv) { f = null; unit = `1食（${p.serving_size || '表示の量'}）当たり`; }
+    else if (per100) { f = 1; unit = `100${u}当たり`; }
+    else return null;
+    const v = (k100, ks) => { const x = f == null ? g(ks) : g(k100) * f; return Number.isFinite(x) ? Math.round(x * 10) / 10 : 0; };
+    const kcal = v('energy-kcal_100g', 'energy-kcal_serving'); if (!(kcal > 0)) return null;
+    return {kind:'product', name:name.slice(0, 40), maker:String(p.brands || '').split(',')[0].trim().slice(0, 30), series:'', size:String(p.quantity || '').slice(0, 20), amount:'', unit,
+      basis:'表示', kcal, p:v('proteins_100g', 'proteins_serving'), f:v('fat_100g', 'fat_serving'), c:v('carbohydrates_100g', 'carbohydrates_serving'), salt:v('salt_100g', 'salt_serving'), veg:0,
+      source:'Open Food Facts（パッケージの栄養成分表示のデータ）', sourceUrl:`https://jp.openfoodfacts.org/product/${jan}`, checkedAt:todayStr(), confirmed:true, jan};
+  } catch (e) { return null; }
+}
+// 写真の表示が写っていなかった商品の数字を、メーカー公式の情報で調べる（AIの返事のあとで、裏で調べる）
+async function officialFill(items) {
+  const need = (items || []).filter(x => x.needOfficial); if (!need.length) return [];
+  try { const r = (await callVision('official', null, {items:need.map(x => ({name:x.name, maker:x.maker, series:x.series, size:x.size, amount:x.amount}))})).result || {items:[]}; return r.items || []; }
+  catch (e) { return need.map(x => Object.assign({}, x, {basis:'確認できません', needOfficial:false})); }
+}
 function aiFoodToRec(x, meal) {
   // 数字を使えるのは、パッケージの表示を読めたもの・メーカー公式で確認できたものだけ
   if (!['表示', '公式'].includes(x.basis) || x.kcal == null) return null;
@@ -6321,7 +6360,7 @@ function quickMeal() {
   inp.click();
 }
 async function quickMealSave(file) {
-  let img; try { img = await readImage(file, 480, 0.7); } catch (e) { toast(e.message, 'error'); return; }
+  let img, hiImg; try { img = await readImage(file, 480, 0.7); hiImg = isPremium() ? await readImage(file, 1024, 0.8) : img; } catch (e) { toast(e.message, 'error'); return; }
   const now = new Date(), tm = (await photoTime(file)) || `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
   const t = todayStr(); let L = getLife(t); if (!L) { L = blankLife(t); state.lifeLogs.push(L); }
   const q = {k:mealByTime(tm), tm, img, added:[], ai:'idle', aiMsg:''};
@@ -6332,8 +6371,8 @@ async function quickMealSave(file) {
     return `<div class="qm"><img class="qm-img" src="${img}" alt="撮った食事の写真"><div class="qm-t"><b>${esc(m.l)}として記録しました</b><span class="small muted">${esc(tm)} に撮った写真</span></div></div>
       <p class="small muted" style="margin:12px 0 6px">違うときは押して直せます</p>
       <div class="seg qm-slot" role="radiogroup">${FOOD_MEALS.map(x => `<label class="seg-opt"><input type="radio" name="qm-slot" value="${x.k}" ${x.k === q.k ? 'checked' : ''}><span>${x.l}</span></label>`).join('')}</div>
-      <div id="qm-ai" style="margin-top:12px">${q.ai === 'busy' ? skelHtml(2, {dots:true, label:'写真を読み取り中', note:'AIが商品名と栄養成分表示を読み取っています'})
-        : foods.length ? `<div class="notice green" style="margin:0"><b>AIが読み取った食べ物</b><div class="chips" style="margin-top:6px">${foods.map(x => `<span class="chip">${esc(x.name)} <span class="muted">${Math.round(x.kcal)}kcal</span></span>`).join('')}</div><p class="small muted" style="margin:6px 0 0">${esc(nutLine(nutTotals(foods)))}</p></div>`
+      <div id="qm-ai" style="margin-top:12px">${(q.checking || []).length ? `<p class="small muted" style="margin:0 0 8px">「${esc(q.checking.join('」「'))}」の栄養成分を、メーカーの公式情報で確認しています…</p>` : ''}${q.ai === 'busy' ? skelHtml(2, {dots:true, label:q.busyLabel || '写真を読み取り中', note:q.busyLabel === 'バーコードを確認中' ? 'バーコードが写っていれば、すぐに出ます' : 'AIが商品名と栄養成分表示を読み取っています'})
+        : foods.length ? `<div class="notice green" style="margin:0"><b>読み取った食べ物</b><div class="chips" style="margin-top:6px">${foods.map(x => `<span class="chip">${esc(x.name)} <span class="muted">${Math.round(x.kcal)}kcal</span></span>`).join('')}</div><p class="small muted" style="margin:6px 0 0">${esc(nutLine(nutTotals(foods)))}</p></div>`
         : q.ai === 'err' ? `<div class="notice" style="margin:0">${esc(q.aiMsg)}</div>`
         : isPremium() ? '' : `<p class="small muted" style="margin:0">${PREMIUM_NAME}プランなら、写真からAIが商品名と栄養成分表示を読み取って自動で入れます。食べたものは「詳しく編集」からリストで選べます。</p>`}</div>`;
   };
@@ -6349,14 +6388,23 @@ async function quickMealSave(file) {
     q.k = nk; put(nk); if (save()) hapticSaved(); render(); redraw();
   });
   if (isPremium()) {
-    q.ai = 'busy'; redraw();
+    q.ai = 'busy'; q.busyLabel = 'バーコードを確認中'; redraw();
     try {
-      const r = (await callVision('meal', img)).result || {items:[]};
-      const miss = [];
-      (r.items || []).forEach(x => { const rec = aiFoodToRec(x, q.k); if (!rec) { miss.push(x.name); return; } const f = normFood(rec); L.foods.push(f); q.added.push(f.id); });
-      q.ai = q.added.length ? 'done' : 'err';
+      // ① バーコードが写っていれば、AIを使わずに一瞬で出す
+      const jan = await janFromFile(file), off = jan ? await offNutrition(jan) : null;
+      let r;
+      if (off) r = {items:[off]};
+      else { q.busyLabel = '写真を読み取り中'; redraw(); r = (await callVision('meal', hiImg)).result || {items:[]}; }
+      const miss = [], later = (r.items || []).filter(x => x.needOfficial);
+      const addOne = x => { const rec = aiFoodToRec(x, q.k); if (!rec) { miss.push(x.name); return false; } const f = normFood(rec); L.foods.push(f); q.added.push(f.id); return true; };
+      (r.items || []).filter(x => !x.needOfficial).forEach(addOne);
+      if (later.length) { // ② 表示が写っていない商品は、名前を先に出して、数字はメーカー公式の情報を裏で調べてから入れる
+        q.checking = later.map(x => x.name);
+        officialFill(later).then(got => { q.checking = []; got.forEach(addOne); q.ai = q.added.length ? 'done' : 'err'; if (miss.length) q.aiMsg = `「${miss.join('」「')}」は栄養成分を確認できませんでした。「詳しく編集」から数字を入れてください。`; save(); render(); redraw(); });
+      }
+      q.ai = q.added.length ? 'done' : later.length ? 'wait' : 'err';
       // 商品で、栄養成分を確かめられなかったものは、推測の数字を入れずに知らせる
-      q.aiMsg = (!q.added.length && !miss.length ? (r.note || '食べ物を読み取れませんでした。「詳しく編集」からリストで選べます。') : '') + (miss.length ? `「${miss.join('」「')}」は栄養成分を確認できません（推測の数字は入れていません）。商品なら袋や箱の裏の栄養成分表示を撮るか、「詳しく編集」から入力してください。` : '');
+      q.aiMsg = (!q.added.length && !miss.length && !later.length ? (r.note || '食べ物を読み取れませんでした。「詳しく編集」からリストで選べます。') : '') + (miss.length ? `「${miss.join('」「')}」は栄養成分を確認できません（推測の数字は入れていません）。商品なら袋や箱の裏の栄養成分表示を撮るか、「詳しく編集」から入力してください。` : '');
       save(); render();
     } catch (err) { q.ai = 'err'; q.aiMsg = err.message; }
     redraw();
@@ -6372,7 +6420,7 @@ function openLifeForm(id, part, forDate) {
   let foods = d.foods.map(x => Object.assign({}, x));
   let exercise = d.exercise.map(x => Object.assign({}, x));
   const saved = Object.assign({}, d.mealPhotos);
-  const pending = {}, aiRes = {};
+  const pending = {}, aiRes = {}, pendingFile = {};
   // 食事だけを開いたときは、今の時刻で朝食・昼食・夕食・間食を自動で選び、その食事の入力欄だけを出す
   const nowHM = () => { const n = new Date(); return `${String(n.getHours()).padStart(2, '0')}:${String(n.getMinutes()).padStart(2, '0')}`; };
   const slot0 = mealByTime(nowHM());
@@ -6568,15 +6616,23 @@ function openLifeForm(id, part, forDate) {
         return;
       }
       const img = pending[k] || saved[k]; if (!img) return;
-      b.disabled = true; box.innerHTML = skelHtml(3, {dots:true, label:'写真を読み取り中', note:'写真を読み取っています（10秒ほどかかります）'});
+      b.disabled = true; box.innerHTML = skelHtml(3, {dots:true, label:'バーコードを確認中', note:'バーコードが写っていれば、すぐに出ます'});
       try {
-        const r = (await callVision('meal', img)).result || {items:[]};
+        // ① バーコードが写っていれば、AIを使わずに一瞬で出す（② なければAIで読む。③ 表示が写っていない商品は、公式情報を裏で調べて入れる）
+        const file = pendingFile[k]; let r = null;
+        if (file) { const jan = await janFromFile(file), off = jan ? await offNutrition(jan) : null; if (off) r = {items:[off]}; }
+        if (!r) { box.innerHTML = skelHtml(3, {dots:true, label:'写真を読み取り中', note:'AIが商品名と栄養成分表示を読み取っています'}); r = (await callVision('meal', file ? await readImage(file, 1024, 0.8) : img)).result || {items:[]}; }
         aiRes[k] = r.items || [];
-        if (!aiRes[k].length) { box.innerHTML = `<div class="notice" style="margin:8px 0 0">食べ物を読み取れませんでした。${esc(r.note || '全体が写るように撮り直すか、下のリストから選んでください。')}</div>`; }
-        else box.innerHTML = `<div class="notice green" style="margin:8px 0 0"><b>読み取った食べ物</b>
-          ${aiRes[k].map((x, i) => x.basis === '確認できません' ? `<div class="check" style="margin-top:6px;align-items:flex-start;opacity:.85"><input type="checkbox" disabled><span>${esc(x.name)}${aiBasisTag(x)}${aiProdLine(x) ? `<br><span class="small muted">${aiProdLine(x)}</span>` : ''}<br><span class="small muted">栄養成分を確認できません。推測の数字は入れていません。${x.kind === 'product' ? '袋や箱の裏の「栄養成分表示」を撮るか、' : '料理は公表された数字がないため、'}下のリストから入力してください。</span></span></div>` : `<label class="check" style="margin-top:6px;align-items:flex-start"><input type="checkbox" data-aipick="${k}" value="${i}" checked><span>${esc(x.name)}${aiBasisTag(x)}${aiProdLine(x) ? `<br><span class="small muted">${aiProdLine(x)}</span>` : ''}${x.unit ? `<br><span class="small muted">${esc(x.unit)}</span>` : ''}${x.sourceUrl ? `<br><a class="small" href="${esc(x.sourceUrl)}" target="_blank" rel="noopener noreferrer">参照元：${esc(x.source || 'メーカー公表情報')}</a>` : ''}${x.checkedAt ? `<span class="small muted">（${esc(fmtShort(x.checkedAt))}確認）</span>` : ''}<br><span class="small muted">${Math.round(x.kcal)}kcal・たんぱく質${x.p}g・脂質${x.f}g・炭水化物${x.c}g${x.salt ? `・食塩相当量${x.salt}g` : ''}${x.veg ? `・野菜${x.veg}g` : ''}</span>${x.diff ? `<br><span class="small" style="color:#b45309">${esc(x.diff)}</span>` : ''}</span></label>`).join('')}
+        if (aiRes[k].some(x => x.needOfficial)) officialFill(aiRes[k]).then(got => { let gi = 0; aiRes[k] = aiRes[k].map(x => x.needOfficial ? (got[gi++] || Object.assign({}, x, {basis:'確認できません', needOfficial:false})) : x); paintAi(); });
+        const paintAi = () => {
+        if (!document.body.contains(box)) return;
+        if (!aiRes[k].length) { box.innerHTML = `<div class="notice" style="margin:8px 0 0">食べ物を読み取れませんでした。${esc(r.note || '全体が写るように撮り直すか、下のリストから選んでください。')}</div>`; return; }
+        box.innerHTML = `<div class="notice green" style="margin:8px 0 0"><b>読み取った食べ物</b>
+          ${aiRes[k].map((x, i) => x.needOfficial ? `<div class="check" style="margin-top:6px;align-items:flex-start;opacity:.85"><input type="checkbox" disabled><span>${esc(x.name)}${aiProdLine(x) ? `<br><span class="small muted">${aiProdLine(x)}</span>` : ''}<br><span class="small muted">栄養成分を、メーカーの公式情報で確認しています…</span></span></div>` : x.basis === '確認できません' ? `<div class="check" style="margin-top:6px;align-items:flex-start;opacity:.85"><input type="checkbox" disabled><span>${esc(x.name)}${aiBasisTag(x)}${aiProdLine(x) ? `<br><span class="small muted">${aiProdLine(x)}</span>` : ''}<br><span class="small muted">栄養成分を確認できません。推測の数字は入れていません。${x.kind === 'product' ? '袋や箱の裏の「栄養成分表示」を撮るか、' : '料理は公表された数字がないため、'}下のリストから入力してください。</span></span></div>` : `<label class="check" style="margin-top:6px;align-items:flex-start"><input type="checkbox" data-aipick="${k}" value="${i}" checked><span>${esc(x.name)}${aiBasisTag(x)}${aiProdLine(x) ? `<br><span class="small muted">${aiProdLine(x)}</span>` : ''}${x.unit ? `<br><span class="small muted">${esc(x.unit)}</span>` : ''}${x.sourceUrl ? `<br><a class="small" href="${esc(x.sourceUrl)}" target="_blank" rel="noopener noreferrer">参照元：${esc(x.source || 'メーカー公表情報')}</a>` : ''}${x.checkedAt ? `<span class="small muted">（${esc(fmtShort(x.checkedAt))}確認）</span>` : ''}<br><span class="small muted">${Math.round(x.kcal)}kcal・たんぱく質${x.p}g・脂質${x.f}g・炭水化物${x.c}g${x.salt ? `・食塩相当量${x.salt}g` : ''}${x.veg ? `・野菜${x.veg}g` : ''}</span>${x.diff ? `<br><span class="small" style="color:#b45309">${esc(x.diff)}</span>` : ''}</span></label>`).join('')}
           <button type="button" class="btn btn-primary btn-sm" data-aiadd="${k}" style="margin-top:8px">チェックしたものを追加</button>
-          <p class="small muted" style="margin-top:6px">${esc(AI_NOTE)}数字は、写真の「栄養成分表示」→ メーカーの公式情報 の順に確かめたものだけを入れます。推測では入れません（料理など確認できないものは「確認できません」と表示します）。量が違う場合は、追加したあとで消して、リストから選び直せます。</p></div>`;
+          <p class="small muted" style="margin-top:6px">${esc(aiRes[k].every(x => x.jan) ? 'バーコードから、Open Food Facts（食品のパッケージ表示のデータベース）に登録された栄養成分表示を出しています。' : AI_NOTE)}数字は、写真の「栄養成分表示」→ メーカーの公式情報 の順に確かめたものだけを入れます。推測では入れません（料理など確認できないものは「確認できません」と表示します）。量が違う場合は、追加したあとで消して、リストから選び直せます。</p></div>`;
+        };
+        paintAi();
       } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; }
       b.disabled = false;
       return;
@@ -6603,7 +6659,7 @@ function openLifeForm(id, part, forDate) {
         // 写真を撮った時刻（なければ今の時刻）で、朝食・昼食・夕食・間食を自動で決める
         const tm = await photoTime(file);
         if (k === 'auto') { kk = mealByTime(tm || nowHM()); showSlot(kk); const blk = $(`.meal-block[data-meal="${kk}"]`, form); if (blk) blk.scrollIntoView({block:'center', behavior:'smooth'}); }
-        pending[kk] = img; markAte(kk); renderPhoto(kk);
+        pending[kk] = img; pendingFile[kk] = file; markAte(kk); renderPhoto(kk);
         const te = form.elements['time_' + kk]; if (tm && te) te.value = tm;
         // プレミアムは、そのままAIで料理と栄養の目安を読み取る
         const pb = $(`[data-premium="${kk}"]`, form); if (pb && isPremium()) pb.click();
@@ -7916,7 +7972,7 @@ async function callVision(mode, image, payload) {
   if (!acct.client) await initCloud();
   if (!acct.client || !acct.user) throw new Error('ログインしてからお使いください。');
   // 返事が来ないまま「読み取り中」で止まらないように、90秒で打ち切る
-  const call = acct.client.functions.invoke('vision', {body:mode === 'advice' || mode === 'menu' || mode === 'recipe' || mode === 'prodinfo' ? {mode, data:payload} : mode === 'diag' || mode === 'storefill' ? {mode} : {mode, image}});
+  const call = acct.client.functions.invoke('vision', {body:mode === 'advice' || mode === 'menu' || mode === 'recipe' || mode === 'prodinfo' || mode === 'official' ? {mode, data:payload} : mode === 'diag' || mode === 'storefill' ? {mode} : mode === 'meal' ? {mode, image, fast:true} : {mode, image}});
   const {data, error} = await Promise.race([call, new Promise((_, rej) => setTimeout(() => rej(new Error('時間がかかりすぎたため中止しました。電波のよい場所で、もう一度お試しください。')), 90000))]);
   if (error) {
     let msg = 'サーバーに接続できませんでした。時間をおいてお試しください。';
@@ -7965,7 +8021,7 @@ async function runVisionDiag() {
   }
   diagBusy = false; upd();
 }
-const VISION_VERSION = '2026-11-05-prodinfo'; // サーバーの関数 vision の最新の版
+const VISION_VERSION = '2026-11-06-fastmeal'; // サーバーの関数 vision の最新の版
 const AI_NOTE = 'AI（Google Gemini）による推定です。必ず内容を確認・修正してから使ってください。';
 const AI_CAT = {'化粧水':'化粧水・トナー','乳液':'乳液','美容液':'美容液・アンプル','クリーム':'クリーム','日焼け止め':'日焼け止め','洗顔料':'洗顔','クレンジング':'クレンジング','パック':'シートマスク・パック'};
 // ===== かんたん申し込み：プレミアムの機能を押したら、その場で（ログイン→）申し込みまで進める =====
@@ -8601,7 +8657,7 @@ function viewSettings() {
       <p class="small" style="margin:0">記録は<b>この端末のブラウザの中</b>に保存されます。「クラウドに保存」をオンにした場合だけ、写真以外の記録をあなたのアカウントに保存します。</p>
       <details class="fold" style="margin-top:10px"><summary>詳しく見る</summary>
       <ul class="points small">
-        <li><b>天気</b>：天気の地域を選んだ場合だけ、緯度・経度を天気サービス（Open-Meteo）に送り、湿度・気温・紫外線を受け取ります。都道府県を選んだときは県庁所在地の位置、「現在地」を選んで位置情報を許可したときは、約100mに丸めた今いる場所の位置です。現在地のときは、地名を表示するために同じ位置を地名の確認サービス（BigDataCloud）にも送ります。記録やアカウントの情報は送りません。位置はこの端末の中に保存します。</li><li><b>保存場所</b>：データは<b>このブラウザの中（localStorage）</b>に保存されます。設定で「クラウドに保存」をオンにした場合だけ、写真を除く記録・化粧品・設定を、あなたのアカウント（Supabase・東京リージョン）に保存します。本人以外は読めません。オフにすると、クラウドに保存したデータは消えます。</li>
+        <li><b>食品のバーコード</b>：食事の写真にバーコードが写っていた場合、その数字（JANコード）だけを食品データベース（Open Food Facts）に送り、栄養成分表示を受け取ります。写真そのものは送りません。</li><li><b>天気</b>：天気の地域を選んだ場合だけ、緯度・経度を天気サービス（Open-Meteo）に送り、湿度・気温・紫外線を受け取ります。都道府県を選んだときは県庁所在地の位置、「現在地」を選んで位置情報を許可したときは、約100mに丸めた今いる場所の位置です。現在地のときは、地名を表示するために同じ位置を地名の確認サービス（BigDataCloud）にも送ります。記録やアカウントの情報は送りません。位置はこの端末の中に保存します。</li><li><b>保存場所</b>：データは<b>このブラウザの中（localStorage）</b>に保存されます。設定で「クラウドに保存」をオンにした場合だけ、写真を除く記録・化粧品・設定を、あなたのアカウント（Supabase・東京リージョン）に保存します。本人以外は読めません。オフにすると、クラウドに保存したデータは消えます。</li>
         <li><b>肌写真</b>：保存は任意です。「ブラウザ内に保存する」にチェックした写真だけを保存し、外部には送信しません。</li>
         <li><b>位置情報</b>：「現在地の近くを探す」を押し、確認画面とブラウザの許可の両方で同意した場合だけ使います。保存はしません。地図のリンクを開くと、地図サービスに位置が送られます。</li>
         <li><b>アカウント</b>：有料プランの申し込み・管理のため、ログインした場合だけ、メールアドレスと契約状況をサーバー（Supabase・東京リージョン）に保存します。決済はStripeの画面で行い、カード情報はナカカラモに保存されません。ログイン機能の部品は、プラン・アカウントの画面を開いたときに jsDelivr から読み込みます。</li>
