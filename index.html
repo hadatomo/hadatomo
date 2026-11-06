@@ -762,10 +762,15 @@ details.acc-cmp{margin-top:14px}
 .mrow-t small{font-size:12px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .mrow-go{color:var(--muted);font-size:18px}
 .my-adds{margin:0 0 12px}
-.my-kinds{display:grid;grid-template-columns:1fr 1fr;margin:0 0 12px;border-bottom:1px solid var(--line)}
+.my-kinds{display:grid;grid-template-columns:1fr 1fr;margin:0 0 12px;border-bottom:1px solid var(--line);position:relative}
+.mk-ind{position:absolute;left:0;bottom:-1px;width:50%;height:2.5px;border-radius:2px;background:var(--green-d);transform:translateX(calc(var(--mk,0) * 100%));transition:transform .32s cubic-bezier(.2,.8,.2,1)}
+.mk-pane.mk-in-r{animation:mkInR .32s cubic-bezier(.2,.8,.2,1) both}.mk-pane.mk-in-l{animation:mkInL .32s cubic-bezier(.2,.8,.2,1) both}
+@keyframes mkInR{from{opacity:0;transform:translateX(28px)}to{opacity:1;transform:none}}@keyframes mkInL{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
+.my-kind{transition:color .2s}
+.my-kind span{transition:background .2s,color .2s}
 .my-kind{background:none;border:0;border-bottom:2.5px solid transparent;margin-bottom:-1px;padding:6px 0;font:inherit;font-size:14.5px;font-weight:700;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
 .my-kind span{font-size:12px;font-weight:600;background:var(--surface2,#F4F1EC);border-radius:999px;padding:1px 8px}
-.my-kind.on{color:var(--ink);border-bottom-color:var(--green-d)}.my-kind.on span{background:var(--green-l,#E5F2EA);color:var(--green-d)}.my-adds .btn{justify-content:center;gap:4px}.my-adds svg{width:16px;height:16px}
+.my-kind.on{color:var(--ink)}.my-kind.on span{background:var(--green-l,#E5F2EA);color:var(--green-d)}.my-adds .btn{justify-content:center;gap:4px}.my-adds svg{width:16px;height:16px}
 .mrow-in{display:flex;align-items:center;flex:1;min-width:0;background:var(--surface);position:relative;z-index:1;will-change:transform}
 .m-del{position:absolute;right:0;top:0;bottom:0;width:88px;border:0;background:#D64545;color:#fff;font:inherit;font-size:12px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;visibility:hidden}
 .mrow-w.sw-open .m-del{visibility:visible}.m-del svg{width:20px;height:20px}
@@ -1032,9 +1037,23 @@ body::before{content:'';position:fixed;left:0;right:0;top:0;height:env(safe-area
 .pop-item i{flex:none;color:var(--green-d)}.pop-item i svg{width:18px;height:18px}
 .tm-pick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .tm-opt{display:flex;cursor:pointer;position:relative}.tm-opt input{position:absolute;opacity:0;pointer-events:none}
-.tm-opt span{flex:1;display:flex;align-items:center;justify-content:center;min-height:44px;padding:0 4px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);font-weight:700;font-size:clamp(12px,3.6vw,14.5px);white-space:nowrap;letter-spacing:-.02em;color:var(--ink2)}
+.tm-opt span{transition:background .18s,border-color .18s,color .18s,transform .12s;flex:1;display:flex;align-items:center;justify-content:center;min-height:44px;padding:0 4px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);font-weight:700;font-size:clamp(12px,3.6vw,14.5px);white-space:nowrap;letter-spacing:-.02em;color:var(--ink2)}
 .tm-opt input:checked+span{background:var(--green-l,#E5F2EA);border-color:var(--green);color:var(--green-d)}
 .tm-opt input:focus-visible+span{outline:2px solid var(--green-d);outline-offset:2px}
+/* 押したときの小さな動き・色の変化を、どこでも自然に */
+.chip,.adv-c,.add-opt,.rx-item,.pop-item,.mrow,.mtools a,.ls-main,.acc-row,.check,.used-tile,.sc-d,.fq-chip{transition:background-color .18s,border-color .18s,color .18s,transform .12s,box-shadow .18s,opacity .18s}
+.add-opt:active,.rx-item:active,.pop-item:active,.mtools a:active,.sc-d.has:active{transform:scale(.98)}
+.mrow:active{background:var(--surface2,#F6F3EE)}
+details.fold[open]>*:not(summary){animation:itemIn .3s cubic-bezier(.2,.8,.2,1) both}
+details.fold summary{transition:color .18s}
+.acc-panel.closing{animation:accOut .2s ease both}
+@keyframes accOut{to{opacity:0;transform:translateY(-6px)}}
+#modal-ghost{position:fixed;inset:0;z-index:999;pointer-events:none}
+#modal-ghost .modal-backdrop{animation:ghostBg .22s ease forwards}
+#modal-ghost .modal{animation:ghostDown .22s cubic-bezier(.4,0,1,1) forwards}
+@keyframes ghostBg{to{background-color:transparent;opacity:0}}@keyframes ghostDown{to{transform:translateY(105%)}}
+@media(min-width:640px){@keyframes ghostDown{to{transform:translateY(24px) scale(.97);opacity:0}}}
+@media (prefers-reduced-motion:reduce){.mk-pane,.mk-ind,#modal-ghost *,details.fold[open]>*{animation:none!important;transition:none!important}}
 .rx-g{font-size:13px;color:var(--green-d);margin:16px 0 6px}
 .rx-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 12px;margin:0 0 6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font:inherit;color:var(--ink);cursor:pointer}
 .rx-item span{flex:1;min-width:0}.rx-item b{display:block;font-size:14px}.rx-item small{display:block;font-size:11.5px;color:var(--muted);overflow-wrap:anywhere}
@@ -1347,9 +1366,19 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .adv-chips + .adv-text,.adv-chips + .adv-chips + .adv-text{margin-top:8px}
 .advice .adv-text{display:block;font-size:13px;color:var(--muted);line-height:1.6}
 .adv-chips small{font-size:11px;color:var(--muted);margin-right:2px;width:100%}
-.adv-c{font-size:12px;font-weight:600;border-radius:999px;padding:2px 9px}
-.adv-c.good{background:#E3F0E6;color:var(--green-d)}
-.adv-c.bad{background:#FBE9E4;color:#B04A32}
+.adv-c{font-size:12.5px;font-weight:600;border-radius:999px;padding:3px 10px;background:#fff;line-height:1.5}
+.adv-c.good{color:var(--green-d);box-shadow:inset 0 0 0 1px #CFE3D4}
+.adv-c.bad{color:#B04A32;box-shadow:inset 0 0 0 1px #F2CFC4}
+.adv-gb{display:grid;gap:8px;margin:10px 0 2px}
+.adv-box{border-radius:14px;padding:10px 12px 11px}.adv-box.good{background:#EEF6F0}.adv-box.bad{background:#FDF1EC}
+.adv-box small{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;margin:0 0 7px}.adv-box.good small{color:var(--green-d)}.adv-box.bad small{color:#B04A32}
+.adv-ic{width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex:none}
+.adv-box.good .adv-ic{background:var(--green)}.adv-box.bad .adv-ic{background:#D9694B}
+.adv-cl{display:flex;flex-wrap:wrap;gap:6px}
+.advice .adv4 li{padding-bottom:14px}.advice .adv4 li+li{border-top:1px solid var(--line);padding-top:14px}
+.advice .adv4 li b{font-size:15px;line-height:1.5}
+@media(min-width:520px){.adv-gb{grid-template-columns:1fr 1fr}}
+html[data-theme="dark"] .adv-box.good{background:rgba(90,150,110,.16)}html[data-theme="dark"] .adv-box.bad{background:rgba(217,105,75,.14)}html[data-theme="dark"] .adv-c{background:transparent}
 .adv-area{display:block;font-style:normal;font-size:11px;font-weight:700;color:var(--green-d);letter-spacing:.04em}
 .advice .adv4 li>i{background:none;font-size:18px;width:22px;height:22px}
 .ldc-note i{width:5px;height:5px;border-radius:50%;background:var(--green)}
@@ -2612,7 +2641,14 @@ new MutationObserver(() => { if (hapSegQueued) return; hapSegQueued = true; requ
 let lockedY = null;
 function lockScroll() { if (lockedY != null) return; lockedY = window.scrollY; document.body.style.top = `-${lockedY}px`; document.body.classList.add('no-scroll'); }
 function unlockScroll() { if (lockedY == null) return; const y = lockedY; lockedY = null; document.body.classList.remove('no-scroll'); document.body.style.top = ''; window.scrollTo(0, y); }
-function closeModal() { const r = $('#modal-root'); r.innerHTML = ''; delete r.dataset.dirty; unlockScroll();
+function closeModal() { const r = $('#modal-root');
+  // 閉じるときも、下にすっと消える（中身はすぐ消して、見た目だけ少し残す）
+  const m0 = r.querySelector('.modal-backdrop');
+  if (m0 && !document.getElementById('modal-ghost') && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+    const g = document.createElement('div'); g.id = 'modal-ghost'; g.setAttribute('aria-hidden', 'true'); g.appendChild(m0.cloneNode(true));
+    g.querySelectorAll('canvas,video').forEach(x => x.remove()); document.body.appendChild(g); setTimeout(() => g.remove(), 240);
+  }
+  r.innerHTML = ''; delete r.dataset.dirty; unlockScroll();
   const ff = document.body.querySelector(':scope > #fp-field'); if (ff) ff.remove(); // 全画面にした顔の編集が残っていたら消す
   if (FACE3D.st && FACE3D.st.canvasId === 'face3d-form') { FACE3D.st.stop = true; FACE3D.st = null; setTimeout(() => { if (!document.getElementById('face3d-form')) render(); }, 0); } } // 記録画面の3Dの顔を閉じたら、元の画面の3Dの顔を戻す
 // ボトムシート：下にすべらせて閉じる（入力途中なら確認してから）
@@ -5066,7 +5102,8 @@ function viewMy() {
     .sort((a,b) => (a.order == null ? 1e9 : a.order) - (b.order == null ? 1e9 : b.order) || (useN[b.id] || 0) - (useN[a.id] || 0) || FREQS.indexOf(a.frequency) - FREQS.indexOf(b.frequency) || b.startDate.localeCompare(a.startDate));
   let html = `<div class="btn-pair my-adds"><button class="btn btn-primary btn-sm" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button><button class="btn btn-primary btn-sm" data-action="rx-sheet">${icon('plus')}塗り薬を追加</button></div>`;
   const tools = !state.myProducts.length ? '' : `<div class="mtools"><a href="#/compare">${icon('compare')}<span>肌との比較</span><i>›</i></a><a href="#/combo">${icon('flask')}<span>成分の組み合わせ</span><i>›</i></a></div>`;
-  html += `<div class="my-kinds" role="tablist" aria-label="アイテムの種類">${[['cos', '化粧品', nCos], ['rx', '塗り薬', nRx]].map(([k, l, n]) => `<button type="button" class="my-kind ${kind === k ? 'on' : ''}" role="tab" aria-selected="${kind === k}" data-action="my-kind" data-id="${k}">${l}<span>${n}</span></button>`).join('')}</div>`;
+  const kFrom = ui.myKindFrom || kind, kDir = ui.myKindDir || 0; ui.myKindFrom = ''; ui.myKindDir = 0;
+  html += `<div class="my-kinds" role="tablist" aria-label="アイテムの種類" style="--mk:${kFrom === 'rx' ? 1 : 0}" data-to="${kind === 'rx' ? 1 : 0}">${[['cos', '化粧品', nCos], ['rx', '塗り薬', nRx]].map(([k, l, n]) => `<button type="button" class="my-kind ${kind === k ? 'on' : ''}" role="tab" aria-selected="${kind === k}" data-action="my-kind" data-id="${k}">${l}<span>${n}</span></button>`).join('')}<i class="mk-ind" aria-hidden="true"></i></div><div class="mk-pane ${kDir > 0 ? 'mk-in-r' : kDir < 0 ? 'mk-in-l' : ''}">`;
   if (state.myProducts.length && !list.length) {
     html += `<div class="card">${emptyBox(kind === 'rx' ? 'flask' : 'bottle', kind === 'rx' ? 'まだ塗り薬が登録されていません' : 'まだ化粧品が登録されていません', kind === 'rx' ? '皮膚科で出された塗り薬は、上の「塗り薬を追加」から一覧で選べます。' : '使っている化粧品は、上の「化粧品を追加」から登録できます。')}</div>`;
   } else if (!state.myProducts.length) {
@@ -5083,8 +5120,10 @@ function viewMy() {
         <label class="m-sw ${on ? 'on' : ''}"><input type="checkbox" switch class="m-sw-in" data-id="${esc(p.id)}" ${on ? 'checked' : ''} aria-label="${esc(p.name)}を使用中にする"><i aria-hidden="true"></i><span>${on ? '使用中' : '停止中'}</span></label></div></div>`;
     }).join('')}</div>`;
   }
-  return html + tools;
+  return html + tools + '</div>';
 }
+// 化粧品／塗り薬を切り替えたとき、下の線を前の位置からすべらせる
+function myKindsAnimate() { const n = document.querySelector('.my-kinds[data-to]'); if (!n) return; requestAnimationFrame(() => requestAnimationFrame(() => { n.style.setProperty('--mk', n.dataset.to); })); }
 // ===== Myアイテム：使用中／停止中のスイッチ（本物のスイッチなので、iPhoneでも押すと「コツッ」と鳴る） =====
 document.addEventListener('change', e => {
   const ip = e.target; if (!ip || !ip.classList || !ip.classList.contains('m-sw-in')) return;
@@ -7368,8 +7407,9 @@ function advChips(x) {
   const lb = ADV_LABELS[x.area] || ['おすすめ', '控えたいもの'], g = advClean(x.good), a = advClean(x.avoid, 24);
   // スキンケアのおすすめ成分は、押すとその成分の人気商品（楽天市場・Yahoo!ショッピングのレビューの多い順）を出す
   const skin = x.area === 'スキンケア';
-  return (g.length ? `<div class="adv-chips"><small>${lb[0]}</small>${g.map(v => `<span class="adv-c good">${esc(v)}</span>`).join('')}</div>` : '')
-    + (a.length ? `<div class="adv-chips"><small>${lb[1]}</small>${a.map(v => `<span class="adv-c bad">${esc(v)}</span>`).join('')}</div>` : '');
+  if (!g.length && !a.length) return '';
+  return `<div class="adv-gb">${g.length ? `<div class="adv-box good"><small><span class="adv-ic">✓</span>${lb[0]}</small><div class="adv-cl">${g.map(v => `<span class="adv-c good">${esc(v)}</span>`).join('')}</div></div>` : ''}`
+    + `${a.length ? `<div class="adv-box bad"><small><span class="adv-ic">!</span>${lb[1]}</small><div class="adv-cl">${a.map(v => `<span class="adv-c bad">${esc(v)}</span>`).join('')}</div></div>` : ''}</div>`;
 }
 const ADVICE_KEY = 'skinwise_advice';
 function adviceCache() { try { return JSON.parse(localStorage.getItem(ADVICE_KEY) || 'null'); } catch (e) { return null; } }
@@ -7477,7 +7517,7 @@ function menuHtml() {
   // 家で作る（和食・洋食）はAIの献立、コンビニ（セブン・ローソン・ファミマ）は保存してある商品の一覧から、すぐに組み合わせる
   if (res) res = Object.assign({}, res, {meals:res.meals.map(m => Object.assign({}, m, {plans:m.plans.filter(pl => !pl.store).slice(0, 2).map((pl, i) => Object.assign({}, pl, {label:['和食', '洋食'][i]})).concat(storePlans(m.meal, d))}))});
   const body = res ? res.meals.map((m, mi) => { const k = Math.min(ui.menuPick[mi] || 0, m.plans.length - 1);
-    return `<div class="mn-meal"><b class="mn-h">${esc(m.when)}の${esc(m.meal)}</b>${pickRow(m, mi, k)}${plan(m.plans[k])}</div>`; }).join('')
+    return `<div class="mn-meal"><b class="mn-h">${m.when === '明日' ? '明日の' : ''}${esc(({朝:'朝食', 昼:'昼食', 夜:'夕食'})[m.meal] || m.meal)}</b>${pickRow(m, mi, k)}${plan(m.plans[k])}</div>`; }).join('')
     : `<p class="small muted" style="margin:0">${menuErr ? esc(menuErr) : 'まだ献立がありません。'}</p>`;
   const cvNote = res && res.storeNote && !res.meals.some(m => m.plans.some(pl => pl.store)) ? `<p class="mn-src">コンビニ（セブン・ローソン・ファミマ）の商品は、今回は調べられませんでした（${esc(res.storeNote)}）。「別の献立にする」でもう一度調べます。</p>` : '';
   return head + body + cvNote + `<div class="adv-foot"><span class="small muted">${eaten ? `今日食べたもの（${esc(Object.keys(d.eatenToday).join('・'))}）と肌の状態から作りました。` : '今日の食事の記録がまだないので、肌の状態から作りました。'}カロリーなどの数字は出しません。</span></div>`;
@@ -9240,7 +9280,7 @@ const actions = {
     ui.accOpen = ui.accOpen || {}; ui.accOpen[k] = !ui.accOpen[k];
     const pn = document.getElementById('acc-panel-' + k); if (!pn) return;
     if (ui.accOpen[k]) { pn.innerHTML = ACC_SECTIONS[k].body(); pn.hidden = false; pn.classList.remove('open'); void pn.offsetWidth; pn.classList.add('open'); if (k === 'plan' && acct.status === 'idle') initCloud(); }
-    else { pn.hidden = true; pn.innerHTML = ''; }
+    else { pn.classList.remove('open'); pn.classList.add('closing'); setTimeout(() => { if (!ui.accOpen[k]) { pn.hidden = true; pn.innerHTML = ''; } pn.classList.remove('closing'); }, 190); }
     if (el) el.setAttribute('aria-expanded', String(ui.accOpen[k]));
   },
   'acc-budget-edit': () => { ui.budgetEdit = true; const c = document.getElementById('acc-money'); if (c) { c.innerHTML = moneyCardHtml(); const i = document.getElementById('acc-budget-in'); if (i) i.focus(); } },
@@ -9379,7 +9419,11 @@ const actions = {
   },
   'clear-filter': () => { const sheet = !!document.getElementById('flt-done'); Object.assign(ui, {q:'', brand:'', cat:'', origin:'', ing:false, ingQ:'', purpose:'', maxPrice:'', sort:'std'}); if (sheet) closeModal(); render(); if (sheet) openFilterSheet(); },
   'my-filter': v => { ui.myFilter = v; render(); },
-  'my-kind': v => { ui.myKind = v; render(); },
+  'my-kind': v => {
+    if (ui.myKind === v) return;
+    const from = ui.myKind; ui.myKind = v; ui.myKindDir = v === 'rx' ? 1 : -1; ui.myKindFrom = from;
+    hapticSaved(); render();
+  },
   'swipe-del': async id => {
     const p = getMy(id); if (!p) return;
     if (!await confirmDialog(`「${p.name}」を削除しますか？`, {ok:'削除する'})) { swipeClose(); return; }
@@ -9881,6 +9925,7 @@ function render() {
   navRestoreY = null;
   if (r.name === 'home') { placeHomeTabInd(); slideHomePane(); if (ui.homeTab === 'care' && isPremium()) setTimeout(() => { runMenu(false); storeLoad(false); }, 0); }
   if (r.name === 'log') { placeHomeTabInd(); slideHomePane(); }
+  if (r.name === 'my' && !r.id) myKindsAnimate();
   if (r.name === 'product') { const pc = getCat(r.id); if (pc) setTimeout(() => offFetch(pc), 0); }
   hapticizeTargets();
   drawCharts();
