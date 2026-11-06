@@ -5778,9 +5778,9 @@ function openLogForm(id) {
   const usable = state.myProducts.filter(p => p.status === '使用中' || p.status === '一時停止' || d.usedProducts.includes(p.id));
   openModal({title: ex ? '肌の記録を編集' : '肌の記録', body: `<form id="log-form" novalidate><div class="form-grid">
     ${d.date ? `<input type="hidden" id="f_date" name="date" value="${esc(d.date)}">` : field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint: !ex && map[t] ? '今日の記録はすでにあります。別の日付を選ぶか、一覧から今日の記録を編集してください。' : ''})}
-    <div class="field face-ai"><span class="lbl">カメラで記録<span class="opt opt-d">${isPremium() ? '撮ると、AIが今日の肌を自動で入れます' : '顔の枠に合わせて撮り、写真を記録に残します'}</span></span><div class="meal-photo-top mpt-even">
-      <label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label><button type="button" class="btn mpt-btn mpt-mid" data-faceai-cam>${icon('camera')}撮る</button><input type="file" accept="image/*" capture="user" id="f_faceai" class="vh"></div>
-      ${isPremium() ? '' : `<p class="hint" style="margin-top:4px">写真からニキビなどを自動で入れるのは${PREMIUM_NAME}の機能です。<button type="button" class="link small" data-faceai-lock style="background:none;border:0;padding:0;font:inherit;color:var(--green-d);text-decoration:underline">くわしく</button></p>`}<div id="faceai-info"></div></div>
+    <div class="field face-ai"><span class="lbl">カメラで記録<span class="opt opt-d">撮ると、AIが今日の肌を自動で入れます</span></span><div class="meal-photo-top mpt-even">${isPremium()
+      ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label><button type="button" class="btn mpt-btn mpt-mid" data-faceai-cam>${icon('camera')}撮る</button><input type="file" accept="image/*" capture="user" id="f_faceai" class="vh">`
+      : `<button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('image')}選ぶ</span><span class="prem-sub">${PREMIUM_NAME}</span></button><button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('camera')}撮る</span><span class="prem-sub">${PREMIUM_NAME}</span></button>`}</div><div id="faceai-info"></div></div>
     ${field('肌の調子', condSeg(d.condition) + `<p class="cond-ai ai-text" id="cond-ai">${ex ? '' : condAiNote(null)}</p>`, {name:'condition', required:true})}
     <div class="field fp-field" id="fp-field"><div class="fp-bighead"><b>顔を押して記録</b><button type="button" class="icon-btn" data-fp-done aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button></div><span class="lbl fp-lbl">顔を押して記録<span class="opt opt-d">ニキビ選択＝ニキビ、肌質選択＝乾燥・テカリなどの状態</span></span>
       <div class="fp-mode" role="group" aria-label="選び方"><button type="button" class="on" data-fp-mode="tap" aria-pressed="true">ニキビ選択</button><button type="button" data-fp-mode="range" aria-pressed="false">肌質選択</button></div>
@@ -5817,7 +5817,7 @@ function openLogForm(id) {
     </div>
     ${field('自由メモ', `<textarea class="textarea" id="f_memo" name="memo" maxlength="500" placeholder="例：生理前、新しい美容液を使い始めた、マスクで擦れた など">${esc(d.memo)}</textarea>`, {name:'memo', hint:'食事・睡眠は「食事・睡眠」から別に記録できます'})}
     <div class="field"><span class="lbl">肌の写真<span class="opt">任意</span></span>
-      <div class="photo-pick"><button type="button" class="btn btn-soft btn-sm" id="photo-guide">${icon('camera')}ガイド付きで撮る</button><input type="file" accept="image/*" id="f_photo" class="input" style="padding:9px" aria-label="写真を選択"></div>
+      <div class="photo-pick"><button type="button" class="btn btn-soft btn-sm" id="photo-guide">${icon('camera')}ガイド付きで撮る${isPremium() ? '' : `<span class="prem-sub" style="margin-left:4px">${PREMIUM_NAME}</span>`}</button><input type="file" accept="image/*" id="f_photo" class="input" style="padding:9px" aria-label="写真を選択"></div>
       <p class="hint" style="margin-top:4px">「ガイド付きで撮る」は、顔の枠と前回の写真がうすく重なるので、毎回同じ位置・同じ大きさで撮れます。明るい窓の前など、毎回同じ場所で撮ると比べやすくなります。</p>
       <div id="photo-area"></div>
       <p class="hint">ここで選んだ写真は外部に送信されません（「顔を撮って自動で記録」の写真だけ、読み取りのためにAIへ送ります）。保存しない場合は、この画面でのプレビューだけです。</p>
@@ -6047,7 +6047,7 @@ function openLogForm(id) {
   };
   renderPhoto();
   form._setPhoto = url => { pendingPhoto = url; renderPhoto(); $('#modal-root').dataset.dirty = '1'; };
-  $('#photo-guide').onclick = () => openGuideCam(url => form._setPhoto(url));
+  $('#photo-guide').onclick = () => { if (!isPremium()) { toast(`ガイド付きで撮るのは${PREMIUM_NAME}の機能です`); return; } openGuideCam(url => form._setPhoto(url)); };
   $('#f_photo').onchange = async e => {
     const file = e.target.files[0]; if (!file) return;
     try { pendingPhoto = await readImage(file, 640, 0.72); renderPhoto(); }
@@ -6095,7 +6095,7 @@ function openLogForm(id) {
     } catch (err) { box.innerHTML = `<div class="notice warn" style="margin:8px 0 0">${esc(err.message)}</div>`; }
   };
   // カメラで記録：顔の枠に合わせて撮る（前回の写真もうすく重ねる）。プレミアムはそのままAIが記録を入れ、無料は写真を付けて顔を押して記録
-  const camShot = () => openGuideCam(async url => {
+  const camShot = () => !isPremium() ? toast(`カメラで記録は${PREMIUM_NAME}の機能です`) : openGuideCam(async url => {
     if (isPremium()) { const bl = await (await fetch(url)).blob(); faceAi(new File([bl], 'face.jpg', {type:'image/jpeg'})); }
     else { form._setPhoto(url); const sv = $('#photo-save'); if (sv) sv.checked = true; toast('写真を付けました。顔を押して今日の肌を記録してください'); }
     setTimeout(() => { const el = $(isPremium() ? '#faceai-info' : '#photo-area', form); if (el && el.scrollIntoView) el.scrollIntoView({block:'center', behavior:'smooth'}); }, 80);
