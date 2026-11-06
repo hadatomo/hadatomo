@@ -14,6 +14,7 @@
 <meta name="theme-color" content="#121614" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem("skinwise_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
 <title>ナカカラモ（NAKAKARAMO）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500&amp;text=%E3%83%8A%E3%82%AB%E3%83%A9%E3%83%A2&amp;display=swap">
 <style>
 :root{
   --bg:#FAF9F6;--surface:#FFFFFF;--surface2:#F6F3EE;
@@ -141,6 +142,10 @@ button{font-family:inherit}
 .tt-in{animation:none}
 @keyframes ttIn{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.tt-in{animation:none}}
+.topbar .wm-home{position:absolute;left:50%;top:calc(50% + env(safe-area-inset-top) / 2);transform:translate(-50%,-50%);font-family:"Hiragino Maru Gothic ProN","Zen Maru Gothic","Hiragino Sans",var(--font);font-weight:500;font-size:21px;letter-spacing:.14em;color:#3F4B44;white-space:nowrap} /* ホームの「ナカカラモ」：丸みのある文字で、まん中に */
+.topbar .wm-home.tt-in{animation:none}
+.topbar>#top-menu,.topbar>.hap-keep{margin-left:auto}
+.topbar:has(.wm-home){min-height:calc(64px + env(safe-area-inset-top))}
 .wordmark small{display:block;font-family:var(--font);font-size:10px;letter-spacing:.08em;color:var(--muted);margin-top:2px}
 main{max-width:1100px;margin:0 auto;padding:20px 16px calc(150px + env(safe-area-inset-bottom))} /* 一番下にも余白：最後のカードが下のバーにくっつかないように */
 .bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
@@ -1403,7 +1408,7 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
   </aside>
   <div id="page">
     <header class="topbar">
-      <a class="wordmark" data-t="ナカカラモ" href="#/home">ナカカラモ</a>
+      <a class="wordmark wm-home" data-t="ナカカラモ" href="#/home">ナカカラモ</a>
       <button class="icon-btn" id="top-menu" data-action="open-menu" aria-label="メニュー" title="メニュー"></button><div class="ptr" id="ptr" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".18" stroke-width="2.6"/><circle class="ptr-arc" cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="56.5" stroke-dashoffset="56.5" transform="rotate(-90 12 12)"/></svg></div>
     </header>
     <main id="main" tabindex="-1"></main>
@@ -1438,7 +1443,8 @@ const FREQS = ['毎日','週4〜6回','週2〜3回','週1回','不定期'];
 const FREQ_RANGE = {'毎日':[7,7],'週4〜6回':[4,6],'週2〜3回':[2,3],'週1回':[1,1],'不定期':null};
 const STOCK = 'ストック（未開封）';
 const SKIN_TYPES = ['乾燥肌','脂性肌','混合肌','普通肌'];
-const AGE_BANDS = ['10代','20代','30代','40代','50代','60代以上'];
+const AGE_BANDS = ['17歳以下','18〜19歳','20代','30代','40代','50代','60代以上'];
+const isAdultBand = b => !!b && b !== '17歳以下'; // 研究への協力は18歳以上だけ
 const STATUSES = ['使用中','一時停止',STOCK,'使用終了'];
 const AREAS = [{id:'forehead',name:'額'},{id:'nose',name:'鼻'},{id:'rcheek',name:'右頬'},{id:'lcheek',name:'左頬'},{id:'mouth',name:'口まわり'},{id:'chin',name:'顎'}];
 const ACNE_TYPES = ['白ニキビ','黒ニキビ','赤ニキビ','黄ニキビ（膿あり）','しこり・硬い','ニキビ跡'];
@@ -2018,7 +2024,7 @@ function normalize(d) {
   out.settings.proteinGoal = clamp(Math.round(num(ds.proteinGoal) || 0), 0, 300); // たんぱく質の目標（g）。0は自動
   out.settings.skinType = SKIN_TYPES.includes(ds.skinType) ? ds.skinType : ''; // 肌質
   out.settings.sensitive = !!ds.sensitive; // 敏感肌かどうか
-  out.settings.ageBand = ds.ageBand === '18〜19歳' ? '10代' : AGE_BANDS.includes(ds.ageBand) ? ds.ageBand : ''; // 以前の「18〜19歳」は「10代」にまとめる // 年代（任意）
+  out.settings.ageBand = AGE_BANDS.includes(ds.ageBand) ? ds.ageBand : ''; // 年代（任意）。以前の「10代」は17歳以下か18歳以上かわからないので、未回答に戻す
   out.settings.gender = ['女性', '男性'].includes(ds.gender) ? ds.gender : ''; // 性別（3Dの顔の形に使う。任意）
   out.settings.recoBudget = num(ds.recoBudget) === -1 ? -1 : clamp(Math.round(num(ds.recoBudget) || 0), 0, 100000); // あなたに合う化粧品：1つあたりの上限金額（0：未設定、-1：上限なし）
   out.settings.startHidden = !!ds.startHidden; out.settings.a2hsDone = !!ds.a2hsDone; // はじめにやること
@@ -3042,12 +3048,14 @@ function openSetupWizard() {
   if (!root._sw) { root.addEventListener('click', swClick); root._sw = 1; }
   swPaint();
 }
-const SW_STEPS = ['hello', 'age', 'body', 'skin', 'concerns', 'life', 'research', 'done'];
+const SW_ALL = ['hello', 'age', 'body', 'skin', 'concerns', 'life', 'research', 'done'];
+// 研究への協力の質問は、年代で18歳以上を選んだ人にだけ出す
+const swSteps = () => SW_ALL.filter(s => s !== 'research' || isAdultBand(swState && swState.v.ageBand));
 function swOpts(key, list, cur, multi) { return `<div class="sw-opts">${list.map(([v, l, w]) => { const on = multi ? cur.includes(v) : cur === v; return `<button type="button" class="sw-opt ${on ? 'on' : ''} ${w ? 'wide' : ''}" data-sw="${key}" data-v="${esc(v)}" aria-pressed="${on}">${l.includes('|') ? `${esc(l.split('|')[0])}<small>${esc(l.split('|')[1])}</small>` : esc(l)}</button>`; }).join('')}</div>`; }
 function swPaint() {
   const s = swState; if (!s) return; const b = $('#sw-body'), f = $('#sw-foot'); if (!b || !f) return;
-  const step = SW_STEPS[s.i], v = s.v;
-  const dots = `<div class="sw-dots">${SW_STEPS.map((_, k) => `<i class="${k === s.i ? 'on' : ''}"></i>`).join('')}</div>`;
+  const step = swSteps()[s.i], v = s.v;
+  const dots = `<div class="sw-dots">${swSteps().map((_, k) => `<i class="${k === s.i ? 'on' : ''}"></i>`).join('')}</div>`;
   let h = '';
   if (step === 'hello') h = `<div class="sw-hello">🌿</div><p class="sw-q">ナカカラモへようこそ</p><p class="sw-sub">はじめに、いくつか質問させてください（1分ほど）。<br>答えた内容は、ケアの提案や栄養の目安に使います。<br>このスマホの中にだけ保存され、あとから設定でいつでも変えられます。</p>`;
   if (step === 'gender') h = `<p class="sw-q">性別を教えてください</p><p class="sw-sub">記録に使う3Dの顔を、性別に合わせた形にします</p>` + swOpts('gender', [['女性', '女性'], ['男性', '男性'], ['', '答えない', 1]], v.gender);
@@ -3063,7 +3071,7 @@ function swPaint() {
     <p class="sw-sec">化粧品に使う月の予算<span class="small muted">（任意）</span></p><div class="sw-nums" style="grid-template-columns:1fr"><span class="unit"><input class="input" id="sw-budget" inputmode="numeric" placeholder="例：5000" value="${esc(v.budget)}">円</span></div>`;
   if (step === 'research') h = `<p class="sw-q">研究に協力してもらえますか？</p><p class="sw-sub">「どんな肌質の人が、どの成分を使って、肌がどう変わったか」を、たくさんの人の記録から統計にして、スキンケアの研究・商品開発に役立てます</p>
     <ul class="sw-list"><li><b>送るもの</b>：肌質・年代、肌の状態の平均、成分ごとの肌の変化（数字だけ）</li><li><b>送らないもの</b>：名前・メール・写真・メモ・日付・商品名・位置</li><li>5人以上をまとめた統計にしてから使います。いつでも設定からやめられて、やめると送ったデータも消えます</li></ul>`
-    + swOpts('research', [['yes', '協力する|18歳以上で、内容に同意します'], ['no', '協力しない']], v.research);
+    + swOpts('research', [['no', '協力しない'], ['yes', '協力する|内容に同意します']], v.research);
   if (step === 'done') h = `<div class="sw-hello">✨</div><p class="sw-q">準備ができました</p><p class="sw-sub">さっそく今日の肌を記録してみましょう。<br>答えた内容は「設定」の「肌質・年代」から答え直せます。</p>`;
   b.innerHTML = dots + h + '<p class="sw-err" id="sw-err" hidden></p>';
   f.innerHTML = step === 'hello' ? `<button type="button" class="btn btn-ghost" data-action="setup-later">あとで</button><button type="button" class="btn btn-primary" data-swgo="1">はじめる</button>`
@@ -3073,7 +3081,7 @@ function swPaint() {
 const swHas = step => { const v = swState.v; return step === 'research' ? !!v.research : step === 'gender' ? !!v.gender : step === 'age' ? !!v.ageBand : step === 'skin' ? !!(v.skinType || v.sensitive) : step === 'concerns' ? v.concerns.length > 0 : true; };
 // 入力欄の値を読み取る（数字のまちがいがあれば止める）
 function swRead() {
-  const v = swState.v, step = SW_STEPS[swState.i], err = $('#sw-err');
+  const v = swState.v, step = swSteps()[swState.i], err = $('#sw-err');
   const bad = m => { if (err) { err.hidden = false; err.textContent = m; } return false; };
   if (step === 'body') {
     const h = toHalf($('#sw-h').value).trim(), w = toHalf($('#sw-w').value).trim();
@@ -3099,7 +3107,7 @@ function swClick(e) {
     swPaint(); return;
   }
   const g = e.target.closest('[data-swgo]');
-  if (g) { const n = Number(g.dataset.swgo); if (n > 0 && !swRead()) return; if (n < 0) swRead(); swState.i = clamp(swState.i + n, 0, SW_STEPS.length - 1); swPaint(); const mb = $('#modal-root .modal-body'); if (mb) mb.scrollTop = 0; }
+  if (g) { const n = Number(g.dataset.swgo); if (n > 0 && !swRead()) return; if (n < 0) swRead(); swState.i = clamp(swState.i + n, 0, swSteps().length - 1); swPaint(); const mb = $('#modal-root .modal-body'); if (mb) mb.scrollTop = 0; }
 }
 function swSave(done) {
   const st = state.settings, v = swState ? swState.v : null;
@@ -3107,7 +3115,8 @@ function swSave(done) {
     st.gender = v.gender; st.ageBand = v.ageBand; st.skinType = v.skinType; st.sensitive = v.sensitive === 'yes'; st.concerns = v.concerns.filter(x => CONCERNS.includes(x));
     st.height = Number(v.height) || 0; st.weight = Number(v.weight) || 0; st.sleepNeed = v.sleepNeed || 420; st.monthlyBudget = Number(v.budget) || 0;
     // 研究への協力：はじめの質問で「協力する（18歳以上で同意）」を選んだときだけオンにする
-    if (v.research === 'yes') { const r = researchState(); if (!r.on) { r.adult = true; r.on = true; r.lastHash = ''; setTimeout(() => researchSend(true), 0); } }
+    if (v.ageBand === '17歳以下' && researchState().on) setTimeout(() => researchWithdraw(), 0); // 17歳以下は協力しない（送ったデータも消す）
+    if (v.research === 'yes' && isAdultBand(v.ageBand)) { const r = researchState(); if (!r.on) { r.adult = true; r.on = true; r.lastHash = ''; setTimeout(() => researchSend(true), 0); } }
   }
   st.onboarded = true; swState = null; save(); closeModal(); render();
 }
@@ -7824,6 +7833,7 @@ function researchCardHtml() {
     </details>
     ${r.on ? `<p class="small muted" style="margin:10px 0 0">${n < RESEARCH_MIN_LOGS ? `記録が${RESEARCH_MIN_LOGS}日分たまると送られます（今：${n}日分）。` : r.lastSent ? `最後に送った日：${fmtMD(r.lastSent)}（記録が増えると、1日1回まで新しい統計に置きかえます）` : 'まだ送っていません。次にアプリを開いたときに送ります。'}</p>
       <button class="btn btn-ghost btn-sm" style="margin-top:10px" data-action="research-off">協力をやめて、送ったデータを削除する</button>`
+    : state.settings.ageBand === '17歳以下' ? '<p class="small muted" style="margin:10px 0 0">研究への協力は、18歳以上の方だけにお願いしています。</p>'
     : `<label class="check" style="margin-top:10px"><input type="checkbox" id="f_adult"> 18歳以上です</label>
       <button class="btn btn-primary btn-sm" style="margin-top:10px;display:flex" data-action="research-on">内容に同意して協力する</button>
       ${state.settings.skinType ? '' : '<p class="hint">先に「肌質・年代」で肌質を選ぶと、肌質ごとの統計に入ります。</p>'}`}
@@ -8091,6 +8101,7 @@ const actions = {
   'flt-sheet': () => openFilterSheet(),
   'research-on': async () => {
     const ad = document.getElementById('f_adult');
+    if (state.settings.ageBand === '17歳以下') { toast('研究への協力は、18歳以上の方だけにお願いしています。', 'error'); return; }
     if (!ad || !ad.checked) { toast('協力できるのは18歳以上の方です。「18歳以上です」にチェックしてください。', 'error'); return; }
     const r = researchState(); r.adult = true; r.on = true; r.lastHash = ''; save(); refreshAccPanel('settings'); render();
     await researchSend(true); refreshAccPanel('settings');
@@ -8684,7 +8695,7 @@ function setTopTitle(t) {
   const tb = $('.topbar'); if (!tb) return;
   const cur = tb.firstElementChild, want = t || 'ナカカラモ';
   if (cur && cur.dataset.t === want) return;
-  const html = t ? `<h1 class="wordmark top-title" data-t="${esc(t)}">${esc(t)}</h1>` : `<a class="wordmark" data-t="ナカカラモ" href="#/home">ナカカラモ</a>`;
+  const html = t ? `<h1 class="wordmark top-title" data-t="${esc(t)}">${esc(t)}</h1>` : `<a class="wordmark wm-home" data-t="ナカカラモ" href="#/home">ナカカラモ</a>`;
   if (cur && cur.classList.contains('wordmark')) cur.outerHTML = html; else tb.insertAdjacentHTML('afterbegin', html);
   const el = tb.firstElementChild; if (cur) { el.classList.add('tt-in'); }
   setTbh();
