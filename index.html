@@ -761,11 +761,15 @@ details.acc-cmp{margin-top:14px}
 .mrow-t b{font-size:14.5px;font-weight:600;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .mrow-t small{font-size:12px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .mrow-go{color:var(--muted);font-size:18px}
-.my-adds{margin:0 0 14px}.my-adds .btn{justify-content:center;gap:4px}.my-adds svg{width:16px;height:16px}
-.mrow-w{position:relative}.mrow-w+.mrow-w{border-top:1px solid var(--line)}
-.mrow-w .mrow{grid-template-columns:52px 1fr;padding-right:96px}
+.my-adds{margin:0 0 12px}
+.my-kinds{display:grid;grid-template-columns:1fr 1fr;margin:0 0 12px;border-bottom:1px solid var(--line)}
+.my-kind{background:none;border:0;border-bottom:2.5px solid transparent;margin-bottom:-1px;padding:10px 0;font:inherit;font-size:15px;font-weight:700;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.my-kind span{font-size:12px;font-weight:600;background:var(--surface2,#F4F1EC);border-radius:999px;padding:1px 8px}
+.my-kind.on{color:var(--ink);border-bottom-color:var(--green-d)}.my-kind.on span{background:var(--green-l,#E5F2EA);color:var(--green-d)}.my-adds .btn{justify-content:center;gap:4px}.my-adds svg{width:16px;height:16px}
+.mrow-w{display:flex;align-items:center}.mrow-w+.mrow-w{border-top:1px solid var(--line)}
+.mrow-w .mrow{flex:1;min-width:0;grid-template-columns:52px 1fr;padding-right:6px}
 .mrow-w.off .mrow{opacity:.55}
-.m-sw{position:absolute;right:14px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:6px 4px;font:inherit;cursor:pointer;color:var(--muted)}
+.m-sw{flex:none;align-self:stretch;justify-content:center;margin-right:10px;min-width:64px;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:6px 4px;font:inherit;cursor:pointer;color:var(--muted)}
 .m-sw i{position:relative;width:46px;height:28px;border-radius:999px;background:#D9D4CC;transition:background .2s}
 .m-sw i::after{content:'';position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
 .m-sw.on i{background:var(--green)}.m-sw.on i::after{transform:translateX(18px)}
@@ -3171,7 +3175,7 @@ function rxPick(name) {
   const id = rxId(d[1]);
   if (!getCat(id)) state.catalog.push({id, isSample:false, verify:'verified', name:d[1], brand:'処方薬', category:'皮膚科の塗り薬', origin:'その他', price:0, volume:'', image:'', imageUrl:'', shopUrl:'', imgClean:false,
     purposes:[], ingredients:d[2], features:`${d[0]}の処方薬（有効成分：${d[2]}）`, usage:'医師・薬剤師の指示どおりに使ってください。', caution:'', jan:'', source:'添付文書の一般名', checkedAt:todayStr(), offChecked:'', offUrl:'', offers:[]});
-  save(); closeModal(); setTimeout(() => openMyForm(null, id), 200);
+  ui.myKind = 'rx'; save(); closeModal(); setTimeout(() => openMyForm(null, id), 200);
 }
 // ===== 人気の化粧品（楽天ランキング・毎日自動で入れ替わる popular.json） =====
 let POPULAR = null, popN = 20;
@@ -3426,7 +3430,7 @@ function findPick(i) {
   const fs = findState, x = fs && fs.items && fs.items[Number(i)]; if (!x) return;
   const p = netToCat(x, fs.items); if (!p) return;
   const kind = fs.kind; findState = null; closeModal();
-  if (kind === 'my') setTimeout(() => openMyForm(null, p.id), 200);
+  if (kind === 'my') { ui.myKind = p.category === '皮膚科の塗り薬' ? 'rx' : 'cos'; setTimeout(() => openMyForm(null, p.id), 200); }
   else { location.hash = '#/product/' + encodeURIComponent(p.id); render(); }
 }
 // ---------- はじめの質問（身長・体重・肌質・肌悩みなど） ----------
@@ -5020,11 +5024,18 @@ function ingResults() {
 function viewMy() {
   // 使った回数（肌の記録の「今日使ったもの」）が多い順。使用中を上に、停止中を下に
   const useN = {}; state.skinLogs.forEach(l => (l.usedProducts || []).forEach(id => { useN[id] = (useN[id] || 0) + 1; }));
-  const list = state.myProducts.slice()
-    .sort((a,b) => (b.status === '使用中') - (a.status === '使用中') || (useN[b.id] || 0) - (useN[a.id] || 0) || FREQS.indexOf(a.frequency) - FREQS.indexOf(b.frequency) || b.startDate.localeCompare(a.startDate));
+  const isRx = p => p.category === '皮膚科の塗り薬';
+  const nRx = state.myProducts.filter(isRx).length, nCos = state.myProducts.length - nRx;
+  if (!['cos', 'rx'].includes(ui.myKind)) ui.myKind = !nCos && nRx ? 'rx' : 'cos';
+  const kind = ui.myKind;
+  const list = state.myProducts.filter(p => kind === 'rx' ? isRx(p) : !isRx(p))
+    .sort((a,b) => (useN[b.id] || 0) - (useN[a.id] || 0) || FREQS.indexOf(a.frequency) - FREQS.indexOf(b.frequency) || b.startDate.localeCompare(a.startDate));
   let html = `<div class="btn-pair my-adds"><button class="btn btn-primary btn-sm" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button><button class="btn btn-primary btn-sm" data-action="rx-sheet">${icon('plus')}塗り薬を追加</button></div>`;
   const tools = !state.myProducts.length ? '' : `<div class="mtools"><a href="#/compare">${icon('compare')}商品と肌状態の比較<i>›</i></a><a href="#/combo">${icon('flask')}成分の組み合わせ<i>›</i></a></div>`;
-  if (!state.myProducts.length) {
+  html += `<div class="my-kinds" role="tablist" aria-label="アイテムの種類">${[['cos', '化粧品', nCos], ['rx', '塗り薬', nRx]].map(([k, l, n]) => `<button type="button" class="my-kind ${kind === k ? 'on' : ''}" role="tab" aria-selected="${kind === k}" data-action="my-kind" data-id="${k}">${l}<span>${n}</span></button>`).join('')}</div>`;
+  if (state.myProducts.length && !list.length) {
+    html += `<div class="card">${emptyBox(kind === 'rx' ? 'flask' : 'bottle', kind === 'rx' ? 'まだ塗り薬が登録されていません' : 'まだ化粧品が登録されていません', kind === 'rx' ? '皮膚科で出された塗り薬は、上の「塗り薬を追加」から一覧で選べます。' : '使っている化粧品は、上の「化粧品を追加」から登録できます。')}</div>`;
+  } else if (!state.myProducts.length) {
     html += `<div class="card">${emptyBox('bottle', 'まだアイテムが登録されていません', '使っている化粧品や、皮膚科で出された塗り薬を登録すると、使用期間・成分・支出をまとめて管理できます。上のボタンから登録できます。')}</div>`;
   } else {
     html += `<div class="card mrows">${list.map(p => {
@@ -9230,7 +9241,18 @@ const actions = {
   },
   'clear-filter': () => { const sheet = !!document.getElementById('flt-done'); Object.assign(ui, {q:'', brand:'', cat:'', origin:'', ing:false, ingQ:'', purpose:'', maxPrice:'', sort:'std'}); if (sheet) closeModal(); render(); if (sheet) openFilterSheet(); },
   'my-filter': v => { ui.myFilter = v; render(); },
-  'my-toggle': id => { const p = getMy(id); if (!p) return; if (p.status === '使用中') p.status = '一時停止'; else { p.status = '使用中'; p.endDate = ''; } save(); hapticSaved(); render(); },
+  'my-kind': v => { ui.myKind = v; render(); },
+  'my-toggle': id => {
+    const p = getMy(id); if (!p) return;
+    if (p.status === '使用中') p.status = '一時停止'; else { p.status = '使用中'; p.endDate = ''; }
+    save(); hapticSaved();
+    // 画面全体を作り直さずに、そのスイッチだけ切り替える（並びやスクロールの位置を変えない）
+    const b = document.querySelector(`.m-sw[data-id="${CSS.escape(id)}"]`), on = p.status === '使用中';
+    if (!b) { render(); return; }
+    b.classList.toggle('on', on); b.setAttribute('aria-checked', String(on)); b.querySelector('span').textContent = on ? '使用中' : '停止中';
+    b.setAttribute('aria-label', `${p.name}を${on ? '停止中にする' : '使用中にする'}`);
+    const w = b.closest('.mrow-w'); if (w) w.classList.toggle('off', !on);
+  },
   'chart-range': v => { if (Number(v) === 90 && locked()) { toast('90日間のグラフは' + PREMIUM_NAME + 'の機能です'); return; } ui.chartRange = Number(v); render(); },
   'report-prev': () => { ui.reportOffset--; render(); },
   'report-next': () => { if (ui.reportOffset < 0) { ui.reportOffset++; render(); } },
