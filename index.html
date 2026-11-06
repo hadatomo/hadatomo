@@ -670,6 +670,7 @@ details.acc-cmp{margin-top:14px}
 .sbar-top .sbar-f{min-height:44px;width:44px;padding:0;border-radius:50%;justify-content:center}
 .top-actions{display:flex;gap:8px;margin:0 0 12px}
 .my-add{width:100%;justify-content:center}
+.my-filters .my-add{gap:4px}.my-filters .my-add svg{width:16px;height:16px}
 /* ウィジェットのプレビュー */
 .wg-row{display:flex;flex-wrap:wrap;gap:12px;align-items:stretch;padding-bottom:2px}
 .wg{flex:none;border-radius:22px;background:var(--surface);box-shadow:0 2px 10px rgba(0,0,0,.08);border:1px solid var(--line);color:var(--ink);text-decoration:none;padding:12px}
@@ -701,7 +702,7 @@ details.acc-cmp{margin-top:14px}
 .log-tabs .ht,.home-tabs .ht{font-size:12.5px;font-weight:700;letter-spacing:-.01em;min-width:0}
 @media (min-width:900px){.home-tabs{margin:0 0 16px;border-radius:14px;border:1px solid var(--line)}}
 @media (prefers-reduced-motion:reduce){.ht-ind{transition:none}}
-.my-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 14px}
+.my-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 14px}
 .my-f{justify-content:center;gap:6px;padding-left:6px;padding-right:6px;white-space:nowrap}
 .my-f span{font-size:11.5px;font-weight:700;color:var(--muted)}
 .my-f.active{background:#E3F0E6;border-color:var(--green);color:var(--green-d)}
@@ -4740,17 +4741,18 @@ function ingResults() {
 function viewMy() {
   const counts = {};
   STATUSES.forEach(s => counts[s] = state.myProducts.filter(p => p.status === s).length);
-  const filters = ['使用中','一時停止',STOCK,'使用終了','すべて'];
-  const label = f => f === '使用終了' ? '過去の商品' : f === STOCK ? 'ストック' : f;
+  const filters = ['使用中','一時停止']; // ストック・過去の商品・すべては、なくした（使用中でないものは「一時停止」にまとめて出す）
+  if (!filters.includes(ui.myFilter)) ui.myFilter = '使用中';
+  const label = f => f;
+  counts['一時停止'] = state.myProducts.filter(p => p.status !== '使用中').length;
   // 使った回数（肌の記録の「今日使った化粧品」）が多い順。同じなら予定の使用頻度が多い順、そのあと新しい順
   const useN = {}; state.skinLogs.forEach(l => (l.usedProducts || []).forEach(id => { useN[id] = (useN[id] || 0) + 1; }));
-  const list = state.myProducts.filter(p => ui.myFilter === 'すべて' || p.status === ui.myFilter)
+  const list = state.myProducts.filter(p => ui.myFilter === '使用中' ? p.status === '使用中' : p.status !== '使用中')
     .sort((a,b) => (useN[b.id] || 0) - (useN[a.id] || 0) || FREQS.indexOf(a.frequency) - FREQS.indexOf(b.frequency) || b.startDate.localeCompare(a.startDate));
-  let html = `<button class="btn btn-primary my-add" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button>`;
-  html += `<div class="my-filters" role="tablist">${filters.map(f => `<button class="btn btn-ghost btn-sm my-f ${ui.myFilter === f ? 'active' : ''}" role="tab" aria-selected="${ui.myFilter === f}" data-action="my-filter" data-id="${esc(f)}">${esc(label(f))}<span>${f === 'すべて' ? state.myProducts.length : counts[f]}</span></button>`).join('')}</div>`;
+  let html = `<div class="my-filters" role="tablist"><button class="btn btn-primary btn-sm my-f my-add" data-action="add-sheet" data-id="my">${icon('plus')}追加</button>${filters.map(f => `<button class="btn btn-ghost btn-sm my-f ${ui.myFilter === f ? 'active' : ''}" role="tab" aria-selected="${ui.myFilter === f}" data-action="my-filter" data-id="${esc(f)}">${esc(label(f))}<span>${counts[f]}</span></button>`).join('')}</div>`;
   const tools = !state.myProducts.length ? '' : `<div class="mtools">${state.myProducts.length ? `<a href="#/compare">${icon('compare')}商品と肌状態の比較<i>›</i></a><a href="#/combo">${icon('flask')}成分の組み合わせ<i>›</i></a>` : ''}</div>`;
   if (!state.myProducts.length) {
-    html += `<div class="card">${emptyBox('bottle', 'まだ化粧品が登録されていません', '使っている化粧品を登録すると、使用期間・成分・支出をまとめて管理できます。上の「化粧品を追加」から登録できます。')}</div>`;
+    html += `<div class="card">${emptyBox('bottle', 'まだ化粧品が登録されていません', '使っている化粧品を登録すると、使用期間・成分・支出をまとめて管理できます。上の「追加」から登録できます。')}</div>`;
   } else if (!list.length) {
     html += `<div class="card">${emptyBox('bottle', `「${label(ui.myFilter)}」はありません`, '他のタブも確認してください。')}</div>`;
   } else {
@@ -5146,10 +5148,11 @@ function factorCardHtml() {
 const PREFS = [['北海道',43.06,141.35],['青森',40.82,140.74],['岩手',39.70,141.15],['宮城',38.27,140.87],['秋田',39.72,140.10],['山形',38.24,140.36],['福島',37.75,140.47],['茨城',36.34,140.45],['栃木',36.57,139.88],['群馬',36.39,139.06],['埼玉',35.86,139.65],['千葉',35.61,140.12],['東京',35.69,139.69],['神奈川',35.45,139.64],['新潟',37.90,139.02],['富山',36.70,137.21],['石川',36.59,136.63],['福井',36.07,136.22],['山梨',35.66,138.57],['長野',36.65,138.18],['岐阜',35.39,136.72],['静岡',34.98,138.38],['愛知',35.18,136.91],['三重',34.73,136.51],['滋賀',35.00,135.87],['京都',35.02,135.76],['大阪',34.69,135.52],['兵庫',34.69,135.18],['奈良',34.69,135.83],['和歌山',34.23,135.17],['鳥取',35.50,134.24],['島根',35.47,133.05],['岡山',34.66,133.93],['広島',34.40,132.46],['山口',34.19,131.47],['徳島',34.07,134.56],['香川',34.34,134.04],['愛媛',33.84,132.77],['高知',33.56,133.53],['福岡',33.61,130.42],['佐賀',33.25,130.30],['長崎',32.74,129.87],['熊本',32.79,130.74],['大分',33.24,131.61],['宮崎',31.91,131.42],['鹿児島',31.56,130.56],['沖縄',26.21,127.68]];
 let WX_BUSY = false;
 // 現在地：許可済みのときだけ聞く（ホームを開くたびに許可の窓が出ないように）。位置は約1kmに丸めて、端末の中だけに保存
+let WX_GEO_ERR = 0;
 function wxGeo(ask) {
   return new Promise(res => {
     if (!navigator.geolocation) return res(null);
-    const go = () => navigator.geolocation.getCurrentPosition(p => res({lat:Math.round(p.coords.latitude * 100) / 100, lon:Math.round(p.coords.longitude * 100) / 100}), () => res(null), {enableHighAccuracy:false, timeout:10000, maximumAge:3 * 3600 * 1000});
+    const go = () => navigator.geolocation.getCurrentPosition(p => { WX_GEO_ERR = 0; res({lat:Math.round(p.coords.latitude * 100) / 100, lon:Math.round(p.coords.longitude * 100) / 100}); }, e => { WX_GEO_ERR = (e && e.code) || 2; res(null); }, {enableHighAccuracy:false, timeout:15000, maximumAge:3 * 3600 * 1000});
     if (ask) return go();
     if (navigator.permissions && navigator.permissions.query) navigator.permissions.query({name:'geolocation'}).then(st => st.state === 'granted' ? go() : res(null)).catch(() => res(null)); else res(null);
   });
@@ -5161,7 +5164,8 @@ async function wxFetch(force, ask) {
   let pf = PREFS.find(p => p[0] === state.settings.wxPref);
   WX_BUSY = true;
   if (useGeo) { const g = await wxGeo(ask); if (g) { state.settings.wxLoc = g; state.wxGeoAt = t; } if (state.settings.wxLoc) pf = ['現在地', state.settings.wxLoc.lat, state.settings.wxLoc.lon]; }
-  if (!pf) { WX_BUSY = false; if (useGeo && ask) toast('位置情報を使えませんでした。iPhoneの「設定」→「プライバシー」→「位置情報サービス」でSafariを許可するか、都道府県を選んでください'); return; }
+  if (useGeo && ask && !state.wxGeoAt) { WX_BUSY = false; openGeoHelp(); return; } // 許可されなかった・取れなかったときは、理由と直し方を出す
+  if (!pf) { WX_BUSY = false; return; }
   try {
     const u = `https://api.open-meteo.com/v1/forecast?latitude=${pf[1]}&longitude=${pf[2]}&daily=temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean,relative_humidity_2m_min,uv_index_max&timezone=Asia%2FTokyo&past_days=31&forecast_days=1`;
     const ctrl = new AbortController(), tm = setTimeout(() => ctrl.abort(), 12000);
@@ -5197,6 +5201,19 @@ function wxTodayHtml() {
   return `<div class="wx-bar" id="wx-box"><button type="button" class="wx-b-pl" data-action="wx-setup" aria-label="天気の地域を変える">${pin}${esc(state.settings.wxPref)}</button>
     <span class="wx-b-n"><small>湿度</small><b>${Math.round(w.hum)}%</b></span><span class="wx-b-n"><small>気温</small><b>${Math.round(w.tmin)}〜${Math.round(w.tmax)}℃</b></span><span class="wx-b-n"><small>UV</small><b>${w.uv == null ? '－' : Math.round(w.uv)}</b></span>
     <span class="wx-b-tip ${warn ? 'warn' : ''}">${esc(tip)}</span></div>`;
+}
+function openGeoHelp() {
+  const ios = DEV.ios, denied = WX_GEO_ERR === 1, standalone = isStandalone();
+  const steps = !denied ? ['電波のよい場所で、もう一度「現在地を使う」を押してください', 'iPhoneの「設定」→「プライバシーとセキュリティ」→「位置情報サービス」が「オン」になっているか確かめてください']
+    : ios ? (standalone
+      ? ['iPhoneの「設定」→「プライバシーとセキュリティ」→「位置情報サービス」を開く', '「位置情報サービス」が「オン」になっているか確かめる', '下の一覧の「SafariのWebサイト」を押して「このAppの使用中」（または「次回確認」）にする', 'ナカカラモを閉じて開き直し、「現在地を使う」を押して「許可」を押す']
+      : ['Safariのアドレスバーの左の「ぁあ」（または「aA」）を押す', '「Webサイトの設定」→「位置情報」を「確認」か「許可」にする', '見つからないときは、iPhoneの「設定」→「プライバシーとセキュリティ」→「位置情報サービス」→「SafariのWebサイト」を「このAppの使用中」にする', 'ページを開き直して、「現在地を使う」を押して「許可」を押す'])
+    : ['アドレスバーの左のマーク（鍵など）を押す', '「位置情報」を「許可」にする', 'ページを開き直して、「現在地を使う」を押す'];
+  openModal({title:'現在地を使えませんでした', dismissable:true, body:`<p class="small" style="margin:0 0 10px">${denied ? '位置情報が「許可しない」になっています。次の手順で許可すると使えます。' : '現在地をうまく取れませんでした。'}</p>
+    <ol class="a2hs-steps">${steps.map(t => `<li><b>${esc(t)}</b></li>`).join('')}</ol>
+    <p class="small muted" style="margin:10px 0 0">位置情報を使わずに、住んでいる都道府県の天気を出すこともできます。</p>`,
+    footer:`<button type="button" class="btn btn-ghost" data-action="wx-setup">都道府県を選ぶ</button><button type="button" class="btn btn-primary" data-action="wx-geo-retry">もう一度試す</button>`});
+  const b = document.getElementById('wx-box'); if (b) b.outerHTML = wxTodayHtml();
 }
 function openWxSetup() {
   openModal({title:'天気の地域', dismissable:true, body:`<p class="small muted" style="margin:0 0 10px">「現在地」にすると、アプリを開いたときの場所の天気を自動で使います（旅行先でもそのまま）。都道府県を選ぶと県庁所在地の天気です。天気サービス（Open-Meteo）に送るのは、約1kmに丸めた緯度・経度だけです。</p>
@@ -8219,10 +8236,12 @@ function accSectionHtml(k) {
   return `<section class="card acc-sec" id="acc-sec-${k}"><button class="acc-row acc-toggle" data-action="acc-toggle" data-id="${k}" aria-expanded="${open}" aria-controls="acc-panel-${k}">${icon(x.icon)}<span><b>${esc(x.t)}</b><small>${x.d()}</small></span><i>›</i></button>
     <div class="acc-panel" id="acc-panel-${k}" ${open ? '' : 'hidden'}>${open ? x.body() : ''}</div></section>`;
 }
+const ACC_TABS = [{k:'spend', l:'支出'}, {k:'plan', l:'アカウント'}, {k:'settings', l:'プライバシー'}];
 function viewAccount() {
-  ui.budgetEdit = false; ui.accOpen = ui.accOpen || {};
-  if (ui.accOpen.plan && acct.status === 'idle') setTimeout(initCloud, 0);
-  return ['spend', 'plan', 'settings'].map(accSectionHtml).join('');
+  ui.budgetEdit = false; if (!ACC_TABS.some(x => x.k === ui.accTab)) ui.accTab = 'spend';
+  const k = ui.accTab; if (k === 'plan' && acct.status === 'idle') setTimeout(initCloud, 0);
+  const nav = `<nav class="home-tabs log-tabs acc-tabs" role="tablist" aria-label="アカウントの表示">${ACC_TABS.map(x => `<button type="button" class="ht ${k === x.k ? 'active' : ''}" role="tab" aria-selected="${k === x.k}" data-action="acc-tab" data-id="${x.k}"><span>${x.l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
+  return nav + `<div class="home-pane"><div class="acc-tabpanel" id="acc-panel-${k}">${ACC_SECTIONS[k].body()}</div></div>`;
 }
 // 設定・プライバシー（アカウントの中）：並びを整え、データ関係を1つにまとめ、プライバシーは押すと開く形にする
 // 設定：ウィジェットの見た目（アプリ版でホーム画面に置けるもの）のプレビュー
@@ -8525,6 +8544,7 @@ const actions = {
     state.lifeLogs = state.lifeLogs.filter(x => x.id !== id);
     if (save()) { toast('削除しました'); render(); }
   },
+  'acc-tab': v => { if (ui.accTab === v) { window.scrollTo({top:0, behavior:'smooth'}); return; } if (!ui.htSlide) { const o = ACC_TABS.map(x => x.k); ui.htSlide = o.indexOf(v) > o.indexOf(ui.accTab) ? 1 : -1; } ui.atFrom = ui.accTab; ui.accTab = v; render(); window.scrollTo(0, 0); },
   'log-tab': v => { if (ui.logTab === v) { window.scrollTo({top:0, behavior:'smooth'}); return; } if (!ui.htSlide) { const o = ['list', 'recent', 'photos']; ui.htSlide = o.indexOf(v) > o.indexOf(ui.logTab) ? 1 : -1; } ui.ltFrom = ui.logTab; ui.logTab = v; render(); window.scrollTo(0, 0); },
   'log-day-step': v => logDayStep(Number(v)),
   'new-my': () => openMyForm(),
@@ -8624,7 +8644,8 @@ const actions = {
   'photo-compare': () => openPhotoCompare(),
   'wx-setup': () => openWxSetup(),
   'wx-save': () => { const f = document.getElementById('f_wxPref'); state.settings.wxPref = f ? f.value : ''; state.wxFetched = ''; state.wxGeoAt = ''; save(); dismissModal(); hapticSaved(); render(); if (state.settings.wxPref) wxFetch(true, state.settings.wxPref === '現在地'); },
-  'wx-geo': () => { state.settings.wxPref = '現在地'; state.wxFetched = ''; state.wxGeoAt = ''; save(); render(); wxFetch(true, true); },
+  'wx-geo-retry': () => { dismissModal(); setTimeout(() => actions['wx-geo'](), 250); },
+  'wx-geo': () => { state.settings.wxPref = '現在地'; state.wxFetched = ''; state.wxGeoAt = ''; save(); wxFetch(true, true); const b = document.getElementById('wx-box'); if (b) b.innerHTML = '<span class="muted">現在地を確認しています…（許可の確認が出たら「許可」を押してください）</span>'; },
   'sync-use-cloud': () => { const r = ui.syncRow; dismissModal(); if (r) syncApply(r); },
   'sync-use-local': () => { dismissModal(); syncPush(); toast('この端末のデータをクラウドに保存します'); },
   'cart-toggle': id => cartToggle(id),
@@ -9139,7 +9160,7 @@ function renderNav(active, sideActive) {
   NAV.filter(n => !['search', 'stores', 'suggest'].includes(n.r)).forEach(n => { if (n.g !== g) { g = n.g; if (g) side += `<div class="sn-group">${esc(g)}</div>`; } side += `<a class="sn-item ${sideActive === n.r ? 'active' : ''}" href="#/${n.r}">${icon(n.icon)}${esc(n.label)}</a>`; });
   $('#side-nav').innerHTML = side;
   const moreActive = !BOTTOM_NAV.includes(active);
-  $('#bottom-nav').innerHTML = BOTTOM_NAV.map(r => r === 'account' ? {r:'account', label:'アカウント', icon:'user'} : NAV.find(n => n.r === r)).map(n => `<a class="bn-item ${active === n.r ? 'active' : ''}" href="#/${n.r}">${icon(n.icon)}<span>${esc(({log:'記録'})[n.r] || n.label)}</span></a>`).join('');
+  $('#bottom-nav').innerHTML = BOTTOM_NAV.map(r => r === 'account' ? {r:'account', label:'アカウント', icon:'user'} : NAV.find(n => n.r === r)).map(n => `<a class="bn-item ${active === n.r ? 'active' : ''}" href="#/${n.r}">${icon(n.icon)}<span>${esc(n.label)}</span></a>`).join('');
   const tm = document.getElementById('top-menu'); if (tm) tm.classList.toggle('on', moreActive);
 }
 let lastRoute = '';
@@ -9152,8 +9173,8 @@ function stopMomentumTop() {
 function placeHomeTabInd() {
   const nav = document.querySelector('.home-tabs'), ind = nav && nav.querySelector('.ht-ind'); if (!ind) return;
   const at = k => { const b = nav.querySelector(`.ht[data-id="${k}"]`); if (!b) return 0; return b.offsetLeft + b.offsetWidth / 2 - 24; };
-  const log = nav.classList.contains('log-tabs'), cur = log ? ui.logTab : ui.homeTab, prev = log ? ui.ltFrom : ui.htFrom;
-  const to = at(cur), from = prev ? at(prev) : to; ui.htFrom = ''; ui.ltFrom = '';
+  const acc = nav.classList.contains('acc-tabs'), log = !acc && nav.classList.contains('log-tabs'), cur = acc ? ui.accTab : log ? ui.logTab : ui.homeTab, prev = acc ? ui.atFrom : log ? ui.ltFrom : ui.htFrom;
+  const to = at(cur), from = prev ? at(prev) : to; ui.htFrom = ''; ui.ltFrom = ''; ui.atFrom = '';
   ind.style.transition = 'none'; ind.style.transform = `translateX(${from}px)`; void ind.offsetWidth;
   ind.style.transition = ''; ind.style.transform = `translateX(${to}px)`;
 }
@@ -9165,12 +9186,12 @@ function placeHomeTabInd() {
   window.addEventListener('pointerup', e => { if (e.pointerType === 'touch' && Date.now() - swAt < 400) { swAt = 0; switchTick(); } }, {passive:true});
   // ホームと記録の画面で使う：タブの並びと、今のタブ・切り替える操作
   const LOG_TABS = [{k:'list'}, {k:'recent'}, {k:'photos'}];
-  const page = () => parseRoute().name === 'log' ? {tabs:LOG_TABS, cur:ui.logTab, go:k => actions['log-tab'](k)} : {tabs:HOME_TABS, cur:ui.homeTab, go:k => actions['home-tab'](k)};
+  const page = () => parseRoute().name === 'account' ? {tabs:ACC_TABS, cur:ui.accTab, go:k => actions['acc-tab'](k)} : parseRoute().name === 'log' ? {tabs:LOG_TABS, cur:ui.logTab, go:k => actions['log-tab'](k)} : {tabs:HOME_TABS, cur:ui.homeTab, go:k => actions['home-tab'](k)};
   const idx = () => { const g = page(); return Math.max(0, g.tabs.findIndex(x => x.k === g.cur)); };
   const scrollsX = el => { for (let n = el; n && n !== document.body; n = n.parentElement) { if (n.scrollWidth > n.clientWidth + 2) { const ox = getComputedStyle(n).overflowX; if (ox === 'auto' || ox === 'scroll') return true; } } return false; };
   window.addEventListener('touchstart', e => {
     x0 = null; lock = '';
-    const rn = parseRoute(); if (e.touches.length !== 1 || !['home', 'log'].includes(rn.name) || (rn.name === 'log' && rn.id)) return;
+    const rn = parseRoute(); if (e.touches.length !== 1 || !['home', 'log', 'account'].includes(rn.name) || (rn.name === 'log' && rn.id)) return;
     const tg = e.target;
     if ($('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full')) return;
     if (!tg.closest || !tg.closest('.home-pane') || tg.closest('input,textarea,select,.ld-cal,[data-noswipe],#ld-swipe,.ld-stage') || scrollsX(tg)) return; // 日付の行（横スワイプで日付を変える）と3Dの顔は除く
@@ -9263,7 +9284,7 @@ function render() {
   html = html.replace(/<a class="back" href="([^"]*)">([^<]*)<\/a>/g, (m, href, label) => `<a class="back" href="${href}" data-back="1">${prevNav && prevNav !== href ? '← 戻る' : label}</a>`);
   renderingNow = true; try { $('#main').innerHTML = html; } finally { renderingNow = false; } // 作り直しの最中に古い入力欄から来る変更は無視する
   renderNav(navName, ({product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'})[r.name] || r.name);
-  setTopTitle(r.id ? '' : ({log:'記録', my:'マイ化粧品', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント'})[r.name] || '');
+  setTopTitle(r.id ? '' : ({log:'肌の記録', my:'マイ化粧品', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント'})[r.name] || '');
   const key = r.name + '/' + r.id;
   const routeChanged = key !== lastRoute;
   if (key !== lastRoute) {
@@ -9273,7 +9294,7 @@ function render() {
   }
   navRestoreY = null;
   if (r.name === 'home') { placeHomeTabInd(); slideHomePane(); if (ui.homeTab === 'care' && isPremium()) setTimeout(() => { runMenu(false); storeLoad(false); }, 0); }
-  if (r.name === 'log') { placeHomeTabInd(); slideHomePane(); }
+  if (r.name === 'log' || r.name === 'account') { placeHomeTabInd(); slideHomePane(); }
   if (r.name === 'product') { const pc = getCat(r.id); if (pc) setTimeout(() => offFetch(pc), 0); }
   hapticizeTargets();
   drawCharts();
