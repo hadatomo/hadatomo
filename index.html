@@ -1004,6 +1004,13 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 /* iPhoneの上（時計・電池の場所）に、スクロールした中身が重ならないように、背景色で隠す */
 body::before{content:'';position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);background:var(--bg);z-index:3000;pointer-events:none}
 .rx-svg{width:100%;height:100%;display:block}.rx-item .rx-svg{width:46px;height:46px;flex:none;border-radius:10px}
+.pop-sec{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}.pop-h{display:flex;align-items:baseline;justify-content:space-between;margin:0 0 8px}.pop-h b{font-size:15px}.pop-h small{font-size:11.5px;color:var(--muted)}
+#pop-list{margin-top:8px}
+.pop-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:8px 10px;margin:0 0 6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font:inherit;color:var(--ink);cursor:pointer}
+.pop-r{flex:none;width:26px;text-align:center;font-weight:800;font-size:13px;color:var(--green-d)}
+.pop-item .pop-img,.pop-item .xim{flex:none;width:48px;height:48px;border-radius:10px;overflow:hidden;background:#F2F1EE;display:block}.pop-item .xim img{width:100%;height:100%;object-fit:contain;background:#fff}
+.pop-t{flex:1;min-width:0}.pop-t b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;font-size:13px;line-height:1.4}.pop-t small{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.pop-item i{flex:none;color:var(--green-d)}.pop-item i svg{width:18px;height:18px}
 .rx-g{font-size:13px;color:var(--green-d);margin:16px 0 6px}
 .rx-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 12px;margin:0 0 6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font:inherit;color:var(--ink);cursor:pointer}
 .rx-item span{flex:1;min-width:0}.rx-item b{display:block;font-size:14px}.rx-item small{display:block;font-size:11.5px;color:var(--muted);overflow-wrap:anywhere}
@@ -3166,11 +3173,39 @@ function rxPick(name) {
     purposes:[], ingredients:d[2], features:`${d[0]}の処方薬（有効成分：${d[2]}）`, usage:'医師・薬剤師の指示どおりに使ってください。', caution:'', jan:'', source:'添付文書の一般名', checkedAt:todayStr(), offChecked:'', offUrl:'', offers:[]});
   save(); closeModal(); setTimeout(() => openMyForm(null, id), 200);
 }
+// ===== 人気の化粧品（楽天ランキング・毎日自動で入れ替わる popular.json） =====
+let POPULAR = null, popN = 20;
+async function popularLoad() {
+  if (POPULAR) return POPULAR;
+  try { const r = await fetch('popular.json?d=' + todayStr(), {cache:'no-cache'}); if (!r.ok) throw new Error('x'); const j = await r.json(); POPULAR = {updatedAt:j.updatedAt || '', items:(j.items || []).filter(x => x && x.name && x.url)}; }
+  catch (e) { POPULAR = {updatedAt:'', items:[]}; }
+  return POPULAR;
+}
+function popPaint() {
+  const box = document.getElementById('pop-list'); if (!box || !POPULAR) return;
+  const q = (document.getElementById('pop-q') || {}).value || '';
+  const k = fnorm(q), hit = POPULAR.items.filter(x => !k || fnorm(cleanShopName(x.name)).includes(k));
+  if (!POPULAR.items.length) { box.innerHTML = '<p class="small muted" style="margin:6px 0">人気ランキングを準備中です。上の「自分で入力」から探せます。</p>'; return; }
+  if (!hit.length) { box.innerHTML = '<p class="small muted" style="margin:6px 0">ランキングの中には見つかりませんでした。上の「自分で入力」から探せます。</p>'; return; }
+  box.innerHTML = hit.slice(0, popN).map(x => `<button type="button" class="pop-item" data-pop="${POPULAR.items.indexOf(x)}"><span class="pop-r">${x.rank || ''}</span>${x.image ? extImgHtml(x.image, 'pop-img') : '<span class="pop-img"></span>'}<span class="pop-t"><b>${esc(truncate(cleanShopName(x.name) || x.name, 60))}</b><small>${x.price ? '¥' + Number(x.price).toLocaleString() : ''}${x.reviews ? `・レビュー${Number(x.reviews).toLocaleString()}件` : ''}</small></span><i>${icon('plus')}</i></button>`).join('')
+    + (hit.length > popN ? `<button type="button" class="btn btn-ghost btn-sm" id="pop-more" style="width:100%;justify-content:center;margin-top:6px">もっと見る（あと${hit.length - popN}件）</button>` : '');
+  const more = document.getElementById('pop-more'); if (more) more.onclick = () => { popN += 30; popPaint(); };
+}
+async function popularMount() {
+  const sec = document.getElementById('pop-sec'); if (!sec) return;
+  popN = 20; await popularLoad(); if (!document.getElementById('pop-sec')) return;
+  const up = POPULAR.updatedAt ? new Date(POPULAR.updatedAt) : null;
+  const h = sec.querySelector('.pop-h small'); if (h && up && !isNaN(up)) h.textContent = `${up.getMonth() + 1}/${up.getDate()} 更新・${POPULAR.items.length}件`;
+  popPaint();
+  const q = document.getElementById('pop-q'); if (q) q.addEventListener('input', () => { popN = 20; popPaint(); });
+  sec.addEventListener('click', e => { const b = e.target.closest('[data-pop]'); if (!b) return; const x = POPULAR.items[Number(b.dataset.pop)]; if (!x) return; findState = {kind:'my', q:'', items:[x]}; findPick(0); });
+}
 function openAddSheet(kind) {
   const my = kind === 'my';
   openModal({title:my ? '化粧品を追加' : '商品を追加', size:'small', dismissable:true, body:`<div class="add-opts">
     <button class="add-opt main" data-action="add-manual" data-id="${my ? 'my' : 'cat'}">${icon('note')}<span><b>自分で入力</b><small>バーコードの数字か商品名を入れると、候補が出ます</small></span><i>›</i></button>
-    <button class="add-opt main" data-action="add-camera" data-id="${my ? 'my' : 'cat'}">${icon('camera')}<span><b>カメラで登録${isPremium() ? '' : `<span class="prem-sub">${PREMIUM_NAME}</span>`}</b><small>バーコードか商品の写真から、商品を見つける</small></span><i>›</i></button></div>`});
+    <button class="add-opt main" data-action="add-camera" data-id="${my ? 'my' : 'cat'}">${icon('camera')}<span><b>カメラで登録${isPremium() ? '' : `<span class="prem-sub">${PREMIUM_NAME}</span>`}</b><small>バーコードか商品の写真から、商品を見つける</small></span><i>›</i></button></div>${my ? `<div id="pop-sec" class="pop-sec"><div class="pop-h"><b>人気の化粧品</b><small>楽天ランキング</small></div><input type="search" class="input" id="pop-q" placeholder="ランキングの中から探す（例：化粧水、キュレル）" aria-label="人気の化粧品から探す" autocomplete="off"><div id="pop-list"><p class="small muted" style="margin:6px 0">読み込み中…</p></div><p class="small muted" style="margin:8px 0 0">ランキングは毎日自動で入れ替わります。Supported by Rakuten Developers</p></div>` : ''}`});
+  if (my) popularMount();
 }
 // 実際の商品（楽天市場・Yahoo!ショッピング）を名前で探して、そのまま追加する
 let findState = null;
