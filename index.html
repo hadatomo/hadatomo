@@ -484,10 +484,8 @@ label.btn{position:relative}
 .hero-plain .life-btns .hap-keep>.btn{width:100%}
 .life-btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px;max-width:420px}
 .life-btns .btn{justify-content:center;padding-left:6px;padding-right:6px;white-space:nowrap}
-.life-btns .life-main{grid-column:1 / 3;grid-row:1}
-.life-btns .life-cam,.life-btns .hap-keep:has(>.life-cam){grid-column:3;grid-row:1}
-.life-btns>:not(.life-main):not(.life-cam):not(:has(>.life-cam)){grid-row:2}
-.hero-plain .life-btns .life-cam{min-height:44px;height:100%}
+.life-btns .life-main{grid-column:1 / -1;grid-row:1}
+.life-btns>:not(.life-main){grid-row:2}
 .life-links{display:inline-flex;gap:10px;margin-left:6px}
 .life-sum{margin-top:14px;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:var(--surface)}
 .ls-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 12px;background:var(--surface2);font-size:13px}
@@ -888,6 +886,7 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .gcam-view video,.gcam-ghost{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .gcam-view video{transform:scaleX(-1)}
 .gcam-ghost{opacity:.3;pointer-events:none}
+.gcam-fail{padding:24px;text-align:center;color:#fff;display:flex;flex-direction:column;gap:14px;align-items:center;max-width:340px}.gcam-fail p{margin:0;font-size:14px;line-height:1.6}.gcam-fail .small{font-size:12px;color:#ccc}
 .gcam-guide{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .gcam-msg{position:absolute;top:calc(14px + env(safe-area-inset-top));left:0;right:0;margin:0;text-align:center;color:#fff;font-size:14px;font-weight:600;text-shadow:0 1px 3px rgba(0,0,0,.6)}
 .gcam-msg small{font-weight:400;font-size:11.5px}
@@ -2935,7 +2934,7 @@ function viewHome() {
 
   let html = loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '';
   html += `<section class="hero hero-plain">
-    <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${icon('plus')}今日の肌を記録</button><button class="btn btn-ghost btn-sm life-cam" data-action="cam-log" aria-label="カメラで肌を記録">${icon('camera')}カメラ</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('chart')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('note')}食事</button></div></section>`;
+    <div class="life-btns"><button class="btn btn-primary life-main" data-action="new-log">${icon('plus')}今日の肌を記録</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="sleep">${icon('moon')}睡眠</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="exercise">${icon('chart')}運動</button><button class="btn btn-ghost btn-sm" data-action="life-part" data-id="meal">${icon('note')}食事</button></div></section>`;
 
   const lifeLine = lifeSumHtml(todayLife);
   // 今日の肌記録：3Dの顔を大きく、記録の数値を横に小さく
@@ -5655,14 +5654,26 @@ async function openGuideCam(done, o = {}) {
   document.body.appendChild(root); lockScroll();
   const video = root.querySelector('video'); let stream = null;
   const close = () => { if (stream) stream.getTracks().forEach(t => t.stop()); root.remove(); unlockScroll(); };
-  try { stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:1280}, height:{ideal:1280}}, audio:false}); video.srcObject = stream; }
-  catch (e) { close(); if (o.fallback) { toast('アプリ内のカメラを使えなかったので、ふつうのカメラで撮ります'); o.fallback(); } else toast('カメラを使えませんでした。設定でカメラを許可するか、「ファイルを選択」から撮ってください', 'error'); return; }
+  // アプリ内のカメラが使えないとき（許可していない・対応していない）は、ふつうのカメラを開くボタンを出す（押した指の操作で開くので、iPhoneでも確実に開く）
+  const fail = msg => {
+    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+    root.querySelector('.gcam-view').innerHTML = `<div class="gcam-fail"><p>${esc(msg)}</p><label class="btn btn-primary">${icon('camera')}ふつうのカメラで撮る<input type="file" accept="image/*" capture="user" class="vh" id="gcam-file"></label>
+      <p class="small">アプリ内のカメラを使うには、iPhoneの「設定」→「Safari」→「カメラ」を「確認」か「許可」にしてください。</p></div>`;
+    root.querySelector('.gcam-shot').style.visibility = 'hidden';
+    root.querySelector('#gcam-file').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { const url = await readImage(f, o.w || 640, o.w > 640 ? 0.85 : 0.72); close(); done(url); } catch (err) { toast(err.message, 'error'); } };
+  };
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'user', width:{ideal:1280}, height:{ideal:1280}}, audio:false});
+    video.setAttribute('playsinline', ''); video.muted = true; video.srcObject = stream;
+    await new Promise((res, rej) => { if (video.readyState >= 1) return res(); video.onloadedmetadata = res; setTimeout(() => rej(new Error('t')), 8000); });
+    await video.play().catch(() => {});
+  } catch (e) { fail(e && e.name === 'NotAllowedError' ? 'カメラの使用が許可されていません。' : 'アプリ内のカメラを開けませんでした。'); return; }
   root.addEventListener('click', e => {
     const b = e.target.closest('[data-g]'); if (!b) return;
     if (b.dataset.g === 'close') close();
     if (b.dataset.g === 'ghost') { const g = root.querySelector('.gcam-ghost'), on = g.style.display !== 'none'; g.style.display = on ? 'none' : ''; b.textContent = `前回の写真：${on ? '非表示' : '表示'}`; }
     if (b.dataset.g === 'shot') {
-      const vw = video.videoWidth, vh = video.videoHeight; if (!vw) return;
+      const vw = video.videoWidth, vh = video.videoHeight; if (!vw) { toast('カメラの準備中です。少し待ってからもう一度押してください'); return; }
       const view = root.querySelector('.gcam-view'), ar = view.clientWidth / view.clientHeight; // 画面に見えている範囲（3:4）だけを切り出す
       let sw = vw, sh = vw / ar; if (sh > vh) { sh = vh; sw = vh * ar; }
       const W = o.w || 640, H = Math.round(W / ar), cv = document.createElement('canvas'); cv.width = W; cv.height = H;
@@ -5767,9 +5778,9 @@ function openLogForm(id) {
   const usable = state.myProducts.filter(p => p.status === '使用中' || p.status === '一時停止' || d.usedProducts.includes(p.id));
   openModal({title: ex ? '肌の記録を編集' : '肌の記録', body: `<form id="log-form" novalidate><div class="form-grid">
     ${d.date ? `<input type="hidden" id="f_date" name="date" value="${esc(d.date)}">` : field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint: !ex && map[t] ? '今日の記録はすでにあります。別の日付を選ぶか、一覧から今日の記録を編集してください。' : ''})}
-    <div class="field face-ai"><span class="lbl">顔の写真で自動で記録<span class="opt opt-d">写真から今日の肌をAIが入れます</span></span><div class="meal-photo-top mpt-even">${isPremium()
-      ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label><button type="button" class="btn mpt-btn mpt-mid" data-faceai-cam>${icon('camera')}撮る</button><input type="file" accept="image/*" capture="user" id="f_faceai" class="vh">`
-      : `<button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('image')}選ぶ</span><span class="prem-sub">${PREMIUM_NAME}</span></button><button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('camera')}撮る</span><span class="prem-sub">${PREMIUM_NAME}</span></button>`}</div><div id="faceai-info"></div></div>
+    <div class="field face-ai"><span class="lbl">カメラで記録<span class="opt opt-d">${isPremium() ? '撮ると、AIが今日の肌を自動で入れます' : '顔の枠に合わせて撮り、写真を記録に残します'}</span></span><div class="meal-photo-top mpt-even">
+      <label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label><button type="button" class="btn mpt-btn mpt-mid" data-faceai-cam>${icon('camera')}撮る</button><input type="file" accept="image/*" capture="user" id="f_faceai" class="vh"></div>
+      ${isPremium() ? '' : `<p class="hint" style="margin-top:4px">写真からニキビなどを自動で入れるのは${PREMIUM_NAME}の機能です。<button type="button" class="link small" data-faceai-lock style="background:none;border:0;padding:0;font:inherit;color:var(--green-d);text-decoration:underline">くわしく</button></p>`}<div id="faceai-info"></div></div>
     ${field('肌の調子', condSeg(d.condition) + `<p class="cond-ai ai-text" id="cond-ai">${ex ? '' : condAiNote(null)}</p>`, {name:'condition', required:true})}
     <div class="field fp-field" id="fp-field"><div class="fp-bighead"><b>顔を押して記録</b><button type="button" class="icon-btn" data-fp-done aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button></div><span class="lbl fp-lbl">顔を押して記録<span class="opt opt-d">ニキビ選択＝ニキビ、肌質選択＝乾燥・テカリなどの状態</span></span>
       <div class="fp-mode" role="group" aria-label="選び方"><button type="button" class="on" data-fp-mode="tap" aria-pressed="true">ニキビ選択</button><button type="button" data-fp-mode="range" aria-pressed="false">肌質選択</button></div>
@@ -6088,10 +6099,11 @@ function openLogForm(id) {
     if (isPremium()) { const bl = await (await fetch(url)).blob(); faceAi(new File([bl], 'face.jpg', {type:'image/jpeg'})); }
     else { form._setPhoto(url); const sv = $('#photo-save'); if (sv) sv.checked = true; toast('写真を付けました。顔を押して今日の肌を記録してください'); }
     setTimeout(() => { const el = $(isPremium() ? '#faceai-info' : '#photo-area', form); if (el && el.scrollIntoView) el.scrollIntoView({block:'center', behavior:'smooth'}); }, 80);
-  }, {w:isPremium() ? 1024 : 640, fallback:() => { const inp = $(isPremium() ? '#f_faceai' : '#f_photo', form); if (inp) inp.click(); }});
+  }, {w:isPremium() ? 1024 : 640, fallback:() => { const inp = $('#f_faceai', form); if (inp) inp.click(); }});
   $$('[data-faceai-cam]', form).forEach(b => { b.onclick = camShot; });
-  if (ui.camStart) { ui.camStart = false; setTimeout(camShot, 120); }
-  ['f_faceai', 'f_faceai2'].forEach(id => { const inp = $('#' + id, form); if (inp) inp.onchange = e => { const f = e.target.files[0]; e.target.value = ''; faceAi(f); }; });
+  ['f_faceai', 'f_faceai2'].forEach(id => { const inp = $('#' + id, form); if (inp) inp.onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    if (isPremium()) { faceAi(f); return; }
+    try { form._setPhoto(await readImage(f, 640, 0.72)); const sv = $('#photo-save'); if (sv) sv.checked = true; toast('写真を付けました。顔を押して今日の肌を記録してください'); } catch (err) { toast(err.message, 'error'); } }; });
   $$('[data-faceai-lock]', form).forEach(lk => { lk.onclick = () => { $('#faceai-info', form).innerHTML = `<div class="notice" style="margin:8px 0 0">顔の写真を撮るだけで今日の肌を記録できる機能は、<b>${PREMIUM_NAME}プラン</b>の機能です。AIが写真からニキビの数や、部位ごとの赤み・乾燥・テカリなどの目安を読み取って入れます。<br>無料プランでは、下の顔を押して記録してください。<br><a href="#/plan">プランの詳細を見る</a></div>`; }; });
   form.onsubmit = e => {
     e.preventDefault();
@@ -8516,7 +8528,6 @@ const split2 = v => String(v).split('|');
 const actions = {
   'close-modal': () => dismissModal(),
   'close-modal-bg': (id, el, e) => { if (e.target === el) dismissModal(); },
-  'cam-log': () => { const t = state.skinLogs.find(l => l.date === todayStr()); ui.camStart = true; if (t) openLogForm(t.id); else openLogForm(); },
   'remind-home': () => { actions['reminder-ics'](); state.settings.remindDone = true; save(); setTimeout(render, 400); },
   'remind-hide': () => { state.settings.remindHide = true; save(); render(); toast('お知らせの案内を閉じました。「設定」からいつでも設定できます'); },
   'derm-hide': () => { state.settings.dermHide = todayStr(); save(); render(); },
