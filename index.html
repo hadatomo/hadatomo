@@ -144,6 +144,14 @@ button{font-family:inherit}
 @media (prefers-reduced-motion:reduce){.tt-in{animation:none}}
 .topbar .wm-home{position:absolute;left:50%;top:calc(50% + env(safe-area-inset-top) / 2);transform:translate(-50%,-50%);font-family:var(--serif);font-weight:500;font-size:18px;letter-spacing:.06em;color:var(--ink);white-space:nowrap} /* ホームの「ナカカラモ」：丸みのある文字で、まん中に */
 .topbar .wm-home.tt-in{animation:none}
+.topbar .wm-wx{font-family:var(--font);letter-spacing:0;max-width:calc(100% - 24px)}
+.twx{display:flex;align-items:center;gap:12px;background:none;border:0;padding:6px 4px;font:inherit;color:var(--ink);cursor:pointer;white-space:nowrap}
+.twx svg{vertical-align:-1px;margin-right:3px;color:var(--green-d)}
+.twx-pl{font-size:13px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis}
+.twx-n{font-size:15px;font-weight:700;display:flex;align-items:baseline;gap:3px}.twx-n small{font-size:10px;font-weight:500;color:var(--muted)}.twx-n.warn{color:var(--warn)}
+.twx-load{font-size:13px;color:var(--muted);font-weight:500}
+.twx-set{font-size:13px;font-weight:600;color:var(--green-d);padding:6px 12px;border-radius:999px;background:var(--green-l,#E5F2EA)}
+@media(max-width:360px){.twx{gap:8px}.twx-n{font-size:13.5px}.twx-pl{max-width:56px}}
 .topbar>#top-menu,.topbar>.hap-keep{margin-left:auto}
 /* メニュー（三本線）はなくした。中の画面は、ホームの「ショートカット」からすべて開ける */
 .topbar #top-menu,.topbar .hap-keep:has(#top-menu){display:none!important}
@@ -1521,7 +1529,7 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
   </aside>
   <div id="page">
     <header class="topbar">
-      <a class="wordmark wm-home" data-t="ナカカラモ" href="#/home">ナカカラモ</a>
+      <div class="wordmark wm-home wm-wx" data-t="ナカカラモ" id="top-wx"></div>
       <button class="icon-btn" id="top-menu" data-action="open-menu" aria-label="メニュー" title="メニュー"></button><div class="ptr" id="ptr" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".18" stroke-width="2.6"/><circle class="ptr-arc" cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="56.5" stroke-dashoffset="56.5" transform="rotate(-90 12 12)"/></svg></div>
     </header>
     <main id="main" tabindex="-1"></main>
@@ -2985,7 +2993,7 @@ function viewHome() {
   const tabs = `<nav class="home-tabs" role="tablist" aria-label="ホームの表示">${HOME_TABS.map(x => `<button type="button" class="ht ${tab === x.k ? 'active' : ''}" role="tab" aria-selected="${tab === x.k}" data-action="home-tab" data-id="${x.k}"><span>${x.l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
   // 3つのタブ：画面の上にくっついたまま、押すと中身だけ切り替わる
   // 中身は .home-pane に入れる（横にスワイプしたとき、タブのバーは動かさずに中身だけ動かすため）
-  if (tab === 'today') { html = tabs + '<div class="home-pane">' + wxTodayHtml() + html + dermHintHtml() + careQuickHtml() + periodHintHtml() + prodAlertHtml() + comboAlertHtml() + remindCardHtml() + onboard + startHtml() + todayCard + weekReviewHtml() + '</div>'; setTimeout(() => { wxFetch(false); badgeCheck(); }, 0); }
+  if (tab === 'today') { html = tabs + '<div class="home-pane">' + html + dermHintHtml() + periodHintHtml() + prodAlertHtml() + comboAlertHtml() + remindCardHtml() + onboard + startHtml() + todayCard + weekReviewHtml() + '</div>'; setTimeout(() => { wxFetch(false); badgeCheck(); }, 0); }
   else if (tab === 'care') { html = tabs + '<div class="home-pane">' + (loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '') + careCard + '</div>'; }
   else { html = tabs + '<div class="home-pane">' + (loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '') + shortcuts + '</div>'; }
   html += adSlot('home');
@@ -5174,7 +5182,7 @@ async function wxFetch(force, ask) {
       if (v.tmax != null && v.hum != null) state.weather[day] = Object.fromEntries(Object.entries(v).map(([k, x]) => [k, x == null ? null : Math.round(Number(x) * 10) / 10])); });
     const keep = addDays(t, -400); Object.keys(state.weather).forEach(k => { if (k < keep) delete state.weather[k]; });
     state.wxFetched = t; save();
-    const b = document.getElementById('wx-box'); if (b) b.outerHTML = wxTodayHtml();
+    wxTopRefresh();
   } catch (e) { /* 通信できないときは、次に開いたときにやり直す */ }
   WX_BUSY = false;
 }
@@ -5189,6 +5197,16 @@ function wxTags(w) {
   return out;
 }
 const WX_TAGS = ['乾燥した日', '紫外線が強い日', '寒い日', '暑い日'];
+// 上の帯の真ん中：今いる場所の湿度・気温・UV（ホームだけ。押すと地域の設定）
+function wxTopInner() {
+  const pin = `<svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>`;
+  const w = state.weather[todayStr()];
+  if (!state.settings.wxPref || (state.settings.wxPref === '現在地' && !state.settings.wxLoc && !w)) return `<button type="button" class="twx twx-set" data-action="wx-geo">${pin}今日の湿度・気温を表示</button>`;
+  if (!w) return `<button type="button" class="twx" data-action="wx-setup"><span class="twx-load">${pin}${esc(state.settings.wxPref)}の天気を読み込み中…</span></button>`;
+  return `<button type="button" class="twx" data-action="wx-setup" aria-label="${esc(state.settings.wxPref)}の天気。押すと地域を変えられます"><span class="twx-pl">${pin}${esc(state.settings.wxPref)}</span>
+    <span class="twx-n ${w.hum < 50 ? 'warn' : ''}"><small>湿度</small>${Math.round(w.hum)}%</span><span class="twx-n"><small>気温</small>${Math.round(w.tmin)}〜${Math.round(w.tmax)}℃</span><span class="twx-n ${w.uv >= 6 ? 'warn' : ''}"><small>UV</small>${w.uv == null ? '－' : Math.round(w.uv)}</span></button>`;
+}
+function wxTopRefresh() { const b = document.getElementById('top-wx'); if (b) b.innerHTML = wxTopInner(); }
 function wxTodayHtml() {
   const pin = `<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>`;
   if (!state.settings.wxPref || (state.settings.wxPref === '現在地' && !state.settings.wxLoc && !state.weather[todayStr()]))
@@ -5213,7 +5231,7 @@ function openGeoHelp() {
     <p class="small muted" style="margin:10px 0 0">位置情報を使わずに、住んでいる都道府県の天気を出すこともできます。</p>
     <p class="small muted" style="margin:6px 0 0;font-size:11px">原因の番号：${WX_GEO_ERR || '-'} ${esc(WX_GEO_MSG.slice(0, 80))}${navigator.geolocation ? '' : '（位置情報に未対応）'}</p>`,
     footer:`<button type="button" class="btn btn-ghost" data-action="wx-setup">都道府県を選ぶ</button><button type="button" class="btn btn-primary" data-action="wx-geo-retry">もう一度試す</button>`});
-  const b = document.getElementById('wx-box'); if (b) b.outerHTML = wxTodayHtml();
+  wxTopRefresh();
 }
 function openWxSetup() {
   openModal({title:'天気の地域', dismissable:true, body:`<p class="small muted" style="margin:0 0 10px">「現在地」にすると、アプリを開いたときの場所の天気を自動で使います（旅行先でもそのまま）。都道府県を選ぶと県庁所在地の天気です。天気サービス（Open-Meteo）に送るのは、約1kmに丸めた緯度・経度だけです。</p>
@@ -7808,7 +7826,7 @@ async function callVision(mode, image, payload) {
       if (j && (j.error || j.message || j.msg)) msg = String(j.error || j.message || j.msg);
       if (/JWT/i.test(msg)) msg = 'サーバーの設定で、ログインの確認方法が合っていません（Verify JWT）。' + (st ? `［${st}］` : '');
     } catch (e) { /* 何もしない */ }
-    if (mode !== 'diag') msg += '（うまくいかないときは「アカウント」→「アカウント」タブの「診断する」で原因を調べられます）';
+    if (mode !== 'diag') msg += '（うまくいかないときは「アカウント」→「プラン・アカウント」の「診断する」で原因を調べられます）';
     throw new Error(msg);
   }
   if (data && data.error) throw new Error(data.error);
@@ -8252,12 +8270,10 @@ function accSectionHtml(k) {
   return `<section class="card acc-sec" id="acc-sec-${k}"><button class="acc-row acc-toggle" data-action="acc-toggle" data-id="${k}" aria-expanded="${open}" aria-controls="acc-panel-${k}">${icon(x.icon)}<span><b>${esc(x.t)}</b><small>${x.d()}</small></span><i>›</i></button>
     <div class="acc-panel" id="acc-panel-${k}" ${open ? '' : 'hidden'}>${open ? x.body() : ''}</div></section>`;
 }
-const ACC_TABS = [{k:'spend', l:'支出'}, {k:'plan', l:'アカウント'}, {k:'settings', l:'プライバシー'}];
 function viewAccount() {
-  ui.budgetEdit = false; if (!ACC_TABS.some(x => x.k === ui.accTab)) ui.accTab = 'spend';
-  const k = ui.accTab; if (k === 'plan' && acct.status === 'idle') setTimeout(initCloud, 0);
-  const nav = `<nav class="home-tabs log-tabs acc-tabs" role="tablist" aria-label="アカウントの表示">${ACC_TABS.map(x => `<button type="button" class="ht ${k === x.k ? 'active' : ''}" role="tab" aria-selected="${k === x.k}" data-action="acc-tab" data-id="${x.k}"><span>${x.l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
-  return nav + `<div class="home-pane"><div class="acc-tabpanel" id="acc-panel-${k}">${ACC_SECTIONS[k].body()}</div></div>`;
+  ui.budgetEdit = false; ui.accOpen = ui.accOpen || {};
+  if (ui.accOpen.plan && acct.status === 'idle') setTimeout(initCloud, 0);
+  return ['spend', 'plan', 'settings'].map(accSectionHtml).join('');
 }
 // 設定・プライバシー（アカウントの中）：並びを整え、データ関係を1つにまとめ、プライバシーは押すと開く形にする
 // 設定：ウィジェットの見た目（アプリ版でホーム画面に置けるもの）のプレビュー
@@ -8559,7 +8575,6 @@ const actions = {
     state.lifeLogs = state.lifeLogs.filter(x => x.id !== id);
     if (save()) { toast('削除しました'); render(); }
   },
-  'acc-tab': v => { if (ui.accTab === v) { window.scrollTo({top:0, behavior:'smooth'}); return; } if (!ui.htSlide) { const o = ACC_TABS.map(x => x.k); ui.htSlide = o.indexOf(v) > o.indexOf(ui.accTab) ? 1 : -1; } ui.atFrom = ui.accTab; ui.accTab = v; render(); window.scrollTo(0, 0); },
   'log-tab': v => { if (ui.logTab === v) { window.scrollTo({top:0, behavior:'smooth'}); return; } if (!ui.htSlide) { const o = ['list', 'recent', 'photos']; ui.htSlide = o.indexOf(v) > o.indexOf(ui.logTab) ? 1 : -1; } ui.ltFrom = ui.logTab; ui.logTab = v; render(); window.scrollTo(0, 0); },
   'log-day-step': v => logDayStep(Number(v)),
   'new-my': () => openMyForm(),
@@ -8660,7 +8675,7 @@ const actions = {
   'wx-setup': () => openWxSetup(),
   'wx-save': () => { const f = document.getElementById('f_wxPref'); state.settings.wxPref = f ? f.value : ''; state.wxFetched = ''; state.wxGeoAt = ''; save(); dismissModal(); hapticSaved(); render(); if (state.settings.wxPref) wxFetch(true, state.settings.wxPref === '現在地'); },
   'wx-geo-retry': () => { dismissModal(); setTimeout(() => actions['wx-geo'](), 250); },
-  'wx-geo': () => { state.settings.wxPref = '現在地'; state.wxFetched = ''; state.wxGeoAt = ''; save(); wxFetch(true, true); const b = document.getElementById('wx-box'); if (b) b.innerHTML = '<span class="muted">現在地を確認しています…（許可の確認が出たら「許可」を押してください）</span>'; },
+  'wx-geo': () => { state.settings.wxPref = '現在地'; state.wxFetched = ''; state.wxGeoAt = ''; save(); wxFetch(true, true); const b = document.getElementById('top-wx'); if (b) b.innerHTML = '<span class="twx-load">現在地を確認中…</span>'; toast('位置情報の確認が出たら「許可」を押してください'); },
   'sync-use-cloud': () => { const r = ui.syncRow; dismissModal(); if (r) syncApply(r); },
   'sync-use-local': () => { dismissModal(); syncPush(); toast('この端末のデータをクラウドに保存します'); },
   'cart-toggle': id => cartToggle(id),
@@ -9201,12 +9216,12 @@ function placeHomeTabInd() {
   window.addEventListener('pointerup', e => { if (e.pointerType === 'touch' && Date.now() - swAt < 400) { swAt = 0; switchTick(); } }, {passive:true});
   // ホームと記録の画面で使う：タブの並びと、今のタブ・切り替える操作
   const LOG_TABS = [{k:'list'}, {k:'recent'}, {k:'photos'}];
-  const page = () => parseRoute().name === 'account' ? {tabs:ACC_TABS, cur:ui.accTab, go:k => actions['acc-tab'](k)} : parseRoute().name === 'log' ? {tabs:LOG_TABS, cur:ui.logTab, go:k => actions['log-tab'](k)} : {tabs:HOME_TABS, cur:ui.homeTab, go:k => actions['home-tab'](k)};
+  const page = () => parseRoute().name === 'log' ? {tabs:LOG_TABS, cur:ui.logTab, go:k => actions['log-tab'](k)} : {tabs:HOME_TABS, cur:ui.homeTab, go:k => actions['home-tab'](k)};
   const idx = () => { const g = page(); return Math.max(0, g.tabs.findIndex(x => x.k === g.cur)); };
   const scrollsX = el => { for (let n = el; n && n !== document.body; n = n.parentElement) { if (n.scrollWidth > n.clientWidth + 2) { const ox = getComputedStyle(n).overflowX; if (ox === 'auto' || ox === 'scroll') return true; } } return false; };
   window.addEventListener('touchstart', e => {
     x0 = null; lock = '';
-    const rn = parseRoute(); if (e.touches.length !== 1 || !['home', 'log', 'account'].includes(rn.name) || (rn.name === 'log' && rn.id)) return;
+    const rn = parseRoute(); if (e.touches.length !== 1 || !['home', 'log'].includes(rn.name) || (rn.name === 'log' && rn.id)) return;
     const tg = e.target;
     if ($('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full')) return;
     if (!tg.closest || !tg.closest('.home-pane') || tg.closest('input,textarea,select,.ld-cal,[data-noswipe],#ld-swipe,.ld-stage') || scrollsX(tg)) return; // 日付の行（横スワイプで日付を変える）と3Dの顔は除く
@@ -9262,8 +9277,8 @@ window.addEventListener('resize', setTbh); window.addEventListener('orientationc
 function setTopTitle(t) {
   const tb = $('.topbar'); if (!tb) return;
   const cur = tb.firstElementChild, want = t || 'ナカカラモ';
-  if (cur && cur.dataset.t === want) return;
-  const html = t ? `<h1 class="wordmark top-title" data-t="${esc(t)}">${esc(t)}</h1>` : `<a class="wordmark wm-home" data-t="ナカカラモ" href="#/home">ナカカラモ</a>`;
+  if (cur && cur.dataset.t === want) { if (!t) wxTopRefresh(); return; }
+  const html = t ? `<h1 class="wordmark top-title" data-t="${esc(t)}">${esc(t)}</h1>` : `<div class="wordmark wm-home wm-wx" data-t="ナカカラモ" id="top-wx">${wxTopInner()}</div>`;
   if (cur && cur.classList.contains('wordmark')) cur.outerHTML = html; else tb.insertAdjacentHTML('afterbegin', html);
   const el = tb.firstElementChild; if (cur) { el.classList.add('tt-in'); }
   setTbh();
@@ -9309,7 +9324,7 @@ function render() {
   }
   navRestoreY = null;
   if (r.name === 'home') { placeHomeTabInd(); slideHomePane(); if (ui.homeTab === 'care' && isPremium()) setTimeout(() => { runMenu(false); storeLoad(false); }, 0); }
-  if (r.name === 'log' || r.name === 'account') { placeHomeTabInd(); slideHomePane(); }
+  if (r.name === 'log') { placeHomeTabInd(); slideHomePane(); }
   if (r.name === 'product') { const pc = getCat(r.id); if (pc) setTimeout(() => offFetch(pc), 0); }
   hapticizeTargets();
   drawCharts();
