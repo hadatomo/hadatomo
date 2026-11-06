@@ -5309,22 +5309,24 @@ function viewMyDetail(id) {
       <p class="small muted" style="margin-top:10px">数字は「肌の調子」の平均です（記録が3件以上ある期間のみ表示）。季節・睡眠・体調・ほかの商品なども肌に影響するため、この商品が変化の原因かどうかは判断できません。</p>`;
   }
   const fc = p.status !== STOCK ? freqCheck(p, addDays(t, -27), t) : null;
-  if (p.category === '皮膚科の塗り薬') {
-    const use = rxUseOf(p.name), ing = ingsOfMy(p) || (RX_DRUGS.find(x => x[1] === p.name) || [])[2] || '';
+  { // 化粧品も塗り薬も、同じ形の画面にする
+    const isRx = p.category === '皮膚科の塗り薬';
+    const use = isRx ? rxUseOf(p.name) : p.purposes.join('・'), ing = ingsOfMy(p) || (isRx ? (RX_DRUGS.find(x => x[1] === p.name) || [])[2] || '' : '');
+    const ingHtml = !ing ? '<span class="muted">未登録</span>' : isRx || ing.length <= 60 ? esc(ing) : `${known.length ? '' : '<span class="muted">解説のある成分はありません</span>'}<details class="fold" style="margin-top:${known.length ? 0 : 6}px"><summary>全成分を表示</summary><p class="prose small">${esc(ing)}</p></details>`;
     return `<a class="back" href="#/my">← Myアイテム</a>
     <div class="card detail-top">
-      ${thumbHtml(Object.assign({}, cat || {category:p.category}, {name:p.name, isSample:false}), false)}
+      ${thumbHtml(Object.assign({}, cat || {category:p.category}, isRx ? {name:p.name, isSample:false} : {isSample:false}), false)}
       <div>
-        <div class="chips"><span class="chip">${esc(p.category)}</span>${use ? `<span class="chip green">${esc(use)}</span>` : ''}</div>
+        <div class="chips"><span class="chip">${esc(p.category)}</span>${(isRx ? (use ? [use] : []) : p.purposes).map(x => `<span class="chip green">${esc(x)}</span>`).join('')}</div>
         <div class="small muted" style="margin-top:10px">${esc(p.brand)}</div>
         <h1 class="detail-title">${esc(p.name)}</h1>
         <dl class="kv">
           ${use ? `<dt>使用目的</dt><dd>${esc(use)}</dd>` : ''}
           <dt>使用タイミング</dt><dd>${esc(p.timing === '必要なときだけ' ? '必要な時だけ' : p.timing)}（${esc(p.frequency)}）</dd>
           <dt>使用開始日</dt><dd>${fmtDate(p.startDate)}</dd>
-          <dt>成分</dt><dd>${ing ? esc(ing) : '未登録'}${known.length ? `<div class="ing-list" style="margin-top:6px">${known.map(k => `<a href="#/ingredients/${k.entry.key}">${esc(k.entry.name)}</a>`).join('')}</div>` : ''}</dd>
+          <dt>成分</dt><dd>${isRx || ing.length <= 60 ? ingHtml : ''}${known.length ? `<div class="ing-list" style="margin-top:${isRx || ing.length <= 60 ? 6 : 0}px">${known.map(k => `<a href="#/ingredients/${k.entry.key}">${esc(k.entry.name)}</a>`).join('')}</div>` : ''}${!isRx && ing.length > 60 ? ingHtml : ''}</dd>
         </dl>
-        <p class="hint" style="margin-top:12px">使う量・回数・期間は、医師・薬剤師の指示に従ってください。</p>
+        ${isRx ? '<p class="hint" style="margin-top:12px">使う量・回数・期間は、医師・薬剤師の指示に従ってください。</p>' : ''}
         <div class="page-actions" style="margin-top:14px">
           <button class="btn btn-primary btn-sm" data-action="edit-my" data-id="${esc(p.id)}">編集</button>
           <button class="btn btn-ghost btn-sm" data-action="compare-with" data-id="${esc(p.id)}">ほかと比較</button>
@@ -5397,7 +5399,21 @@ function guessFromName(name) {
   const g = guessCat(n);
   return {brand:brand || brandFromName(n, true), purposes, category:g === 'その他' ? '' : g};
 }
+// 商品を選んだら、登録画面は出さずにそのままMyアイテムに入れる（使用開始日＝今日、朝・夜／毎日、使用目的・ブランドは自動）
+function quickAddMy(catId) {
+  const c = getCat(catId); if (!c) return;
+  if (c.category === '皮膚科の塗り薬' && RX_DRUGS.some(d => d[1] === c.name)) return rxPick(c.name);
+  ui.myKind = c.category === '皮膚科の塗り薬' ? 'rx' : 'cos';
+  closeModal();
+  if (state.myProducts.some(x => x.catalogId === c.id && x.status === '使用中')) { toast('この商品はすでに登録されています'); if (parseRoute().name !== 'my') location.hash = '#/my'; else render(); return; }
+  const g = guessFromName(c.name);
+  state.myProducts.push({id:uid(), demo:false, purchases:[], catalogId:c.id, name:c.name, brand:c.brand || g.brand || brandOrCompany(c.name, (String(c.source || '').match(/（(.+)）$/) || [])[1]) || '—',
+    category:c.category && CATEGORIES.includes(c.category) ? c.category : (g.category || 'その他'), purposes:(c.purposes && c.purposes.length ? c.purposes : g.purposes || []).filter(v => PURPOSES.includes(v)), ingredients:'',
+    timing:'朝・夜', frequency:'毎日', startDate:todayStr(), status:'使用中', endDate:'', memo:'', pao:0, order:null});
+  if (save()) { hapticSaved(); toast(`「${truncate(c.name, 20)}」を登録しました`); if (parseRoute().name !== 'my') location.hash = '#/my'; else render(); }
+}
 function openMyForm(id, fromCatId) {
+  if (!id && fromCatId && getCat(fromCatId)) return quickAddMy(fromCatId);
   const ex = id ? getMy(id) : null;
   const src = fromCatId ? getCat(fromCatId) : null;
   const t = todayStr();
@@ -5754,7 +5770,7 @@ function wxTopInner() {
   if (!w) return `<button type="button" class="twx" data-action="wx-setup"><span class="twx-load">${pin}${esc(state.settings.wxPref)}の天気を読み込み中…</span></button>`;
   const pl = state.settings.wxPref === '現在地' && state.settings.wxPlace ? state.settings.wxPlace : state.settings.wxPref;
   const nw = wxNowOk() ? WX_NOW : null, hum = nw ? nw.hum : w.hum, uv = nw ? nw.uv : w.uv; // 今の湿度・UV（取れないときはその日の平均・最大）
-  return `<button type="button" class="twx" data-action="wx-setup" aria-label="${esc(pl)}の天気。押すと地域を変えられます"><span class="twx-pl">${pin}${esc(pl)}</span>
+  return `<button type="button" class="twx" data-action="wx-setup" aria-label="${esc(pl)}の天気。押すと地域を変えられます">
     <span class="twx-n ${hum < 50 ? 'warn' : ''}"><small>湿度</small>${Math.round(hum)}%</span><span class="twx-n"><small>気温</small>${Math.round(w.tmin)}〜${Math.round(w.tmax)}℃</span><span class="twx-n ${uv >= 6 ? 'warn' : ''}"><small>UV</small>${uv == null ? '－' : Math.round(uv)}</span></button>`;
 }
 function wxTopRefresh() { const b = document.getElementById('top-wx'); if (b) b.innerHTML = wxTopInner(); wxFit(); }
