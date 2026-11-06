@@ -3033,6 +3033,49 @@ function openAddSheet(kind) {
 }
 // 実際の商品（楽天市場・Yahoo!ショッピング）を名前で探して、そのまま追加する
 let findState = null;
+// ===== 商品名の比べ方（同じ商品かどうか） =====
+// ひらがな・カタカナ、全角・半角、大文字・小文字の違いをなくして比べる
+const fnorm = t => String(t || '').normalize('NFKC').toLowerCase().replace(/[ァ-ヶ]/g, c => String.fromCharCode(c.charCodeAt(0) - 0x60)).replace(/[ー－‐\-・･,，、。．.\/／()（）「」『』!！?？★☆◆◇■□●○※＊*+＋&＆'’"”]/g, '').replace(/\s+/g, '');
+// お店がつける宣伝の言葉を取って、商品そのものの名前にする
+const cleanShopName = n => String(n || '').replace(/[【\[<＜《〔][^】\]>＞》〕]*[】\]>＞》〕]/g, ' ')
+  .replace(/送料無料|送料込み?|公式(ショップ|ストア)?|正規品|国内正規品|あす楽(対応)?|ポイント\s*\d+\s*倍|\d+\s*%\s*(OFF|オフ)|最大\s*\d+|即納|即日発送|メール便|ネコポス|ゆうパケット|クーポン(配布中|あり)?|楽天ランキング\d*位?|ランキング\d*位|1位|SALE|セール|在庫限り|数量限定|送料別|代引不可|★+|☆+/gi, ' ')
+  .replace(/\s+/g, ' ').trim();
+// 種類が違うと別の商品（しっとり／さっぱり、化粧水／乳液、容量、詰め替え など）
+const VARIANT_WORDS = ['とてもしっとり', 'しっとり', 'さっぱり', 'ノーマル', 'リッチ', 'ライト', 'ジェル', 'ミルク', '乳液', '化粧水', 'ローション', '美容液', 'セラム', 'クリーム', '洗顔', 'クレンジング', 'オイル', 'パック', 'マスク', '日焼け止め', 'トナー', 'エッセンス', '詰め替え', '詰替', 'つめかえ', 'リフィル', 'レフィル', 'お試し', 'ミニ', 'トライアル', 'セット'].map(fnorm);
+function variantSig(name) {
+  const n = fnorm(cleanShopName(name));
+  const words = VARIANT_WORDS.filter(w => n.includes(w)).filter((w, i, a) => !a.some(o => o !== w && o.includes(w))).sort().join('|');
+  const vol = (String(name).normalize('NFKC').match(/(\d+(?:\.\d+)?)\s*(ml|g|枚)(?![a-z])/i) || []).slice(1, 3).join('').toLowerCase();
+  return {n, words, vol};
+}
+// 2つが同じ商品か（名前がとても似ていて、種類と容量が同じ）
+function sameProduct(a, b) {
+  if (a.jan && b.jan) return a.jan === b.jan;
+  const x = variantSig(a.name), y = variantSig(b.name);
+  if (x.words !== y.words) return false;
+  if (x.vol && y.vol && x.vol !== y.vol) return false;
+  return similarity(x.n, y.n) >= 0.75;
+}
+// 検索した言葉が、商品名にどれだけ入っているか
+function matchScore(q, name) {
+  const toks = String(q).normalize('NFKC').split(/[\s　]+/).map(fnorm).filter(Boolean); if (!toks.length) return {all:true, hit:0, n:0};
+  const n = fnorm(cleanShopName(name)); const hit = toks.filter(t => n.includes(t)).length;
+  return {all:hit === toks.length, hit, n:toks.length};
+}
+async function findFetch(body) {
+  for (let i = 0; i < 2; i++) { // つながらない・混んでいるときは、もう1回だけ試す
+    try {
+      const ctrl = new AbortController(), tm = setTimeout(() => ctrl.abort(), 25000);
+      const res = await fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', signal:ctrl.signal, headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify(body)});
+      const j = await res.json().catch(() => ({})); clearTimeout(tm);
+      if (!res.ok || j.error) throw new Error('x');
+      const items = Array.isArray(j.items) ? j.items : [];
+      if (!items.length && (j.errors || []).length && i === 0) { await new Promise(r => setTimeout(r, 1500)); continue; } // 楽天などが混んでいて0件のとき
+      return items;
+    } catch (e) { if (i === 1) throw e; await new Promise(r => setTimeout(r, 1200)); }
+  }
+  return [];
+}
 function openFindSheet(kind) {
   findState = {kind, q:'', items:null, loading:false, err:'', timer:null};
   openModal({title:'自分で入力', dismissable:true, body:`<div class="ac-wrap sbig find-bar">${icon('search')}<input type="search" id="find-q" class="input" placeholder="バーコードの数字 または 商品名" autocomplete="off" aria-label="バーコードの数字または商品名"></div>
@@ -3049,18 +3092,38 @@ async function findRun(q) {
   if (q.length < 2) { fs.items = null; fs.loading = false; findPaint(); return; }
   fs.loading = true; findPaint();
   try {
-    const ctrl = new AbortController(), tm = setTimeout(() => ctrl.abort(), 25000);
     // 数字だけ（8桁・13桁）ならバーコード（JANコード）として探す
     const digits = q.replace(/[\s-]/g, ''), jan = /^(\d{8}|\d{13})$/.test(digits) ? digits : '';
-    const res = await fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', signal:ctrl.signal, headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify(jan ? {jan, q:'', mode:'discover'} : {q, mode:'discover'})});
-    const j = await res.json().catch(() => ({})); clearTimeout(tm);
+    let items = await findFetch(jan ? {jan, q:'', mode:'discover'} : {q, mode:'discover'});
     if (findState !== fs || fs.q !== q) return;
-    if (!res.ok || j.error) throw new Error('x');
-    // 候補の並び：ふつうの単品を先に、セット・詰め替え・お試し・まとめ買いは後ろへ。同じ名前は1つにまとめる
+    fs.near = false;
+    if (jan) {
+      // バーコード：Yahoo!はバーコードが一致した商品だけ。楽天はバーコードで探すとちがう商品が混ざるので、Yahoo!の商品と同じものだけ残す
+      const exact = items.filter(x => x.jan === jan);
+      if (exact.length) {
+        const ref = exact[0];
+        const rk = items.filter(x => x.jan !== jan && sameProduct({name:x.name}, {name:ref.name}));
+        let more = [];
+        try { more = (await findFetch({q:cleanShopName(ref.name).slice(0, 40), mode:'discover'})).filter(x => x.jan === jan || (!x.jan && sameProduct({name:x.name}, {name:ref.name}))); } catch (e) { /* 何もしない */ }
+        if (findState !== fs || fs.q !== q) return;
+        items = [...exact, ...rk, ...more];
+      } else items = items.filter(x => x.byJan);
+    } else {
+      // 商品名：入れた言葉が全部入っている商品だけ出す。0件なら、言葉を減らして近い商品を出す
+      let full = items.filter(x => matchScore(q, x.name).all);
+      const toks = q.split(/[\s　]+/).filter(Boolean);
+      if (!full.length && toks.length >= 2) {
+        try { const more = await findFetch({q:toks.slice(0, -1).join(' '), mode:'discover'}); if (findState !== fs || fs.q !== q) return; items = items.concat(more); } catch (e) { /* 何もしない */ }
+        full = items.filter(x => matchScore(q, x.name).all);
+      }
+      if (!full.length) { fs.near = items.length > 0; full = items.map(x => ({x, m:matchScore(q, x.name)})).filter(v => v.m.hit).sort((a, b) => b.m.hit - a.m.hit).map(v => v.x); }
+      items = full;
+    }
+    // 並び：ふつうの単品を先に、セット・詰め替え・お試し・まとめ買いは後ろへ。同じ商品（同じ名前・同じ容量）は1つにまとめる
     const odd = n => /セット|詰め?替え?|つめかえ|リフィル|レフィル|お試し|トライアル|サンプル|まとめ買い|\d+個|\d+本組|福袋|業務用/.test(n || '');
     const seenN = new Set();
-    fs.items = (Array.isArray(j.items) ? j.items : []).filter(x => x && x.name).filter(x => { const k = String(x.name).normalize('NFKC').replace(/【[^】]*】|\[[^\]]*\]|[\s　]/g, '').slice(0, 30); if (seenN.has(k)) return false; seenN.add(k); return true; })
-      .map((x, i) => ({x, i, o:odd(x.name)})).sort((a, b) => a.o - b.o || a.i - b.i).map(v => v.x).slice(0, 30);
+    fs.items = items.filter(x => x && x.name).filter(x => { const v = variantSig(x.name), k = v.n.slice(0, 40) + '|' + v.vol; if (seenN.has(k)) return false; seenN.add(k); return true; })
+      .map((x, i) => ({x, i, o:odd(x.name)})).sort((a, b) => a.o - b.o || a.i - b.i).map(v => v.x).slice(0, 60);
   } catch (e) { if (findState === fs && fs.q === q) { fs.items = null; fs.err = '商品を探せませんでした。電波のよい場所で、もう一度お試しください。'; } }
   if (findState === fs && fs.q === q) { fs.loading = false; findPaint(); }
 }
@@ -3070,8 +3133,8 @@ function findPaint() {
   if (fs.err) { box.innerHTML = `<p class="small muted">${esc(fs.err)}</p>`; return; }
   if (!fs.items) { box.innerHTML = fs.cam ? '' : '<p class="small muted">バーコードの数字か商品名を入れると、候補が出ます。</p>'; return; }
   if (!fs.items.length) { box.innerHTML = `<p class="small muted">見つかりませんでした。${fs.cam ? '撮り直すか、' : '別の言葉で探すか、'}<button type="button" class="link" data-action="add-full" data-id="${fs.kind}">すべて自分で入力</button>してください。</p>`; return; }
-  box.innerHTML = fs.items.map((x, i) => `<div class="net-item">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
-      <span class="net-t"><b>${esc(truncate(x.name, 60))}</b><small>${esc(x.site)}${x.shop ? '・' + esc(truncate(x.shop, 18)) : ''}</small><em>${yen(x.price)}</em></span>
+  box.innerHTML = (fs.near ? '<p class="small muted" style="margin:0 0 8px">ぴったりの商品が見つからなかったので、近い商品を出しています。言葉を変えると見つかることがあります。</p>' : '') + `<p class="small muted" style="margin:0 0 8px">${fs.items.length}件</p>` + fs.items.map((x, i) => `<div class="net-item">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
+      <span class="net-t"><b>${esc(truncate(cleanShopName(x.name) || x.name, 70))}</b><small>${esc(x.site)}${x.shop ? '・' + esc(truncate(x.shop, 18)) : ''}</small><em>${yen(x.price)}</em></span>
       <span class="net-btns"><button class="btn btn-primary btn-sm" data-action="find-pick" data-id="${i}">${icon('plus')}これを選ぶ</button></span></div>`).join('');
 }
 // ---------- カメラで登録：選ぶ／撮る → バーコードを読む（だめなら、プレミアムは商品の写真から商品名を読む）→ 候補から選ぶ ----------
@@ -3403,7 +3466,7 @@ function netHtml() {
 function netToCat(x, others) {
   const old = state.catalog.find(c => c.shopUrl && c.shopUrl === x.url); if (old) return old;
   const vol = (x.name.match(/(\d+(?:\.\d+)?)\s*(ml|mL|ML|g|G)(?![a-z])/) || [])[0] || '';
-  const p = {id:uid(), isSample:false, verify:'unverified', name:x.name.replace(/[【\[].*?[】\]]/g, '').replace(/\s+/g, ' ').trim().slice(0, 80) || x.name.slice(0, 80), brand:'', category:guessCat(x.name), origin:'日本',
+  const p = {id:uid(), isSample:false, verify:'unverified', name:cleanShopName(x.name).slice(0, 80) || x.name.slice(0, 80), brand:'', category:guessCat(x.name), origin:'日本',
     price:x.price, volume:vol.replace(/\s/g, '').replace(/mL|ML/, 'ml').replace('G', 'g'), image:null, imageUrl:/^https:\/\//.test(x.image || '') ? x.image : '', shopUrl:x.url, purposes:[], ingredients:'', features:'', usage:'', caution:'',
     jan:/^(\d{8}|\d{13})$/.test(x.jan || '') ? x.jan : '', source:`${x.site}（${x.shop || 'ショップ'}）`, checkedAt:todayStr(), offers:[]};
   const g = guessFromName(p.name); if (g && g.brand) p.brand = g.brand; if (g && g.purposes && g.purposes.length) p.purposes = g.purposes.filter(v => PURPOSES.includes(v));
@@ -3418,7 +3481,7 @@ async function pickCleanImage(p, x, others) {
   const urls = [];
   const add = u => { const v = hiResImg(u); if (v && !urls.includes(v)) urls.push(v); };
   (x.images && x.images.length ? x.images : [x.image]).forEach(add);
-  others.filter(o => o !== x && similarity(key(o.name), key(x.name)) >= 0.55).forEach(o => (o.images && o.images.length ? o.images : [o.image]).forEach(add));
+  others.filter(o => o !== x && sameProduct({name:o.name, jan:o.jan}, {name:x.name, jan:x.jan})).forEach(o => (o.images && o.images.length ? o.images : [o.image]).forEach(add)); // 同じ商品（種類・容量も同じ）の画像だけ
   if (urls.length < 2) return;
   try {
     const res = await fetch(CLOUD.url + '/functions/v1/prices', {method:'POST', headers:{'Content-Type':'application/json', apikey:CLOUD.key}, body:JSON.stringify({mode:'pickimg', urls:urls.slice(0, 8)})});
