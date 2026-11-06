@@ -14,7 +14,6 @@
 <meta name="theme-color" content="#121614" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem("skinwise_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
 <title>ナカカラモ（NAKAKARAMO）</title>
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500&amp;text=%E3%83%8A%E3%82%AB%E3%83%A9%E3%83%A2&amp;display=swap">
 <style>
 :root{
   --bg:#FAF9F6;--surface:#FFFFFF;--surface2:#F6F3EE;
@@ -142,7 +141,7 @@ button{font-family:inherit}
 .tt-in{animation:none}
 @keyframes ttIn{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.tt-in{animation:none}}
-.topbar .wm-home{position:absolute;left:50%;top:calc(50% + env(safe-area-inset-top) / 2);transform:translate(-50%,-50%);font-family:"Hiragino Maru Gothic ProN","Zen Maru Gothic","Hiragino Sans",var(--font);font-weight:500;font-size:17px;letter-spacing:.14em;color:#3F4B44;white-space:nowrap} /* ホームの「ナカカラモ」：丸みのある文字で、まん中に */
+.topbar .wm-home{position:absolute;left:50%;top:calc(50% + env(safe-area-inset-top) / 2);transform:translate(-50%,-50%);font-family:var(--serif);font-weight:500;font-size:18px;letter-spacing:.06em;color:var(--ink);white-space:nowrap} /* ホームの「ナカカラモ」：丸みのある文字で、まん中に */
 .topbar .wm-home.tt-in{animation:none}
 .topbar>#top-menu,.topbar>.hap-keep{margin-left:auto}
 /* メニュー（三本線）はなくした。中の画面は、ホームの「ショートカット」からすべて開ける */
@@ -150,7 +149,7 @@ button{font-family:inherit}
 .topbar:has(.wm-home){min-height:calc(52px + env(safe-area-inset-top))}
 .wordmark small{display:block;font-family:var(--font);font-size:10px;letter-spacing:.08em;color:var(--muted);margin-top:2px}
 main{max-width:1100px;margin:0 auto;padding:20px 16px calc(150px + env(safe-area-inset-bottom))} /* 一番下にも余白：最後のカードが下のバーにくっつかないように */
-.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:max(4px,calc(env(safe-area-inset-bottom) - 16px))} /* 下のバーを全体的に下げる（iPhoneの下の線の近くまで） */
 .bn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:9px 0 7px;font-size:10.5px;color:var(--muted);text-decoration:none;background:none;border:0;cursor:pointer;min-width:0;white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .bn-item span{max-width:100%;overflow:hidden;text-overflow:clip}
 .bn-item svg{width:23px;height:23px}
@@ -1209,6 +1208,14 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .sw-list{margin:0 0 14px;padding-left:1.2em;font-size:12.5px;color:var(--ink2);line-height:1.6}
 .sw-list li+li{margin-top:4px}
 .sw-hello{text-align:center;font-size:40px;margin:4px 0 8px}
+.sw-auth{display:flex;flex-direction:column;gap:6px;text-align:left}
+.sw-auth .lbl{margin:6px 0 0}
+.sw-auth .check{margin-top:6px;align-items:flex-start}
+.sw-seg{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:4px}
+.sw-seg .seg-opt{border:1px solid var(--line2);background:var(--surface);border-radius:999px;min-height:38px;font:inherit;font-weight:600;font-size:13.5px;color:var(--ink2);cursor:pointer}
+.sw-seg .seg-opt.on{background:var(--green-d);border-color:var(--green-d);color:#fff}
+.sw-auth-go{margin-top:10px;width:100%}
+.sw-auth-msg{margin:6px 0 0;color:var(--green-d);line-height:1.6}
 .sw-foot{display:flex;gap:8px;width:100%}
 .sw-foot .btn{flex:1}
 .sw-foot>.hap-keep{flex:1 1 0;min-width:0;display:flex}
@@ -3045,16 +3052,52 @@ function findPick(i) {
 let swState = null;
 function openSetupWizard() {
   const st = state.settings;
-  swState = {i:0, v:{gender:st.gender || '', ageBand:st.ageBand || '', height:st.height || '', weight:st.weight || '', skinType:st.skinType || '', sensitive:st.sensitive ? 'yes' : (st.onboarded ? 'no' : ''), concerns:st.concerns.slice(), sleepNeed:st.sleepNeed || 420, budget:st.monthlyBudget || '', research:researchState().on ? 'yes' : ''}};
+  swState = {acct:!(acct && acct.user) && !hasSavedLogin(), acctMode:'signup', i:0, v:{gender:st.gender || '', ageBand:st.ageBand || '', height:st.height || '', weight:st.weight || '', skinType:st.skinType || '', sensitive:st.sensitive ? 'yes' : (st.onboarded ? 'no' : ''), concerns:st.concerns.slice(), sleepNeed:st.sleepNeed || 420, budget:st.monthlyBudget || '', research:researchState().on ? 'yes' : ''}};
   openModal({title:'はじめの質問', body:'<div id="sw-body"></div>', footer:'<div class="sw-foot" id="sw-foot"></div>'});
   const root = $('#modal-root');
   root.querySelector('.modal-head [data-action="close-modal"]').setAttribute('data-action', 'setup-later');
   if (!root._sw) { root.addEventListener('click', swClick); root._sw = 1; }
   swPaint();
 }
-const SW_ALL = ['hello', 'gender', 'age', 'body', 'skin', 'concerns', 'life', 'research', 'done'];
+const SW_ALL = ['hello', 'account', 'gender', 'age', 'body', 'skin', 'concerns', 'life', 'research', 'done'];
+// はじめの質問の「アカウントを作成／ログイン」：成功したら次の質問へ進む
+async function swAuth() {
+  if (!swState || swState.busy) return;
+  const up = (swState.acctMode || 'signup') === 'signup', err = $('#sw-err');
+  const email = ($('#sw-email') || {}).value ? $('#sw-email').value.trim() : '', pw = ($('#sw-pw') || {}).value || '';
+  const bad = m => { if (err) { err.hidden = false; err.textContent = m; } return false; };
+  swState.email = email;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return bad('メールアドレスを正しく入力してください');
+  if (!pw) return bad('パスワードを入力してください');
+  if (up && (pw.length < 8 || !/[A-Za-z]/.test(pw) || !/\d/.test(pw))) return bad('パスワードは8文字以上で、英字と数字を組み合わせてください');
+  if (up && ($('#sw-pw2') || {}).value !== pw) return bad('パスワード（確認）が一致しません');
+  if (up && !($('#sw-agree') || {}).checked) return bad('利用規約とプライバシーポリシーへの同意にチェックを入れてください');
+  const wantSync = up ? !!($('#sw-sync') || {}).checked : true;
+  if (err) err.hidden = true;
+  swState.busy = true; swState.authMsg = ''; swPaint();
+  let next = false;
+  try {
+    if (acct.status !== 'ready') await initCloud();
+    if (!acct.client) throw new Error('offline');
+    if (up) {
+      const {data, error} = await acct.client.auth.signUp({email, password:pw, options:{emailRedirectTo:appUrl()}});
+      if (error) throw error;
+      if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) throw new Error('already registered');
+      state.settings.cloudSync = wantSync; save();
+      if (!data.session) { swState.authMsg = `${email} に確認のメールを送りました。メールのリンクを押すと登録が完了します（あとで大丈夫です）。そのまま質問を続けてください。`; acct.mode = 'login'; }
+      else { toast('登録しました'); next = true; }
+    } else {
+      const {error} = await acct.client.auth.signInWithPassword({email, password:pw});
+      if (error) throw error;
+      toast('ログインしました'); next = true;
+    }
+  } catch (e) { swState.busy = false; swPaint(); bad(e && e.message === 'offline' ? '通信できませんでした。電波のよい場所で、もう一度お試しください' : authErrMsg(e)); return; }
+  swState.busy = false;
+  if (next) { swState.i = clamp(swState.i + 1, 0, swSteps().length - 1); const mb = $('#modal-root .modal-body'); if (mb) mb.scrollTop = 0; }
+  swPaint();
+}
 // 研究への協力の質問は、年代で18歳以上を選んだ人にだけ出す
-const swSteps = () => SW_ALL.filter(s => s !== 'research' || isAdultBand(swState && swState.v.ageBand));
+const swSteps = () => SW_ALL.filter(s => (s !== 'research' || isAdultBand(swState && swState.v.ageBand)) && (s !== 'account' || (swState && swState.acct))); // 新規登録は、まだログインしていない人にだけ
 function swOpts(key, list, cur, multi) { return `<div class="sw-opts">${list.map(([v, l, w]) => { const on = multi ? cur.includes(v) : v === '' ? !!(swState && swState.none && swState.none[key]) && cur === '' : cur === v; return `<button type="button" class="sw-opt ${on ? 'on' : ''} ${w ? 'wide' : ''}" data-sw="${key}" data-v="${esc(v)}" aria-pressed="${on}">${l.includes('|') ? `${esc(l.split('|')[0])}<small>${esc(l.split('|')[1])}</small>` : esc(l)}</button>`; }).join('')}</div>`; }
 function swPaint() {
   const s = swState; if (!s) return; const b = $('#sw-body'), f = $('#sw-foot'); if (!b || !f) return;
@@ -3062,6 +3105,18 @@ function swPaint() {
   const dots = `<div class="sw-dots">${swSteps().map((_, k) => `<i class="${k === s.i ? 'on' : ''}"></i>`).join('')}</div>`;
   let h = '';
   if (step === 'hello') h = `<div class="sw-hello">🌿</div><p class="sw-q">ナカカラモへようこそ</p><p class="sw-sub">はじめに、いくつか質問させてください（1分ほど）。<br>答えた内容は、ケアの提案や栄養の目安に使います。<br>このスマホの中にだけ保存され、あとから設定でいつでも変えられます。</p>`;
+  if (step === 'account') { const a = swState.acctMode || 'signup', up = a === 'signup';
+    h = `<p class="sw-q">${up ? 'アカウントを作成' : 'ログイン'}</p><p class="sw-sub">${up ? 'メールアドレスで登録すると、記録をクラウドに保存して、機種変更しても続きから使えます（無料）。あとからでも登録できます' : '登録済みのメールアドレスとパスワードを入れてください'}</p>
+    <div class="sw-auth">
+      <div class="seg sw-seg" role="radiogroup"><button type="button" class="seg-opt ${up ? 'on' : ''}" data-swmode="signup">新規登録</button><button type="button" class="seg-opt ${up ? '' : 'on'}" data-swmode="login">ログイン</button></div>
+      <label class="lbl" for="sw-email">メールアドレス</label><input class="input" id="sw-email" type="email" autocomplete="email" inputmode="email" maxlength="254" value="${esc(swState.email || '')}" placeholder="例：name@example.com">
+      <label class="lbl" for="sw-pw">パスワード</label><input class="input" id="sw-pw" type="password" autocomplete="${up ? 'new-password' : 'current-password'}" maxlength="72" placeholder="${up ? '8文字以上・英字と数字' : ''}">
+      ${up ? `<label class="lbl" for="sw-pw2">パスワード（確認）</label><input class="input" id="sw-pw2" type="password" autocomplete="new-password" maxlength="72">
+      <label class="check"><input type="checkbox" id="sw-sync" checked> 記録をクラウドに保存する（写真は送りません）</label>
+      <label class="check"><input type="checkbox" id="sw-agree"> <span><a href="#/terms" target="_blank" rel="noopener">利用規約</a>と<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意します</span></label>` : ''}
+      <button type="button" class="btn btn-primary sw-auth-go" data-action="sw-auth" ${swState.busy ? 'disabled' : ''}>${swState.busy ? '送信中…' : up ? '登録する' : 'ログインする'}</button>
+      ${swState.authMsg ? `<p class="small sw-auth-msg">${esc(swState.authMsg)}</p>` : ''}
+    </div>`; }
   if (step === 'gender') h = `<p class="sw-q">性別を教えてください</p><p class="sw-sub">記録に使う3Dの顔を、性別に合わせた形にします</p>` + swOpts('gender', [['女性', '女性'], ['男性', '男性'], ['', '答えない', 1]], v.gender);
   if (step === 'age') h = `<p class="sw-q">年代を教えてください</p><p class="sw-sub">年代に合ったケアの考え方に使います</p>` + swOpts('ageBand', AGE_BANDS.map(x => [x, x]).concat([['', '答えない']]), v.ageBand);
   if (step === 'body') h = `<p class="sw-q">身長と体重を教えてください</p><p class="sw-sub">1日のたんぱく質の目安（体重×1g）などに使います。空欄でも大丈夫です</p>
@@ -3080,9 +3135,9 @@ function swPaint() {
   b.innerHTML = dots + h + '<p class="sw-err" id="sw-err" hidden></p>';
   f.innerHTML = step === 'hello' ? `<button type="button" class="btn btn-ghost" data-action="setup-later">あとで</button><button type="button" class="btn btn-primary" data-swgo="1">はじめる</button>`
     : step === 'done' ? `<button type="button" class="btn btn-primary" data-action="setup-finish">ナカカラモをはじめる</button>`
-    : `<button type="button" class="btn btn-ghost" data-swgo="-1">戻る</button><button type="button" class="btn btn-primary" data-swgo="1">${['gender', 'age', 'skin', 'concerns', 'research'].includes(step) && !swHas(step) ? 'スキップ' : '次へ'}</button>`;
+    : `<button type="button" class="btn btn-ghost" data-swgo="-1">戻る</button><button type="button" class="btn btn-primary" data-swgo="1">${['account', 'gender', 'age', 'skin', 'concerns', 'research'].includes(step) && !swHas(step) ? 'スキップ' : '次へ'}</button>`;
 }
-const swHas = step => { const v = swState.v; return step === 'research' ? !!v.research : step === 'gender' ? !!v.gender : step === 'age' ? !!v.ageBand : step === 'skin' ? !!(v.skinType || v.sensitive) : step === 'concerns' ? v.concerns.length > 0 : true; };
+const swHas = step => { const v = swState.v; return step === 'account' ? !!(acct && acct.user) : step === 'research' ? !!v.research : step === 'gender' ? !!v.gender : step === 'age' ? !!v.ageBand : step === 'skin' ? !!(v.skinType || v.sensitive) : step === 'concerns' ? v.concerns.length > 0 : true; };
 // 入力欄の値を読み取る（数字のまちがいがあれば止める）
 function swRead() {
   const v = swState.v, step = swSteps()[swState.i], err = $('#sw-err');
@@ -3103,6 +3158,8 @@ function swRead() {
 }
 function swClick(e) {
   if (!swState) return;
+  const md = e.target.closest('[data-swmode]');
+  if (md) { const em = $('#sw-email'); if (em) swState.email = em.value; swState.acctMode = md.dataset.swmode; swState.authMsg = ''; swPaint(); return; }
   const o = e.target.closest('[data-sw]');
   if (o) {
     const k = o.dataset.sw, val = o.dataset.v, v = swState.v;
@@ -8097,6 +8154,7 @@ const actions = {
   'a2hs-guide': () => { hapticTick(); openA2hsGuide(); },
   'a2hs-done': () => { state.settings.a2hsDone = true; save(); dismissModal(); hapticSaved(); render(); },
   'start-hide': () => { state.settings.startHidden = true; save(); render(); toast('「はじめにやること」を閉じました'); },
+  'sw-auth': () => swAuth(),
   'sync-use-cloud': () => { const r = ui.syncRow; dismissModal(); if (r) syncApply(r); },
   'sync-use-local': () => { dismissModal(); syncPush(); toast('この端末のデータをクラウドに保存します'); },
   'cart-toggle': id => cartToggle(id),
