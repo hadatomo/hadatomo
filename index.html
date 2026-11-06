@@ -987,6 +987,10 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 #ps-form{display:flex;flex-direction:column;gap:10px}.ps-note,.ps-me{margin:0}
 .ps-agree{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;line-height:1.6}.ps-agree input{margin-top:3px;width:18px;height:18px;flex:none}
 .ps-go{width:100%;justify-content:center;min-height:50px;font-size:16px}.ps-foot{margin:0;text-align:center}
+.period-btn{display:flex;cursor:pointer}.period-btn input{position:absolute;opacity:0;pointer-events:none}
+.period-btn span{flex:1;display:flex;align-items:center;justify-content:center;min-height:48px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);font-weight:700;font-size:15px;color:var(--ink2);transition:background .15s,border-color .15s}
+.period-btn input:checked+span{background:#FCE4EC;border-color:#E86A92;color:#B0275A}
+.period-btn input:focus-visible+span{outline:2px solid var(--green-d);outline-offset:2px}
 .wx-box{display:flex;flex-direction:column;gap:6px;margin:12px 0;padding:12px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);position:relative}
 .wx-box.wx-setup{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;font-size:12.5px;color:var(--ink2)}
 .wx-box.wx-setup svg{width:16px;height:16px;color:var(--green-d)}
@@ -5977,6 +5981,7 @@ function openLogForm(id) {
       ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label><button type="button" class="btn mpt-btn mpt-mid" data-faceai-cam>${icon('camera')}撮る</button><input type="file" accept="image/*" capture="user" id="f_faceai" class="vh">`
       : `<button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('image')}選ぶ</span><span class="prem-sub">${PREMIUM_NAME}</span></button><button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('camera')}撮る</span><span class="prem-sub">${PREMIUM_NAME}</span></button>`}</div><div id="faceai-info"></div></div>
     ${field('肌の調子', condSeg(d.condition) + `<p class="cond-ai ai-text" id="cond-ai">${ex ? '' : condAiNote(null)}</p>`, {name:'condition', required:true})}
+    ${state.settings.gender === '女性' ? `<div class="field period-field"><span class="lbl">生理<span class="opt">任意</span></span><div class="period-btns btn-pair">${['生理中', '生理前'].map(v => `<label class="period-btn"><input type="checkbox" name="factors" value="${v}" ${(d.factors || []).includes(v) ? 'checked' : ''}><span>${v === '生理中' ? '🩸 ' : ''}${v}</span></label>`).join('')}</div><p class="hint">押すと、次の生理の予想や、生理と肌の関係がわかるようになります。</p></div>` : ''}
     <div class="field fp-field" id="fp-field"><div class="fp-bighead"><b>顔を押して記録</b><button type="button" class="icon-btn" data-fp-done aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button></div><span class="lbl fp-lbl">顔を押して記録<span class="opt opt-d">ニキビ選択＝ニキビ、肌質選択＝乾燥・テカリなどの状態</span></span>
       <div class="fp-mode" role="group" aria-label="選び方"><button type="button" class="on" data-fp-mode="tap" aria-pressed="true">ニキビ選択</button><button type="button" data-fp-mode="range" aria-pressed="false">肌質選択</button></div>
       <div class="fp-wrap"><div class="f3-stage fp-stage"><canvas id="face3d-form" aria-label="押して部位を選ぶ3Dの顔"></canvas><button type="button" class="fp-open" data-fp-open aria-label="顔を大きくして記録する"><i>⤢</i></button><div class="fp-zoom"><button type="button" class="icon-btn" data-fp-zoom="in" aria-label="拡大">＋</button><button type="button" class="icon-btn" data-fp-zoom="out" aria-label="縮小">−</button></div><div class="f3-load" id="fp-load"><span class="skel skel-face"></span></div></div>
@@ -5999,7 +6004,7 @@ function openLogForm(id) {
     ${field('乾燥', seg('dryness', lv, d.dryness) + '<div class="scale-cap"><span>0 なし</span><span>5 強い</span></div>', {name:'dryness', required:true})}
     ${field('皮脂', seg('oil', lv, d.oil) + '<div class="scale-cap"><span>0 気にならない</span><span>5 とても多い</span></div>', {name:'oil', required:true})}
     ${field('その他の気になる状態', checksHtml('otherConcerns', OTHER_CONCERNS, d.otherConcerns), {name:'otherConcerns', optLabel:'任意・複数選択可'})}
-    ${field('今日の体と生活', checksHtml('factors', factorList(), d.factors || []), {name:'factors', optLabel:'任意・複数選択可', hint:'あった日となかった日の肌を、「最近の肌状態」で比べられます'})}
+    ${field('今日の体と生活', checksHtml('factors', state.settings.gender === '女性' ? factorList().filter(f => !/生理/.test(f)) : factorList(), d.factors || []), {name:'factors', optLabel:'任意・複数選択可', hint:'あった日となかった日の肌を、「最近の肌状態」で比べられます'})}
     </div>
     <div class="field" style="display:none" aria-hidden="true"><span class="lbl">気になる部位</span>
       <div class="face-wrap">${faceSvg()}<div><div class="checks">${AREAS.map(a => `<label class="check"><input type="checkbox" name="areas" value="${a.id}" ${d.areas.includes(a.id) ? 'checked' : ''}>${esc(a.name)}</label>`).join('')}</div>
@@ -6011,11 +6016,9 @@ function openLogForm(id) {
       : '<p class="small muted">使用中の化粧品が登録されていません。</p>'}
     </div>
     ${field('自由メモ', `<textarea class="textarea" id="f_memo" name="memo" maxlength="500" placeholder="例：生理前、新しい美容液を使い始めた、マスクで擦れた など">${esc(d.memo)}</textarea>`, {name:'memo', hint:'食事・睡眠は「食事・睡眠」から別に記録できます'})}
-    <div class="field"><span class="lbl">肌の写真<span class="opt">任意</span></span>
-      <div class="photo-pick"><button type="button" class="btn btn-soft btn-sm" id="photo-guide">${icon('camera')}ガイド付きで撮る${isPremium() ? '' : `<span class="prem-sub" style="margin-left:4px">${PREMIUM_NAME}</span>`}</button><input type="file" accept="image/*" id="f_photo" class="input" style="padding:9px" aria-label="写真を選択"></div>
-      <p class="hint" style="margin-top:4px">「ガイド付きで撮る」は、顔の枠と前回の写真がうすく重なるので、毎回同じ位置・同じ大きさで撮れます。明るい窓の前など、毎回同じ場所で撮ると比べやすくなります。</p>
+    <div class="field" id="photo-field" ${d.photo ? '' : 'hidden'}><span class="lbl">肌の写真</span>
+      <div class="photo-pick" hidden><button type="button" class="btn btn-soft btn-sm" id="photo-guide">${icon('camera')}ガイド付きで撮る${isPremium() ? '' : `<span class="prem-sub" style="margin-left:4px">${PREMIUM_NAME}</span>`}</button><input type="file" accept="image/*" id="f_photo" class="input" style="padding:9px" aria-label="写真を選択"></div>
       <div id="photo-area"></div>
-      <p class="hint">ここで選んだ写真は外部に送信されません（「顔を撮って自動で記録」の写真だけ、読み取りのためにAIへ送ります）。保存しない場合は、この画面でのプレビューだけです。</p>
     </div>
   </div></form>`,
   footer: `<button type="button" class="btn btn-ghost" data-action="close-modal">キャンセル</button><button type="submit" form="log-form" class="btn btn-primary">${ex ? '保存する' : '記録する'}</button>`});
@@ -6231,7 +6234,7 @@ function openLogForm(id) {
   usedBoxes().forEach(i => i.addEventListener('change', syncUseAll)); syncUseAll();
   let pendingPhoto = null;
   const renderPhoto = () => {
-    const area = $('#photo-area');
+    const area = $('#photo-area'), pf = $('#photo-field', form); if (pf) pf.hidden = !(pendingPhoto || photo); // 「カメラで記録」で撮った写真があるときだけ出す
     if (pendingPhoto) {
       area.innerHTML = `<div class="photo-prev"><img src="${pendingPhoto}" alt="選択した写真のプレビュー"><div><label class="check"><input type="checkbox" id="photo-save"> この写真を記録と一緒に<br>このブラウザ内に保存する</label><p class="hint">保存すると容量を使います（目安：1枚50〜150KB）</p><button type="button" class="btn btn-ghost btn-sm" id="photo-cancel">選択を取り消す</button></div></div>`;
       $('#photo-cancel').onclick = () => { pendingPhoto = null; $('#f_photo').value = ''; renderPhoto(); };
