@@ -5147,11 +5147,11 @@ function factorCardHtml() {
 const PREFS = [['北海道',43.06,141.35],['青森',40.82,140.74],['岩手',39.70,141.15],['宮城',38.27,140.87],['秋田',39.72,140.10],['山形',38.24,140.36],['福島',37.75,140.47],['茨城',36.34,140.45],['栃木',36.57,139.88],['群馬',36.39,139.06],['埼玉',35.86,139.65],['千葉',35.61,140.12],['東京',35.69,139.69],['神奈川',35.45,139.64],['新潟',37.90,139.02],['富山',36.70,137.21],['石川',36.59,136.63],['福井',36.07,136.22],['山梨',35.66,138.57],['長野',36.65,138.18],['岐阜',35.39,136.72],['静岡',34.98,138.38],['愛知',35.18,136.91],['三重',34.73,136.51],['滋賀',35.00,135.87],['京都',35.02,135.76],['大阪',34.69,135.52],['兵庫',34.69,135.18],['奈良',34.69,135.83],['和歌山',34.23,135.17],['鳥取',35.50,134.24],['島根',35.47,133.05],['岡山',34.66,133.93],['広島',34.40,132.46],['山口',34.19,131.47],['徳島',34.07,134.56],['香川',34.34,134.04],['愛媛',33.84,132.77],['高知',33.56,133.53],['福岡',33.61,130.42],['佐賀',33.25,130.30],['長崎',32.74,129.87],['熊本',32.79,130.74],['大分',33.24,131.61],['宮崎',31.91,131.42],['鹿児島',31.56,130.56],['沖縄',26.21,127.68]];
 let WX_BUSY = false;
 // 現在地：許可済みのときだけ聞く（ホームを開くたびに許可の窓が出ないように）。位置は約1kmに丸めて、端末の中だけに保存
-let WX_GEO_ERR = 0;
+let WX_GEO_ERR = 0, WX_GEO_MSG = '';
 function wxGeo(ask) {
   return new Promise(res => {
     if (!navigator.geolocation) return res(null);
-    const go = () => navigator.geolocation.getCurrentPosition(p => { WX_GEO_ERR = 0; res({lat:Math.round(p.coords.latitude * 100) / 100, lon:Math.round(p.coords.longitude * 100) / 100}); }, e => { WX_GEO_ERR = (e && e.code) || 2; res(null); }, {enableHighAccuracy:false, timeout:15000, maximumAge:3 * 3600 * 1000});
+    const go = () => navigator.geolocation.getCurrentPosition(p => { WX_GEO_ERR = 0; res({lat:Math.round(p.coords.latitude * 100) / 100, lon:Math.round(p.coords.longitude * 100) / 100}); }, e => { WX_GEO_ERR = (e && e.code) || 2; WX_GEO_MSG = String((e && e.message) || ''); res(null); }, {enableHighAccuracy:false, timeout:15000, maximumAge:3 * 3600 * 1000});
     if (ask) return go();
     if (navigator.permissions && navigator.permissions.query) navigator.permissions.query({name:'geolocation'}).then(st => st.state === 'granted' ? go() : res(null)).catch(() => res(null)); else res(null);
   });
@@ -5206,11 +5206,12 @@ function openGeoHelp() {
   const steps = !denied ? ['電波のよい場所で、もう一度「現在地を使う」を押してください', 'iPhoneの「設定」→「プライバシーとセキュリティ」→「位置情報サービス」が「オン」になっているか確かめてください']
     : ios ? (standalone
       ? ['iPhoneの「設定」→「プライバシーとセキュリティ」→「位置情報サービス」を開く', '「位置情報サービス」が「オン」になっているか確かめる', '下の一覧の「SafariのWebサイト」を押して「このAppの使用中」（または「次回確認」）にする', 'ナカカラモを閉じて開き直し、「現在地を使う」を押して「許可」を押す']
-      : ['Safariのアドレスバーの左の「ぁあ」（または「aA」）を押す', '「Webサイトの設定」→「位置情報」を「確認」か「許可」にする', '見つからないときは、iPhoneの「設定」→「プライバシーとセキュリティ」→「位置情報サービス」→「SafariのWebサイト」を「このAppの使用中」にする', 'ページを開き直して、「現在地を使う」を押して「許可」を押す'])
+      : ['iPhoneの「設定」→「プライバシーとセキュリティ」→「位置情報サービス」→ 下の一覧の「SafariのWebサイト」を「このAppの使用中」にする（「なし」だと使えません）', 'iPhoneの「設定」→「アプリ」→「Safari」→ 下の方の「Webサイトの設定」の「位置情報」を「確認」にする', 'Safariのアドレスバーの左のマークを押し、「Webサイトの設定」→「位置情報」を「確認」にする', 'Safariでこのページを再読み込みしてから、「現在地を使う」→「許可」を押す'])
     : ['アドレスバーの左のマーク（鍵など）を押す', '「位置情報」を「許可」にする', 'ページを開き直して、「現在地を使う」を押す'];
   openModal({title:'現在地を使えませんでした', dismissable:true, body:`<p class="small" style="margin:0 0 10px">${denied ? '位置情報が「許可しない」になっています。次の手順で許可すると使えます。' : '現在地をうまく取れませんでした。'}</p>
     <ol class="a2hs-steps">${steps.map(t => `<li><b>${esc(t)}</b></li>`).join('')}</ol>
-    <p class="small muted" style="margin:10px 0 0">位置情報を使わずに、住んでいる都道府県の天気を出すこともできます。</p>`,
+    <p class="small muted" style="margin:10px 0 0">位置情報を使わずに、住んでいる都道府県の天気を出すこともできます。</p>
+    <p class="small muted" style="margin:6px 0 0;font-size:11px">原因の番号：${WX_GEO_ERR || '-'} ${esc(WX_GEO_MSG.slice(0, 80))}${navigator.geolocation ? '' : '（位置情報に未対応）'}</p>`,
     footer:`<button type="button" class="btn btn-ghost" data-action="wx-setup">都道府県を選ぶ</button><button type="button" class="btn btn-primary" data-action="wx-geo-retry">もう一度試す</button>`});
   const b = document.getElementById('wx-box'); if (b) b.outerHTML = wxTodayHtml();
 }
