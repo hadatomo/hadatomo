@@ -7662,7 +7662,7 @@ async function runVisionDiag() {
   }
   diagBusy = false; upd();
 }
-const VISION_VERSION = '2026-10-31-models'; // サーバーの関数 vision の最新の版
+const VISION_VERSION = '2026-11-05-prodinfo'; // サーバーの関数 vision の最新の版
 const AI_NOTE = 'AI（Google Gemini）による推定です。必ず内容を確認・修正してから使ってください。';
 const AI_CAT = {'化粧水':'化粧水・トナー','乳液':'乳液','美容液':'美容液・アンプル','クリーム':'クリーム','日焼け止め':'日焼け止め','洗顔料':'洗顔','クレンジング':'クレンジング','パック':'シートマスク・パック'};
 async function callBilling(action) {
@@ -8093,7 +8093,8 @@ function settingsEmbedHtml() {
   const sub = (title, c) => c ? `<div class="set-sub"><h3>${esc(title)}</h3>${inner(c)}</div>` : '';
   const out = [];
   if (cards['身長・体重']) out.push(cards['身長・体重'].outerHTML);
-  if (cards['肌質・年代']) out.push(cards['肌質・年代'].outerHTML);
+  const skinC = cards['肌質・年代・肌悩み'] || cards['肌質・年代']; if (skinC) out.push(skinC.outerHTML);
+  if (cards['クラウドに保存']) out.push(cards['クラウドに保存'].outerHTML);
   if (cards['研究への協力']) out.push(cards['研究への協力'].outerHTML);
   if (cards['画面の表示']) out.push(cards['画面の表示'].outerHTML);
   if (cards['記録のリマインダー']) out.push(cards['記録のリマインダー'].outerHTML);
