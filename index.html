@@ -14,7 +14,6 @@
 <meta name="theme-color" content="#121614" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem("skinwise_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
 <title>ナカカラモ（NAKAKARAMO）</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500&amp;text=%E3%83%8A%E3%82%AB%E3%83%A9%E3%83%A2&amp;display=swap">
 <style>
 :root{
   --bg:#FAF9F6;--surface:#FFFFFF;--surface2:#F6F3EE;
@@ -1209,6 +1208,8 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .sw-hello{text-align:center;font-size:40px;margin:4px 0 8px}
 .sw-foot{display:flex;gap:8px;width:100%}
 .sw-foot .btn{flex:1}
+.sw-foot>.hap-keep{flex:1 1 0;min-width:0;display:flex}
+.sw-foot>.hap-keep>.btn{width:100%}
 :root[data-theme="dark"] .ld-stage{background:transparent}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .ld-stage{background:transparent}}
 .ld-card{touch-action:pan-y;position:relative}
@@ -1408,7 +1409,7 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
   </aside>
   <div id="page">
     <header class="topbar">
-      <a class="wordmark wm-home" data-t="ナカカラモ" href="#/home">ナカカラモ</a>
+      <a class="wordmark wm-home" data-t="ナカカラモ" href="#/home" aria-label="ナカカラモ（ホーム）"></a>
       <button class="icon-btn" id="top-menu" data-action="open-menu" aria-label="メニュー" title="メニュー"></button><div class="ptr" id="ptr" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".18" stroke-width="2.6"/><circle class="ptr-arc" cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="56.5" stroke-dashoffset="56.5" transform="rotate(-90 12 12)"/></svg></div>
     </header>
     <main id="main" tabindex="-1"></main>
@@ -2327,7 +2328,7 @@ function hapticizeKeep(btn) {
   const wrap = document.createElement('span'); wrap.className = 'hap-keep';
   wrap.style.gridColumn = cs.gridColumn; wrap.style.gridRow = cs.gridRow;
   if (full) wrap.style.width = '100%';
-  if (cs.flexGrow !== '0') wrap.style.flexGrow = cs.flexGrow;
+  if (cs.flexGrow !== '0') { wrap.style.flexGrow = cs.flexGrow; wrap.style.flexBasis = cs.flexBasis; wrap.style.minWidth = '0'; } // flex:1 のボタンは、包んだあとも同じ幅に並ぶように
   btn.parentNode.insertBefore(wrap, btn); wrap.appendChild(btn);
   if (full || cs.gridColumn !== 'auto') btn.style.width = '100%';
   const lb = document.createElement('label'); lb.className = 'hap-ov'; lb.setAttribute('aria-hidden', 'true');
@@ -3071,7 +3072,7 @@ function swPaint() {
     <p class="sw-sec">化粧品に使う月の予算<span class="small muted">（任意）</span></p><div class="sw-nums" style="grid-template-columns:1fr"><span class="unit"><input class="input" id="sw-budget" inputmode="numeric" placeholder="例：5000" value="${esc(v.budget)}">円</span></div>`;
   if (step === 'research') h = `<p class="sw-q">研究に協力してもらえますか？</p><p class="sw-sub">「どんな肌質の人が、どの成分を使って、肌がどう変わったか」を、たくさんの人の記録から統計にして、スキンケアの研究・商品開発に役立てます</p>
     <ul class="sw-list"><li><b>送るもの</b>：肌質・年代、肌の状態の平均、成分ごとの肌の変化（数字だけ）</li><li><b>送らないもの</b>：名前・メール・写真・メモ・日付・商品名・位置</li><li>5人以上をまとめた統計にしてから使います。いつでも設定からやめられて、やめると送ったデータも消えます</li></ul>`
-    + swOpts('research', [['no', '協力しない'], ['yes', '協力する|内容に同意します']], v.research);
+    + swOpts('research', [['no', '同意しない'], ['yes', '同意する']], v.research);
   if (step === 'done') h = `<div class="sw-hello">✨</div><p class="sw-q">準備ができました</p><p class="sw-sub">さっそく今日の肌を記録してみましょう。<br>答えた内容は「設定」の「肌質・年代」から答え直せます。</p>`;
   b.innerHTML = dots + h + '<p class="sw-err" id="sw-err" hidden></p>';
   f.innerHTML = step === 'hello' ? `<button type="button" class="btn btn-ghost" data-action="setup-later">あとで</button><button type="button" class="btn btn-primary" data-swgo="1">はじめる</button>`
@@ -8695,7 +8696,7 @@ function setTopTitle(t) {
   const tb = $('.topbar'); if (!tb) return;
   const cur = tb.firstElementChild, want = t || 'ナカカラモ';
   if (cur && cur.dataset.t === want) return;
-  const html = t ? `<h1 class="wordmark top-title" data-t="${esc(t)}">${esc(t)}</h1>` : `<a class="wordmark wm-home" data-t="ナカカラモ" href="#/home">ナカカラモ</a>`;
+  const html = t ? `<h1 class="wordmark top-title" data-t="${esc(t)}">${esc(t)}</h1>` : `<a class="wordmark wm-home" data-t="ナカカラモ" href="#/home" aria-label="ナカカラモ（ホーム）"></a>`;
   if (cur && cur.classList.contains('wordmark')) cur.outerHTML = html; else tb.insertAdjacentHTML('afterbegin', html);
   const el = tb.firstElementChild; if (cur) { el.classList.add('tt-in'); }
   setTbh();
