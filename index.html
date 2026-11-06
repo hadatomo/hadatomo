@@ -3054,7 +3054,7 @@ function lifeSumHtml(lf, date) {
   const ft = lf && lf.foods && lf.foods.length ? nutTotals(lf.foods) : {kcal:0, p:0, f:0, c:0, veg:0};
   const mealRadar = `<button type="button" class="ls-radar" data-action="${date ? 'life-day' : 'life-edit'}" data-id="${date ? date + '|meal' : 'meal'}" aria-label="栄養のバランスを見る">${nutRadarSvg(ft, 210, true)}<span class="ls-rnote"><i class="ls-rkey"></i>緑の点線が1日の目安（100%）</span></button>`;
   // 記録一覧（date あり）では見出しを出さない
-  return `<div class="life-sum">${date ? '' : `<div class="ls-head"><b>今日の睡眠・運動・食事</b><button class="link small" data-action="life-goal">目安を変更</button></div>`}
+  return `<div class="life-sum">${date ? '' : `<div class="ls-head"><b>睡眠・運動・食事</b><button class="link small" data-action="life-goal">目安を変更</button></div>`}
     ${row('sleep', 'moon', '睡眠', sMain, sSub, sCls)}${row('exercise', 'chart', '運動', eMain, eSub, eCls)}${row('meal', 'note', '食事', fMain, fSub, fCls).replace('</button></div>', `</button>${mealRadar}</div>`)}</div>`;
 }
 function openLifeGoal() {
@@ -3121,7 +3121,7 @@ function viewHome() {
   const side = L ? `<div class="t3-side"><div class="t3-tags"><span class="t-cond" style="background:${COND_COLORS[L.condition] || '#999'};color:${COND_FG[L.condition] || '#fff'}">${esc(COND_LABELS[L.condition] || '—')}</span></div><p class="t3-acne">ニキビ <b>${L.acneCount}</b>個</p>
       ${['赤み','乾燥','皮脂'].map((lab, i) => { const v = [L.redness, L.dryness, L.oil][i]; return `<div class="t3-m"><span>${lab}</span><span class="bar"><i style="width:${v / 5 * 100}%"></i></span><b>${v}</b></div>`; }).join('')}</div>`
     : `<div class="t3-side"><p class="small muted" style="margin:0 0 8px">まだ今日の記録がありません。1分ほどで記録できます。</p><button class="btn btn-primary btn-sm" data-action="new-log">${icon('plus')}記録する</button></div>`;
-  const todayCard = `<div class="card"><div class="card-h"><h2>今日の肌記録</h2>${L ? `<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(L.id)}">編集</button>` : ''}</div>
+  const todayCard = `<div class="card"><div class="card-h"><h2>今日の記録</h2>${L ? `<button class="btn btn-ghost btn-sm" data-action="edit-log" data-id="${esc(L.id)}">編集</button>` : ''}</div>
       <div class="t3-grid">${side}<div class="f3-stage t3-stage"><canvas id="face3d-home" aria-label="今日の記録を3Dの顔で表示"></canvas><button class="f3-expand" data-action="f3-full" data-id="home" aria-label="大きく見る">⤢</button><div class="f3-tip" id="t3-tip" hidden></div><div class="f3-load" id="t3-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div></div>
       ${lifeLine}</div>`;
   const careCard = `<div class="card"><div class="advice" id="advice-box">${adviceHtml()}</div></div><div class="card"><div class="menu-box" id="menu-box">${menuHtml()}</div></div>`;
@@ -5896,7 +5896,7 @@ function weekReviewHtml() {
   const map = Object.fromEntries(real.map(l => [l.date, l])), st = recordStreak(map, t).n;
   const cmp = (v, p, good) => p == null || v == null ? '' : v === p ? '<small class="wr-eq">先週と同じ</small>' : `<small class="${(v > p) === good ? 'wr-up' : 'wr-down'}">先週より${v > p ? '↑' : '↓'}${r1(Math.abs(v - p))}</small>`;
   return `<div class="card wr-card"><div class="card-h"><h2>今週のふり返り</h2>${st ? `<span class="wr-streak">${icon('spark')}${st}日連続</span>` : ''}</div>
-    <div class="wr-grid"><span><small>記録した日</small><b>${cur.length}<i>日</i></b><small class="wr-eq">今週（月曜から）</small></span>
+    <div class="wr-grid"><span><small>記録した日</small><b>${cur.length}<i>日</i></b></span>
       <span><small>肌の調子（平均）</small><b>${c1 == null ? '－' : r1(c1)}<i>/5</i></b>${cmp(c1 == null ? null : r1(c1), c0 == null ? null : r1(c0), true)}</span>
       <span><small>ニキビ（1日平均）</small><b>${cur.length ? r1(a1 / cur.length) : '－'}<i>個</i></b>${prev.length && cur.length ? cmp(r1(a1 / cur.length), r1(a0 / prev.length), false) : ''}</span></div>
     <a class="link small" href="#/report">週のまとめを詳しく見る ›</a></div>`;
@@ -7400,7 +7400,7 @@ function face3dShowWeek(i) {
 function openFace3dFull(src) {
   const box = document.createElement('div'); box.className = 'f3-full'; box.id = 'f3-full';
   const logDay = src === 'log' ? (() => { const l = logDayList(); return l[logDayIdx(l)]; })() : null;
-  box.innerHTML = `<div class="f3-full-head"><b>${src === 'home' ? '今日の肌記録' : src === 'log' ? (logDay ? esc(fmtMD(logDay.date)) + 'の肌記録' : '肌記録') : '肌の変化（' + esc(($('#f3-label') || {}).textContent || '') + '）'}</b><button class="icon-btn" data-action="f3-full-close" aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button></div>
+  box.innerHTML = `<div class="f3-full-head"><b>${src === 'home' ? '今日の記録' : src === 'log' ? (logDay ? esc(fmtMD(logDay.date)) + 'の肌記録' : '肌記録') : '肌の変化（' + esc(($('#f3-label') || {}).textContent || '') + '）'}</b><button class="icon-btn" data-action="f3-full-close" aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button></div>
     <div class="f3-full-stage"><canvas id="face3d-full" aria-label="3Dの顔（大きく表示）"></canvas><div class="f3-tip" id="f3full-tip" hidden></div><div class="f3-load" id="f3full-load"><span class="skel skel-face" aria-label="3Dの顔を読み込み中"></span></div></div>
     <p class="small muted" style="text-align:center;margin:6px 12px 0">${DEV.touch ? '1本の指で回す／2本の指で広げると拡大' : 'ドラッグで回す／ホイールで拡大・縮小'}。</p>
     <div class="f3-views" style="padding:8px 12px calc(12px + env(safe-area-inset-bottom))">${src === 'home' || src === 'log'
