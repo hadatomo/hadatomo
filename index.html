@@ -3048,10 +3048,10 @@ function openSetupWizard() {
   if (!root._sw) { root.addEventListener('click', swClick); root._sw = 1; }
   swPaint();
 }
-const SW_ALL = ['hello', 'age', 'body', 'skin', 'concerns', 'life', 'research', 'done'];
+const SW_ALL = ['hello', 'gender', 'age', 'body', 'skin', 'concerns', 'life', 'research', 'done'];
 // 研究への協力の質問は、年代で18歳以上を選んだ人にだけ出す
 const swSteps = () => SW_ALL.filter(s => s !== 'research' || isAdultBand(swState && swState.v.ageBand));
-function swOpts(key, list, cur, multi) { return `<div class="sw-opts">${list.map(([v, l, w]) => { const on = multi ? cur.includes(v) : cur === v; return `<button type="button" class="sw-opt ${on ? 'on' : ''} ${w ? 'wide' : ''}" data-sw="${key}" data-v="${esc(v)}" aria-pressed="${on}">${l.includes('|') ? `${esc(l.split('|')[0])}<small>${esc(l.split('|')[1])}</small>` : esc(l)}</button>`; }).join('')}</div>`; }
+function swOpts(key, list, cur, multi) { return `<div class="sw-opts">${list.map(([v, l, w]) => { const on = multi ? cur.includes(v) : v === '' ? !!(swState && swState.none && swState.none[key]) && cur === '' : cur === v; return `<button type="button" class="sw-opt ${on ? 'on' : ''} ${w ? 'wide' : ''}" data-sw="${key}" data-v="${esc(v)}" aria-pressed="${on}">${l.includes('|') ? `${esc(l.split('|')[0])}<small>${esc(l.split('|')[1])}</small>` : esc(l)}</button>`; }).join('')}</div>`; }
 function swPaint() {
   const s = swState; if (!s) return; const b = $('#sw-body'), f = $('#sw-foot'); if (!b || !f) return;
   const step = swSteps()[s.i], v = s.v;
@@ -3103,7 +3103,7 @@ function swClick(e) {
   if (o) {
     const k = o.dataset.sw, val = o.dataset.v, v = swState.v;
     if (k === 'concerns') v.concerns = v.concerns.includes(val) ? v.concerns.filter(x => x !== val) : v.concerns.concat(val);
-    else v[k] = v[k] === val && val !== '' ? '' : val;
+    else { v[k] = v[k] === val && val !== '' ? '' : val; swState.none = swState.none || {}; swState.none[k] = val === '' ? !swState.none[k] : false; }
     swPaint(); return;
   }
   const g = e.target.closest('[data-swgo]');
