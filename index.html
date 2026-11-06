@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png" type="image/png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -113,7 +113,8 @@ html[data-tod="night"] body::before{background:linear-gradient(160deg,#E4E1F2 0%
 /* 横揺れ対策は、ページ全体ではなく中身の枠だけにかける（ページ全体にかけるとiPhoneでスクロールがガクガクするため） */
 .app{overflow-x:hidden;overflow-x:clip;max-width:100%}
 /* スマホ：画面は縦にだけ動かす（横に動かない）。2本指の拡大はできる */
-body{touch-action:pan-y;touch-action:pan-y pinch-zoom}
+body{touch-action:pan-y}
+@media(max-width:639px){input,select,textarea,.input,.select,.textarea{font-size:16px!important}}
 a,button,input,select,textarea,label,[data-action]{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 /* アプリのように：文字や画像を長押ししても、選択・コピーのメニューが出ないようにする（入力欄は今までどおり選べる） */
 body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
@@ -683,7 +684,7 @@ details.acc-cmp{margin-top:14px}
 .wg-rec.on{color:var(--ink)}.wg-rec.on i{background:var(--green);border-color:var(--green)}
 .wg-rem{grid-column:1/-1;font-size:11.5px;font-weight:600;color:var(--green-d);text-decoration:none;border-top:1px solid var(--line);padding-top:6px}
 /* ホームの上の3つのタブ（Xのように画面の上にくっつく） */
-.home-pane{will-change:transform;touch-action:pan-y pinch-zoom}
+.home-pane{will-change:transform;touch-action:pan-y}
 .home-pane.hp-in{animation:hpIn .46s cubic-bezier(.22,.7,.2,1)}
 @keyframes hpIn{from{transform:translateX(var(--hp-from,0));opacity:.4}to{transform:none;opacity:1}}
 .home-tabs{position:sticky;top:0;z-index:12;display:grid;grid-template-columns:repeat(3,minmax(0,124px));justify-content:center;gap:0;margin:-20px -16px 14px;padding:0 8px;background:var(--bg);border-bottom:1px solid var(--line)}
@@ -2119,7 +2120,8 @@ function normalize(d) {
   out.settings.recoBudget = num(ds.recoBudget) === -1 ? -1 : clamp(Math.round(num(ds.recoBudget) || 0), 0, 100000); // あなたに合う化粧品：1つあたりの上限金額（0：未設定、-1：上限なし）
   out.settings.badges = strArr(ds.badges).filter(k => /^[sn][0-9]{1,3}$/.test(k)); // 獲得したバッジ
   out.settings.startHidden = !!ds.startHidden; out.settings.a2hsDone = !!ds.a2hsDone; // はじめにやること
-  out.settings.wxPref = typeof ds.wxPref === 'string' && PREFS_NAMES.includes(ds.wxPref) ? ds.wxPref : ''; // 天気の地域（都道府県）
+  out.settings.wxPref = typeof ds.wxPref === 'string' && (PREFS_NAMES.includes(ds.wxPref) || ds.wxPref === '現在地') ? ds.wxPref : ''; // 天気の地域（都道府県 or 現在地）
+  out.settings.wxLoc = ds.wxLoc && Number.isFinite(+ds.wxLoc.lat) && Number.isFinite(+ds.wxLoc.lon) ? {lat:+ds.wxLoc.lat, lon:+ds.wxLoc.lon} : null; // 現在地（約1kmに丸めた位置）
   out.settings.cloudSync = !!ds.cloudSync; // クラウドに保存する（ログインしている人だけ）
   out.settings.hideHelp = !!ds.hideHelp; // ボタン・入力欄の説明文を隠す（設定の「画面の表示」）
   out.settings.onboarded = !!ds.onboarded; // はじめの質問に答えた（またはあとでにした）
@@ -2129,6 +2131,7 @@ function normalize(d) {
   out.cart = Array.isArray(d.cart) ? [...new Set(d.cart.filter(x => typeof x === 'string' && out.catalog.some(c => c.id === x)))].slice(0, 50) : []; // 買い物リスト（商品のID）
   out.weather = {}; if (d.weather && typeof d.weather === 'object') Object.entries(d.weather).forEach(([k, v]) => { if (isValidYmd(k) && v && typeof v === 'object') out.weather[k] = {tmax:num(v.tmax), tmin:num(v.tmin), hum:num(v.hum), hmin:num(v.hmin), uv:v.uv == null ? null : num(v.uv)}; }); // 日ごとの天気
   out.wxFetched = isValidYmd(d.wxFetched) ? d.wxFetched : '';
+  out.wxGeoAt = isValidYmd(d.wxGeoAt) ? d.wxGeoAt : '';
   out.careLogs = {}; if (d.careLogs && typeof d.careLogs === 'object') Object.entries(d.careLogs).forEach(([k, v]) => { if (isValidYmd(k) && v && k >= addDays(todayStr(), -60)) out.careLogs[k] = {am:!!v.am, pm:!!v.pm, ids:strArr(v.ids)}; }); // 朝・夜のいつものケア（ワンタップ）
   out.savedAt = Number(d.savedAt) || 0; // 最後に保存した時刻（クラウドとどちらが新しいかを比べる）
   out.customFoods = Array.isArray(d.customFoods) ? d.customFoods.filter(x => x && x.name).map(x => { const n = normFood(Object.assign({meal:'snack', qty:1}, x)); return {id:n.id, name:n.name, kcal:n.kcal, p:n.p, f:n.f, c:n.c, veg:n.veg}; }) : [];
@@ -5115,10 +5118,23 @@ function factorCardHtml() {
 // 無料の天気サービス Open-Meteo を使う（AIは使わない。送るのは地域の緯度・経度だけ）
 const PREFS = [['北海道',43.06,141.35],['青森',40.82,140.74],['岩手',39.70,141.15],['宮城',38.27,140.87],['秋田',39.72,140.10],['山形',38.24,140.36],['福島',37.75,140.47],['茨城',36.34,140.45],['栃木',36.57,139.88],['群馬',36.39,139.06],['埼玉',35.86,139.65],['千葉',35.61,140.12],['東京',35.69,139.69],['神奈川',35.45,139.64],['新潟',37.90,139.02],['富山',36.70,137.21],['石川',36.59,136.63],['福井',36.07,136.22],['山梨',35.66,138.57],['長野',36.65,138.18],['岐阜',35.39,136.72],['静岡',34.98,138.38],['愛知',35.18,136.91],['三重',34.73,136.51],['滋賀',35.00,135.87],['京都',35.02,135.76],['大阪',34.69,135.52],['兵庫',34.69,135.18],['奈良',34.69,135.83],['和歌山',34.23,135.17],['鳥取',35.50,134.24],['島根',35.47,133.05],['岡山',34.66,133.93],['広島',34.40,132.46],['山口',34.19,131.47],['徳島',34.07,134.56],['香川',34.34,134.04],['愛媛',33.84,132.77],['高知',33.56,133.53],['福岡',33.61,130.42],['佐賀',33.25,130.30],['長崎',32.74,129.87],['熊本',32.79,130.74],['大分',33.24,131.61],['宮崎',31.91,131.42],['鹿児島',31.56,130.56],['沖縄',26.21,127.68]];
 let WX_BUSY = false;
-async function wxFetch(force) {
-  const pf = PREFS.find(p => p[0] === state.settings.wxPref); if (!pf || WX_BUSY) return;
-  const t = todayStr(); if (!force && state.wxFetched === t && state.weather[t]) return;
+// 現在地：許可済みのときだけ聞く（ホームを開くたびに許可の窓が出ないように）。位置は約1kmに丸めて、端末の中だけに保存
+function wxGeo(ask) {
+  return new Promise(res => {
+    if (!navigator.geolocation) return res(null);
+    const go = () => navigator.geolocation.getCurrentPosition(p => res({lat:Math.round(p.coords.latitude * 100) / 100, lon:Math.round(p.coords.longitude * 100) / 100}), () => res(null), {enableHighAccuracy:false, timeout:10000, maximumAge:3 * 3600 * 1000});
+    if (ask) return go();
+    if (navigator.permissions && navigator.permissions.query) navigator.permissions.query({name:'geolocation'}).then(st => st.state === 'granted' ? go() : res(null)).catch(() => res(null)); else res(null);
+  });
+}
+async function wxFetch(force, ask) {
+  if (WX_BUSY) return;
+  const t = todayStr(), useGeo = state.settings.wxPref === '現在地';
+  if (!force && state.wxFetched === t && state.weather[t] && !(useGeo && state.wxGeoAt !== t)) return;
+  let pf = PREFS.find(p => p[0] === state.settings.wxPref);
   WX_BUSY = true;
+  if (useGeo) { const g = await wxGeo(ask); if (g) { state.settings.wxLoc = g; state.wxGeoAt = t; } if (state.settings.wxLoc) pf = ['現在地', state.settings.wxLoc.lat, state.settings.wxLoc.lon]; }
+  if (!pf) { WX_BUSY = false; if (useGeo && ask) toast('位置情報を使えませんでした。iPhoneの「設定」→「プライバシー」→「位置情報サービス」でSafariを許可するか、都道府県を選んでください'); return; }
   try {
     const u = `https://api.open-meteo.com/v1/forecast?latitude=${pf[1]}&longitude=${pf[2]}&daily=temperature_2m_max,temperature_2m_min,relative_humidity_2m_mean,relative_humidity_2m_min,uv_index_max&timezone=Asia%2FTokyo&past_days=31&forecast_days=1`;
     const ctrl = new AbortController(), tm = setTimeout(() => ctrl.abort(), 12000);
@@ -5144,16 +5160,17 @@ function wxTags(w) {
 }
 const WX_TAGS = ['乾燥した日', '紫外線が強い日', '寒い日', '暑い日'];
 function wxTodayHtml() {
-  if (!state.settings.wxPref) return `<div class="wx-box wx-setup" id="wx-box">${icon('spark')}<span>地域を選ぶと、毎日の湿度・気温・紫外線を自動で記録して、肌との関係を見られます</span><button type="button" class="btn btn-soft btn-sm" data-action="wx-setup">地域を選ぶ</button></div>`;
+  if (!state.settings.wxPref) return `<div class="wx-box wx-setup" id="wx-box">${icon('spark')}<span>位置情報を許可すると、今いる場所の湿度・気温・紫外線を毎日自動で記録して、肌との関係を見られます</span><button type="button" class="btn btn-soft btn-sm" data-action="wx-geo">現在地を使う</button><button type="button" class="btn btn-ghost btn-sm" data-action="wx-setup">地域を選ぶ</button></div>`;
   const w = state.weather[todayStr()];
+  if (!w && state.settings.wxPref === '現在地' && !state.settings.wxLoc) return `<div class="wx-box wx-setup" id="wx-box">${icon('spark')}<span>位置情報がまだ許可されていません。許可すると今いる場所の天気を自動で記録します</span><button type="button" class="btn btn-soft btn-sm" data-action="wx-geo">位置情報を許可</button><button type="button" class="btn btn-ghost btn-sm" data-action="wx-setup">地域を選ぶ</button></div>`;
   if (!w) return `<div class="wx-box" id="wx-box"><span class="small muted">${esc(state.settings.wxPref)}の今日の天気を読み込み中…</span></div>`;
   const tags = wxTags(w), tip = w.hum < 40 ? '空気がとても乾燥しています。保湿を少し多めに' : w.hum < 50 ? '乾燥しやすい日です。保湿をしっかり' : w.uv >= 6 ? '紫外線が強い日です。日焼け止めを忘れずに' : w.tmax >= 28 ? '汗と皮脂が出やすい日です。こまめに汗をふいて' : w.tmax < 10 ? '寒さで乾燥しやすい日です。洗顔はぬるま湯で' : '肌に大きな負担のない天気です';
   return `<div class="wx-box" id="wx-box"><div class="wx-nums"><span><small>湿度</small><b>${Math.round(w.hum)}%</b></span><span><small>気温</small><b>${Math.round(w.tmin)}〜${Math.round(w.tmax)}℃</b></span><span><small>紫外線</small><b>${w.uv == null ? '－' : Math.round(w.uv)}</b></span></div>
     <p class="wx-tip">${tags.length ? `<i class="chip ${tags.includes('乾燥した日') ? 'warn' : 'gray'}">${esc(tags[0])}</i>` : ''}<span>${esc(tip)}</span><button type="button" class="wx-pref" data-action="wx-setup" aria-label="天気の地域を変える">${esc(state.settings.wxPref)}</button></p></div>`;
 }
 function openWxSetup() {
-  openModal({title:'天気の地域', dismissable:true, body:`<p class="small muted" style="margin:0 0 10px">住んでいる都道府県を選んでください。県庁所在地の天気を使います。天気サービス（Open-Meteo）に送るのは、その場所の緯度・経度だけです。</p>
-    <select class="select" id="f_wxPref"><option value="">使わない</option>${PREFS.map(p => `<option ${state.settings.wxPref === p[0] ? 'selected' : ''}>${p[0]}</option>`).join('')}</select>`,
+  openModal({title:'天気の地域', dismissable:true, body:`<p class="small muted" style="margin:0 0 10px">「現在地」にすると、アプリを開いたときの場所の天気を自動で使います（旅行先でもそのまま）。都道府県を選ぶと県庁所在地の天気です。天気サービス（Open-Meteo）に送るのは、約1kmに丸めた緯度・経度だけです。</p>
+    <select class="select" id="f_wxPref"><option value="">使わない</option><option ${state.settings.wxPref === '現在地' ? 'selected' : ''}>現在地</option>${PREFS.map(p => `<option ${state.settings.wxPref === p[0] ? 'selected' : ''}>${p[0]}</option>`).join('')}</select>`,
     footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">やめる</button><button type="button" class="btn btn-primary" data-action="wx-save">決定</button>`});
 }
 // ===== 化粧品の使用期限・残りの目安（開封日＝使用開始日から計算。目安） =====
@@ -8466,7 +8483,8 @@ const actions = {
   'google-login': () => googleLogin(),
   'photo-compare': () => openPhotoCompare(),
   'wx-setup': () => openWxSetup(),
-  'wx-save': () => { const f = document.getElementById('f_wxPref'); state.settings.wxPref = f ? f.value : ''; state.wxFetched = ''; save(); dismissModal(); hapticSaved(); render(); if (state.settings.wxPref) wxFetch(true); },
+  'wx-save': () => { const f = document.getElementById('f_wxPref'); state.settings.wxPref = f ? f.value : ''; state.wxFetched = ''; state.wxGeoAt = ''; save(); dismissModal(); hapticSaved(); render(); if (state.settings.wxPref) wxFetch(true, state.settings.wxPref === '現在地'); },
+  'wx-geo': () => { state.settings.wxPref = '現在地'; state.wxFetched = ''; state.wxGeoAt = ''; save(); render(); wxFetch(true, true); },
   'sync-use-cloud': () => { const r = ui.syncRow; dismissModal(); if (r) syncApply(r); },
   'sync-use-local': () => { dismissModal(); syncPush(); toast('この端末のデータをクラウドに保存します'); },
   'cart-toggle': id => cartToggle(id),
@@ -9294,5 +9312,6 @@ render();
 // はじめて開いたときは、先に「はじめの質問」を出す
 if (!state.settings.onboarded && !EMBED) setTimeout(() => { if (!$('#modal-root').innerHTML) openSetupWizard(); }, 400);
 </script>
+<script>['gesturestart','gesturechange','gestureend'].forEach(e=>document.addEventListener(e,ev=>ev.preventDefault(),{passive:false}));document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});</script>
 </body>
 </html>
