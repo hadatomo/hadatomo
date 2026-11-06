@@ -14,6 +14,7 @@
 <meta name="theme-color" content="#121614" media="(prefers-color-scheme: dark)">
 <script>try{var t=localStorage.getItem("skinwise_theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);}catch(e){}</script>
 <title>ナカカラモ（NAKAKARAMO）</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500&amp;text=%E3%83%8A%E3%82%AB%E3%83%A9%E3%83%A2&amp;display=swap">
 <style>
 :root{
   --bg:#FAF9F6;--surface:#FFFFFF;--surface2:#F6F3EE;
@@ -141,10 +142,12 @@ button{font-family:inherit}
 .tt-in{animation:none}
 @keyframes ttIn{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){.tt-in{animation:none}}
-.topbar .wm-home{position:absolute;left:50%;top:calc(50% + env(safe-area-inset-top) / 2);transform:translate(-50%,-50%);font-family:"Hiragino Maru Gothic ProN","Zen Maru Gothic","Hiragino Sans",var(--font);font-weight:500;font-size:21px;letter-spacing:.14em;color:#3F4B44;white-space:nowrap} /* ホームの「ナカカラモ」：丸みのある文字で、まん中に */
+.topbar .wm-home{position:absolute;left:50%;top:calc(50% + env(safe-area-inset-top) / 2);transform:translate(-50%,-50%);font-family:"Hiragino Maru Gothic ProN","Zen Maru Gothic","Hiragino Sans",var(--font);font-weight:500;font-size:17px;letter-spacing:.14em;color:#3F4B44;white-space:nowrap} /* ホームの「ナカカラモ」：丸みのある文字で、まん中に */
 .topbar .wm-home.tt-in{animation:none}
 .topbar>#top-menu,.topbar>.hap-keep{margin-left:auto}
-.topbar:has(.wm-home){min-height:calc(64px + env(safe-area-inset-top))}
+/* メニュー（三本線）はなくした。中の画面は、ホームの「ショートカット」からすべて開ける */
+.topbar #top-menu,.topbar .hap-keep:has(#top-menu){display:none!important}
+.topbar:has(.wm-home){min-height:calc(52px + env(safe-area-inset-top))}
 .wordmark small{display:block;font-family:var(--font);font-size:10px;letter-spacing:.08em;color:var(--muted);margin-top:2px}
 main{max-width:1100px;margin:0 auto;padding:20px 16px calc(150px + env(safe-area-inset-bottom))} /* 一番下にも余白：最後のカードが下のバーにくっつかないように */
 .bottom-nav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
@@ -1409,7 +1412,7 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
   </aside>
   <div id="page">
     <header class="topbar">
-      <a class="wordmark wm-home" data-t="ナカカラモ" href="#/home" aria-label="ナカカラモ（ホーム）"></a>
+      <a class="wordmark wm-home" data-t="ナカカラモ" href="#/home">ナカカラモ</a>
       <button class="icon-btn" id="top-menu" data-action="open-menu" aria-label="メニュー" title="メニュー"></button><div class="ptr" id="ptr" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity=".18" stroke-width="2.6"/><circle class="ptr-arc" cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="56.5" stroke-dashoffset="56.5" transform="rotate(-90 12 12)"/></svg></div>
     </header>
     <main id="main" tabindex="-1"></main>
@@ -8696,7 +8699,7 @@ function setTopTitle(t) {
   const tb = $('.topbar'); if (!tb) return;
   const cur = tb.firstElementChild, want = t || 'ナカカラモ';
   if (cur && cur.dataset.t === want) return;
-  const html = t ? `<h1 class="wordmark top-title" data-t="${esc(t)}">${esc(t)}</h1>` : `<a class="wordmark wm-home" data-t="ナカカラモ" href="#/home" aria-label="ナカカラモ（ホーム）"></a>`;
+  const html = t ? `<h1 class="wordmark top-title" data-t="${esc(t)}">${esc(t)}</h1>` : `<a class="wordmark wm-home" data-t="ナカカラモ" href="#/home">ナカカラモ</a>`;
   if (cur && cur.classList.contains('wordmark')) cur.outerHTML = html; else tb.insertAdjacentHTML('afterbegin', html);
   const el = tb.firstElementChild; if (cur) { el.classList.add('tt-in'); }
   setTbh();
