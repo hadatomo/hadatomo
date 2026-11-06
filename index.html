@@ -487,7 +487,7 @@ label.btn{position:relative}
 .hero.hero-plain{background:none;border:0;padding:0;border-radius:0;animation:none;overflow:visible;box-shadow:none}
 .hero.hero-plain::after{display:none}
 .hero-plain .life-btns{max-width:none;margin-top:0;gap:10px}
-.hero-plain .life-btns .btn-sm{min-height:44px;font-size:14px;background:var(--surface)} /* マイ化粧品の「化粧品を追加」と同じ大きさ */
+.hero-plain .life-btns .btn-sm{min-height:44px;font-size:14px;background:var(--surface)} /* Myアイテムの「化粧品を追加」と同じ大きさ */
 .hero-plain .life-btns .hap-keep{width:100%;display:block}
 .hero-plain .life-btns .hap-keep>.btn{width:100%}
 .life-btns{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px;max-width:420px}
@@ -750,7 +750,7 @@ details.acc-cmp{margin-top:14px}
 .add-opt b{display:block;font-size:15.5px}
 .add-opt small{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
 .add-opt i{font-style:normal;color:var(--muted);font-size:18px}
-/* マイ化粧品：1つの枠に行で並べる */
+/* Myアイテム：1つの枠に行で並べる */
 .mrows{padding:4px 0}
 .mrow{display:grid;grid-template-columns:52px 1fr 12px;gap:12px;align-items:center;padding:12px 16px;color:var(--ink);text-decoration:none}
 .mrow+.mrow{border-top:1px solid var(--line)}
@@ -994,6 +994,10 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .agree-line{display:flex!important;align-items:flex-start;gap:10px}.agree-line>span{flex:1;min-width:0;line-height:1.6}
 /* iPhoneの上（時計・電池の場所）に、スクロールした中身が重ならないように、背景色で隠す */
 body::before{content:'';position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);background:var(--bg);z-index:3000;pointer-events:none}
+.rx-g{font-size:13px;color:var(--green-d);margin:16px 0 6px}
+.rx-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 12px;margin:0 0 6px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font:inherit;color:var(--ink);cursor:pointer}
+.rx-item span{flex:1;min-width:0}.rx-item b{display:block;font-size:14px}.rx-item small{display:block;font-size:11.5px;color:var(--muted);overflow-wrap:anywhere}
+.rx-item i{flex:none;color:var(--green-d)}.rx-item i svg{width:18px;height:18px}
 .wx-box{display:flex;flex-direction:column;gap:6px;margin:12px 0;padding:12px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);position:relative}
 .wx-box.wx-setup{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;font-size:12.5px;color:var(--ink2)}
 .wx-box.wx-setup svg{width:16px;height:16px;color:var(--green-d)}
@@ -1583,9 +1587,9 @@ const SERVICE = 'ナカカラモ';
 const SITE_HOME = /^https?:/.test(location.protocol) && location.host ? location.origin + location.pathname : 'https://nakakaramo.github.io/nakakaramo/'; // 公開しているURL（名前を変えて引っ越しても、自動で新しいURLになる） // サービス名（英語表記：ナカカラモ）
 const COMPANY = 'ナカカラモ'; // 企業名（変更する場合はここだけ書き換えます） 
 const STORE_KEY = 'skinwise_data_v1'; // 第1版と同じ保存場所（データを引き継ぐため。サービス名を変えても変更しない）
-const CATEGORIES = ['クレンジング','洗顔','化粧水・トナー','美容液・アンプル','乳液','クリーム','シートマスク・パック','日焼け止め','スポットケア','その他'];
-const CAT_EN = {'クレンジング':'CLEANSING','洗顔':'CLEANSER','化粧水・トナー':'TONER','美容液・アンプル':'SERUM','乳液':'EMULSION','クリーム':'CREAM','シートマスク・パック':'MASK','日焼け止め':'SUN CARE','スポットケア':'SPOT CARE','その他':'SKIN CARE'};
-const CAT_BG = {'クレンジング':'#EEF3F4','洗顔':'#F1F5EF','化粧水・トナー':'#EEF4F0','美容液・アンプル':'#F6F0E5','乳液':'#F5F2EC','クリーム':'#F4EFE8','シートマスク・パック':'#EFF3EE','日焼け止め':'#F7F2E3','スポットケア':'#F3EEEE','その他':'#F2F1EE'};
+const CATEGORIES = ['クレンジング','洗顔','化粧水・トナー','美容液・アンプル','乳液','クリーム','シートマスク・パック','日焼け止め','スポットケア','皮膚科の塗り薬','その他'];
+const CAT_EN = {'皮膚科の塗り薬':'Rx', 'クレンジング':'CLEANSING','洗顔':'CLEANSER','化粧水・トナー':'TONER','美容液・アンプル':'SERUM','乳液':'EMULSION','クリーム':'CREAM','シートマスク・パック':'MASK','日焼け止め':'SUN CARE','スポットケア':'SPOT CARE','その他':'SKIN CARE'};
+const CAT_BG = {'皮膚科の塗り薬':'#EEF1F8', 'クレンジング':'#EEF3F4','洗顔':'#F1F5EF','化粧水・トナー':'#EEF4F0','美容液・アンプル':'#F6F0E5','乳液':'#F5F2EC','クリーム':'#F4EFE8','シートマスク・パック':'#EFF3EE','日焼け止め':'#F7F2E3','スポットケア':'#F3EEEE','その他':'#F2F1EE'};
 const ORIGINS = ['韓国','日本','その他'];
 const PURPOSES = ['洗浄','保湿','鎮静・肌あれ対策','皮脂・毛穴ケア','角質ケア','ニキビ対策','くすみ対策','ハリ・エイジングケア','紫外線対策','その他'];
 const TIMINGS = ['朝','夜','朝・夜','必要なときだけ'];
@@ -1930,7 +1934,7 @@ const icon = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const NAV = [
   {r:'home', label:'ホーム', icon:'home', g:''},
   {r:'log', label:'肌の記録', icon:'note', g:'記録'},
-  {r:'my', label:'マイ化粧品', icon:'bottle', g:'記録'},
+  {r:'my', label:'Myアイテム', icon:'bottle', g:'記録'},
   {r:'charts', label:'肌の変化・比較', icon:'chart', g:'振り返り'},
   {r:'report', label:'週次レポート', icon:'calendar', g:'振り返り'},
   {r:'combo', label:'成分の組み合わせ', icon:'flask', g:'振り返り'},
@@ -2617,7 +2621,7 @@ function pageHead(title, desc, actions='') {
 function emptyBox(iconName, title, text, btnHtml='') {
   return `<div class="empty"><div class="em-icon">${icon(iconName)}</div><h3>${esc(title)}</h3><p>${esc(text)}</p>${btnHtml}</div>`;
 }
-// マイ化粧品を「写真＋短い名前」のタイルで見せる（ホームの使用中の化粧品）
+// Myアイテムを「写真＋短い名前」のタイルで見せる（ホームの使用中の化粧品）
 const shortName = n => String(n || '').replace(/^【[^】]*】\s*/, '');
 const myTileHtml = p => `<a class="used-tile" href="#/my/${encodeURIComponent(p.id)}">${thumbHtml(Object.assign({}, getCat(p.catalogId) || {category:p.category}, {name:p.name, isSample:false}), false)}<span class="used-nm">${esc(truncate(shortName(p.name), 10))}</span><span class="used-sub">${esc(p.category || '')}</span></a>`;
 // 通販サイトの商品画像：小さいサムネイルではなく大きい画像を使う（楽天は600×600、Yahoo!は600px）
@@ -2772,7 +2776,7 @@ function revealEl(el) {
   el.querySelectorAll(COUNT_SEL).forEach(countUp);
   el.querySelectorAll('.chart').forEach(c => { c.classList.add('play'); setTimeout(() => c.classList.remove('play'), 2200); });
 }
-// 下のバーの画面（ホーム・肌の記録・マイ化粧品・商品検索・アカウント）は、最初に開いたときだけ動かし、2回目からは動かさない
+// 下のバーの画面（ホーム・肌の記録・Myアイテム・商品検索・アカウント）は、最初に開いたときだけ動かし、2回目からは動かさない
 const TAB_PAGES = ['home', 'log', 'my', 'search', 'stores', 'favorites', 'account'];
 const motionSeen = new Set();
 function motionIn(route) {
@@ -2976,7 +2980,7 @@ const SHORTCUTS = [
   {k:'charts', h:'#/charts', ic:'chart', l:'肌の変化・比較'}, {k:'report', h:'#/report', ic:'calendar', l:'週次レポート'},
   {k:'combo', h:'#/combo', ic:'flask', l:'成分の組み合わせ'}, {k:'visit', h:'#/visit', ic:'note', l:'受診用まとめ'},
 
-  {k:'ingredients', h:'#/ingredients', ic:'book', l:'成分辞典'}, {k:'my', h:'#/my', ic:'bottle', l:'マイ化粧品'},
+  {k:'ingredients', h:'#/ingredients', ic:'book', l:'成分辞典'}, {k:'my', h:'#/my', ic:'bottle', l:'Myアイテム'},
   {k:'spending', h:'#/spending', ic:'wallet', l:'支出'}, {k:'plan', h:'#/plan', ic:'user', l:'プラン・アカウント'},
   {k:'settings', h:'#/settings', ic:'gear', l:'設定'}
 ];
@@ -3082,10 +3086,66 @@ function meter(label, v) {
 function searchTabs(cur) { const n = (state.favorites || []).length; return `<div class="tabs"><a class="tab ${cur === 'search' ? 'active' : ''}" href="#/search">商品を探す</a><a class="tab ${cur === 'favorites' ? 'active' : ''}" href="#/favorites">${icon('heart')}お気に入り${n ? `（${n}）` : ''}</a><a class="tab ${cur === 'cart' ? 'active' : ''}" href="#/cart">${icon('cart')}買い物リスト${(state.cart || []).length ? `（${state.cart.length}）` : ''}</a><a class="tab ${cur === 'stores' ? 'active' : ''}" href="#/stores">取扱店舗を探す</a></div>`; }
 // 「化粧品を追加」を押したら：カメラで登録（バーコード・商品の写真）か、自分で入力（バーコードの数字・商品名から候補を選ぶ）
 // 実際の商品を名前で探して追加するのは「商品検索」でできるので、ここには置かない
+// ===== 皮膚科で処方される主な塗り薬（アプリに最初から入っている一覧。名前・成分は添付文書の一般名） =====
+// [種類, 商品名, 有効成分（一般名）]
+const RX_DRUGS = [
+  ['ニキビ', 'ディフェリンゲル0.1%', 'アダパレン'], ['ニキビ', 'ベピオゲル2.5%', '過酸化ベンゾイル'], ['ニキビ', 'ベピオローション2.5%', '過酸化ベンゾイル'], ['ニキビ', 'ベピオウォッシュゲル5%', '過酸化ベンゾイル'],
+  ['ニキビ', 'エピデュオゲル', 'アダパレン・過酸化ベンゾイル'], ['ニキビ', 'デュアック配合ゲル', 'クリンダマイシン・過酸化ベンゾイル'], ['ニキビ', 'ダラシンTゲル1%', 'クリンダマイシン'], ['ニキビ', 'ダラシンTローション1%', 'クリンダマイシン'],
+  ['ニキビ', 'アクアチムクリーム1%', 'ナジフロキサシン'], ['ニキビ', 'アクアチムローション1%', 'ナジフロキサシン'], ['ニキビ', 'アクアチム軟膏1%', 'ナジフロキサシン'], ['ニキビ', 'ゼビアックスローション2%', 'オゼノキサシン'], ['ニキビ', 'ゼビアックス油性クリーム2%', 'オゼノキサシン'], ['ニキビ', 'イオウ・カンフルローション', 'イオウ・カンフル'],
+  ['ステロイド（最も強い）', 'デルモベート軟膏0.05%', 'クロベタゾールプロピオン酸エステル'], ['ステロイド（最も強い）', 'デルモベートクリーム0.05%', 'クロベタゾールプロピオン酸エステル'], ['ステロイド（最も強い）', 'デルモベートスカルプローション0.05%', 'クロベタゾールプロピオン酸エステル'], ['ステロイド（最も強い）', 'ダイアコート軟膏0.05%', 'ジフロラゾン酢酸エステル'],
+  ['ステロイド（とても強い）', 'アンテベート軟膏0.05%', 'ベタメタゾン酪酸エステルプロピオン酸エステル'], ['ステロイド（とても強い）', 'アンテベートクリーム0.05%', 'ベタメタゾン酪酸エステルプロピオン酸エステル'], ['ステロイド（とても強い）', 'アンテベートローション0.05%', 'ベタメタゾン酪酸エステルプロピオン酸エステル'],
+  ['ステロイド（とても強い）', 'マイザー軟膏0.05%', 'ジフルプレドナート'], ['ステロイド（とても強い）', 'マイザークリーム0.05%', 'ジフルプレドナート'], ['ステロイド（とても強い）', 'フルメタ軟膏0.1%', 'モメタゾンフランカルボン酸エステル'], ['ステロイド（とても強い）', 'フルメタクリーム0.1%', 'モメタゾンフランカルボン酸エステル'], ['ステロイド（とても強い）', 'フルメタローション0.1%', 'モメタゾンフランカルボン酸エステル'],
+  ['ステロイド（とても強い）', 'ネリゾナユニバーサルクリーム0.1%', 'ジフルコルトロン吉草酸エステル'], ['ステロイド（とても強い）', 'トプシム軟膏0.05%', 'フルオシノニド'], ['ステロイド（とても強い）', 'リンデロンDP軟膏0.064%', 'ベタメタゾンジプロピオン酸エステル'], ['ステロイド（とても強い）', 'パンデル軟膏0.1%', '酪酸プロピオン酸ヒドロコルチゾン'],
+  ['ステロイド（強い）', 'リンデロンV軟膏0.12%', 'ベタメタゾン吉草酸エステル'], ['ステロイド（強い）', 'リンデロンVクリーム0.12%', 'ベタメタゾン吉草酸エステル'], ['ステロイド（強い）', 'リンデロンVローション', 'ベタメタゾン吉草酸エステル'], ['ステロイド（強い）', 'リンデロンVG軟膏0.12%', 'ベタメタゾン吉草酸エステル・ゲンタマイシン'],
+  ['ステロイド（強い）', 'ボアラ軟膏0.12%', 'デキサメタゾン吉草酸エステル'], ['ステロイド（強い）', 'メサデルム軟膏0.1%', 'デキサメタゾンプロピオン酸エステル'], ['ステロイド（強い）', 'エクラー軟膏0.3%', 'デプロドンプロピオン酸エステル'], ['ステロイド（強い）', 'フルコート軟膏0.025%', 'フルオシノロンアセトニド'],
+  ['ステロイド（ふつう）', 'ロコイド軟膏0.1%', 'ヒドロコルチゾン酪酸エステル'], ['ステロイド（ふつう）', 'ロコイドクリーム0.1%', 'ヒドロコルチゾン酪酸エステル'], ['ステロイド（ふつう）', 'キンダベート軟膏0.05%', 'クロベタゾン酪酸エステル'], ['ステロイド（ふつう）', 'アルメタ軟膏', 'アルクロメタゾンプロピオン酸エステル'], ['ステロイド（ふつう）', 'リドメックスコーワ軟膏0.3%', 'プレドニゾロン吉草酸エステル酢酸エステル'],
+  ['ステロイド（弱い）', 'プレドニゾロン軟膏0.5%', 'プレドニゾロン'],
+  ['アトピー・湿疹（ステロイド以外）', 'プロトピック軟膏0.1%', 'タクロリムス'], ['アトピー・湿疹（ステロイド以外）', 'プロトピック軟膏0.03%小児用', 'タクロリムス'], ['アトピー・湿疹（ステロイド以外）', 'コレクチム軟膏0.5%', 'デルゴシチニブ'], ['アトピー・湿疹（ステロイド以外）', 'コレクチム軟膏0.25%', 'デルゴシチニブ'],
+  ['アトピー・湿疹（ステロイド以外）', 'モイゼルト軟膏1%', 'ジファミラスト'], ['アトピー・湿疹（ステロイド以外）', 'モイゼルト軟膏0.3%', 'ジファミラスト'], ['アトピー・湿疹（ステロイド以外）', 'ブイタマークリーム1%', 'タピナロフ'],
+  ['保湿・乾燥', 'ヒルドイドソフト軟膏0.3%', 'ヘパリン類似物質'], ['保湿・乾燥', 'ヒルドイドクリーム0.3%', 'ヘパリン類似物質'], ['保湿・乾燥', 'ヒルドイドローション0.3%', 'ヘパリン類似物質'], ['保湿・乾燥', 'ヒルドイドフォーム0.3%', 'ヘパリン類似物質'],
+  ['保湿・乾燥', 'ヘパリン類似物質油性クリーム0.3%', 'ヘパリン類似物質'], ['保湿・乾燥', 'ヘパリン類似物質外用スプレー0.3%', 'ヘパリン類似物質'], ['保湿・乾燥', 'ケラチナミンコーワクリーム20%', '尿素'], ['保湿・乾燥', 'ウレパールクリーム10%', '尿素'], ['保湿・乾燥', 'パスタロンソフト軟膏20%', '尿素'],
+  ['保湿・乾燥', '白色ワセリン', '白色ワセリン'], ['保湿・乾燥', 'プロペト', '白色ワセリン'], ['保湿・乾燥', 'ザーネ軟膏0.5%', 'ビタミンA油'], ['保湿・乾燥', '亜鉛華軟膏', '酸化亜鉛'], ['保湿・乾燥', 'アズノール軟膏0.033%', 'ジメチルイソプロピルアズレン'],
+  ['化膿・とびひ（抗菌）', 'ゲンタシン軟膏0.1%', 'ゲンタマイシン'], ['化膿・とびひ（抗菌）', 'フシジンレオ軟膏2%', 'フシジン酸ナトリウム'], ['化膿・とびひ（抗菌）', 'アクロマイシン軟膏3%', 'テトラサイクリン'], ['化膿・とびひ（抗菌）', 'テラマイシン軟膏', 'オキシテトラサイクリン・ポリミキシンB'], ['化膿・とびひ（抗菌）', 'バラマイシン軟膏', 'バシトラシン・フラジオマイシン'],
+  ['水虫・カビ（抗真菌）', 'ルリコンクリーム1%', 'ルリコナゾール'], ['水虫・カビ（抗真菌）', 'ルリコン液1%', 'ルリコナゾール'], ['水虫・カビ（抗真菌）', 'ルリコン軟膏1%', 'ルリコナゾール'], ['水虫・カビ（抗真菌）', 'ニゾラールクリーム2%', 'ケトコナゾール'], ['水虫・カビ（抗真菌）', 'ニゾラールローション2%', 'ケトコナゾール'],
+  ['水虫・カビ（抗真菌）', 'ラミシールクリーム1%', 'テルビナフィン'], ['水虫・カビ（抗真菌）', 'アスタット軟膏1%', 'ラノコナゾール'], ['水虫・カビ（抗真菌）', 'アスタットクリーム1%', 'ラノコナゾール'], ['水虫・カビ（抗真菌）', 'マイコスポールクリーム1%', 'ビホナゾール'],
+  ['乾癬', 'ドボネックス軟膏', 'カルシポトリオール'], ['乾癬', 'オキサロール軟膏', 'マキサカルシトール'], ['乾癬', 'オキサロールローション', 'マキサカルシトール'], ['乾癬', 'ボンアルファハイ軟膏', 'タカルシトール'],
+  ['乾癬', 'ドボベット軟膏', 'カルシポトリオール・ベタメタゾンジプロピオン酸エステル'], ['乾癬', 'ドボベットゲル', 'カルシポトリオール・ベタメタゾンジプロピオン酸エステル'], ['乾癬', 'ドボベットフォーム', 'カルシポトリオール・ベタメタゾンジプロピオン酸エステル'], ['乾癬', 'マーデュオックス軟膏', 'マキサカルシトール・ベタメタゾン酪酸エステルプロピオン酸エステル'],
+  ['かゆみ', 'レスタミンコーワクリーム1%', 'ジフェンヒドラミン'], ['かゆみ', 'オイラックスクリーム10%', 'クロタミトン'],
+  ['酒さ（赤ら顔）', 'ロゼックスゲル0.75%', 'メトロニダゾール'],
+  ['汗（多汗症）', 'エクロックゲル5%', 'ソフピロニウム臭化物'], ['汗（多汗症）', 'アポハイドローション20%', 'オキシブチニン塩酸塩'],
+  ['ヘルペス', 'アラセナA軟膏3%', 'ビダラビン'], ['ヘルペス', 'ゾビラックス軟膏5%', 'アシクロビル'],
+  ['傷・やけど', 'ゲーベンクリーム1%', 'スルファジアジン銀'],
+];
+const rxId = n => 'rx-' + fnorm(n).replace(/[^0-9a-z぀-ヿ一-龯]/g, '').slice(0, 40);
+function openRxSheet() {
+  const groups = [...new Set(RX_DRUGS.map(d => d[0]))];
+  const list = q => {
+    const k = fnorm(q || '');
+    const hit = RX_DRUGS.filter(d => !k || fnorm(d[1]).includes(k) || fnorm(d[2]).includes(k) || fnorm(d[0]).includes(k));
+    if (!hit.length) return `<p class="small muted" style="margin:12px 0">見つかりませんでした。ジェネリック（後発品）などで一覧にないときは、下の「一覧にない薬を入力」から登録できます。</p>`;
+    return groups.map(g => { const ds = hit.filter(d => d[0] === g); return ds.length ? `<h3 class="rx-g">${esc(g)}</h3>${ds.map(d => `<button type="button" class="rx-item" data-rx="${esc(d[1])}"><span><b>${esc(d[1])}</b><small>${esc(d[2])}</small></span><i>${icon('plus')}</i></button>`).join('')}` : ''; }).join('');
+  };
+  openModal({title:'皮膚科の塗り薬を追加', dismissable:true, body:`<input type="search" class="input" id="rx-q" placeholder="薬の名前・成分で探す（例：ディフェリン、ヒルドイド）" aria-label="薬の名前で探す" autocomplete="off">
+    <p class="small muted" style="margin:8px 0 4px">皮膚科で処方される主な塗り薬が、最初から入っています（全${RX_DRUGS.length}種類）。</p>
+    <div id="rx-list">${list('')}</div>
+    <button type="button" class="btn btn-ghost btn-sm" data-action="rx-manual" style="margin-top:12px;width:100%;justify-content:center">一覧にない薬を入力</button>
+    <p class="hint" style="margin-top:10px">使う量・回数・期間は、医師・薬剤師の指示に従ってください。このアプリは、使った日や残りの記録のためのものです。</p>`});
+  const q = document.getElementById('rx-q'), box = document.getElementById('rx-list');
+  q.addEventListener('input', () => { box.innerHTML = list(q.value); });
+  box.addEventListener('click', e => { const b = e.target.closest('[data-rx]'); if (b) rxPick(b.dataset.rx); });
+}
+function rxPick(name) {
+  const d = RX_DRUGS.find(x => x[1] === name); if (!d) return;
+  const id = rxId(d[1]);
+  if (!getCat(id)) state.catalog.push({id, isSample:false, verify:'verified', name:d[1], brand:'処方薬', category:'皮膚科の塗り薬', origin:'その他', price:0, volume:'', image:'', imageUrl:'', shopUrl:'', imgClean:false,
+    purposes:[], ingredients:d[2], features:`${d[0]}の処方薬（有効成分：${d[2]}）`, usage:'医師・薬剤師の指示どおりに使ってください。', caution:'', jan:'', source:'添付文書の一般名', checkedAt:todayStr(), offChecked:'', offUrl:'', offers:[]});
+  save(); closeModal(); setTimeout(() => openMyForm(null, id), 200);
+}
 function openAddSheet(kind) {
   const my = kind === 'my';
-  openModal({title:my ? '化粧品を追加' : '商品を追加', size:'small', dismissable:true, body:`<div class="add-opts">
-    <button class="add-opt main" data-action="add-manual" data-id="${my ? 'my' : 'cat'}">${icon('note')}<span><b>自分で入力</b><small>バーコードの数字か商品名を入れると、候補が出ます</small></span><i>›</i></button>
+  openModal({title:my ? 'アイテムを追加' : '商品を追加', size:'small', dismissable:true, body:`<div class="add-opts">
+    ${my ? `<button class="add-opt main" data-action="rx-sheet">${icon('flask')}<span><b>皮膚科の塗り薬</b><small>処方された塗り薬を一覧から選ぶ（${RX_DRUGS.length}種類）</small></span><i>›</i></button>` : ''}
+    <button class="add-opt main" data-action="add-manual" data-id="${my ? 'my' : 'cat'}">${icon('note')}<span><b>化粧品を自分で入力</b><small>バーコードの数字か商品名を入れると、候補が出ます</small></span><i>›</i></button>
     <button class="add-opt main" data-action="add-camera" data-id="${my ? 'my' : 'cat'}">${icon('camera')}<span><b>カメラで登録${isPremium() ? '' : `<span class="prem-sub">${PREMIUM_NAME}</span>`}</b><small>バーコードか商品の写真から、商品を見つける</small></span><i>›</i></button></div>`});
 }
 // 実際の商品（楽天市場・Yahoo!ショッピング）を名前で探して、そのまま追加する
@@ -3519,8 +3579,8 @@ function netHtml() {
     const added = state.catalog.find(c => c.shopUrl && c.shopUrl === x.url);
     return `<div class="net-item net-tap" data-action="net-view" data-id="${i}">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
       <span class="net-t"><b>${esc(truncate(x.name, 60))}</b><small>${esc(x.site)}${x.shop ? '・' + esc(truncate(x.shop, 18)) : ''}</small><em>${yen(x.price)}${x.shipping === 'included' ? '<span class="small muted">（送料込）</span>' : ''}</em></span>
-      <span class="net-btns">${added && state.myProducts.some(m => m.catalogId === added.id) ? `<a class="btn btn-ghost btn-sm" href="#/my">マイ化粧品に登録済み</a>` : `<button class="btn btn-primary btn-sm" data-action="net-add" data-id="${i}">${icon('plus')}マイ化粧品に登録</button>`}<button class="btn btn-ghost btn-sm" data-action="net-view" data-id="${i}">値段を比べる</button></span></div>`;
-  }).join('')}</div><p class="small muted" style="margin-top:8px">価格は検索した時点のものです。「追加」すると、この商品を商品一覧に登録して、お気に入りやマイ化粧品に使えます。${n.items.some(x => x.ad) ? '一部のリンクは広告（アフィリエイト）です。' : ''}</p>
+      <span class="net-btns">${added && state.myProducts.some(m => m.catalogId === added.id) ? `<a class="btn btn-ghost btn-sm" href="#/my">Myアイテムに登録済み</a>` : `<button class="btn btn-primary btn-sm" data-action="net-add" data-id="${i}">${icon('plus')}Myアイテムに登録</button>`}<button class="btn btn-ghost btn-sm" data-action="net-view" data-id="${i}">値段を比べる</button></span></div>`;
+  }).join('')}</div><p class="small muted" style="margin-top:8px">価格は検索した時点のものです。「追加」すると、この商品を商品一覧に登録して、お気に入りやMyアイテムに使えます。${n.items.some(x => x.ad) ? '一部のリンクは広告（アフィリエイト）です。' : ''}</p>
     <p class="credit small muted">Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p>`;
 }
 // ブランド名を商品名から自動で入れる：知っているブランド → メーカー名のすぐ後ろの言葉 → 商品名の最初の言葉
@@ -3570,7 +3630,7 @@ async function pickCleanImage(p, x, others) {
     if (['product', 'search', 'favorites', 'my', 'mydetail'].includes(parseRoute().name) && !$('#modal-root').innerHTML) render();
   } catch (e) { /* 選べなかったときは、最初の画像のまま */ }
 }
-// 商品検索で見つけた商品を、そのままマイ化粧品に登録する（使い始めた日・使う時間などを入れる画面を開く）
+// 商品検索で見つけた商品を、そのままMyアイテムに登録する（使い始めた日・使う時間などを入れる画面を開く）
 function netAdd(i) {
   const x = ui.net && ui.net.items && ui.net.items[Number(i)]; if (!x) return;
   const p = netToCat(x, ui.net.items); if (!p) return;
@@ -3646,7 +3706,7 @@ function recoHtml() {
   RECO.res = res;
   const body = res.map((g, gi) => `<div class="reco-g"><p class="reco-why">${icon('spark')}${esc(g.why)}</p>${g.items.length ? `<div class="net-list">${g.items.map((x, i) => `<div class="net-item net-tap" data-action="reco-view" data-id="${gi}:${i}">${x.image ? extImgHtml(x.image, 'net-img') : `<span class="net-noimg">${icon('bottle')}</span>`}
       <span class="net-t"><b>${esc(truncate(x.name, 60))}</b><small>${esc(x.site)}${x.shop ? '・' + esc(truncate(x.shop, 18)) : ''}</small><em>${yen(x.price)}${x.shipping === 'included' ? '<span class="small muted">（送料込）</span>' : ''}</em></span>
-      <span class="net-btns"><button class="btn btn-primary btn-sm" data-action="reco-view" data-id="${gi}:${i}">詳しく見る</button><button class="btn btn-ghost btn-sm" data-action="reco-add" data-id="${gi}:${i}">${icon('plus')}マイ化粧品に登録</button></span></div>`).join('')}</div>`
+      <span class="net-btns"><button class="btn btn-primary btn-sm" data-action="reco-view" data-id="${gi}:${i}">詳しく見る</button><button class="btn btn-ghost btn-sm" data-action="reco-add" data-id="${gi}:${i}">${icon('plus')}Myアイテムに登録</button></span></div>`).join('')}</div>`
     : `<p class="small muted" style="margin:2px 0 0">${cap > 0 ? `${yen(cap)}以内の` : ''}商品が見つかりませんでした。${cap > 0 ? '上限金額を上げると見つかるかもしれません。' : ''}</p>`}</div>`).join('');
   return head + body + foot + '<p class="credit small muted">Supported by Rakuten Developers／Web Services by Yahoo! JAPAN</p>';
 }
@@ -3807,7 +3867,7 @@ function comboNgHtml(p) {
 }
 function viewProduct(id) {
   const p = getCat(id);
-  if (!p) return notFound('商品が見つかりません', '#/my', 'マイ化粧品に戻る');
+  if (!p) return notFound('商品が見つかりません', '#/my', 'Myアイテムに戻る');
   const ings = splitIngs(p.ingredients);
   const known = knownIngs(p.ingredients);
   const knownMap = {};
@@ -3815,7 +3875,7 @@ function viewProduct(id) {
   const mine = state.myProducts.filter(m => m.catalogId === p.id);
   const unit = perUnitText(p.price, p.volume);
   const bk = ui.prodBack && ui.prodBack.id === p.id ? ui.prodBack : null;
-  return `<a class="back" href="${bk ? esc(bk.hash) : '#/my'}">← ${bk ? esc(bk.label) : 'マイ化粧品'}</a>
+  return `<a class="back" href="${bk ? esc(bk.hash) : '#/my'}">← ${bk ? esc(bk.label) : 'Myアイテム'}</a>
     ${p.isSample ? '<div class="notice warn">この商品は動作確認用の<b>架空のサンプル</b>です。実在の商品・価格・成分ではありません。</div>' : p.verify !== 'verified' ? '<div class="notice">この商品の情報は<b>未確認</b>です。購入前に、パッケージや公式サイトの表示を確認してください。</div>' : ''}
     <div class="card detail-top">
       ${thumbHtml(p)}
@@ -3826,9 +3886,9 @@ function viewProduct(id) {
         <dl class="kv"><dt>価格</dt><dd>${p.price ? yen(p.price) : val('')}</dd><dt>内容量</dt><dd>${val(p.volume)}</dd>
           ${unit ? `<dt>単価</dt><dd>${esc(unit)}</dd>` : ''}
           ${p.jan ? `<dt>JANコード</dt><dd>${esc(p.jan)}</dd>` : ''}<dt>情報の出典</dt><dd>${val(p.source)}</dd><dt>確認日</dt><dd>${p.checkedAt ? fmtDate(p.checkedAt) : val('')}</dd></dl>
-        ${mine.length ? `<p class="small" style="margin-top:12px;color:var(--green-d)">マイ化粧品に登録済み（${mine.length}件）</p>` : ''}
+        ${mine.length ? `<p class="small" style="margin-top:12px;color:var(--green-d)">Myアイテムに登録済み（${mine.length}件）</p>` : ''}
         <div class="page-actions" style="margin-top:16px">
-          <button class="btn btn-primary" data-action="new-my-from" data-id="${esc(p.id)}">${icon('plus')}マイ化粧品に登録</button>
+          <button class="btn btn-primary" data-action="new-my-from" data-id="${esc(p.id)}">${icon('plus')}Myアイテムに登録</button>
         </div>
         <div class="page-actions" style="margin-top:8px">
           <button class="btn btn-ghost btn-sm" data-action="edit-cat" data-id="${esc(p.id)}">商品情報を編集</button>
@@ -4122,7 +4182,7 @@ function viewCart() {
 function mapLink(query) { return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`; }
 function viewPrices(id) {
   const p = getCat(id);
-  if (!p) return notFound('商品が見つかりません', '#/my', 'マイ化粧品に戻る');
+  if (!p) return notFound('商品が見つかりません', '#/my', 'Myアイテムに戻る');
   const online = p.offers.filter(o => o.kind === 'online'), stores = p.offers.filter(o => o.kind === 'store');
   const eligible = online.filter(o => offerIssues(o, p).length === 0 && offerTotal(o) != null);
   const best = eligible.slice().sort((a,b) => offerTotal(a) - offerTotal(b))[0];
@@ -4763,7 +4823,7 @@ function candRow(c, s) {
   return `<div class="mitem" style="grid-template-columns:56px 1fr;margin-top:8px;box-shadow:none">${thumbHtml(c)}<div>
     <div class="brand">${esc(c.brand)}${c.jan ? '・JAN ' + esc(c.jan) : ''}</div><div class="name">${esc(c.name)}</div>
     <div class="small muted">${esc(c.category)}${c.volume ? '・' + esc(c.volume) : ''}${s != null ? `・名前の一致度 ${Math.round(s * 100)}%` : ''}</div>
-    <div class="page-actions" style="margin-top:6px"><button class="btn btn-primary btn-sm" data-action="scan-use" data-id="${esc(c.id)}">この商品をマイ化粧品に登録</button><a class="btn btn-ghost btn-sm" href="#/product/${encodeURIComponent(c.id)}">詳細</a></div></div></div>`;
+    <div class="page-actions" style="margin-top:6px"><button class="btn btn-primary btn-sm" data-action="scan-use" data-id="${esc(c.id)}">この商品をMyアイテムに登録</button><a class="btn btn-ghost btn-sm" href="#/product/${encodeURIComponent(c.id)}">詳細</a></div></div></div>`;
 }
 
 /* =========================================================
@@ -4876,7 +4936,7 @@ function viewIngredients(key) {
     return `<a class="back" href="#/ingredients">← 成分辞典</a>` + pageHead(e.name, '一般的な情報です。効果や安全性を保証するものではありません。') +
       `<div class="card">${ingCard(e)}<p class="small muted" style="margin-top:12px">この辞典で照合する表示名：${esc(e.aliases.join('、'))}<br>辞典の内容：${fmtDate(ING_DB_UPDATED)}更新</p></div>
       <div class="grid g2 mt">
-        <div class="card"><div class="card-h"><h2>この成分を含むマイ化粧品</h2></div>${inMy.length ? inMy.map(p => `<p><a href="#/my/${encodeURIComponent(p.id)}">${esc(p.name)}</a> ${statusChip(p.status)}</p>`).join('') : '<p class="small muted">ありません（全成分が登録された商品のみ判定）</p>'}</div>
+        <div class="card"><div class="card-h"><h2>この成分を含むMyアイテム</h2></div>${inMy.length ? inMy.map(p => `<p><a href="#/my/${encodeURIComponent(p.id)}">${esc(p.name)}</a> ${statusChip(p.status)}</p>`).join('') : '<p class="small muted">ありません（全成分が登録された商品のみ判定）</p>'}</div>
         <div class="card"><div class="card-h"><h2>この成分を含む登録商品</h2></div>${inCat.length ? inCat.map(p => `<p><a href="#/product/${encodeURIComponent(p.id)}">${esc(p.name)}</a></p>`).join('') : '<p class="small muted">ありません</p>'}</div>
       </div>
       <div class="card"><div class="card-h"><h2>信頼できる情報源</h2></div>${sourcesHtml()}</div>`;
@@ -4896,7 +4956,7 @@ function ingResults() {
 }
 
 /* =========================================================
-   画面：マイ化粧品
+   画面：Myアイテム
    ========================================================= */
 function viewMy() {
   const counts = {};
@@ -4930,7 +4990,7 @@ function viewMy() {
 function periodStats(s, e) { const logs = s <= e ? logsInRange(s, e) : []; return Object.assign(stats(logs), {logs}); }
 function viewMyDetail(id) {
   const p = getMy(id);
-  if (!p) return notFound('化粧品が見つかりません', '#/my', 'マイ化粧品に戻る');
+  if (!p) return notFound('化粧品が見つかりません', '#/my', 'Myアイテムに戻る');
   const cat = getCat(p.catalogId);
   const end = productEnd(p);
   const days = Math.max(0, diffDays(p.startDate, end) + 1);
@@ -4948,7 +5008,7 @@ function viewMyDetail(id) {
       <p class="small muted" style="margin-top:10px">数字は「肌の調子」の平均です（記録が3件以上ある期間のみ表示）。季節・睡眠・体調・ほかの商品なども肌に影響するため、この商品が変化の原因かどうかは判断できません。</p>`;
   }
   const fc = p.status !== STOCK ? freqCheck(p, addDays(t, -27), t) : null;
-  return `<a class="back" href="#/my">← マイ化粧品</a>
+  return `<a class="back" href="#/my">← Myアイテム</a>
     <div class="card detail-top">
       ${thumbHtml(Object.assign({}, cat || {category:p.category}, {isSample:false}), false)}
       <div>
@@ -4993,7 +5053,7 @@ function viewMyDetail(id) {
     <div class="card"><div class="card-h"><h2>使用感・肌状態のメモ</h2></div><p class="prose">${val(p.memo, 'メモはありません')}</p></div>`;
 }
 
-/* マイ化粧品 登録・編集フォーム */
+/* Myアイテム 登録・編集フォーム */
 // 商品名から、ブランド名・使用目的・カテゴリを推測する（商品データベースにあればその情報を使う）
 const PURPOSE_WORDS = [
   ['洗浄', /洗顔|クレンジング|フォーム|ソープ|メイク落とし|ウォッシュ|cleans/i],
@@ -5028,7 +5088,7 @@ function openMyForm(id, fromCatId) {
     timing:'朝・夜', frequency:'毎日', startDate:t, status:'使用中', endDate:'', memo:''};
   const catOpts = state.catalog.map(c => ({v:c.id, label:`${c.isSample ? '[サンプル] ' : ''}${c.brand}｜${c.name}`}));
   const linkedIngs = p.catalogId && getCat(p.catalogId) ? getCat(p.catalogId).ingredients : '';
-  openModal({title: ex ? 'マイ化粧品を編集' : 'マイ化粧品に登録', body: `<form id="my-form" novalidate><div class="form-grid two">
+  openModal({title: ex ? 'Myアイテムを編集' : 'Myアイテムに登録', body: `<form id="my-form" novalidate><div class="form-grid two">
     ${field('商品データベースから選ぶ', selectHtml('catalogId', catOpts, p.catalogId, '選ばずに直接入力する'), {name:'catalogId', cls:'span2', hint:'選ぶと商品名・ブランド・カテゴリ・使用目的が自動入力されます'})}
     ${field('商品名', `<input class="input" id="f_name" name="name" maxlength="80" value="${esc(p.name)}" autocomplete="off"><div class="hint name-auto" id="name-auto"></div>`, {name:'name', required:true, cls:'span2'})}
     ${field('ブランド名', `<input class="input" id="f_brand" name="brand" maxlength="40" list="brand-list2" value="${esc(p.brand)}"><datalist id="brand-list2">${BRAND_SUGGEST.map(b => `<option value="${esc(b)}">`).join('')}</datalist>`, {name:'brand', required:true})}
@@ -5121,7 +5181,7 @@ function openMyForm(id, fromCatId) {
       if (price > 0) target.purchases.push({id:uid(), date:v('purchaseDate'), price, memo:''});
       state.myProducts.push(target);
     }
-    if (save()) { closeModal(); toast(ex ? '保存しました' : 'マイ化粧品に登録しました'); location.hash = '#/my/' + encodeURIComponent(target.id); render(); }
+    if (save()) { closeModal(); toast(ex ? '保存しました' : 'Myアイテムに登録しました'); location.hash = '#/my/' + encodeURIComponent(target.id); render(); }
   };
 }
 function openPurchaseForm(pid) {
@@ -5158,7 +5218,7 @@ function viewCompare() {
   if (locked()) return `<a class="back" href="#/charts">← 肌の変化・比較</a>` + pageHead('商品と肌状態の比較', '過去の商品と今の商品、商品を変えた前後の肌記録を並べて確認します。') + lockCard('商品と肌状態の比較は' + PREMIUM_NAME + 'の機能です', '使っていた商品ごとの肌記録の比較や、商品を変えた時期の前後の振り返りができます。');
   const used = state.myProducts.filter(isUsedType).sort((a,b) => b.startDate.localeCompare(a.startDate));
   let html = `<a class="back" href="#/charts">← 肌の変化・比較</a>` + pageHead('商品と肌状態の比較', '過去の商品と今の商品、商品を変えた前後の肌記録を並べて確認します。');
-  if (used.length < 1) return html + `<div class="card">${emptyBox('compare', '比較できる化粧品がありません', 'マイ化粧品を登録すると、使用期間ごとの肌記録を比べられます。', '<button class="btn btn-primary btn-sm" data-action="new-my">化粧品を登録</button>')}</div>`;
+  if (used.length < 1) return html + `<div class="card">${emptyBox('compare', '比較できる化粧品がありません', 'Myアイテムを登録すると、使用期間ごとの肌記録を比べられます。', '<button class="btn btn-primary btn-sm" data-action="new-my">化粧品を登録</button>')}</div>`;
   if (!getMy(ui.cmpA) || !isUsedType(getMy(ui.cmpA))) ui.cmpA = (used.find(p => p.status === '使用終了') || used[0]).id;
   if (!getMy(ui.cmpB) || !isUsedType(getMy(ui.cmpB)) || ui.cmpB === ui.cmpA) { const a = getMy(ui.cmpA); ui.cmpB = ((used.find(p => p.id !== ui.cmpA && p.category === a.category && p.status !== '使用終了')) || used.find(p => p.id !== ui.cmpA) || {id:''}).id; }
   const opts = sel => used.map(p => `<option value="${esc(p.id)}" ${p.id === sel ? 'selected' : ''}>${esc(truncate(p.name, 30))}（${p.status === '使用終了' ? '過去' : p.status}）</option>`).join('');
@@ -5229,7 +5289,7 @@ function viewCombo() {
   const active = state.myProducts.filter(p => p.status === '使用中');
   let html = pageHead('成分の組み合わせレポート', '使用中の化粧品の成分をまとめ、一般的な注意点を表示します。');
   html += `<div class="notice">成分名が含まれているかどうかだけで判定しています。濃度・処方・使用量・個人差は考慮できないため、<b>安全性や効果を判断するものではありません</b>。各製品の使用方法・注意事項を優先し、気になる症状がある場合は皮膚科医や薬剤師に相談してください。</div>`;
-  if (!active.length) return html + `<div class="card">${emptyBox('flask', '使用中の化粧品がありません', 'マイ化粧品で「使用中」の商品を登録し、全成分を入力すると、ここにまとめが表示されます。', '<button class="btn btn-primary btn-sm" data-action="new-my">化粧品を登録</button>')}</div>`;
+  if (!active.length) return html + `<div class="card">${emptyBox('flask', '使用中の化粧品がありません', 'Myアイテムで「使用中」の商品を登録し、全成分を入力すると、ここにまとめが表示されます。', '<button class="btn btn-primary btn-sm" data-action="new-my">化粧品を登録</button>')}</div>`;
   const r = comboReport(active);
   // まず結果のまとめ：注意の数・全成分が足りない商品（押すとすぐ入力できる）
   const nAl = r.alerts.length + (r.uvNote ? 1 : 0);
@@ -5414,7 +5474,7 @@ function openWxSetup() {
     footer:`<button type="button" class="btn btn-ghost" data-action="close-modal">やめる</button><button type="button" class="btn btn-primary" data-action="wx-save">決定</button>`});
 }
 // ===== 化粧品の使用期限・残りの目安（開封日＝使用開始日から計算。目安） =====
-const PAO_DEF = {'クレンジング':6, '洗顔':12, '化粧水・トナー':6, '美容液・アンプル':6, '乳液':6, 'クリーム':6, 'シートマスク・パック':3, '日焼け止め':12, 'スポットケア':6, 'その他':6};
+const PAO_DEF = {'皮膚科の塗り薬':12, 'クレンジング':6, '洗顔':12, '化粧水・トナー':6, '美容液・アンプル':6, '乳液':6, 'クリーム':6, 'シートマスク・パック':3, '日焼け止め':12, 'スポットケア':6, 'その他':6};
 const PER_USE = {'クレンジング':2, '洗顔':1, '化粧水・トナー':2, '美容液・アンプル':0.6, '乳液':1, 'クリーム':0.5, '日焼け止め':0.8, 'スポットケア':0.1, 'その他':1}; // 1回に使う量の目安（mL・g）
 const FREQ_K = {'毎日':1, '週4〜6回':5 / 7, '週2〜3回':2.5 / 7, '週1回':1 / 7, '不定期':0.2};
 function prodLife(p) {
@@ -5496,7 +5556,7 @@ function weekReviewHtml() {
     <a class="link small" href="#/report">週のまとめを詳しく見る ›</a></div>`;
 }
 // ===== 朝・夜の「いつものケア」をワンタップで記録 =====
-// マイ化粧品で使うタイミングが「朝」「夜」「朝・夜」の使用中の化粧品を、まとめて「今日使った」にする
+// Myアイテムで使うタイミングが「朝」「夜」「朝・夜」の使用中の化粧品を、まとめて「今日使った」にする
 const careSet = k => state.myProducts.filter(p => p.status === '使用中' && (k === 'am' ? /朝/.test(p.timing) : /夜/.test(p.timing)));
 function careQuickHtml() {
   const am = careSet('am'), pm = careSet('pm'); if (!am.length && !pm.length) return '';
@@ -7817,7 +7877,7 @@ function viewSpending() {
     <button class="btn btn-ghost btn-sm" data-action="spend-prev">← 前月</button><strong>${fmtMonth(mk)}</strong>
     <button class="btn btn-ghost btn-sm" data-action="spend-next" ${mk >= cur ? 'disabled' : ''}>翌月 →</button></div>`;
   if (!allPurchases().length) {
-    return html + `<div class="card">${emptyBox('wallet', '購入記録がまだありません', 'マイ化粧品を登録するときに購入価格を入力するか、詳細画面の「購入記録」から追加すると、ここに集計されます。', '<button class="btn btn-primary btn-sm" data-action="new-my">化粧品を登録する</button>')}</div>`;
+    return html + `<div class="card">${emptyBox('wallet', '購入記録がまだありません', 'Myアイテムを登録するときに購入価格を入力するか、詳細画面の「購入記録」から追加すると、ここに集計されます。', '<button class="btn btn-primary btn-sm" data-action="new-my">化粧品を登録する</button>')}</div>`;
   }
   html += `<div class="grid g3">
     <div class="card"><div class="small muted">${fmtMonth(mk)}の支出</div><div class="big-stat" style="margin-top:4px">${yen(total)}</div><div class="small" style="margin-top:4px">${list.length}件の購入</div></div>
@@ -8514,7 +8574,7 @@ function moneyCardHtml() {
       <div class="mb-sub"><span class="mb-chip ${d > 0 ? 'bad' : d < 0 ? 'good' : ''}">先月比 ${signEn(d)}</span>${budgetLine}</div>${budgetForm}
       ${cats.length ? `<div class="mb-cats">${cats.map(([c, v]) => `<div class="mb-cat"><span>${esc(c)}</span><span class="mb-catbar"><i style="width:${(v / total * 100).toFixed(1)}%"></i></span><b>${en(v)}</b></div>`).join('')}</div>` : ''}
       ${items.length ? `<ul class="mb-list">${items.map(x => `<li><span><b>${esc(truncate(x.name, 30))}</b><small>${esc(fmtMD(x.date))}${x.brand ? '・' + esc(x.brand) : ''}</small></span><em>${en(x.price)}</em></li>`).join('')}</ul>`
-        : `<p class="small muted" style="margin:10px 0 0">この月の購入の記録はありません。マイ化粧品に購入価格を入れると、ここに表示されます。</p>`}
+        : `<p class="small muted" style="margin:10px 0 0">この月の購入の記録はありません。Myアイテムに購入価格を入れると、ここに表示されます。</p>`}
     </div>
     <a class="btn btn-soft btn-sm" style="margin-top:12px" href="#/spending">${icon('wallet')}支出をくわしく見る・購入を記録</a>`;
 }
@@ -8632,7 +8692,7 @@ async function researchWithdraw() {
 }
 function researchPreviewHtml() {
   const sm = researchSummary(), arrow = (v, good) => v == null ? '—' : `<span style="color:${(good === 'up' ? v > 0 : v < 0) ? 'var(--green-d)' : v === 0 ? 'var(--muted)' : '#C0503C'}">${v > 0 ? '+' : ''}${v.toFixed(2)}</span>`;
-  if (!sm.ings.length) return `<p class="small muted" style="margin:0">まだ成分ごとの比較ができる記録がありません。マイ化粧品に全成分を入れ、肌の記録で「今日使った化粧品」を選ぶと、ここに出ます（使った日・使わなかった日がそれぞれ3日以上必要です）。</p>`;
+  if (!sm.ings.length) return `<p class="small muted" style="margin:0">まだ成分ごとの比較ができる記録がありません。Myアイテムに全成分を入れ、肌の記録で「今日使った化粧品」を選ぶと、ここに出ます（使った日・使わなかった日がそれぞれ3日以上必要です）。</p>`;
   return `<p class="small muted" style="margin:0 0 6px">その成分を使った日と使わなかった日の差（あなたの記録）。肌の調子は＋が良い、ほかは−が良い変化です。</p>
     <div class="rs-list">${sm.ings.slice(0, 12).map(x => `<div class="rs-row"><b>${esc(truncate(x.name.replace(/（.*?）/g, ''), 16))}<small>使った日 ${x.du}日</small></b><span>調子 ${arrow(x.d.cond, 'up')}</span><span>ニキビ ${arrow(x.d.acne, 'down')}</span><span>赤み ${arrow(x.d.red, 'down')}</span><span>乾燥 ${arrow(x.d.dry, 'down')}</span></div>`).join('')}</div>`;
 }
@@ -8727,7 +8787,7 @@ function viewSettings() {
     <div class="card"><div class="card-h"><h2>データの保存状況</h2></div>
       <p class="small" style="margin:0">使用容量 約${kb}KB・肌の記録 ${state.skinLogs.length}件</p>
       <details class="fold" style="margin-top:10px"><summary>詳しく見る</summary>
-      <dl class="kv"><dt>使用容量（目安）</dt><dd>約${kb}KB（ブラウザの上限は一般的に5MB前後）</dd><dt>肌の記録</dt><dd>${state.skinLogs.length}件（写真付き ${photos}件）</dd><dt>食事・運動・睡眠</dt><dd>${state.lifeLogs.length}件（食事の写真 ${mealPh}枚・自分で登録した食品 ${state.customFoods.length}件）</dd><dt>マイ化粧品</dt><dd>${state.myProducts.length}件</dd><dt>商品データベース</dt><dd>${state.catalog.length}件</dd></dl></details>
+      <dl class="kv"><dt>使用容量（目安）</dt><dd>約${kb}KB（ブラウザの上限は一般的に5MB前後）</dd><dt>肌の記録</dt><dd>${state.skinLogs.length}件（写真付き ${photos}件）</dd><dt>食事・運動・睡眠</dt><dd>${state.lifeLogs.length}件（食事の写真 ${mealPh}枚・自分で登録した食品 ${state.customFoods.length}件）</dd><dt>Myアイテム</dt><dd>${state.myProducts.length}件</dd><dt>商品データベース</dt><dd>${state.catalog.length}件</dd></dl></details>
       ${storageOK ? '' : '<div class="notice warn" style="margin-top:12px">現在このブラウザでは保存ができない状態です。</div>'}</div>
     <div class="card"><div class="card-h"><h2>バックアップ</h2></div>
       <p class="small muted" style="margin-bottom:12px">ブラウザの履歴やWebサイトデータを削除すると、記録も消えます。定期的にバックアップファイルを保存しておくと安心です。</p>
@@ -8738,7 +8798,7 @@ function viewSettings() {
       <div class="page-actions">${hasDemo ? '<button class="btn btn-danger-ghost btn-sm" data-action="demo-remove">デモデータを削除</button>' : '<button class="btn btn-soft btn-sm" data-action="demo-add">デモデータを追加</button>'}
 </div></div>
     <div class="card"><div class="card-h"><h2>すべてのデータを削除</h2></div>
-      <p class="small muted" style="margin-bottom:12px">肌の記録・食事睡眠・マイ化粧品・支出・登録した商品をすべて削除します。削除した直後（数秒間）だけ「元に戻す」で取り消せます。心配な場合は、先にバックアップを書き出してください。</p>
+      <p class="small muted" style="margin-bottom:12px">肌の記録・食事睡眠・Myアイテム・支出・登録した商品をすべて削除します。削除した直後（数秒間）だけ「元に戻す」で取り消せます。心配な場合は、先にバックアップを書き出してください。</p>
       <button class="btn btn-danger btn-sm" data-action="delete-all">すべて削除する</button></div>
     <div class="card"><div class="card-h"><h2>ナカカラモについて</h2></div>
       <dl class="kv" style="margin-bottom:12px"><dt>サービス名</dt><dd>${esc(SERVICE)}</dd><dt>バージョン</dt><dd>第2版（試作）</dd><dt>お問い合わせ</dt><dd><a href="mailto:${esc(LEGAL.email)}">${esc(LEGAL.email)}</a></dd>
@@ -8774,7 +8834,7 @@ function addDemo() {
     mk('sample-4','【サンプル】セラミド バリアクリーム','クリーム',['保湿'],'夜','週4〜6回',55,'使用終了',21,[[55,2800]],'デモデータ：しっとりしていて冬向き'),
     mk('sample-6','【サンプル】ナイアシンアミド セラム','美容液・アンプル',['皮脂・毛穴ケア'],'朝','毎日',3,STOCK,null,[[3,2200]])
   ];
-  // 架空の商品はマイ化粧品に入れない（実際にある商品だけを扱うため）。デモは肌・食事・睡眠の記録だけ
+  // 架空の商品はMyアイテムに入れない（実際にある商品だけを扱うため）。デモは肌・食事・睡眠の記録だけ
   P.length = 0;
   const usedIds = [];
   const existing = new Set(state.skinLogs.map(l => l.date)), existingLife = new Set(state.lifeLogs.map(l => l.date));
@@ -8852,7 +8912,7 @@ const actions = {
   },
   'delete-my': async id => {
     const p = getMy(id); if (!p) return;
-    if (!await confirmDialog(`「${p.name}」をマイ化粧品から削除しますか？\nこの商品の購入記録（支出）も削除されます。削除した直後なら「元に戻す」で取り消せます。\n（使い終わった場合は「使用終了にする」で記録を残せます）`)) return;
+    if (!await confirmDialog(`「${p.name}」をMyアイテムから削除しますか？\nこの商品の購入記録（支出）も削除されます。削除した直後なら「元に戻す」で取り消せます。\n（使い終わった場合は「使用終了にする」で記録を残せます）`)) return;
     state.myProducts = state.myProducts.filter(x => x.id !== id);
     state.skinLogs.forEach(l => { l.usedProducts = l.usedProducts.filter(x => x !== id); });
     if (save()) { toast('削除しました'); location.hash = '#/my'; }
@@ -8871,7 +8931,7 @@ const actions = {
   'delete-cat': async id => {
     const p = getCat(id); if (!p) return;
     const linked = state.myProducts.filter(m => m.catalogId === id).length;
-    if (!await confirmDialog(`「${p.name}」を商品データベースから削除しますか？\n登録した価格・店舗の情報も削除されます。${linked ? `\nマイ化粧品（${linked}件）は残りますが、商品情報へのリンクは外れます。` : ''}`)) return;
+    if (!await confirmDialog(`「${p.name}」を商品データベースから削除しますか？\n登録した価格・店舗の情報も削除されます。${linked ? `\nMyアイテム（${linked}件）は残りますが、商品情報へのリンクは外れます。` : ''}`)) return;
     state.myProducts.forEach(m => { if (m.catalogId === id) { if (!m.ingredients) m.ingredients = p.ingredients; m.catalogId = ''; } });
     state.catalog = state.catalog.filter(x => x.id !== id);
     if (save()) { toast('商品を削除しました'); location.hash = '#/my'; }
@@ -8971,6 +9031,8 @@ const actions = {
     if (!isPremium()) { closeModal(); openPremiumSheet('化粧品のカメラ登録'); return; }
     closeModal(); setTimeout(() => openCamSheet(kind || 'my'), 200);
   },
+  'rx-sheet': () => { closeModal(); setTimeout(openRxSheet, 200); },
+  'rx-manual': () => { closeModal(); setTimeout(() => { openMyForm(); setTimeout(() => { const c = document.querySelector('#my-form [name=category]'); if (c) { c.value = '皮膚科の塗り薬'; c.dispatchEvent(new Event('change', {bubbles:true})); } const b = document.querySelector('#my-form [name=brand]'); if (b && !b.value) b.value = '処方薬'; }, 60); }, 200); },
   'add-manual': kind => { closeModal(); setTimeout(() => openFindSheet(kind || 'my'), 200); },
   'acc-toggle': (k, el) => {
     ui.accOpen = ui.accOpen || {}; ui.accOpen[k] = !ui.accOpen[k];
@@ -9101,7 +9163,7 @@ const actions = {
     const jan = janOf(ui.scan.jan);
     const addJan = !c.jan && isValidJan(jan) && !state.catalog.some(x => x.jan === jan);
     const addImg = !c.image && ui.scan.photo;
-    if ((addJan || addImg) && await confirmDialog(`この商品の情報に、次の内容を追加しますか？\n${addJan ? `・JANコード ${jan}\n` : ''}${addImg ? '・撮影した写真（商品画像として）\n' : ''}追加しなくても、マイ化粧品への登録はできます。`, {ok:'追加する', danger:false})) {
+    if ((addJan || addImg) && await confirmDialog(`この商品の情報に、次の内容を追加しますか？\n${addJan ? `・JANコード ${jan}\n` : ''}${addImg ? '・撮影した写真（商品画像として）\n' : ''}追加しなくても、Myアイテムへの登録はできます。`, {ok:'追加する', danger:false})) {
       if (addJan) c.jan = jan;
       if (addImg) c.image = ui.scan.photo;
       save();
@@ -9182,7 +9244,7 @@ const actions = {
     addDemo();
   },
   'demo-remove': async () => {
-    if (!await confirmDialog('デモデータ（「デモ」表示の記録・食事睡眠・マイ化粧品）を削除しますか？\nご自身で入力したデータは削除されません。')) return;
+    if (!await confirmDialog('デモデータ（「デモ」表示の記録・食事睡眠・Myアイテム）を削除しますか？\nご自身で入力したデータは削除されません。')) return;
     const demoIds = new Set(state.myProducts.filter(p => p.demo).map(p => p.id));
     state.skinLogs = state.skinLogs.filter(l => !l.demo);
     state.skinLogs.forEach(l => { l.usedProducts = l.usedProducts.filter(x => !demoIds.has(x)); });
@@ -9196,7 +9258,7 @@ const actions = {
     if (save()) { toast('サンプル商品を初期状態に戻しました'); render(); }
   },
   'delete-all': async () => {
-    if (!await confirmDialog('すべてのデータを削除しますか？\n肌の記録・写真・食事睡眠・マイ化粧品・支出・登録した商品が消えます。\n（削除した直後の数秒間だけ「元に戻す」で取り消せます）', {ok:'すべて削除する'})) return;
+    if (!await confirmDialog('すべてのデータを削除しますか？\n肌の記録・写真・食事睡眠・Myアイテム・支出・登録した商品が消えます。\n（削除した直後の数秒間だけ「元に戻す」で取り消せます）', {ok:'すべて削除する'})) return;
     state = freshState();
     if (save()) { toast('すべてのデータを削除しました'); location.hash = '#/home'; render(); }
   }
@@ -9535,7 +9597,7 @@ function slideHomePane() {
   p.addEventListener('animationend', () => p.classList.remove('hp-in'), {once:true});
 }
 window.addEventListener('resize', () => { if (document.querySelector('.home-tabs')) { const i = document.querySelector('.ht-ind'); if (i) i.style.transition = 'none'; placeHomeTabInd(); } });
-// 左上：ホームでは「ナカカラモ」、肌の記録・マイ化粧品・商品検索・アカウントでは、その画面の名前を出す
+// 左上：ホームでは「ナカカラモ」、肌の記録・Myアイテム・商品検索・アカウントでは、その画面の名前を出す
 // 上の帯の高さを測って、タブのバーをそのすぐ下にくっつける
 function setTbh() { const tb = document.querySelector('.topbar'); if (tb) document.documentElement.style.setProperty('--tbh', tb.offsetHeight + 'px'); }
 window.addEventListener('resize', setTbh); window.addEventListener('orientationchange', () => setTimeout(setTbh, 300));
@@ -9585,7 +9647,7 @@ function render() {
   html = html.replace(/<a class="back" href="([^"]*)">([^<]*)<\/a>/g, (m, href, label) => `<a class="back" href="${href}" data-back="1">${prevNav && prevNav !== href ? '← 戻る' : label}</a>`);
   renderingNow = true; try { $('#main').innerHTML = html; } finally { renderingNow = false; } // 作り直しの最中に古い入力欄から来る変更は無視する
   renderNav(navName, ({product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'})[r.name] || r.name);
-  setTopTitle(r.id ? '' : ({log:'肌の記録', my:'マイ化粧品', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント'})[r.name] || '');
+  setTopTitle(r.id ? '' : ({log:'肌の記録', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント'})[r.name] || '');
   const key = r.name + '/' + r.id;
   const routeChanged = key !== lastRoute;
   if (key !== lastRoute) {
