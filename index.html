@@ -3177,7 +3177,7 @@ function rxPick(name) {
 let POPULAR = null, popN = 20;
 async function popularLoad() {
   if (POPULAR) return POPULAR;
-  try { const r = await fetch('popular.json?d=' + todayStr(), {cache:'no-cache'}); if (!r.ok) throw new Error('x'); const j = await r.json(); POPULAR = {updatedAt:j.updatedAt || '', items:(j.items || []).filter(x => x && x.name && x.url)}; }
+  try { const r = await fetch('popular.json?d=' + todayStr(), {cache:'no-cache'}); if (!r.ok) throw new Error('x'); const j = await r.json(); POPULAR = {updatedAt:j.updatedAt || '', items:j.genre === '216131' ? [] : (j.items || []).filter(x => x && x.name && x.url).sort((a, b) => (a.rank || 9999) - (b.rank || 9999))}; } // 216131 は化粧品ではないジャンル（最初の版のまちがい）なので使わない
   catch (e) { POPULAR = {updatedAt:'', items:[]}; }
   return POPULAR;
 }
