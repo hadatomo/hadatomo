@@ -991,6 +991,9 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .period-btn span{flex:1;display:flex;align-items:center;justify-content:center;min-height:48px;border-radius:14px;border:1.5px solid var(--line);background:var(--surface);font-weight:700;font-size:15px;color:var(--ink2);transition:background .15s,border-color .15s}
 .period-btn input:checked+span{background:#FCE4EC;border-color:#E86A92;color:#B0275A}
 .period-btn input:focus-visible+span{outline:2px solid var(--green-d);outline-offset:2px}
+.agree-line{display:flex!important;align-items:flex-start;gap:10px}.agree-line>span{flex:1;min-width:0;line-height:1.6}
+/* iPhoneの上（時計・電池の場所）に、スクロールした中身が重ならないように、背景色で隠す */
+body::before{content:'';position:fixed;left:0;right:0;top:0;height:env(safe-area-inset-top);background:var(--bg);z-index:3000;pointer-events:none}
 .wx-box{display:flex;flex-direction:column;gap:6px;margin:12px 0;padding:12px 14px;border-radius:16px;background:var(--surface);border:1px solid var(--line);position:relative}
 .wx-box.wx-setup{flex-direction:row;flex-wrap:wrap;align-items:center;gap:8px;font-size:12.5px;color:var(--ink2)}
 .wx-box.wx-setup svg{width:16px;height:16px;color:var(--green-d)}
@@ -8206,10 +8209,10 @@ function viewPlan(query) {
         ${field('メールアドレス', '<input type="email" class="input" id="f_email" name="email" autocomplete="email" inputmode="email" maxlength="254">', {name:'email', required:true})}
         ${field('パスワード', `<input type="password" class="input" id="f_password" name="password" autocomplete="${signup ? 'new-password' : 'current-password'}">`, {name:'password', required:true, hint:signup ? '8文字以上で、英字と数字を組み合わせてください' : ''})}
         ${signup ? `${field('パスワード（確認）', '<input type="password" class="input" id="f_password2" name="password2" autocomplete="new-password">', {name:'password2', required:true})}
-          <div class="field" data-field="agree"><label class="check"><input type="checkbox" name="agree"> <a href="#/terms" target="_blank" rel="noopener">利用規約</a>・<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意します</label><div class="field-error" data-err="agree"></div></div>` : ''}
+          <div class="field" data-field="agree"><label class="check agree-line"><input type="checkbox" name="agree"><span><a href="#/terms" target="_blank" rel="noopener">利用規約</a>・<a href="#/privacy" target="_blank" rel="noopener">プライバシーポリシー</a>に同意します</span></label><div class="field-error" data-err="agree"></div></div>` : ''}
       </div>
-      <button type="submit" class="btn btn-primary" style="margin-top:14px" ${acct.busy ? 'disabled' : ''}>${signup ? 'アカウントを作る' : 'ログイン'}</button>
-      ${signup ? '<p class="hint">登録すると、確認のメールが届きます。メール内のリンクを押すと登録が完了します。</p>' : '<p style="margin-top:12px"><a href="#" class="small" data-action="acct-forgot">パスワードを忘れた場合</a></p>'}
+      <button type="submit" class="btn btn-primary" style="margin-top:14px;width:100%;justify-content:center" ${acct.busy ? 'disabled' : ''}>${acct.busy ? (signup ? 'アカウントを作っています…' : 'ログインしています…') : signup ? 'アカウントを作る' : 'ログイン'}</button>
+      ${signup ? '<p class="hint">登録すると、すぐにログインした状態になります。</p>' : '<p style="margin-top:12px"><a href="#" class="small" data-action="acct-forgot">パスワードを忘れた場合</a></p>'}
       </form></div>` + (EMBED ? notes + cmpFold : '');
   }
   // ログイン中
@@ -8278,14 +8281,16 @@ async function handleAuthSubmit(form) {
   if (signup && !form.elements.agree.checked) errors.agree = '同意のチェックを入れてください。';
   if (!showErrors(form, errors)) return;
   acct.busy = true; acct.msg = ''; render();
+  const lim = (pr) => Promise.race([pr, new Promise((_, rej) => setTimeout(() => rej(new Error('fetch timeout')), 20000))]); // 20秒たっても返事がなければ、ボタンを押せる状態に戻す
   try {
+    if (!acct.client) { await initCloud(); if (!acct.client) throw new Error('fetch failed'); }
     if (signup) {
-      const {data, error} = await acct.client.auth.signUp({email, password, options:{emailRedirectTo:appUrl()}});
+      const {data, error} = await lim(acct.client.auth.signUp({email, password, options:{emailRedirectTo:appUrl()}}));
       if (error) throw error;
       if (data && data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) throw new Error('already registered');
       if (!data.session) { acct.mode = 'login'; acct.msg = `${email} に確認のメールを送りました。メール内のリンクを押して登録を完了してから、ログインしてください。メールが届かない場合は、迷惑メールのフォルダも確認してください。`; }
     } else {
-      const {error} = await acct.client.auth.signInWithPassword({email, password});
+      const {error} = await lim(acct.client.auth.signInWithPassword({email, password}));
       if (error) throw error;
       toast('ログインしました');
     }
