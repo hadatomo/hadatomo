@@ -775,18 +775,24 @@ details.acc-cmp{margin-top:14px}
 .m-del{position:absolute;right:0;top:0;bottom:0;width:88px;border:0;background:#D64545;color:#fff;font:inherit;font-size:12px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;visibility:hidden}
 .mrow-w.sw-open .m-del{visibility:visible}.m-del svg{width:20px;height:20px}
 .mrows{overflow:hidden}.mrows:has(.lift){overflow:visible}
+.mrows>.mrow-w:first-child,.mrows>.mrow-w:first-child .mrow-in{border-top-left-radius:calc(var(--radius) - 1px);border-top-right-radius:calc(var(--radius) - 1px)}
+.mrows>.mrow-w:last-child,.mrows>.mrow-w:last-child .mrow-in{border-bottom-left-radius:calc(var(--radius) - 1px);border-bottom-right-radius:calc(var(--radius) - 1px)}
+.mrows>.mrow-w.lift,.mrows>.mrow-w.lift .mrow-in{border-radius:14px!important}
 .mrow-w{display:flex;align-items:center;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;position:relative;transition:box-shadow .15s,transform .05s}.mrow-w+.mrow-w{border-top:1px solid var(--line)}
 .mrow-w .mrow{flex:1;min-width:0;grid-template-columns:44px 1fr;gap:10px;padding:9px 4px 9px 14px;-webkit-touch-callout:none}
 .mrow-w .mrow .thumb{width:44px;height:44px;border-radius:10px}
 .mrow-w .mrow-b{font-size:11px}.mrow-w .mrow-t b{font-size:14px;line-height:1.35;-webkit-line-clamp:2;word-break:normal;overflow-wrap:anywhere;line-break:strict}
 .mrow-w .mrow-t small{font-size:11.5px;margin-top:1px}
 .mrow-w{will-change:transform}
-.mrow-w.lift{z-index:20;background:var(--surface);box-shadow:0 14px 34px rgba(0,0,0,.20),0 2px 6px rgba(0,0,0,.08);border-radius:14px}
+.mrow-w.lift{overflow:hidden;z-index:20;background:var(--surface);box-shadow:0 14px 34px rgba(0,0,0,.20),0 2px 6px rgba(0,0,0,.08);border-radius:14px}
 .mrow-w.lift.drop{box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.mrow-w.lift .mrow-in{border-radius:14px}.mrow-w.lift .mrow,.mrow-w.lift .mrow:active{background:transparent}
+.mrows>.mk-x{display:none}
 body.m-dragging .mrow-w:not(.lift){pointer-events:none}
 body.m-dragging{touch-action:none}
 .m-sw-in{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
-.mrow-w.off .mrow{opacity:.55}
+.mrow-w .mrow-t,.mrow-w .mrow .thumb{transition:opacity .2s ease}
+.mrow-w.off .mrow-t,.mrow-w.off .mrow .thumb{opacity:.5}
 .m-sw{flex:none;align-self:stretch;justify-content:center;margin-right:8px;min-width:54px;position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:6px 4px;font:inherit;cursor:pointer;color:var(--muted)}
 .m-sw i{position:relative;width:42px;height:25px;border-radius:999px;background:#D9D4CC;transition:background .2s}
 .m-sw i::after{content:'';position:absolute;top:2.5px;left:2.5px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
@@ -3229,7 +3235,7 @@ function openRxSheet() {
     if (!hit.length) return `<p class="small muted" style="margin:12px 0">見つかりませんでした。ジェネリック（後発品）などで一覧にないときは、下の「一覧にない薬を入力」から登録できます。</p>`;
     return groups.map(g => { const ds = hit.filter(d => d[0] === g); return ds.length ? `<h3 class="rx-g">${esc(g)}</h3>${ds.map(d => `<button type="button" class="rx-item" data-rx="${esc(d[1])}">${rxSvg(d[1])}<span><b>${esc(d[1])}</b><small>${esc(d[2])}</small></span><i>${icon('plus')}</i></button>`).join('')}` : ''; }).join('');
   };
-  openModal({title:'皮膚科の塗り薬を追加', dismissable:true, body:`<input type="search" class="input" id="rx-q" placeholder="薬の名前・成分で探す（例：ディフェリン、ヒルドイド）" aria-label="薬の名前で探す" autocomplete="off">
+  openModal({title:'皮膚科の塗り薬を追加', dismissable:true, body:`<input type="search" class="input" id="rx-q" placeholder="薬の名前・成分で探す" aria-label="薬の名前で探す" autocomplete="off">
     <p class="small muted" style="margin:8px 0 4px">皮膚科で処方される主な塗り薬が、最初から入っています（全${RX_DRUGS.length}種類）。</p>
     <div id="rx-list">${list('')}</div>
     <button type="button" class="btn btn-ghost btn-sm" data-action="rx-manual" style="margin-top:12px;width:100%;justify-content:center">一覧にない薬を入力</button>
