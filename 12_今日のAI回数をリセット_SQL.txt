@@ -1,0 +1,4 @@
+-- ナカカラモ：今日のAIの使用回数を0に戻す（テストで使い切ったとき用）
+-- Supabase の「SQL Editor」に貼り付けて「Run」を押してください。
+-- 消えるのは「今日、何回使ったか」の数だけです。記録や写真は消えません。
+delete from public.vision_usage where day = (now() at time zone 'Asia/Tokyo')::date;

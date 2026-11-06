@@ -6998,11 +6998,13 @@ function menuHtml() {
   return head + body + cvNote + `<div class="adv-foot"><span class="small muted">${eaten ? `今日食べたもの（${esc(Object.keys(d.eatenToday).join('・'))}）と肌の状態から作りました。` : '今日の食事の記録がまだないので、肌の状態から作りました。'}カロリーなどの数字は出しません。</span></div>`;
 }
 // 記録が変わったとき・食事の時間帯が変わったときだけ、自動で作り直す（同じなら前の献立を使う）
+const AI_AUTO_GAP = 6 * 3600 * 1000;
 async function runMenu(force) {
   if (menuBusy || !isPremium()) return;
   const d = menuInput(), sig = adviceSig(d), c = menuCache();
   if (c && c.res && (!(c.res.meals || []).every(m => Array.isArray(m.plans)) || !('storeNote' in c.res))) force = true; // 前の形（コンビニなし）の結果は作り直す
   if (!force && c && (c.sig === sig || (c.failSig === sig && Date.now() - (c.failAt || 0) < 10 * 60 * 1000))) return;
+  if (!force && c && c.at && Date.now() - c.at < AI_AUTO_GAP) return; // 自動の作り直しは6時間に1回まで（AIの1日の回数を、写真の読み取りに残すため）
   menuBusy = true; menuErr = '';
   const box = () => { const b = document.getElementById('menu-box'); if (b) b.innerHTML = menuHtml(); };
   box();
@@ -7048,6 +7050,7 @@ async function runAdvice(force) {
   if (adviceBusy || !isPremium()) return;
   const d = adviceInput(), sig = adviceSig(d), c = adviceCache();
   if (!force && c && (c.sig === sig || (c.failSig === sig && Date.now() - (c.failAt || 0) < 10 * 60 * 1000))) return; // 失敗したときは10分たったら自動でもう一度
+  if (!force && c && c.at && Date.now() - c.at < AI_AUTO_GAP) return; // 自動の分析は6時間に1回まで（記録を何度も直しても、AIの回数を使いすぎない）
   if (!d.skin.days && !d.sleep.days && !d.meal.days && !d.exercise.recordedDays) return;
   adviceBusy = true; adviceErr = '';
   const box = () => { const b = document.getElementById('advice-box'); if (b) b.innerHTML = adviceHtml(); };
@@ -7804,7 +7807,7 @@ async function callVision(mode, image, payload) {
       if (j && (j.error || j.message || j.msg)) msg = String(j.error || j.message || j.msg);
       if (/JWT/i.test(msg)) msg = 'サーバーの設定で、ログインの確認方法が合っていません（Verify JWT）。' + (st ? `［${st}］` : '');
     } catch (e) { /* 何もしない */ }
-    if (mode !== 'diag') msg += '（うまくいかないときは「プラン・アカウント」の画面の「診断する」で原因を調べられます）';
+    if (mode !== 'diag') msg += '（うまくいかないときは「アカウント」→「アカウント」タブの「診断する」で原因を調べられます）';
     throw new Error(msg);
   }
   if (data && data.error) throw new Error(data.error);
