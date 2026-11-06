@@ -144,14 +144,14 @@ button{font-family:inherit}
 @media (prefers-reduced-motion:reduce){.tt-in{animation:none}}
 .topbar .wm-home{position:absolute;left:50%;top:calc(50% + env(safe-area-inset-top) / 2);transform:translate(-50%,-50%);font-family:var(--serif);font-weight:500;font-size:18px;letter-spacing:.06em;color:var(--ink);white-space:nowrap} /* ホームの「ナカカラモ」：丸みのある文字で、まん中に */
 .topbar .wm-home.tt-in{animation:none}
-.topbar .wm-wx{font-family:var(--font);letter-spacing:0;max-width:calc(100% - 24px)}
-.twx{display:flex;align-items:center;gap:12px;background:none;border:0;padding:6px 4px;font:inherit;color:var(--ink);cursor:pointer;white-space:nowrap}
-.twx svg{vertical-align:-1px;margin-right:3px;color:var(--green-d)}
-.twx-pl{font-size:13px;font-weight:700;max-width:80px;overflow:hidden;text-overflow:ellipsis}
-.twx-n{font-size:15px;font-weight:700;display:flex;align-items:baseline;gap:3px}.twx-n small{font-size:10px;font-weight:500;color:var(--muted)}.twx-n.warn{color:var(--warn)}
+.topbar .wm-wx{font-family:var(--font);letter-spacing:0;max-width:calc(100% - 24px);display:flex;justify-content:center}
+.twx{display:flex;align-items:center;justify-content:space-between;gap:.8em;background:none;border:0;padding:6px 0;font:inherit;font-size:15px;color:var(--ink);cursor:pointer;white-space:nowrap}
+.twx svg{vertical-align:-.08em;margin-right:.2em;color:var(--green-d);width:.85em;height:.85em}
+.twx-pl{font-size:.87em;font-weight:700;max-width:6.5em;overflow:hidden;text-overflow:ellipsis}
+.twx-n{font-size:1em;font-weight:700;display:flex;align-items:baseline;gap:.2em}.twx-n small{font-size:.67em;font-weight:500;color:var(--muted)}.twx-n.warn{color:var(--warn)}
 .twx-load{font-size:13px;color:var(--muted);font-weight:500}
 .twx-set{font-size:13px;font-weight:600;color:var(--green-d);padding:6px 12px;border-radius:999px;background:var(--green-l,#E5F2EA)}
-@media(max-width:360px){.twx{gap:8px}.twx-n{font-size:13.5px}.twx-pl{max-width:56px}}
+
 .topbar>#top-menu,.topbar>.hap-keep{margin-left:auto}
 /* メニュー（三本線）はなくした。中の画面は、ホームの「ショートカット」からすべて開ける */
 .topbar #top-menu,.topbar .hap-keep:has(#top-menu){display:none!important}
@@ -800,7 +800,7 @@ body.m-dragging .mrow-w:not(.lift) .mrow-in{background:transparent}
 body.m-dragging .mrow-w:not(.lift){pointer-events:none}
 body.m-dragging{touch-action:none}
 .m-sw-in{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
-.mrow-w .mrow-t,.mrow-w .mrow .thumb{transition:opacity .2s ease}
+.mrow-w .mrow-t,.mrow-w .mrow .thumb{transition:opacity .2s ease;will-change:opacity;transform:translateZ(0);backface-visibility:hidden}
 .mrow-w.off .mrow-t,.mrow-w.off .mrow .thumb{opacity:.5}
 .m-sw{flex:none;align-self:stretch;justify-content:center;margin-right:8px;min-width:54px;position:relative;display:flex;flex-direction:column;align-items:center;gap:4px;background:none;border:0;padding:6px 4px;font:inherit;cursor:pointer;color:var(--muted)}
 .m-sw i{position:relative;width:42px;height:25px;border-radius:999px;background:#D9D4CC;transition:background .2s}
@@ -1211,6 +1211,10 @@ a.used-tile{color:inherit;text-decoration:none}
 /* ===== 動き（モーション） ===== */
 @keyframes pgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 #main.pg-in{animation:pgIn .38s cubic-bezier(.2,.8,.2,1) both}
+@keyframes pgPush{from{opacity:.4;transform:translateX(42%)}to{opacity:1;transform:none}}
+@keyframes pgPop{from{opacity:.4;transform:translateX(-30%)}to{opacity:1;transform:none}}
+#main.pg-push{animation:pgPush .34s cubic-bezier(.2,.8,.2,1) both!important}#main.pg-pop{animation:pgPop .34s cubic-bezier(.2,.8,.2,1) both!important}
+.my-del-btn{width:100%;justify-content:center;gap:6px;margin-top:10px}.my-del-btn svg{width:16px;height:16px}
 .fade-once{animation:fadeOnce .7s ease both}
 @keyframes fadeOnce{from{opacity:0}to{opacity:1}}
 .kt{display:inline-block;opacity:0;transform:translateY(.55em) scale(.96);filter:blur(3px);animation:ktIn .55s cubic-bezier(.2,.9,.25,1.15) forwards;animation-delay:calc(var(--k) * 28ms + 60ms)}
@@ -3224,7 +3228,7 @@ function rxSvg(name) {
   return `<svg class="rx-svg" viewBox="0 0 100 100" role="img" aria-label="${esc(n)}"><rect width="100" height="100" fill="${c}" opacity=".08"/>${body}<text x="50" y="${ty}" text-anchor="middle" font-size="${short.length > 5 ? 7.2 : short.length > 4 ? 8.5 : 10}" font-weight="700" fill="#fff" font-family="sans-serif"${short.length > 5 ? ' textLength="40" lengthAdjust="spacingAndGlyphs"' : ''}>${short}</text>${kind ? `<text x="50" y="${ty + 8}" text-anchor="middle" font-size="6" fill="#fff" opacity=".9" font-family="sans-serif">${kind}</text>` : ''}</svg>`;
 }
 // 薬の使用目的（添付文書の「効能・効果」をもとに、種類ごとにわかりやすく書いたもの）
-const RX_USE = {'ニキビ':'ニキビ（尋常性ざ瘡）','ステロイド（最も強い）':'湿疹・皮膚炎などの炎症やかゆみ','ステロイド（とても強い）':'湿疹・皮膚炎などの炎症やかゆみ','ステロイド（強い）':'湿疹・皮膚炎などの炎症やかゆみ','ステロイド（ふつう）':'湿疹・皮膚炎などの炎症やかゆみ','ステロイド（弱い）':'湿疹・皮膚炎などの炎症やかゆみ','アトピー・湿疹（ステロイド以外）':'アトピー性皮膚炎','保湿・乾燥':'皮膚の乾燥（乾皮症など）','化膿・とびひ（抗菌）':'細菌による皮膚の感染（とびひ・化膿など）','水虫・カビ（抗真菌）':'水虫・カンジダなど、カビによる皮膚の感染','乾癬':'乾癬','かゆみ':'皮膚のかゆみ','酒さ（赤ら顔）':'酒さ（赤ら顔）','汗（多汗症）':'多汗症（汗が多い）','ヘルペス':'ヘルペス（疱疹）','傷・やけど':'やけど・傷の感染を防ぐ'};
+const RX_USE = {'ニキビ':'ニキビ','ステロイド（最も強い）':'湿疹・皮膚炎などの炎症やかゆみ','ステロイド（とても強い）':'湿疹・皮膚炎などの炎症やかゆみ','ステロイド（強い）':'湿疹・皮膚炎などの炎症やかゆみ','ステロイド（ふつう）':'湿疹・皮膚炎などの炎症やかゆみ','ステロイド（弱い）':'湿疹・皮膚炎などの炎症やかゆみ','アトピー・湿疹（ステロイド以外）':'アトピー性皮膚炎','保湿・乾燥':'皮膚の乾燥（乾皮症など）','化膿・とびひ（抗菌）':'細菌による皮膚の感染（とびひ・化膿など）','水虫・カビ（抗真菌）':'水虫・カンジダなど、カビによる皮膚の感染','乾癬':'乾癬','かゆみ':'皮膚のかゆみ','酒さ（赤ら顔）':'酒さ（赤ら顔）','汗（多汗症）':'多汗症（汗が多い）','ヘルペス':'ヘルペス（疱疹）','傷・やけど':'やけど・傷の感染を防ぐ'};
 const rxUseOf = name => { const d = RX_DRUGS.find(x => x[1] === name); return d ? (RX_USE[d[0]] || d[0]) : ''; };
 const rxInfoUrl = name => 'https://www.google.com/search?q=' + encodeURIComponent(name + ' 添付文書');
 // 薬の種類から、使用目的を自動で決める
@@ -5309,7 +5313,6 @@ function viewMyDetail(id) {
           ${use ? `<dt>使用目的</dt><dd>${esc(use)}</dd>` : ''}
           <dt>使用タイミング</dt><dd>${esc(p.timing === '必要なときだけ' ? '必要な時だけ' : p.timing)}（${esc(p.frequency)}）</dd>
           <dt>使用開始日</dt><dd>${fmtDate(p.startDate)}</dd>
-          <dt>使用日数</dt><dd>${days}日${p.status === '使用終了' ? '' : '（今日まで）'}</dd>
           <dt>成分</dt><dd>${ing ? esc(ing) : '未登録'}${known.length ? `<div class="ing-list" style="margin-top:6px">${known.map(k => `<a href="#/ingredients/${k.entry.key}">${esc(k.entry.name)}</a>`).join('')}</div>` : ''}</dd>
         </dl>
         <p class="hint" style="margin-top:12px">使う量・回数・期間は、医師・薬剤師の指示に従ってください。</p>
@@ -5317,6 +5320,7 @@ function viewMyDetail(id) {
           <button class="btn btn-primary btn-sm" data-action="edit-my" data-id="${esc(p.id)}">編集</button>
           <button class="btn btn-ghost btn-sm" data-action="compare-with" data-id="${esc(p.id)}">ほかと比較</button>
         </div>
+        <button type="button" class="btn btn-danger-ghost btn-sm my-del-btn" data-action="delete-my" data-id="${esc(p.id)}">${icon('trash')}削除する</button>
       </div>
     </div>
     <div class="mt"><div class="card"><div class="card-h"><h2>肌記録との比較（参考）</h2></div>${compareHtml}</div></div>
@@ -5738,7 +5742,18 @@ function wxTopInner() {
   return `<button type="button" class="twx" data-action="wx-setup" aria-label="${esc(pl)}の天気。押すと地域を変えられます"><span class="twx-pl">${pin}${esc(pl)}</span>
     <span class="twx-n ${w.hum < 50 ? 'warn' : ''}"><small>湿度</small>${Math.round(w.hum)}%</span><span class="twx-n"><small>気温</small>${Math.round(w.tmin)}〜${Math.round(w.tmax)}℃</span><span class="twx-n ${w.uv >= 6 ? 'warn' : ''}"><small>UV</small>${w.uv == null ? '－' : Math.round(w.uv)}</span></button>`;
 }
-function wxTopRefresh() { const b = document.getElementById('top-wx'); if (b) b.innerHTML = wxTopInner(); }
+function wxTopRefresh() { const b = document.getElementById('top-wx'); if (b) b.innerHTML = wxTopInner(); wxFit(); }
+// 上の湿度・気温の文字を、下の「今日の肌を記録」の枠と同じ横幅になる大きさにそろえる
+function wxFit() {
+  const b = document.querySelector('#top-wx .twx'); if (!b || b.classList.contains('twx-set') || b.querySelector('.twx-load')) { if (b) { b.style.fontSize = ''; b.style.width = ''; } return; }
+  const c = document.querySelector('#main .card'), T = Math.round(c ? c.getBoundingClientRect().width : Math.min(window.innerWidth - 32, 640));
+  if (!T) return;
+  b.style.width = 'auto'; b.style.fontSize = '15px';
+  const w0 = b.scrollWidth; if (!w0) return;
+  const f = Math.max(12, Math.min(22, 15 * T / w0));
+  b.style.fontSize = f.toFixed(2) + 'px'; b.style.width = T + 'px';
+}
+window.addEventListener('resize', () => { clearTimeout(wxFit.t); wxFit.t = setTimeout(wxFit, 120); });
 function wxTodayHtml() {
   const pin = `<svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-5.6-6-11a6 6 0 0 1 12 0c0 5.4-6 11-6 11z"/><circle cx="12" cy="10" r="2.2"/></svg>`;
   if (!state.settings.wxPref || (state.settings.wxPref === '現在地' && !state.settings.wxLoc && !state.weather[todayStr()]))
@@ -9226,7 +9241,7 @@ const actions = {
   },
   'delete-my': async id => {
     const p = getMy(id); if (!p) return;
-    if (!await confirmDialog(`「${p.name}」をMyアイテムから削除しますか？\nこの商品の購入記録（支出）も削除されます。削除した直後なら「元に戻す」で取り消せます。\n（使い終わった場合は「使用終了にする」で記録を残せます）`)) return;
+    if (!await confirmDialog(`「${p.name}」をMyアイテムから削除しますか？`, {ok:'削除する'})) return;
     state.myProducts = state.myProducts.filter(x => x.id !== id);
     state.skinLogs.forEach(l => { l.usedProducts = l.usedProducts.filter(x => x !== id); });
     if (save()) { toast('削除しました'); location.hash = '#/my'; }
@@ -9498,7 +9513,6 @@ const actions = {
   },
   'swipe-del': async id => {
     const p = getMy(id); if (!p) return;
-    if (!await confirmDialog(`「${p.name}」を削除しますか？`, {ok:'削除する'})) { swipeClose(); return; }
     state.myProducts = state.myProducts.filter(x => x.id !== id);
     state.skinLogs.forEach(l => { l.usedProducts = (l.usedProducts || []).filter(x => x !== id); });
     save(); hapticSaved();
@@ -9947,7 +9961,7 @@ function setTopTitle(t) {
   const html = t ? `<h1 class="wordmark top-title" data-t="${esc(t)}">${esc(t)}</h1>` : `<div class="wordmark wm-home wm-wx" data-t="ナカカラモ" id="top-wx">${wxTopInner()}</div>`;
   if (cur && cur.classList.contains('wordmark')) cur.outerHTML = html; else tb.insertAdjacentHTML('afterbegin', html);
   const el = tb.firstElementChild; if (cur) { el.classList.add('tt-in'); }
-  setTbh();
+  setTbh(); requestAnimationFrame(wxFit);
 }
 document.addEventListener('click', e => {
   const a = e.target.closest && e.target.closest('a[href="#/plan"], [data-premium], .mpt-locked[data-mcam], [data-psheet]');
@@ -9988,7 +10002,7 @@ function render() {
   renderNav(navName, ({product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'})[r.name] || r.name);
   setTopTitle(r.id ? '' : ({log:'肌の記録', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント'})[r.name] || '');
   const key = r.name + '/' + r.id;
-  const routeChanged = key !== lastRoute;
+  const routeChanged = key !== lastRoute, prevRoute = lastRoute;
   if (key !== lastRoute) {
     lastRoute = key;
     if (navRestoreY != null) { const y = navRestoreY; window.scrollTo(0, y); requestAnimationFrame(() => { window.scrollTo(0, y); setTimeout(() => { if (Math.abs(window.scrollY - y) > 2) window.scrollTo(0, y); }, 120); }); }
@@ -10002,6 +10016,11 @@ function render() {
   hapticizeTargets();
   drawCharts();
   if (routeChanged) motionIn(r.name + (r.id ? '/' + r.id : '')); // 画面を移ったときだけ、動きのある表示にする
+  // Myアイテムの一覧 ⇄ 詳しい画面：iPhoneのように横にすべって切り替わる
+  if (routeChanged && r.name === 'my' && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+    const m = document.getElementById('main'), dir = r.id && prevRoute === 'my/' ? 'pg-push' : !r.id && prevRoute.startsWith('my/') && prevRoute !== 'my/' ? 'pg-pop' : '';
+    if (m && dir) { m.classList.remove('pg-push', 'pg-pop'); void m.offsetWidth; m.classList.add(dir); setTimeout(() => m.classList.remove(dir), 400); }
+  }
   fillAds();
   if (r.name === 'charts') drawFace3d();
   else if (r.name === 'log' && document.getElementById('face3d-log')) { const list = logDayList(), d = logFaceData(list[logDayIdx(list)]); bindLogDaySwipe(); drawFace3d({canvas:'face3d-log', load:'ld-load', tip:'', camZ:55, yawOnly:true, noZoom:true, grid:true, gridLines:false, ready:st => { st.canvasId = 'face3d-log'; face3dShowLog(st, d); if (logDayIdx(list) < list.length - 1) { st.auto = false; st.yaw = 0; st.pitch = 0.05; st.dirty = true; } }}); }
