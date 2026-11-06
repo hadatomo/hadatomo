@@ -7680,6 +7680,7 @@ function authErrMsg(e) {
   if (/Invalid login credentials/i.test(m)) return 'メールアドレスまたはパスワードが違います。';
   if (/Email not confirmed/i.test(m)) return 'メールアドレスの確認が済んでいません。届いたメールのリンクを押してから、ログインしてください。';
   if (/already (been )?registered/i.test(m)) return 'このメールアドレスは登録済みです。「ログイン」からお入りください。';
+  if (/not authorized|error sending|sending (confirmation|recovery)/i.test(m)) return '確認メールを送れませんでした。準備中のため、しばらくしてからもう一度お試しください（登録せずに「スキップ」で使うこともできます）。';
   if (/rate limit|too many|security purposes/i.test(m)) return '短い時間に操作が集中しました。しばらく待ってから、もう一度お試しください。';
   if (/password/i.test(m) && /(at least|short|weak|characters)/i.test(m)) return 'パスワードが短いか、簡単すぎます。8文字以上で、英字と数字を組み合わせてください。';
   if (/fetch|network/i.test(m)) return 'サーバーに接続できませんでした。インターネットの接続を確認してください。';
