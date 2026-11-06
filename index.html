@@ -359,6 +359,7 @@ label.btn{position:relative}
 .detail-top{display:grid;gap:20px}
 @media(min-width:720px){.detail-top{grid-template-columns:260px 1fr}}
 .detail-top .thumb{border-radius:var(--radius-s)}
+@media(max-width:719px){.detail-top>.thumb{width:60%;margin:0 auto}}
 .detail-title{font-size:22px;line-height:1.45;margin:6px 0 12px}
 .ing-list{display:flex;flex-wrap:wrap;gap:6px}
 .ing-list span,.ing-list a{font-size:12.5px;padding:3px 10px;border-radius:8px;background:var(--surface2);border:1px solid var(--line);color:var(--ink2);text-decoration:none}
@@ -772,7 +773,7 @@ details.acc-cmp{margin-top:14px}
 .my-kind span{font-size:12px;font-weight:600;background:var(--surface2,#F4F1EC);border-radius:999px;padding:1px 8px}
 .my-kind.on{color:var(--ink)}.my-kind.on span{background:var(--green-l,#E5F2EA);color:var(--green-d)}.my-adds .btn{justify-content:center;gap:4px}.my-adds svg{width:16px;height:16px}
 .mrow-in{display:flex;align-items:center;flex:1;min-width:0;background:var(--surface);position:relative;z-index:1;will-change:transform}
-.m-del{position:absolute;right:0;top:0;bottom:0;width:88px;border:0;background:#D64545;color:#fff;font:inherit;font-size:12px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;visibility:hidden}
+.m-del{position:absolute;right:6px;top:6px;bottom:6px;width:76px;border-radius:12px;border:0;background:#D64545;color:#fff;font:inherit;font-size:12px;font-weight:700;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;visibility:hidden}
 .mrow-w.sw-open .m-del{visibility:visible}.m-del svg{width:20px;height:20px}
 .mrows{overflow:hidden}.mrows:has(.lift){overflow:visible}
 .mrows>.mrow-w:first-child,.mrows>.mrow-w:first-child .mrow-in{border-top-left-radius:calc(var(--radius) - 1px);border-top-right-radius:calc(var(--radius) - 1px)}
@@ -805,7 +806,7 @@ body.m-dragging{touch-action:none}
 .m-sw i{position:relative;width:42px;height:25px;border-radius:999px;background:#D9D4CC;transition:background .2s}
 .m-sw i::after{content:'';position:absolute;top:2.5px;left:2.5px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
 .m-sw.on i{background:var(--green)}.m-sw.on i::after{transform:translateX(17px)}
-.m-sw span{font-size:10.5px;font-weight:700}.m-sw.on span{color:var(--green-d)}
+.m-sw span{font-size:10.5px;font-weight:700;transition:color .2s ease}.m-sw.on span{color:var(--green-d)}
 .sdot{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--muted)}
 .sdot.s-0{background:var(--green)}.sdot.s-1{background:#D6A06A}.sdot.s-2{background:#7FA3C9}.sdot.s-3{background:#B9B3AA}
 .mtools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
@@ -5135,7 +5136,7 @@ function viewMy() {
       const on = p.status === '使用中';
       const days = diffDays(p.startDate, productEnd(p)) + 1;
       const period = p.status === '使用終了' ? `${fmtShort(p.startDate)}〜${fmtShort(p.endDate)}（${days}日）` : p.status === STOCK ? `${fmtShort(p.startDate)} 購入` : (days > 0 ? `${days}日目` : `${fmtShort(p.startDate)}から`);
-      const meta = [useN[p.id] ? `使用${useN[p.id]}回` : '', on ? (p.timing === '必要なときだけ' ? '必要な時だけ' : p.timing) : '', on ? p.frequency : '', period].filter(Boolean).join('・');
+      const meta = [useN[p.id] ? `使用${useN[p.id]}回` : '', p.timing === '必要なときだけ' ? '必要な時だけ' : p.timing, p.timing === '必要なときだけ' ? '' : p.frequency, period].filter(Boolean).join('・');
       return `<div class="mrow-w ${on ? '' : 'off'}" data-mid="${esc(p.id)}"><button type="button" class="m-del" data-action="swipe-del" data-id="${esc(p.id)}" tabindex="-1">${icon('trash')}<span>削除</span></button><div class="mrow-in"><a class="mrow" draggable="false" href="#/my/${encodeURIComponent(p.id)}">${thumbHtml(Object.assign({}, cat, {name:p.name, isSample:false}), false)}
         <span class="mrow-t"><span class="mrow-b">${esc(p.brand)}${cat.category ? '・' + esc(cat.category) : ''}</span><b>${esc(p.name)}</b><small>${esc(meta)}</small>${on && prodLifeChips(p) ? `<span class="mrow-life">${prodLifeChips(p)}</span>` : ''}</span></a>
         <label class="m-sw ${on ? 'on' : ''}"><input type="checkbox" switch class="m-sw-in" data-id="${esc(p.id)}" ${on ? 'checked' : ''} aria-label="${esc(p.name)}を使用中にする"><i aria-hidden="true"></i><span>${on ? '使用中' : '停止中'}</span></label></div></div>`;
@@ -5311,8 +5312,7 @@ function viewMyDetail(id) {
           <dt>使用日数</dt><dd>${days}日${p.status === '使用終了' ? '' : '（今日まで）'}</dd>
           <dt>成分</dt><dd>${ing ? esc(ing) : '未登録'}${known.length ? `<div class="ing-list" style="margin-top:6px">${known.map(k => `<a href="#/ingredients/${k.entry.key}">${esc(k.entry.name)}</a>`).join('')}</div>` : ''}</dd>
         </dl>
-        <a class="rx-info" href="${rxInfoUrl(p.name)}" target="_blank" rel="noopener">${icon('book')}<span>添付文書（詳しい情報）を見る</span><i>›</i></a>
-        <p class="hint" style="margin-top:8px">使う量・回数・期間は、医師・薬剤師の指示に従ってください。</p>
+        <p class="hint" style="margin-top:12px">使う量・回数・期間は、医師・薬剤師の指示に従ってください。</p>
         <div class="page-actions" style="margin-top:14px">
           <button class="btn btn-primary btn-sm" data-action="edit-my" data-id="${esc(p.id)}">編集</button>
           <button class="btn btn-ghost btn-sm" data-action="compare-with" data-id="${esc(p.id)}">ほかと比較</button>
@@ -5320,7 +5320,7 @@ function viewMyDetail(id) {
       </div>
     </div>
     <div class="mt"><div class="card"><div class="card-h"><h2>肌記録との比較（参考）</h2></div>${compareHtml}</div></div>
-    <div class="card"><div class="card-h"><h2>使用感・肌状態のメモ</h2></div><p class="prose">${val(p.memo, 'メモはありません')}</p></div>`;
+    <div class="card mt"><div class="card-h"><h2>使用感・肌状態のメモ</h2></div><p class="prose">${val(p.memo, 'メモはありません')}</p></div>`;
   }
   return `<a class="back" href="#/my">← Myアイテム</a>
     <div class="card detail-top">
@@ -5354,7 +5354,7 @@ function viewMyDetail(id) {
       ${ingsOfMy(p) ? `${known.length ? `<p class="small muted" style="margin-bottom:8px">解説のある成分：</p><div class="ing-list">${known.map(k => `<a href="#/ingredients/${k.entry.key}">${esc(k.entry.name)}</a>`).join('')}</div>` : '<p class="small muted">成分辞典に収録している成分は見つかりませんでした。</p>'}
         <details class="fold" style="margin-top:12px"><summary>全成分を表示</summary><p class="prose small">${esc(ingsOfMy(p))}</p></details>`
       : '<p class="na">全成分が未登録です。「編集」から入力すると、成分の解説や組み合わせの確認ができます。</p>'}</div>
-    <div class="card"><div class="card-h"><h2>使用感・肌状態のメモ</h2></div><p class="prose">${val(p.memo, 'メモはありません')}</p></div>`;
+    <div class="card mt"><div class="card-h"><h2>使用感・肌状態のメモ</h2></div><p class="prose">${val(p.memo, 'メモはありません')}</p></div>`;
 }
 
 /* Myアイテム 登録・編集フォーム */
