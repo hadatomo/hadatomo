@@ -705,6 +705,8 @@ details.acc-cmp{margin-top:14px}
 .home-pane{will-change:transform;touch-action:pan-y}
 .home-pane.hp-in{animation:hpIn .46s cubic-bezier(.22,.7,.2,1)}
 @keyframes hpIn{from{transform:translateX(var(--hp-from,0));opacity:.4}to{transform:none;opacity:1}}
+@keyframes hpInMy{from{transform:translateX(var(--hp-from,0))}to{transform:none}}
+.mk-pane.home-pane.hp-in{animation-name:hpInMy}
 .home-tabs.my-tabs{grid-template-columns:repeat(2,minmax(0,124px))}
 .my-tabs .ht{display:inline-flex;align-items:center;justify-content:center;gap:5px}
 .my-tabs .ht-n{font-size:12px;font-weight:600;line-height:1.5;background:var(--surface2,#F4F1EC);color:var(--muted);border-radius:999px;padding:1px 8px;transition:background .2s,color .2s}
