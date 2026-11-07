@@ -5246,6 +5246,7 @@ function swipeClose(except) { if (swOpen && swOpen !== except) { const r = swOpe
 (() => {
   const W = 88; let sw = null, blockClick = 0;
   document.addEventListener('touchstart', e => {
+    return; // 行の横スワイプは「化粧品⇄塗り薬」の切り替えに使う（削除は商品の画面の「削除する」から）
     const w = e.target.closest && e.target.closest('.mrow-w'); if (!w || e.target.closest('.m-del')) { if (!e.target.closest || !e.target.closest('.m-del')) swipeClose(); return; }
     const inn = w.querySelector('.mrow-in'); if (swOpen && swOpen !== inn) swipeClose();
     const t = e.touches[0]; sw = {inn, x:t.clientX, y:t.clientY, base:inn === swOpen ? -W : 0, on:false};
@@ -10007,7 +10008,7 @@ function placeHomeTabInd() {
   const scrollsX = el => { for (let n = el; n && n !== document.body; n = n.parentElement) { if (n.scrollWidth > n.clientWidth + 2) { const ox = getComputedStyle(n).overflowX; if (ox === 'auto' || ox === 'scroll') return true; } } return false; };
   window.addEventListener('touchstart', e => {
     x0 = null; lock = '';
-    const rn = parseRoute(); if (e.touches.length !== 1 || !['home', 'log'].includes(rn.name) || (rn.name !== 'home' && rn.id)) return;
+    const rn = parseRoute(); if (e.touches.length !== 1 || !['home', 'log', 'my'].includes(rn.name) || (rn.name !== 'home' && rn.id)) return;
     const tg = e.target;
     if ($('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full')) return;
     const blank = tg.closest && !tg.closest('.home-pane') && !tg.closest('.topbar,.bottom-nav,.home-tabs,button,a,input,label,select,textarea') && !!document.querySelector('.home-pane'); // 中身の外の空いたところ（下の余白など）も、横スワイプで動かせる
