@@ -1100,7 +1100,7 @@ details.fold summary{transition:color .18s}
 .st-sub{margin:2px 0 0;font-size:12px;color:var(--muted)}
 .st-x{flex:none;width:32px;height:32px;border-radius:50%;border:0;background:var(--surface2,#F4F1EC);color:var(--ink2);font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;margin:-4px -4px 0 0}
 .st-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:0 0 12px}.st-steps i{height:5px;border-radius:3px;background:var(--surface2,#EEE9E1);transition:background .3s}.st-steps i.on{background:var(--green-d)}
-.st-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.st-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.st-grid>.st-tile:first-child:nth-last-child(odd){grid-column:1/-1}
 .start-row.st-tile{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface);text-align:left;min-height:0;grid-template-columns:none}
 .st-tile .st-ic{width:32px;height:32px;border-radius:10px;background:var(--green-l,#E5F2EA);color:var(--green-d);display:flex;align-items:center;justify-content:center;margin-bottom:4px}.st-tile .st-ic svg{width:17px;height:17px}
 .st-tile b{font-size:14px;line-height:1.35;white-space:nowrap}.st-tile small{font-size:11px;line-height:1.5;color:var(--muted)}
@@ -3489,12 +3489,12 @@ function viewHome() {
 
   const shortcuts = `<div class="card" id="sc-card"><div class="card-h"><h2>ショートカット</h2><button class="link small sc-edit" data-action="sc-edit">${icon('gear')}変更</button></div><div class="shortcuts">${myShortcuts().map(x => `<a class="shortcut" href="${x.h}">${icon(x.ic)}${esc(x.l)}</a>`).join('')}</div></div>`;
 
-  const onboard = !state.settings.concerns.length ? `<div class="notice green" style="margin-bottom:16px"><b>はじめに：あなたの肌悩みを教えてください。</b>答えた内容から、あなたに合うケアと成分を「おすすめケア」に出します。<br><button type="button" class="btn btn-primary btn-sm" style="margin-top:10px" data-action="setup">質問に答える（1分）</button></div>` : '';
+  const onboard = ''; // 肌悩みの質問は「はじめにやること」の1つ目にまとめた
   const tab = HOME_TABS.some(x => x.k === ui.homeTab) ? ui.homeTab : 'today';
   const tabs = `<nav class="home-tabs" role="tablist" aria-label="ホームの表示">${HOME_TABS.map(x => `<button type="button" class="ht ${tab === x.k ? 'active' : ''}" role="tab" aria-selected="${tab === x.k}" data-action="home-tab" data-id="${x.k}"><span>${x.l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav>`;
   // 3つのタブ：画面の上にくっついたまま、押すと中身だけ切り替わる
   // 中身は .home-pane に入れる（横にスワイプしたとき、タブのバーは動かさずに中身だけ動かすため）
-  if (tab === 'today') { html = tabs + '<div class="home-pane">' + html + dermHintHtml() + periodHintHtml() + prodAlertHtml() + comboAlertHtml() + remindCardHtml() + onboard + startHtml() + todayCard + weekReviewHtml() + '</div>'; setTimeout(() => { wxFetch(false); badgeCheck(); }, 0); }
+  if (tab === 'today') { html = tabs + '<div class="home-pane">' + html + dermHintHtml() + periodHintHtml() + prodAlertHtml() + comboAlertHtml() + remindCardHtml() + onboard + startHtml() + (state.skinLogs.length || state.settings.startHidden ? todayCard : '') + weekReviewHtml() + '</div>'; setTimeout(() => { wxFetch(false); badgeCheck(); }, 0); }
   else if (tab === 'care') { html = tabs + '<div class="home-pane">' + (loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '') + careCard + '</div>'; }
   else { html = tabs + '<div class="home-pane">' + (loadWarning ? `<div class="notice warn">${esc(loadWarning)}</div>` : '') + shortcuts + '</div>'; }
   html += adSlot('home');
@@ -3870,7 +3870,7 @@ function openSetupWizard() {
   if (!root._sw) { root.addEventListener('click', swClick); root._sw = 1; }
   swPaint();
 }
-const SW_ALL = ['hello', 'account', 'gender', 'age', 'body', 'skin', 'concerns', 'life', 'research', 'done'];
+const SW_ALL = ['hello', 'gender', 'age', 'body', 'skin', 'concerns', 'life', 'research', 'account', 'done']; // アカウント作成は質問のあと（最初にやめてしまわないように）
 // はじめの質問の「アカウントを作成／ログイン」：成功したら次の質問へ進む
 async function swAuth() {
   if (!swState || swState.busy) return;
@@ -6402,6 +6402,7 @@ function careDone(k) {
 function startItems() {
   const life = state.lifeLogs.filter(l => !l.demo);
   return [
+    {k:'concern', l:'肌悩みに答える', s:'合うケアと成分がわかる', done:state.settings.concerns.length > 0, a:'setup'},
     {k:'skin', l:'肌を記録', s:'1分で今日の調子を残す', done:state.skinLogs.some(l => !l.demo), a:'new-log'},
     {k:'my', l:'化粧品を登録', s:'使っている物を1つ', done:state.myProducts.some(p => !p.isSample), a:'add-sheet', id:'my'},
     {k:'meal', l:'食事を記録', s:'栄養のバランスがわかる', done:life.some(l => (l.foods || []).length || MEALS.some(m => l.meals && l.meals[m.k] && l.meals[m.k].ate)), a:'life-edit', id:'meal'},
@@ -6411,9 +6412,9 @@ function startItems() {
 function startHtml() {
   if (state.settings.startHidden) return '';
   const it = startItems(), n = it.filter(x => x.done).length; if (n === it.length) return '';
-  const IC = {skin:'note', my:'bottle', meal:'leaf', a2hs:'home'};
+  const IC = {concern:'spark', skin:'note', my:'bottle', meal:'leaf', a2hs:'home'};
   return `<div class="card start-card"><div class="st-head"><div><h2>はじめにやること</h2><p class="st-sub">あと${it.length - n}つで準備完了です</p></div><button type="button" class="st-x" data-action="start-hide" aria-label="この案内を閉じる">×</button></div>
-    <div class="st-steps" aria-hidden="true">${it.map((x, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</div>
+    <div class="st-steps" aria-hidden="true" style="grid-template-columns:repeat(${it.length},1fr)">${it.map((x, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</div>
     <div class="st-grid">${it.map((x, i) => `<button type="button" class="start-row st-tile ${x.done ? 'done' : ''}" ${x.done ? 'disabled' : `data-action="${x.a}"${x.id ? ` data-id="${x.id}"` : ''}`}><span class="st-ic">${icon(x.done ? 'check' : IC[x.k] || 'spark')}</span><b>${esc(x.l)}</b><small>${x.done ? 'できました' : esc(x.s)}</small></button>`).join('')}</div>
     ${state.skinLogs.some(l => l.demo) ? '<p class="small muted start-demo">見本のデータが入っています。<button type="button" class="link small" data-action="demo-remove">見本を消す</button></p>' : !state.skinLogs.some(l => !l.demo) ? '<p class="small muted start-demo">記録がたまるとどう見えるか先に知りたいときは <button type="button" class="link small" data-action="demo-add">見本のデータで試す</button>（あとで消せます）</p>' : ''}
     </div>`;
@@ -6857,17 +6858,17 @@ const FP_HINT_ZONE = '「肌質選択」：額・眉間・鼻・こめかみ（�
 function openLogForm(id) {
   const ex = id ? getLog(id) : null;
   const t = todayStr(), map = logMap();
-  const d = ex || {date:map[t] ? '' : t, condition:3, acneCount:0, acneTypes:[], acneSpots:[], redness:0, dryness:0, oil:0, otherConcerns:[], areas:[], usedProducts:map[t] ? [] : ((state.careLogs[t] || {}).ids || []).filter(id => state.myProducts.some(p => p.id === id)), usageRecorded:false, memo:'', photo:null};
+  const d = ex || {date:map[t] ? '' : t, condition:0, acneCount:0, acneTypes:[], acneSpots:[], redness:0, dryness:0, oil:0, otherConcerns:[], areas:[], usedProducts:map[t] ? [] : ((state.careLogs[t] || {}).ids || []).filter(id => state.myProducts.some(p => p.id === id)), usageRecorded:false, memo:'', photo:null};
   let photo = safeImg(d.photo);
   const lv = [0,1,2,3,4,5].map(i => ({v:i, label:String(i)}));
   const usable = state.myProducts.filter(p => p.status === '使用中' || p.status === '一時停止' || d.usedProducts.includes(p.id));
   openModal({title: ex ? '肌の記録を編集' : '肌の記録', body: `<form id="log-form" novalidate><div class="form-grid">
     ${d.date ? `<input type="hidden" id="f_date" name="date" value="${esc(d.date)}">` : field('日付', `<input type="date" class="input" id="f_date" name="date" value="${esc(d.date)}" max="${t}">`, {name:'date', required:true, hint: !ex && map[t] ? '今日の記録はすでにあります。別の日付を選ぶか、一覧から今日の記録を編集してください。' : ''})}
+    ${field('肌の調子', condSeg(d.condition) + `<p class="cond-ai ai-text" id="cond-ai">${ex ? '' : condAiNote(null)}</p>`, {name:'condition', required:true})}
+    ${state.settings.gender === '女性' ? `<div class="field period-field"><span class="lbl">生理<span class="opt">任意</span></span><div class="period-btns btn-pair">${['生理中', '生理前'].map(v => `<label class="period-btn"><input type="checkbox" name="factors" value="${v}" ${(d.factors || []).includes(v) ? 'checked' : ''}><span>${v === '生理中' ? '🩸 ' : ''}${v}</span></label>`).join('')}</div><p class="hint">押すと、次の生理の予想や、生理と肌の関係がわかるようになります。</p></div>` : ''}
     <div class="field face-ai"><span class="lbl">カメラで記録<span class="opt opt-d">撮ると、AIが今日の肌を自動で入れます</span></span><div class="meal-photo-top mpt-even">${isPremium()
       ? `<label class="btn mpt-btn mpt-mid">${icon('image')}選ぶ<input type="file" accept="image/*" id="f_faceai2" class="vh"></label><button type="button" class="btn mpt-btn mpt-mid" data-faceai-cam>${icon('camera')}撮る</button><input type="file" accept="image/*" capture="user" id="f_faceai" class="vh">`
       : `<button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('image')}選ぶ</span><span class="prem-sub">${PREMIUM_NAME}</span></button><button type="button" class="btn mpt-btn mpt-locked" data-faceai-lock><span class="mpt-l">${icon('camera')}撮る</span><span class="prem-sub">${PREMIUM_NAME}</span></button>`}</div><div id="faceai-info"></div></div>
-    ${field('肌の調子', condSeg(d.condition) + `<p class="cond-ai ai-text" id="cond-ai">${ex ? '' : condAiNote(null)}</p>`, {name:'condition', required:true})}
-    ${state.settings.gender === '女性' ? `<div class="field period-field"><span class="lbl">生理<span class="opt">任意</span></span><div class="period-btns btn-pair">${['生理中', '生理前'].map(v => `<label class="period-btn"><input type="checkbox" name="factors" value="${v}" ${(d.factors || []).includes(v) ? 'checked' : ''}><span>${v === '生理中' ? '🩸 ' : ''}${v}</span></label>`).join('')}</div><p class="hint">押すと、次の生理の予想や、生理と肌の関係がわかるようになります。</p></div>` : ''}
     <div class="field fp-field" id="fp-field"><div class="fp-bighead"><b>顔を押して記録</b><button type="button" class="icon-btn" data-fp-done aria-label="閉じる"><span class="xi" aria-hidden="true"></span></button></div><span class="lbl fp-lbl">顔を押して記録<span class="opt opt-d">ニキビ選択＝ニキビ、肌質選択＝乾燥・テカリなどの状態</span></span>
       <div class="fp-mode" role="group" aria-label="選び方"><button type="button" class="on" data-fp-mode="tap" aria-pressed="true">ニキビ選択</button><button type="button" data-fp-mode="range" aria-pressed="false">肌質選択</button></div>
       <div class="fp-wrap"><div class="f3-stage fp-stage"><canvas id="face3d-form" aria-label="押して部位を選ぶ3Dの顔"></canvas><button type="button" class="fp-open" data-fp-open aria-label="顔を大きくして記録する"><i>⤢</i></button><div class="fp-zoom"><button type="button" class="icon-btn" data-fp-zoom="in" aria-label="拡大">＋</button><button type="button" class="icon-btn" data-fp-zoom="out" aria-label="縮小">−</button></div><div class="f3-load" id="fp-load"><span class="skel skel-face"></span></div></div>
@@ -7198,6 +7199,7 @@ function openLogForm(id) {
     else { const dup = state.skinLogs.find(l => l.date === date && (!ex || l.id !== ex.id)); if (dup) errors.date = 'この日付の記録はすでにあります。一覧から編集してください。'; }
     const ac = toHalf(fe.acneCount.value).trim();
     if (!/^\d{1,2}$/.test(ac)) errors.acneCount = 'ニキビの数は0〜99の整数（半角数字）で入力してください。';
+    if (!$('input[name="condition"]:checked', form)) errors.condition = '肌の調子を選んでください。';
     const spots = $$('.spot-row', form).map(r => {
       const sid = r.dataset.spot, cnt = toHalf($('[name="sp_count"]', r).value).trim(), onset = $('[name="sp_onset"]', r).value;
       if (!/^\d{1,2}$/.test(cnt) || Number(cnt) < 1) errors['spot_' + sid] = '個数は1〜99の整数で入力してください。';
@@ -7208,7 +7210,7 @@ function openLogForm(id) {
     const saveChk = $('#photo-save');
     const used = $$('input[name="usedProducts"]:checked', form).map(i => i.value);
     const noneUsed = !!(fe.noneUsed && fe.noneUsed.checked);
-    const data = {date, condition:Number(fe.condition.value), acneCount:Number(ac),
+    const data = {date, condition:Number(($('input[name="condition"]:checked', form) || {}).value) || 3, acneCount:Number(ac),
       acneTypes:$$('input[name="acneTypes"]:checked', form).map(i => i.value), acneSpots:spots,
       redness:Number(fe.redness.value), dryness:Number(fe.dryness.value), oil:Number(fe.oil.value),
       otherConcerns:$$('input[name="otherConcerns"]:checked', form).map(i => i.value),
@@ -10533,7 +10535,7 @@ function render() {
   html = html.replace(/<a class="back" href="([^"]*)">([^<]*)<\/a>/g, (m, href, label) => `<a class="back" href="${href}" data-back="1">${prevNav && prevNav !== href ? '← 戻る' : label}</a>`);
   renderingNow = true; try { $('#main').innerHTML = html; } finally { renderingNow = false; } // 作り直しの最中に古い入力欄から来る変更は無視する
   renderNav(navName, ({product:'search', prices:'search', compare:'charts', check:'spending', terms:'settings', privacy:'settings', law:'settings'})[r.name] || r.name);
-  setTopTitle(r.name === 'home' ? '' : ({log:'肌の記録', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
+  setTopTitle(r.name === 'home' ? '' : ({log:'肌の記録', my:'Myアイテム', search:'商品検索', favorites:'商品検索', stores:'商品検索', account:'アカウント', report:'週次レポート', charts:'グラフ', compare:'比べる', combo:'成分組み合わせ', ingredients:'成分辞典', shop:'商品', spending:'支出', plan:'プラン', settings:'設定', visit:'受診メモ', check:'確認', terms:'利用規約', privacy:'プライバシー', law:'特商法の表示', suggest:'おすすめ', scan:'読み取り', product:'商品', prices:'価格', cart:'カート'})[r.name] || 'ナカカラモ'); // 湿度・気温はホームの上だけに出す
   const key = r.name + '/' + r.id;
   const routeChanged = key !== lastRoute, prevRoute = lastRoute;
   if (key !== lastRoute) {
