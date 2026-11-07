@@ -1408,6 +1408,9 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .adv-chips + .adv-text,.adv-chips + .adv-chips + .adv-text{margin-top:8px}
 .advice .adv-text{display:block;font-size:13px;color:var(--muted);line-height:1.6}
 .adv-chips small{font-size:11px;color:var(--muted);margin-right:2px;width:100%}
+.adv-ing{border:0;font:inherit;font-size:12.5px;font-weight:600;color:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:4px}.adv-ing i{font-style:normal;opacity:.6}
+.ing-dl{margin:0 0 8px}.ing-dl dt{font-size:12px;font-weight:700;color:var(--green-d);margin-top:10px}.ing-dl dt:first-child{margin-top:0}.ing-dl dd{margin:3px 0 0;font-size:13.5px;line-height:1.75;text-wrap:pretty}
+.ing-h{font-size:14.5px;margin:18px 0 8px}
 .adv-c{font-size:12.5px;font-weight:600;border-radius:999px;padding:3px 10px;background:#fff;line-height:1.5}
 .adv-c.good{color:var(--green-d);box-shadow:inset 0 0 0 1px #CFE3D4}
 .adv-c.bad{color:#B04A32;box-shadow:inset 0 0 0 1px #F2CFC4}
@@ -3970,7 +3973,38 @@ function quickFindHtml() {
   return `<div class="card"><div class="card-h"><h2>種類から探す</h2></div><div class="qf-chips">${QUICK_FIND.map(w => `<button type="button" class="qf-c" data-qfind="${esc(w)}">${esc(w)}</button>`).join('')}</div>
     <p class="small muted" style="margin:10px 0 0">押すと、楽天市場・Yahoo!ショッピングで実際に売られている商品が出てきます。商品名やブランド名でも検索できます。</p></div>`;
 }
-// おすすめ成分を押したら、商品検索でその成分の人気商品を出す
+// おすすめ成分を押したら：成分の説明と、その成分を使った人気商品（ランキング順）を4〜5個出す
+function ingEntryOf(word) {
+  const w = normIng(String(word || '').replace(/（.*?）|\(.*?\)/g, '').trim()); if (!w) return null;
+  return ING_INDEX.get(w) || ING_DB.find(e => [e.name.replace(/（.*?）/g, ''), ...(e.aliases || [])].some(a => { const n = normIng(a); return n.length >= 2 && (n === w || w.includes(n) || n.includes(w)); })) || null;
+}
+function ingWords(word, e) { // 商品名の中で探す言葉（成分名と、その別名）
+  const base = String(word || '').replace(/（.*?）|\(.*?\)/g, '').trim();
+  const ws = [base].concat(e ? [e.name.replace(/（.*?）|\(.*?\)/g, '')].concat(e.aliases || []) : []).map(x => String(x).replace(/類$|誘導体$/, '').trim()).filter(x => x.length >= 2);
+  return Array.from(new Set(ws.map(fnorm))).filter(Boolean);
+}
+async function openIngSheet(word) {
+  const w0 = String(word).replace(/（.*?）|\(.*?\)/g, '').trim(), e = ingEntryOf(word);
+  openModal({title:esc(w0), size:'small', dismissable:true, body:`<div class="ing-sheet">
+    ${e ? `<dl class="ing-dl"><dt>どんな成分？</dt><dd>${esc(e.feature)}</dd><dt>何のために入っている？</dt><dd>${esc(e.purpose)}</dd><dt>気をつけること</dt><dd>${esc(e.caution)}</dd></dl>
+      <a class="link small" href="#/ingredients/${e.key}" onclick="closeModal()">成分辞典で詳しく見る ›</a>` : `<p class="small muted">この成分は、まだ成分辞典に載っていません。</p>`}
+    <h3 class="ing-h">この成分を使った人気の商品</h3><div id="ing-pop">${skelHtml(3, {label:'人気の商品を探しています'})}</div>
+    <p class="small muted" style="margin-top:8px">楽天市場のランキング順です（ランキングにないときは、レビューの多い順）。押すとMyアイテムに追加できます。</p></div>`});
+  const keys = ingWords(word, e), hit = x => { const n = fnorm(cleanShopName(x.name) || x.name); return keys.some(k => n.includes(k)); };
+  await popularLoad();
+  const list = (POPULAR.items || []).filter(hit).slice(0, 5).map(x => Object.assign({}, x, {src:'rank'}));
+  if (list.length < 4) { // ランキングに少ないときは、楽天・Yahoo!でその成分の商品をレビューの多い順に足す
+    try {
+      const more = (await findFetch({q:w0 + ' 化粧品', mode:'discover'})).filter(hit).sort((a, b) => (Number(b.reviews) || 0) - (Number(a.reviews) || 0));
+      more.forEach(x => { if (list.length < 5 && !list.some(y => sameProduct({name:y.name}, {name:x.name}))) list.push(Object.assign({}, x, {src:'review'})); });
+    } catch (er) { /* 見つからなくても説明は出す */ }
+  }
+  const b = document.getElementById('ing-pop'); if (!b) return;
+  if (!list.length) { b.innerHTML = '<p class="small muted">この成分の名前が入った人気商品は見つかりませんでした。</p>'; return; }
+  b.innerHTML = list.map((x, i) => `<button type="button" class="pop-item" data-ingpick="${i}"><span class="pop-r">${i + 1}</span>${x.image ? extImgHtml(x.image, 'pop-img') : '<span class="pop-img"></span>'}<span class="pop-t"><b>${esc(truncate((cleanShopName(x.name) || x.name).replace(/[＼\\][^／\/]*[／\/]/g, ' ').replace(/\d{1,2}\/\d{1,2}\s*\d{1,2}:\d{2}\s*[~〜～][^ ]*\s*(\d{1,2}\/\d{1,2}\s*)?\d{1,2}:\d{2}/g, ' ').replace(/\s+/g, ' ').trim() || x.name, 60))}</b><small>${x.src === 'rank' && x.rank ? `ランキング${x.rank}位` : 'レビューの多い商品'}${x.price ? '・¥' + Number(x.price).toLocaleString() : ''}</small></span><i>${icon('plus')}</i></button>`).join('');
+  b.onclick = ev => { const t = ev.target.closest('[data-ingpick]'); if (!t) return; const x = list[Number(t.dataset.ingpick)]; if (!x) return; findState = {kind:'my', q:'', items:[x]}; findPick(0); };
+}
+document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-ingsheet]'); if (!b) return; hapticTick(); openIngSheet(b.dataset.ingsheet); });
 document.addEventListener('click', e => {
   const b = e.target.closest && e.target.closest('[data-ingfind]'); if (!b) return;
   const w = b.dataset.ingfind.replace(/（.*?）|\(.*?\)/g, '').trim();
@@ -7550,7 +7584,7 @@ function advChips(x) {
   // スキンケアのおすすめ成分は、押すとその成分の人気商品（楽天市場・Yahoo!ショッピングのレビューの多い順）を出す
   const skin = x.area === 'スキンケア';
   if (!g.length && !a.length) return '';
-  return `<div class="adv-gb">${g.length ? `<div class="adv-box good"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4l3 3 6-6.4" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>${lb[0]}</small><div class="adv-cl">${g.map(v => `<span class="adv-c good">${esc(v)}</span>`).join('')}</div></div>` : ''}`
+  return `<div class="adv-gb">${g.length ? `<div class="adv-box good"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.4l3 3 6-6.4" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>${lb[0]}</small><div class="adv-cl">${g.map(v => skin ? `<button type="button" class="adv-c good adv-ing" data-ingsheet="${esc(v)}">${esc(v)}<i>›</i></button>` : `<span class="adv-c good">${esc(v)}</span>`).join('')}</div></div>` : ''}`
     + `${a.length ? `<div class="adv-box bad"><small><span class="adv-ic"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3.6v5.6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/><circle cx="8" cy="12.2" r="1.45" fill="#fff"/></svg></span>${lb[1]}</small><div class="adv-cl">${a.map(v => `<span class="adv-c bad">${esc(v)}</span>`).join('')}</div></div>` : ''}</div>`;
 }
 const ADVICE_KEY = 'skinwise_advice';
