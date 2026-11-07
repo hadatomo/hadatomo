@@ -981,7 +981,7 @@ button:not(:disabled):not(.bn-item):not(.fp-open):not(.sbar-in):active,.btn:acti
 .or-line::before,.or-line::after{content:"";flex:1;border-top:1px solid var(--line)}
 .wr-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:8px}
 .wr-grid span{display:flex;flex-direction:column;align-items:center;text-align:center;background:var(--surface2);border-radius:12px;padding:8px 4px}
-.wr-grid small{font-size:10.5px;color:var(--muted)}
+.wr-grid small{font-size:11px;color:var(--muted);white-space:nowrap}.wr-grid small.wr-up,.wr-grid small.wr-down,.wr-grid small.wr-eq{font-size:10.5px}
 .wr-grid b{font-size:20px;line-height:1.3}
 .wr-grid b i{font-style:normal;font-size:11px;font-weight:600;color:var(--muted);margin-left:1px}
 .wr-up{color:var(--green-d)!important;font-weight:700}
@@ -1103,7 +1103,7 @@ details.fold summary{transition:color .18s}
 .st-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .start-row.st-tile{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface);text-align:left;min-height:0;grid-template-columns:none}
 .st-tile .st-ic{width:32px;height:32px;border-radius:10px;background:var(--green-l,#E5F2EA);color:var(--green-d);display:flex;align-items:center;justify-content:center;margin-bottom:4px}.st-tile .st-ic svg{width:17px;height:17px}
-.st-tile b{font-size:14px;line-height:1.35;white-space:nowrap}.st-tile small{font-size:11px;line-height:1.5;color:var(--muted);text-wrap:pretty}
+.st-tile b{font-size:14px;line-height:1.35;white-space:nowrap}.st-tile small{font-size:11px;line-height:1.5;color:var(--muted)}
 .start-row.st-tile.done{background:var(--surface2,#F7F4EF);border-color:transparent}.st-tile.done .st-ic{background:var(--green-d);color:#fff}.start-row.st-tile.done b{text-decoration:none;color:var(--ink2)}
 .start-bar{height:6px;border-radius:3px;background:var(--surface2);overflow:hidden;margin:-2px 0 6px}
 .start-bar i{display:block;height:100%;background:var(--green-d);border-radius:3px;transition:width .4s}
@@ -1409,7 +1409,15 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .advice .adv-text{display:block;font-size:13px;color:var(--muted);line-height:1.6}
 .adv-chips small{font-size:11px;color:var(--muted);margin-right:2px;width:100%}
 .adv-ing{border:0;font:inherit;font-size:12.5px;font-weight:600;color:inherit;cursor:pointer;display:inline-flex;align-items:center;gap:4px}.adv-ing i{font-style:normal;opacity:.6}
-.ing-dl{margin:0 0 8px}.ing-dl dt{font-size:12px;font-weight:700;color:var(--green-d);margin-top:10px}.ing-dl dt:first-child{margin-top:0}.ing-dl dd{margin:3px 0 0;font-size:13.5px;line-height:1.75;text-wrap:pretty}
+.ing-dl{display:grid;gap:8px;margin:0 0 10px}.ing-b{background:var(--surface2,#F6F3EE);border-radius:12px;padding:10px 12px}.ing-b b{display:block;font-size:12px;color:var(--green-d);margin-bottom:2px}.ing-b.warn b{color:#B0662A}.ing-b p{margin:0;font-size:13.5px;line-height:1.7}
+.ing-go{font-style:normal;font-size:20px;color:var(--muted)}
+.shop-top{display:grid;gap:12px}.shop-img{width:62%;margin:0 auto;aspect-ratio:1;border-radius:16px;overflow:hidden;background:#fff;display:block}.shop-img img{width:100%;height:100%;object-fit:contain}
+.shop-name{font-size:17px;line-height:1.5;margin:0}.shop-meta{display:flex;flex-wrap:wrap;gap:6px}
+.shop-price{font-size:24px;font-weight:800}.shop-price small{font-size:12px;font-weight:500;color:var(--muted);margin-left:6px}
+.shop-btn{display:flex;align-items:center;gap:10px;width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-decoration:none;font-weight:700;font-size:15px;margin-top:8px;box-sizing:border-box}
+.shop-btn.main{background:var(--green-d);border-color:var(--green-d);color:#fff}.shop-btn span{flex:1;min-width:0}.shop-btn small{font-weight:500;font-size:11.5px;opacity:.8;display:block}.shop-btn i{font-style:normal;font-size:18px;opacity:.7}
+.shop-dot{width:10px;height:10px;border-radius:50%;flex:none}
+.pr-tag{display:inline-block;font-size:10.5px;font-weight:700;border:1px solid var(--line2);color:var(--muted);border-radius:4px;padding:0 5px;margin-right:6px;vertical-align:1px}
 .ing-h{font-size:14.5px;margin:18px 0 8px}
 .adv-c{font-size:12.5px;font-weight:600;border-radius:999px;padding:3px 10px;background:#fff;line-height:1.5}
 .adv-c.good{color:var(--green-d);box-shadow:inset 0 0 0 1px #CFE3D4}
@@ -1612,15 +1620,15 @@ input[type="date"].input::-webkit-date-and-time-value,input[type="time"].input::
 .legal-kv dd{line-height:1.7}
 .rp-nav{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px;margin-bottom:12px;padding:12px}
 .rp-range{display:flex;flex-direction:column;align-items:center;text-align:center;line-height:1.35}.rp-range b{font-size:15px}.rp-range span{font-size:11.5px;color:var(--muted);margin-top:2px}
-.rp-note p{margin:0;line-height:1.7;text-wrap:pretty}.rp-note p+p{margin-top:4px}
+.rp-note p{margin:0;line-height:1.7}.rp-note p+p{margin-top:4px}
 .week-strip .ws-acne{margin-top:5px;font-size:13px;font-weight:700;color:var(--ink)}.week-strip .ws-acne i{font-style:normal;font-size:9.5px;font-weight:500;color:var(--muted);margin-left:1px}
 .rp-legend{display:grid;gap:6px;margin-top:12px;font-size:12px;color:var(--muted)}.rp-legend p{margin:0;line-height:1.6}.rp-legend small{font-size:11px}.rp-legend b{color:var(--ink)}
 .rp-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#E5A42B;margin-right:6px;vertical-align:-1px}
 .rp-p{margin:0;line-height:1.7}.rp-p+.rp-p{margin-top:2px}
 .rp-pts{display:grid;gap:10px}
 .rp-pt{padding:12px 14px;border-radius:12px;background:var(--surface2,#F4F1EC);border-left:3px solid var(--green)}
-.rp-pt b{display:block;font-size:14px;line-height:1.6;text-wrap:pretty}
-.rp-pt p{margin:4px 0 0;font-size:13px;line-height:1.75;color:var(--ink2);text-wrap:pretty}
+.rp-pt b{display:block;font-size:14px;line-height:1.6}
+.rp-pt p{margin:4px 0 0;font-size:13px;line-height:1.75;color:var(--ink2)}
 .nav-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
 .map-frame{width:100%;height:260px;border:0;border-radius:12px;background:var(--surface2);display:block}
 .store-map{width:100%;height:340px;border-radius:12px;background:var(--surface2);overflow:hidden;position:relative;z-index:0}
@@ -3973,6 +3981,54 @@ function quickFindHtml() {
   return `<div class="card"><div class="card-h"><h2>種類から探す</h2></div><div class="qf-chips">${QUICK_FIND.map(w => `<button type="button" class="qf-c" data-qfind="${esc(w)}">${esc(w)}</button>`).join('')}</div>
     <p class="small muted" style="margin:10px 0 0">押すと、楽天市場・Yahoo!ショッピングで実際に売られている商品が出てきます。商品名やブランド名でも検索できます。</p></div>`;
 }
+// ===== アフィリエイト（買えるお店へのリンク） =====
+// それぞれのIDを入れると、リンクがアフィリエイトのリンクになる（空のままなら、ふつうのリンク）
+const AFF = {
+  rakuten:'',   // 楽天アフィリエイトID（例：1a2b3c4d.5e6f7a8b.1a2b3c4d.5e6f7a8b）
+  amazon:'',    // Amazonアソシエイトのトラッキングタグ（例：nakakaramo-22）
+  vcSid:'', vcPid:'', // バリューコマース（Yahoo!ショッピング）の sid と pid
+};
+const affOn = () => !!(AFF.rakuten || AFF.amazon || (AFF.vcSid && AFF.vcPid));
+function affUrl(url) {
+  const u = String(url || ''); if (!/^https?:\/\//.test(u)) return '';
+  if (AFF.rakuten && /(^https?:\/\/)([a-z0-9-]+\.)*rakuten\.co\.jp\//i.test(u)) return `https://hb.afl.rakuten.co.jp/hgc/${AFF.rakuten}/?pc=${encodeURIComponent(u)}&m=${encodeURIComponent(u)}`;
+  if (AFF.vcSid && AFF.vcPid && /shopping\.yahoo\.co\.jp|store\.shopping\.yahoo/i.test(u)) return `https://ck.jp.ap.valuecommerce.com/servlet/referral?sid=${AFF.vcSid}&pid=${AFF.vcPid}&vc_url=${encodeURIComponent(u)}`;
+  if (AFF.amazon && /amazon\.co\.jp/i.test(u)) return u + (u.includes('?') ? '&' : '?') + 'tag=' + encodeURIComponent(AFF.amazon);
+  return u;
+}
+function shopLinks(x) {
+  const q = (cleanShopName(x.name) || x.name).replace(/[＼\\][^／\/]*[／\/]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').slice(0, 5).join(' ');
+  const site = /yahoo/i.test(x.site || x.url || '') ? 'yahoo' : /amazon/i.test(x.url || '') ? 'amazon' : 'rakuten';
+  const main = x.url ? {k:site, label:site === 'yahoo' ? 'Yahoo!ショッピングで見る' : site === 'amazon' ? 'Amazonで見る' : '楽天市場で見る', sub:x.shop ? String(x.shop).slice(0, 30) : '', url:affUrl(x.url)} : null;
+  const others = [
+    {k:'rakuten', label:'楽天市場で探す', url:affUrl('https://search.rakuten.co.jp/search/mall/' + encodeURIComponent(q) + '/')},
+    {k:'yahoo', label:'Yahoo!ショッピングで探す', url:affUrl('https://shopping.yahoo.co.jp/search?p=' + encodeURIComponent(q))},
+    {k:'amazon', label:'Amazonで探す', url:affUrl('https://www.amazon.co.jp/s?k=' + encodeURIComponent(q))},
+  ].filter(o => !main || o.k !== main.k);
+  return {main, others};
+}
+const SHOP_COL = {rakuten:'#BF0000', yahoo:'#FF0033', amazon:'#FF9900'};
+function viewShop() {
+  const x = ui.shopItem;
+  if (!x) return `<a class="back" href="#/home">← 戻る</a><div class="card">${emptyBox('search', '商品が選ばれていません', 'おすすめケアの成分から、商品を選んでください。', '')}</div>`;
+  const nm = (cleanShopName(x.name) || x.name).replace(/[＼\\][^／\/]*[／\/]/g, ' ').replace(/\s+/g, ' ').trim();
+  const L = shopLinks(x), pr = affOn() ? '<span class="pr-tag">PR</span>' : '';
+  const btn = (o, main) => `<a class="shop-btn ${main ? 'main' : ''}" href="${esc(o.url)}" target="_blank" rel="noopener sponsored">${main ? '' : `<i class="shop-dot" style="background:${SHOP_COL[o.k]}"></i>`}<span>${pr}${esc(o.label)}${o.sub ? `<small>${esc(o.sub)}</small>` : ''}</span><i>↗</i></a>`;
+  return `<a class="back" href="#/home" onclick="history.length > 1 && (event.preventDefault(), history.back())">← 戻る</a>
+    <div class="card shop-top">
+      ${x.image ? extImgHtml(x.image, 'shop-img') : ''}
+      <div class="shop-meta">${x.fromIng ? `<span class="chip green">${esc(x.fromIng)}入り</span>` : ''}${x.rank ? `<span class="chip">楽天ランキング${esc(String(x.rank))}位</span>` : ''}${x.reviews ? `<span class="chip">レビュー${Number(x.reviews).toLocaleString()}件</span>` : ''}</div>
+      <h1 class="shop-name">${esc(truncate(nm, 70))}</h1>
+      ${x.price ? `<div class="shop-price">¥${Number(x.price).toLocaleString()}<small>税込・${esc(x.site || '楽天市場')}</small></div>` : ''}
+    </div>
+    <div class="card mt"><div class="card-h"><h2>買えるお店</h2></div>
+      ${L.main ? btn(L.main, true) : ''}
+      <p class="small muted" style="margin:14px 0 0">ほかのお店でも探す</p>
+      ${L.others.map(o => btn(o, false)).join('')}
+      <p class="small muted" style="margin-top:12px">${affOn() ? 'このページのお店へのリンクには、広告（アフィリエイトリンク）が含まれます。' : ''}値段・在庫は、お店のページで確かめてください。</p>
+    </div>
+    <div class="page-actions" style="margin-top:12px"><button type="button" class="btn btn-ghost btn-sm" data-action="shop-to-my" style="width:100%">使っているなら、Myアイテムに追加</button></div>`;
+}
 // おすすめ成分を押したら：成分の説明と、その成分を使った人気商品（ランキング順）を4〜5個出す
 function ingEntryOf(word) {
   const w = normIng(String(word || '').replace(/（.*?）|\(.*?\)/g, '').trim()); if (!w) return null;
@@ -3986,10 +4042,10 @@ function ingWords(word, e) { // 商品名の中で探す言葉（成分名と、
 async function openIngSheet(word) {
   const w0 = String(word).replace(/（.*?）|\(.*?\)/g, '').trim(), e = ingEntryOf(word);
   openModal({title:esc(w0), size:'small', dismissable:true, body:`<div class="ing-sheet">
-    ${e ? `<dl class="ing-dl"><dt>どんな成分？</dt><dd>${esc(e.feature)}</dd><dt>何のために入っている？</dt><dd>${esc(e.purpose)}</dd><dt>気をつけること</dt><dd>${esc(e.caution)}</dd></dl>
+    ${e ? `<div class="ing-dl"><div class="ing-b"><b>どんな成分？</b><p>${esc(e.feature)}</p></div><div class="ing-b"><b>何のために入っている？</b><p>${esc(e.purpose)}</p></div><div class="ing-b warn"><b>気をつけること</b><p>${esc(e.caution)}</p></div></div>
       <a class="link small" href="#/ingredients/${e.key}" onclick="closeModal()">成分辞典で詳しく見る ›</a>` : `<p class="small muted">この成分は、まだ成分辞典に載っていません。</p>`}
     <h3 class="ing-h">この成分を使った人気の商品</h3><div id="ing-pop">${skelHtml(3, {label:'人気の商品を探しています'})}</div>
-    <p class="small muted" style="margin-top:8px">楽天市場のランキング順です（ランキングにないときは、レビューの多い順）。押すとMyアイテムに追加できます。</p></div>`});
+    <p class="small muted" style="margin-top:8px">楽天市場のランキング順です（ランキングにないときは、レビューの多い順）。押すと、商品のくわしい情報と買えるお店が見られます。</p></div>`});
   const keys = ingWords(word, e), hit = x => { const n = fnorm(cleanShopName(x.name) || x.name); return keys.some(k => n.includes(k)); };
   await popularLoad();
   const list = (POPULAR.items || []).filter(hit).slice(0, 5).map(x => Object.assign({}, x, {src:'rank'}));
@@ -4001,8 +4057,8 @@ async function openIngSheet(word) {
   }
   const b = document.getElementById('ing-pop'); if (!b) return;
   if (!list.length) { b.innerHTML = '<p class="small muted">この成分の名前が入った人気商品は見つかりませんでした。</p>'; return; }
-  b.innerHTML = list.map((x, i) => `<button type="button" class="pop-item" data-ingpick="${i}"><span class="pop-r">${i + 1}</span>${x.image ? extImgHtml(x.image, 'pop-img') : '<span class="pop-img"></span>'}<span class="pop-t"><b>${esc(truncate((cleanShopName(x.name) || x.name).replace(/[＼\\][^／\/]*[／\/]/g, ' ').replace(/\d{1,2}\/\d{1,2}\s*\d{1,2}:\d{2}\s*[~〜～][^ ]*\s*(\d{1,2}\/\d{1,2}\s*)?\d{1,2}:\d{2}/g, ' ').replace(/\s+/g, ' ').trim() || x.name, 60))}</b><small>${x.src === 'rank' && x.rank ? `ランキング${x.rank}位` : 'レビューの多い商品'}${x.price ? '・¥' + Number(x.price).toLocaleString() : ''}</small></span><i>${icon('plus')}</i></button>`).join('');
-  b.onclick = ev => { const t = ev.target.closest('[data-ingpick]'); if (!t) return; const x = list[Number(t.dataset.ingpick)]; if (!x) return; findState = {kind:'my', q:'', items:[x]}; findPick(0); };
+  b.innerHTML = list.map((x, i) => `<button type="button" class="pop-item" data-ingpick="${i}"><span class="pop-r">${i + 1}</span>${x.image ? extImgHtml(x.image, 'pop-img') : '<span class="pop-img"></span>'}<span class="pop-t"><b>${esc(truncate((cleanShopName(x.name) || x.name).replace(/[＼\\][^／\/]*[／\/]/g, ' ').replace(/\d{1,2}\/\d{1,2}\s*\d{1,2}:\d{2}\s*[~〜～][^ ]*\s*(\d{1,2}\/\d{1,2}\s*)?\d{1,2}:\d{2}/g, ' ').replace(/\s+/g, ' ').trim() || x.name, 60))}</b><small>${x.src === 'rank' && x.rank ? `ランキング${x.rank}位` : 'レビューの多い商品'}${x.price ? '・¥' + Number(x.price).toLocaleString() : ''}</small></span><i class="ing-go">›</i></button>`).join('');
+  b.onclick = ev => { const t = ev.target.closest('[data-ingpick]'); if (!t) return; const x = list[Number(t.dataset.ingpick)]; if (!x) return; ui.shopItem = Object.assign({}, x, {fromIng:w0}); closeModal(); location.hash = '#/shop'; };
 }
 document.addEventListener('click', e => { const b = e.target.closest && e.target.closest('[data-ingsheet]'); if (!b) return; hapticTick(); openIngSheet(b.dataset.ingsheet); });
 document.addEventListener('click', e => {
@@ -5965,11 +6021,11 @@ function weekReviewHtml() {
   const avg = (a, k) => a.length ? a.reduce((x, l) => x + (Number(l[k]) || 0), 0) / a.length : null, r1 = v => Math.round(v * 10) / 10;
   const c1 = avg(cur, 'condition'), c0 = avg(prev, 'condition'), a1 = cur.reduce((x, l) => x + (l.acneCount || 0), 0), a0 = prev.reduce((x, l) => x + (l.acneCount || 0), 0);
   const map = Object.fromEntries(real.map(l => [l.date, l])), st = recordStreak(map, t).n;
-  const cmp = (v, p, good) => p == null || v == null ? '' : v === p ? '<small class="wr-eq">先週と同じ</small>' : `<small class="${(v > p) === good ? 'wr-up' : 'wr-down'}">先週より${v > p ? '↑' : '↓'}${r1(Math.abs(v - p))}</small>`;
+  const cmp = (v, p, good) => p == null || v == null ? '' : v === p ? '<small class="wr-eq">先週と同じ</small>' : `<small class="${(v > p) === good ? 'wr-up' : 'wr-down'}">先週比 ${v > p ? '↑' : '↓'}${r1(Math.abs(v - p))}</small>`;
   return `<div class="card wr-card"><div class="card-h"><h2>今週のふり返り</h2>${st ? `<span class="wr-streak">${icon('spark')}${st}日連続</span>` : ''}</div>
     <div class="wr-grid"><span><small>記録した日</small><b>${cur.length}<i>日</i></b></span>
-      <span><small>肌の調子（平均）</small><b>${c1 == null ? '－' : r1(c1)}<i>/5</i></b>${cmp(c1 == null ? null : r1(c1), c0 == null ? null : r1(c0), true)}</span>
-      <span><small>ニキビ（1日平均）</small><b>${cur.length ? r1(a1 / cur.length) : '－'}<i>個</i></b>${prev.length && cur.length ? cmp(r1(a1 / cur.length), r1(a0 / prev.length), false) : ''}</span></div>
+      <span><small>肌の調子</small><b>${c1 == null ? '－' : r1(c1)}<i>/5</i></b>${cmp(c1 == null ? null : r1(c1), c0 == null ? null : r1(c0), true)}</span>
+      <span><small>ニキビ/日</small><b>${cur.length ? r1(a1 / cur.length) : '－'}<i>個</i></b>${prev.length && cur.length ? cmp(r1(a1 / cur.length), r1(a0 / prev.length), false) : ''}</span></div>
     <a class="link small" href="#/report">週のまとめを詳しく見る ›</a></div>`;
 }
 // ===== 朝・夜の「いつものケア」をワンタップで記録 =====
@@ -9426,6 +9482,7 @@ const actions = {
   'reco-add': id => recoAdd(id),
   'a2hs-guide': () => { hapticTick(); openA2hsGuide(); },
   'a2hs-done': () => { state.settings.a2hsDone = true; save(); dismissModal(); hapticSaved(); render(); },
+  'shop-to-my': () => { const x = ui.shopItem; if (!x) return; findState = {kind:'my', q:'', items:[x]}; findPick(0); },
   'start-hide': () => { state.settings.startHidden = true; save(); render(); toast('「はじめにやること」を閉じました'); },
   'sw-auth': () => swAuth(),
   'care-done': k => careDone(k),
@@ -9739,6 +9796,7 @@ async function runWithUndo(work) {
   const before = JSON.stringify(state);
   await work();
   if (JSON.stringify(state) === before) return; // キャンセルされた
+  return; // 下から出てくる「元に戻す」のお知らせは出さない
   const root = $('#toast-root'), last = root.lastElementChild, msg = last ? last.textContent : '削除しました';
   if (last) last.remove();
   const el = document.createElement('div');
@@ -10089,7 +10147,7 @@ function render() {
   if (['search', 'favorites', 'stores', 'cart', 'prices'].includes(r.name)) { location.replace('#/my'); return; }
   if (r.name === 'suggest') { location.replace('#/settings'); return; }
   if (r.name === 'check') { location.replace('#/account'); return; } // 買う前チェックはなくした // ケアの提案は「おすすめケア」と重なるのでなくした（肌悩みは設定へ） // 商品検索は試作の段階ではなくした
-  const views = {home:viewHome, search:viewSearch, product:() => viewProduct(r.id), prices:() => viewPrices(r.id), cart:viewCart, stores:viewStores,
+  const views = {home:viewHome, shop:viewShop, search:viewSearch, product:() => viewProduct(r.id), prices:() => viewPrices(r.id), cart:viewCart, stores:viewStores,
     ingredients:() => viewIngredients(r.id), scan:viewScan, my:() => r.id ? viewMyDetail(r.id) : viewMy(), compare:viewCompare, combo:viewCombo,
     log:viewLog, charts:viewCharts, report:viewReport, spending:viewSpending, check:() => viewCheck(r.id), settings:viewSettings, account:viewAccount, favorites:viewFavorites, terms:viewTerms, privacy:viewPrivacy, law:viewLaw, plan:() => viewPlan(r.query), suggest:viewSuggest, visit:viewVisit};
   const alias = {account:'account', product:'search', prices:'search', cart:'search', stores:'search', favorites:'search', spending:'account', plan:'account', settings:'account', compare:'log', charts:'log', report:'log', visit:'log', check:'account', terms:'account', privacy:'account', law:'account'};
