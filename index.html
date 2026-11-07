@@ -3999,11 +3999,11 @@ function affUrl(url) {
 function shopLinks(x) {
   const q = (cleanShopName(x.name) || x.name).replace(/[＼\\][^／\/]*[／\/]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').slice(0, 5).join(' ');
   const site = /yahoo/i.test(x.site || x.url || '') ? 'yahoo' : /amazon/i.test(x.url || '') ? 'amazon' : 'rakuten';
-  const main = x.url ? {k:site, label:site === 'yahoo' ? 'Yahoo!ショッピングで見る' : site === 'amazon' ? 'Amazonで見る' : '楽天市場で見る', sub:x.shop ? String(x.shop).slice(0, 30) : '', url:affUrl(x.url)} : null;
+  const main = x.url ? {k:site, label:site === 'yahoo' ? 'Yahoo!ショッピング' : site === 'amazon' ? 'Amazon' : '楽天市場', sub:x.shop ? String(x.shop).slice(0, 30) : '', url:affUrl(x.url)} : null;
   const others = [
-    {k:'rakuten', label:'楽天市場で探す', url:affUrl('https://search.rakuten.co.jp/search/mall/' + encodeURIComponent(q) + '/')},
-    {k:'yahoo', label:'Yahoo!ショッピングで探す', url:affUrl('https://shopping.yahoo.co.jp/search?p=' + encodeURIComponent(q))},
-    {k:'amazon', label:'Amazonで探す', url:affUrl('https://www.amazon.co.jp/s?k=' + encodeURIComponent(q))},
+    {k:'rakuten', label:'楽天市場', url:affUrl('https://search.rakuten.co.jp/search/mall/' + encodeURIComponent(q) + '/')},
+    {k:'amazon', label:'Amazon', url:affUrl('https://www.amazon.co.jp/s?k=' + encodeURIComponent(q))},
+    {k:'yahoo', label:'Yahoo!ショッピング', url:affUrl('https://shopping.yahoo.co.jp/search?p=' + encodeURIComponent(q))},
   ].filter(o => !main || o.k !== main.k);
   return {main, others};
 }
@@ -4021,9 +4021,8 @@ function viewShop() {
       <h1 class="shop-name">${esc(truncate(nm, 70))}</h1>
       ${x.price ? `<div class="shop-price">¥${Number(x.price).toLocaleString()}<small>税込・${esc(x.site || '楽天市場')}</small></div>` : ''}
     </div>
-    <div class="card mt"><div class="card-h"><h2>買えるお店</h2></div>
+    <div class="card mt"><div class="card-h"><h2>購入サイト</h2></div>
       ${L.main ? btn(L.main, true) : ''}
-      <p class="small muted" style="margin:14px 0 0">ほかのお店でも探す</p>
       ${L.others.map(o => btn(o, false)).join('')}
       <p class="small muted" style="margin-top:12px">${affOn() ? 'このページのお店へのリンクには、広告（アフィリエイトリンク）が含まれます。' : ''}値段・在庫は、お店のページで確かめてください。</p>
     </div>
@@ -4045,7 +4044,7 @@ async function openIngSheet(word) {
     ${e ? `<div class="ing-dl"><div class="ing-b"><b>どんな成分？</b><p>${esc(e.feature)}</p></div><div class="ing-b"><b>何のために入っている？</b><p>${esc(e.purpose)}</p></div><div class="ing-b warn"><b>気をつけること</b><p>${esc(e.caution)}</p></div></div>
       <a class="link small" href="#/ingredients/${e.key}" onclick="closeModal()">成分辞典で詳しく見る ›</a>` : `<p class="small muted">この成分は、まだ成分辞典に載っていません。</p>`}
     <h3 class="ing-h">この成分を使った人気の商品</h3><div id="ing-pop">${skelHtml(3, {label:'人気の商品を探しています'})}</div>
-    <p class="small muted" style="margin-top:8px">楽天市場のランキング順です（ランキングにないときは、レビューの多い順）。押すと、商品のくわしい情報と買えるお店が見られます。</p></div>`});
+    <p class="small muted" style="margin-top:8px">楽天市場のランキング順です（ランキングにないときは、レビューの多い順）。押すと、商品のくわしい情報と購入サイトが見られます。</p></div>`});
   const keys = ingWords(word, e), hit = x => { const n = fnorm(cleanShopName(x.name) || x.name); return keys.some(k => n.includes(k)); };
   await popularLoad();
   const list = (POPULAR.items || []).filter(hit).slice(0, 5).map(x => Object.assign({}, x, {src:'rank'}));
