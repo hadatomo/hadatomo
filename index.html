@@ -10421,8 +10421,10 @@ function placeHomeTabInd() {
     if (e.touches.length !== 1) { x0 = null; if (lock === 'x') back(); return; }
     const mx = e.touches[0].clientX - x0, my = e.touches[0].clientY - y0;
     if (!lock) {
+      // 横向きに動き始めたら、最初の動きから縦のスクロールを止める（iPhoneは最初に止めないと、縦と横が同時に動く）
+      if (Math.abs(mx) > Math.abs(my) && Math.abs(mx) >= 2 && !window.__ptrOn) e.preventDefault();
       if (Math.abs(mx) < 7 && Math.abs(my) < 7) return;
-      lock = Math.abs(mx) > Math.abs(my) * 1.1 && !window.__ptrOn ? 'x' : 'y'; // 上に引っぱって更新が始まっていたら、横には動かさない
+      lock = Math.abs(mx) > Math.abs(my) && !window.__ptrOn ? 'x' : 'y'; window.__hSwipe = lock === 'x'; // 上に引っぱって更新が始まっていたら、横には動かさない
       if (lock === 'y') { x0 = null; return; }
       x0 = e.touches[0].clientX; // ここから動かす（はじめの10pxでカクッとしないように）
       pane.style.transition = 'none';
@@ -10447,8 +10449,8 @@ function placeHomeTabInd() {
       g.go(g.tabs[j].k);
     } else back();
   };
-  window.addEventListener('touchend', end, {passive:true});
-  window.addEventListener('touchcancel', () => { if (lock === 'x') back(); x0 = null; lock = ''; }, {passive:true});
+  window.addEventListener('touchend', e => { end(e); window.__hSwipe = false; }, {passive:true});
+  window.addEventListener('touchcancel', () => { if (lock === 'x') back(); x0 = null; lock = ''; window.__hSwipe = false; }, {passive:true});
 })();
 // タブを切り替えたあと、新しい中身をスワイプした向きからすべり込ませる
 function slideHomePane() {
@@ -10631,7 +10633,7 @@ function ptrRepaint() {
     y0 = e.touches[0].clientY; ptrX0 = e.touches[0].clientX; started = false;
   }, {passive:true});
   window.addEventListener('touchmove', e => {
-    if (document.body.classList.contains('m-dragging')) { y0 = null; return; } // Myアイテムを並べ替えている間は、引っぱって更新しない
+    if (document.body.classList.contains('m-dragging') || window.__hSwipe) { y0 = null; return; } // 並べ替え中・横にスワイプ中は、引っぱって更新しない
     if (y0 == null || (phase !== 'idle' && phase !== 'pulling' && !(phase === 'refreshing' && touching))) return;
     const dy = e.touches[0].clientY - y0;
     if (!started) {
