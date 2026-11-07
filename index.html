@@ -707,7 +707,8 @@ details.acc-cmp{margin-top:14px}
 @keyframes hpIn{from{transform:translateX(var(--hp-from,0));opacity:.4}to{transform:none;opacity:1}}
 .home-tabs.my-tabs{grid-template-columns:repeat(2,minmax(0,124px))}
 .my-tabs .ht{display:inline-flex;align-items:center;justify-content:center;gap:5px}
-.my-tabs .ht-n{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;padding:0 5px;border-radius:10px;border:1.5px solid currentColor;font-size:11px;font-weight:700;line-height:1;box-sizing:border-box}
+.my-tabs .ht-n{font-size:12px;font-weight:600;line-height:1.5;background:var(--surface2,#F4F1EC);color:var(--muted);border-radius:999px;padding:1px 8px;transition:background .2s,color .2s}
+.my-tabs .ht.active .ht-n{background:var(--green-l,#E5F2EA);color:var(--green-d)}
 .home-tabs{position:sticky;top:0;z-index:12;display:grid;grid-template-columns:repeat(3,minmax(0,124px));justify-content:center;gap:0;margin:-20px -16px 14px;padding:0 8px;background:var(--bg);border-bottom:1px solid var(--line)}
 .ht-ind{position:absolute;left:0;bottom:-1px;width:48px;height:3px;border-radius:3px;background:var(--green-d);transition:transform .44s cubic-bezier(.3,.8,.25,1);pointer-events:none}
 .ht{display:flex;align-items:center;justify-content:center;gap:5px;min-height:38px;min-width:0;padding:0 6px!important;border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;position:relative;white-space:nowrap;padding:0 4px}
@@ -5160,7 +5161,7 @@ function viewMy() {
   let html = ui.myKind === 'rx' ? `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="rx-sheet">${icon('plus')}塗り薬を追加</button></div>` : `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button></div>`;
   const tools = !state.myProducts.length ? '' : `<div class="mtools"><a href="#/compare">${icon('compare')}<span>肌との比較</span><i>›</i></a><a href="#/combo">${icon('flask')}<span>成分組み合わせ</span><i>›</i></a></div>`;
   const kFrom = ui.myKindFrom || kind, kDir = ui.myKindDir || 0; ui.myKindFrom = ''; ui.myKindDir = 0;
-  html = `<nav class="home-tabs my-tabs" role="tablist" aria-label="アイテムの種類">${[['cos', '化粧品'], ['rx', '塗り薬']].map(([k, l]) => { const n = state.myProducts.filter(x => (x.category === '皮膚科の塗り薬') === (k === 'rx')).length; return `<button type="button" class="ht ${kind === k ? 'active' : ''}" role="tab" aria-selected="${kind === k}" data-action="my-kind" data-id="${k}"><span>${l}</span>${n ? `<b class="ht-n">${n}</b>` : ''}</button>`; }).join('')}<i class="ht-ind" aria-hidden="true"></i></nav><div class="mk-pane home-pane ${kDir > 0 ? 'mk-in-r' : kDir < 0 ? 'mk-in-l' : ''}">` + html;
+  html = `<nav class="home-tabs my-tabs" role="tablist" aria-label="アイテムの種類">${[['cos', '化粧品'], ['rx', '塗り薬']].map(([k, l]) => { const n = state.myProducts.filter(x => (x.category === '皮膚科の塗り薬') === (k === 'rx')).length; return `<button type="button" class="ht ${kind === k ? 'active' : ''}" role="tab" aria-selected="${kind === k}" data-action="my-kind" data-id="${k}"><span>${l}</span><b class="ht-n">${n}</b></button>`; }).join('')}<i class="ht-ind" aria-hidden="true"></i></nav><div class="mk-pane home-pane ${kDir > 0 ? 'mk-in-r' : kDir < 0 ? 'mk-in-l' : ''}">` + html;
   if (state.myProducts.length && !list.length) {
     html += `<div class="card">${emptyBox(kind === 'rx' ? 'flask' : 'bottle', kind === 'rx' ? 'まだ塗り薬が登録されていません' : 'まだ化粧品が登録されていません', kind === 'rx' ? '皮膚科で出された塗り薬は、上の「塗り薬を追加」から一覧で選べます。' : '使っている化粧品は、上の「化粧品を追加」から登録できます。')}</div>`;
   } else if (!state.myProducts.length) {
@@ -5198,7 +5199,6 @@ function swipeClose(except) { if (swOpen && swOpen !== except) { const r = swOpe
 (() => {
   const W = 88; let sw = null, blockClick = 0;
   document.addEventListener('touchstart', e => {
-    return; // 行の横スワイプは「化粧品⇄塗り薬」の切り替えに使う（削除は詳しい画面の「削除する」から）
     const w = e.target.closest && e.target.closest('.mrow-w'); if (!w || e.target.closest('.m-del')) { if (!e.target.closest || !e.target.closest('.m-del')) swipeClose(); return; }
     const inn = w.querySelector('.mrow-in'); if (swOpen && swOpen !== inn) swipeClose();
     const t = e.touches[0]; sw = {inn, x:t.clientX, y:t.clientY, base:inn === swOpen ? -W : 0, on:false};
@@ -9565,8 +9565,8 @@ const actions = {
   'my-filter': v => { ui.myFilter = v; render(); },
   'my-kind': v => {
     if (ui.myKind === v) return;
-    const from = ui.myKind; ui.myKind = v; ui.myKindDir = v === 'rx' ? 1 : -1; ui.myKindFrom = from; ui.mtFrom = from; ui.htSlide = 0;
-    hapticSaved(); render();
+    const from = ui.myKind; ui.myKind = v; ui.myKindDir = 0; ui.myKindFrom = from; ui.mtFrom = from; ui.htSlide = v === 'rx' ? 1 : -1; // ホームの上のバーと同じ動き
+    render(); window.scrollTo(0, 0);
   },
   'swipe-del': async id => {
     const p = getMy(id); if (!p) return;
@@ -9959,7 +9959,7 @@ function placeHomeTabInd() {
   const scrollsX = el => { for (let n = el; n && n !== document.body; n = n.parentElement) { if (n.scrollWidth > n.clientWidth + 2) { const ox = getComputedStyle(n).overflowX; if (ox === 'auto' || ox === 'scroll') return true; } } return false; };
   window.addEventListener('touchstart', e => {
     x0 = null; lock = '';
-    const rn = parseRoute(); if (e.touches.length !== 1 || !['home', 'log', 'my'].includes(rn.name) || (rn.name !== 'home' && rn.id)) return;
+    const rn = parseRoute(); if (e.touches.length !== 1 || !['home', 'log'].includes(rn.name) || (rn.name !== 'home' && rn.id)) return;
     const tg = e.target;
     if ($('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full')) return;
     const blank = tg.closest && !tg.closest('.home-pane') && !tg.closest('.topbar,.bottom-nav,.home-tabs,button,a,input,label,select,textarea') && !!document.querySelector('.home-pane'); // 中身の外の空いたところ（下の余白など）も、横スワイプで動かせる
@@ -10071,6 +10071,7 @@ function render() {
   navRestoreY = null;
   if (r.name === 'home') { requestAnimationFrame(wxFit); placeHomeTabInd(); slideHomePane(); if (ui.homeTab === 'care' && isPremium()) setTimeout(() => { runMenu(false); storeLoad(false); }, 0); }
   if (r.name === 'log') { placeHomeTabInd(); slideHomePane(); }
+  if (r.name === 'my' && !r.id) slideHomePane();
   if (r.name === 'my' && !r.id) placeHomeTabInd();
   if (r.name === 'product') { const pc = getCat(r.id); if (pc) setTimeout(() => offFetch(pc), 0); }
   hapticizeTargets();
