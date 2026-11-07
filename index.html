@@ -1425,6 +1425,7 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .ing-kind{flex:none;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surface);color:var(--ink2);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .ing-kind small{font-size:11px;font-weight:600;color:var(--muted)}.ing-kind.on{background:var(--green-d);border-color:var(--green-d);color:#fff}.ing-kind.on small{color:rgba(255,255,255,.8)}.ing-kind:disabled{opacity:.4;cursor:default}
 .ing-more{width:100%;justify-content:center;margin-top:4px}.ing-sales{color:#B0662A;font-weight:700}
+.ing-amz.main{background:#BF0000;border-color:#BF0000;color:#fff}.ing-amz.main .pr-tag{color:#fff;border-color:rgba(255,255,255,.6)}
 .ing-amz{display:flex;align-items:center;gap:10px;margin-top:10px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);text-decoration:none;font-weight:700;font-size:14px}.ing-amz span{flex:1;min-width:0}.ing-amz i:last-child{font-style:normal;opacity:.6}
 .adv-c{font-size:12.5px;font-weight:600;border-radius:999px;padding:3px 10px;background:#fff;line-height:1.5}
 .adv-c.good{color:var(--green-d);box-shadow:inset 0 0 0 1px #CFE3D4}
@@ -4270,6 +4271,7 @@ const AFF = {
   amazon:'',    // Amazonアソシエイトのトラッキングタグ（例：nakakaramo-22）
   vcSid:'', vcPid:'', // バリューコマース（Yahoo!ショッピング）の sid と pid
 };
+const affSite = k => k === 'rakuten' ? !!AFF.rakuten : k === 'amazon' ? !!AFF.amazon : k === 'yahoo' ? !!(AFF.vcSid && AFF.vcPid) : false; // アフィリエイトの設定ができているサイトだけ出す
 const affOn = () => !!(AFF.rakuten || AFF.amazon || (AFF.vcSid && AFF.vcPid));
 function affUrl(url) {
   const u = String(url || ''); if (!/^https?:\/\//.test(u)) return '';
@@ -4281,12 +4283,12 @@ function affUrl(url) {
 function shopLinks(x) {
   const q = (cleanShopName(x.name) || x.name).replace(/[＼\\][^／\/]*[／\/]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').slice(0, 5).join(' ');
   const site = /yahoo/i.test(x.site || x.url || '') ? 'yahoo' : /amazon/i.test(x.url || '') ? 'amazon' : 'rakuten';
-  const main = x.url ? {k:site, label:site === 'yahoo' ? 'Yahoo!ショッピング' : site === 'amazon' ? 'Amazon' : '楽天市場', sub:x.shop ? String(x.shop).slice(0, 30) : '', url:affUrl(x.url)} : null;
+  const main = x.url && affSite(site) ? {k:site, label:site === 'yahoo' ? 'Yahoo!ショッピング' : site === 'amazon' ? 'Amazon' : '楽天市場', sub:x.shop ? String(x.shop).slice(0, 30) : '', url:affUrl(x.url)} : null;
   const others = [
     {k:'rakuten', label:'楽天市場', url:affUrl('https://search.rakuten.co.jp/search/mall/' + encodeURIComponent(q) + '/')},
     {k:'amazon', label:'Amazon', url:affUrl('https://www.amazon.co.jp/s?k=' + encodeURIComponent(q))},
     {k:'yahoo', label:'Yahoo!ショッピング', url:affUrl('https://shopping.yahoo.co.jp/search?p=' + encodeURIComponent(q))},
-  ].filter(o => !main || o.k !== main.k);
+  ].filter(o => (!main || o.k !== main.k) && affSite(o.k));
   return {main, others};
 }
 const SHOP_COL = {rakuten:'#BF0000', yahoo:'#FF0033', amazon:'#FF9900'};
@@ -4338,9 +4340,10 @@ async function openIngSheet(word) {
   await popularLoad();
   const pop = (POPULAR.items || []).filter(hit);
   pop.forEach(x => { const m = list.find(y => (x.url && y.url && y.url.split('?')[0] === x.url.split('?')[0]) || sameProduct({name:y.name}, {name:x.name})); if (m) m.sales = Number(x.rank) || 0; else list.push(Object.assign({}, x, {sales:Number(x.rank) || 0})); });
+  for (let k = list.length - 1; k >= 0; k--) { const st = /yahoo/i.test(list[k].site || list[k].url || '') ? 'yahoo' : /amazon/i.test(list[k].url || '') ? 'amazon' : 'rakuten'; if (!affSite(st)) list.splice(k, 1); } // 今はアフィリエイトが使えるサイト（楽天）の商品だけ
   list.sort((a, b) => (a.sales ? 0 : 1) - (b.sales ? 0 : 1) || (a.sales || 0) - (b.sales || 0) || (Number(b.reviews) || 0) - (Number(a.reviews) || 0));
   const b = document.getElementById('ing-pop'); if (!b) return;
-  if (!list.length) { b.innerHTML = '<p class="small muted">この成分の名前が入った人気商品は見つかりませんでした。</p>'; return; }
+  const none = !list.length;
   const kindOf = x => { const n = tidyName(x.name); return /美容液|セラム|エッセンス|アンプル/i.test(n) ? 'serum' : /化粧水|ローション|トナー/i.test(n) && !/ボディ/.test(n) ? 'lotion' : /クリーム|バーム/.test(n) && !/ハンド|ボディ|日焼け|UV/i.test(n) ? 'cream' : 'other'; };
   list.forEach(x => { x.kind = kindOf(x); });
   // 日焼け止め・洗顔など、成分ではなく「商品の種類」そのもののときは、化粧水・美容液…に分けない
@@ -4351,12 +4354,14 @@ async function openIngSheet(word) {
   const amzQ = encodeURIComponent(w0);
   b.innerHTML = (KINDS.length < 2 ? '' : `<div class="ing-kinds">${KINDS.map(([k, l]) => { const c = k === 'all' ? list.length : list.filter(x => x.kind === k).length; return `<button type="button" class="ing-kind ${cur === k ? 'on' : ''}" data-ingkind="${k}" ${c ? '' : 'disabled'}>${l}<small>${c}</small></button>`; }).join('')}</div>`)
     + `<div class="ing-list"></div><button type="button" class="btn btn-ghost btn-sm ing-more" data-ingmore="1" hidden></button>`
-    + `<a class="ing-amz" href="${esc(affUrl('https://www.amazon.co.jp/s?k=' + amzQ + '&s=exact-aware-popularity-rank'))}" target="_blank" rel="noopener sponsored"><i class="shop-dot" style="background:#FF9900"></i><span>Amazonの人気順で「${esc(w0)}」を見る</span><i>↗</i></a>`;
+    + [['rakuten', '楽天市場', '#BF0000', 'https://search.rakuten.co.jp/search/mall/' + amzQ + '/?s=4'], ['amazon', 'Amazon', '#FF9900', 'https://www.amazon.co.jp/s?k=' + amzQ + '&s=exact-aware-popularity-rank'], ['yahoo', 'Yahoo!ショッピング', '#FF0033', 'https://shopping.yahoo.co.jp/search?p=' + amzQ + '&X=4']].filter(z => affSite(z[0])).map(([k, l, c, u]) => `<a class="ing-amz ${k === 'rakuten' ? 'main' : ''}" href="${esc(affUrl(u))}" target="_blank" rel="noopener sponsored"><span class="pr-tag">PR</span><span>${l}で「${esc(w0)}」を見る</span><i>↗</i></a>`).join('');
   const listBox = b.querySelector('.ing-list'), moreBtn = b.querySelector('.ing-more');
+  if (none) { listBox.innerHTML = '<p class="small muted">アプリの中では人気商品を見つけられませんでした。下のボタンから楽天市場で探せます。</p>'; const kk = b.querySelector('.ing-kinds'); if (kk) kk.remove(); }
   const rowHtml = x => `<button type="button" class="pop-item" data-ingpick="${list.indexOf(x)}"><span class="pop-r"></span>${x.image ? extImgHtml(x.image, 'pop-img') : '<span class="pop-img"></span>'}<span class="pop-t"><b>${esc(truncate(tidyName(x.name), 60))}</b><small>${x.sales ? `<span class="ing-sales">売上ランキング${x.sales}位</span>・` : ''}${x.reviews ? `レビュー${Number(x.reviews).toLocaleString()}件` : ''}${x.price ? `${x.reviews ? '・' : ''}¥${Number(x.price).toLocaleString()}` : ''}${x.site ? `・${esc(/yahoo/i.test(x.site) ? 'Yahoo!' : /楽天/.test(x.site) ? '楽天' : x.site)}` : ''}</small></span><i class="ing-go">›</i></button>`;
   const rows = new Map(); // 商品 → 行（作った行は使い回す。画像を読み直さない）
   const rowOf = x => { if (!rows.has(x)) { const t = document.createElement('div'); t.innerHTML = rowHtml(x); rows.set(x, t.firstElementChild); } const el = rows.get(x); return el.parentElement && el.parentElement.classList.contains('hap-keep') ? el.parentElement : el; };
   const paint = () => {
+    if (none) return;
     const L = list.filter(x => cur === 'all' || x.kind === cur), want = L.slice(0, shown).map(rowOf);
     want.forEach((node, i) => { const btn = node.matches('.pop-item') ? node : node.querySelector('.pop-item'); btn.querySelector('.pop-r').textContent = i + 1; btn.dataset.ingpos = i + 1; });
     [...listBox.children].forEach(c => { if (!want.includes(c)) c.remove(); });
