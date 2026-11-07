@@ -1432,6 +1432,8 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .pop-item.ir .ir-img{width:64px;height:64px;border-radius:12px}
 .ir-t{display:flex;flex-direction:column;gap:6px;min-width:0}
 .ir-t b{font-size:13.5px;font-weight:700;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pop-item.ir.ir-pr{grid-template-columns:64px minmax(0,1fr) 12px;border-color:#CFE0D3;background:#F7FBF8}.ir-brand{font-size:11px;color:var(--muted);font-weight:600}
+.ing-h .pr-tag{vertical-align:2px}
 .ir-t em{font-style:normal;font-size:16px;font-weight:800;color:var(--ink)}
 .ing-amz.main{background:#BF0000;border-color:#BF0000;color:#fff}.ing-amz.main .pr-tag{color:#fff;border-color:rgba(255,255,255,.6)}
 .ing-amz{display:flex;align-items:center;gap:10px;margin-top:10px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);text-decoration:none;font-weight:700;font-size:14px}.ing-amz>span:not(.pr-tag){flex:1;min-width:0}.ing-amz .pr-tag{flex:none;margin:0}.ing-amz i:last-child{font-style:normal;opacity:.6}
@@ -4272,6 +4274,16 @@ function tidyName(n) {
     .replace(/\s+/g, ' ').trim();
   return t || String(n || '');
 }
+// ===== 提携ブランド（A8.net）のおすすめ商品 =====
+// partners.json（index.html と同じ場所）に商品を入れると、その成分が入っている商品を「提携ブランドのおすすめ（PR）」に出す
+// 1商品の形：{"brand":"ブランド名","name":"商品名","price":3300,"image":"写真のURL","url":"A8のリンク","pixel":"A8の計測用画像のURL（あれば）","ingredients":"全成分（、区切り）","category":"美容液"}
+let PARTNERS = null;
+async function partnersLoad() {
+  if (PARTNERS) return PARTNERS;
+  try { const r = await fetch('partners.json?d=' + todayStr(), {cache:'no-cache'}); if (!r.ok) throw new Error('x'); const j = await r.json(); PARTNERS = (Array.isArray(j) ? j : j.items || []).filter(x => x && x.name && /^https:\/\//.test(x.url || '')); }
+  catch (e) { PARTNERS = []; }
+  return PARTNERS;
+}
 // ===== アフィリエイト（買えるお店へのリンク） =====
 // それぞれのIDを入れると、リンクがアフィリエイトのリンクになる（空のままなら、ふつうのリンク）
 const AFF = {
@@ -4279,7 +4291,7 @@ const AFF = {
   amazon:'',    // Amazonアソシエイトのトラッキングタグ（例：nakakaramo-22）
   vcSid:'', vcPid:'', // バリューコマース（Yahoo!ショッピング）の sid と pid
 };
-const affSite = k => k === 'rakuten' ? !!AFF.rakuten : k === 'amazon' ? !!AFF.amazon : k === 'yahoo' ? !!(AFF.vcSid && AFF.vcPid) : false; // アフィリエイトの設定ができているサイトだけ出す
+const affSite = k => k === 'a8' ? true : k === 'rakuten' ? !!AFF.rakuten : k === 'amazon' ? !!AFF.amazon : k === 'yahoo' ? !!(AFF.vcSid && AFF.vcPid) : false; // アフィリエイトの設定ができているサイトだけ出す
 const affOn = () => !!(AFF.rakuten || AFF.amazon || (AFF.vcSid && AFF.vcPid));
 function affUrl(url) {
   const u = String(url || ''); if (!/^https?:\/\//.test(u)) return '';
@@ -4290,6 +4302,7 @@ function affUrl(url) {
 }
 function shopLinks(x) {
   const q = (cleanShopName(x.name) || x.name).replace(/[＼\\][^／\/]*[／\/]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').slice(0, 5).join(' ');
+  if (x.a8) return {main:{k:'a8', label:`${x.brand || 'ブランド'}の公式サイト`, sub:'公式通販', url:x.url}, others:[{k:'rakuten', label:'楽天市場', url:affUrl('https://search.rakuten.co.jp/search/mall/' + encodeURIComponent(tidyName(x.name).split(' ').slice(0, 4).join(' ')) + '/')}].filter(o => affSite(o.k))};
   const site = /yahoo/i.test(x.site || x.url || '') ? 'yahoo' : /amazon/i.test(x.url || '') ? 'amazon' : 'rakuten';
   const main = x.url && affSite(site) ? {k:site, label:site === 'yahoo' ? 'Yahoo!ショッピング' : site === 'amazon' ? 'Amazon' : '楽天市場', sub:x.shop ? String(x.shop).slice(0, 30) : '', url:affUrl(x.url)} : null;
   const others = [
@@ -4299,18 +4312,18 @@ function shopLinks(x) {
   ].filter(o => (!main || o.k !== main.k) && affSite(o.k));
   return {main, others};
 }
-const SHOP_COL = {rakuten:'#BF0000', yahoo:'#FF0033', amazon:'#FF9900'};
+const SHOP_COL = {rakuten:'#BF0000', yahoo:'#FF0033', amazon:'#FF9900', a8:'#3B6E52'};
 function viewShop() {
   const x = ui.shopItem;
   if (!x) return `<a class="back" href="#/home">← 戻る</a><div class="card">${emptyBox('search', '商品が選ばれていません', 'おすすめケアの成分から、商品を選んでください。', '')}</div>`;
   const nm = tidyName(x.name);
   const L = shopLinks(x), pr = affOn() ? '<span class="pr-tag">PR</span>' : '';
-  const btn = (o, main) => `<a class="shop-btn ${main ? 'main' : ''}" href="${esc(o.url)}" target="_blank" rel="noopener sponsored">${main ? '' : `<i class="shop-dot" style="background:${SHOP_COL[o.k]}"></i>`}<span>${/hb\.afl\.rakuten|valuecommerce|[?&]tag=/.test(o.url) ? '<span class="pr-tag">PR</span>' : ''}${esc(o.label)}${o.sub ? `<small>${esc(o.sub)}</small>` : ''}</span><i>↗</i></a>`;
+  const btn = (o, main) => `<a class="shop-btn ${main ? 'main' : ''}" href="${esc(o.url)}" target="_blank" rel="noopener sponsored">${main ? '' : `<i class="shop-dot" style="background:${SHOP_COL[o.k]}"></i>`}<span>${/hb\.afl\.rakuten|valuecommerce|[?&]tag=|a8\.net/.test(o.url) || o.k === 'a8' ? '<span class="pr-tag">PR</span>' : ''}${esc(o.label)}${o.sub ? `<small>${esc(o.sub)}</small>` : ''}</span><i>↗</i></a>`;
   return `<a class="back" href="#/home" onclick="history.length > 1 && (event.preventDefault(), history.back())">← 戻る</a>
     <div class="card shop-top">
       ${x.image ? extImgHtml(x.image, 'shop-img') : ''}
-      <div class="shop-meta">${x.fromIng ? `<span class="chip green">${esc(x.fromIng)}の人気${x.ingRank ? ` ${x.ingRank}位` : ''}</span>` : ''}${x.rank ? `<span class="chip">楽天ランキング${esc(String(x.rank))}位</span>` : ''}${x.reviews ? `<span class="chip">レビュー${Number(x.reviews).toLocaleString()}件</span>` : ''}</div>
-      <h1 class="shop-name">${esc(truncate(nm, 70))}</h1>
+      <div class="shop-meta">${x.a8 ? '<span class="chip"><span class="pr-tag" style="margin:0 4px 0 0">PR</span>提携ブランド</span>' : ''}${x.fromIng ? `<span class="chip green">${esc(x.fromIng)}${x.a8 ? '入り' : `の人気${x.ingRank ? ` ${x.ingRank}位` : ''}`}</span>` : ''}${x.rank ? `<span class="chip">楽天ランキング${esc(String(x.rank))}位</span>` : ''}${x.reviews ? `<span class="chip">レビュー${Number(x.reviews).toLocaleString()}件</span>` : ''}</div>
+      <h1 class="shop-name">${esc(truncate(nm, 70))}</h1>${x.a8 && x.brand ? `<div class="small muted">${esc(x.brand)}</div>` : ''}${x.a8 && /^https:\/\//.test(x.pixel || '') ? `<img src="${esc(x.pixel)}" width="1" height="1" alt="" style="position:absolute;opacity:0">` : ''}
       ${x.price ? `<div class="shop-price">¥${Number(x.price).toLocaleString()}<small>税込・${esc(x.site || '楽天市場')}</small></div>` : ''}
     </div>
     <div class="card mt"><div class="card-h"><h2>購入サイト</h2></div>
@@ -4335,9 +4348,19 @@ async function openIngSheet(word) {
   openModal({title:esc(w0), size:'small', dismissable:true, body:`<div class="ing-sheet">
     ${e ? `<div class="ing-dl"><div class="ing-b"><b>どんな成分？</b><p>${esc(e.feature)}</p></div><div class="ing-b"><b>何のために入っている？</b><p>${esc(e.purpose)}</p></div><div class="ing-b warn"><b>気をつけること</b><p>${esc(e.caution)}</p></div></div>
       <a class="link small" href="#/ingredients/${e.key}" onclick="closeModal()">成分辞典で詳しく見る ›</a>` : `<p class="small muted">この成分のくわしい説明は準備中です。下の商品の成分表示も参考にしてください。</p>`}
+    <div id="ing-partner"></div>
     <h3 class="ing-h">この成分の人気ランキング</h3><div id="ing-pop">${skelHtml(3, {label:'人気の商品を探しています'})}</div>
     <p class="small muted" style="margin-top:8px">売れている順です。押すと、商品のくわしい情報と購入サイトが見られます。</p></div>`});
   const keys = ingWords(word, e), hit = x => { const n = fnorm(cleanShopName(x.name) || x.name); return keys.some(k => n.includes(k)); };
+  // 提携ブランド（A8）の商品で、その成分が全成分に入っているもの（ランキングとは別の枠。PRと表示する）
+  partnersLoad().then(P => {
+    const box = document.getElementById('ing-partner'); if (!box) return;
+    const got = P.filter(x => { const t = fnorm((x.ingredients || '') + ' ' + x.name); return keys.some(k => t.includes(k)); }).slice(0, 4);
+    if (!got.length) return;
+    box.innerHTML = `<h3 class="ing-h"><span class="pr-tag">PR</span>提携ブランドのおすすめ</h3><div class="irk-list">${got.map((x, i) => `<button type="button" class="pop-item ir ir-pr" data-a8="${P.indexOf(x)}">${x.image ? extImgHtml(x.image, 'pop-img ir-img') : '<span class="pop-img ir-img"></span>'}<span class="ir-t"><small class="ir-brand">${esc(x.brand || '')}</small><b>${esc(x.name)}</b>${x.price ? `<em>¥${Number(x.price).toLocaleString()}</em>` : ''}</span><i class="ing-go">›</i></button>`).join('')}</div>
+      <p class="small muted" style="margin:6px 0 0">ナカカラモと提携しているブランドの広告です。全成分に「${esc(w0)}」が入っている商品を出しています。</p>`;
+    box.onclick = ev => { const t = ev.target.closest('[data-a8]'); if (!t) return; const x = P[Number(t.dataset.a8)]; if (!x) return; ui.shopItem = Object.assign({}, x, {a8:true, site:'公式通販', fromIng:w0}); closeModal(); location.hash = '#/shop'; };
+  });
   // その成分の商品だけを、楽天市場・Yahoo!ショッピング（美容・コスメ）で人気順（レビューの多い順）に探す
   // 種類ごとにも探して、たくさん集める（すべて・化粧水・美容液・クリーム・その他で分けて見られる）
   const list = [], alias = e && (e.aliases || [])[0] && (e.aliases || [])[0] !== w0 ? e.aliases[0] : '';
