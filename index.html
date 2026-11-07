@@ -1342,7 +1342,9 @@ a.used-tile{color:inherit;text-decoration:none}
 .mn-pl{font-size:11px;font-weight:700;color:var(--muted);min-width:52px}
 .mn-item{display:flex;align-items:center;gap:10px;min-width:0}
 .mn-item a{color:var(--ink);font-size:14px;text-decoration:underline;text-decoration-color:var(--line2);text-underline-offset:3px}
-.mn-img{flex:none;width:52px;height:52px;border-radius:10px;object-fit:cover;background:var(--surface2);border:1px solid var(--line)}
+.mn-img{flex:none;width:52px;height:52px;border-radius:10px;object-fit:cover;background:var(--surface2);border:1px solid var(--line);object-position:200px 200px}
+.mn-img.shown{object-position:center;animation:mnIn .25s ease}.mn-img.bad{display:none}
+@keyframes mnIn{from{opacity:.3}to{opacity:1}}
 .mn-noimg{display:flex;align-items:center;justify-content:center;color:var(--muted)}
 .mn-noimg svg{width:20px;height:20px}
 .mn-pb{border:1px solid var(--line2);background:var(--surface);color:var(--muted);border-radius:999px;padding:5px 11px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}
@@ -7994,6 +7996,21 @@ const STORE_LIST = [{k:'seven', name:'セブン-イレブン', short:'セブン'
 const CVS_KEY = 'skinwise_store_items';
 const STORE = {items:[], at:0, checked:'', state:'', err:''};
 try { const c = JSON.parse(localStorage.getItem(CVS_KEY) || 'null'); if (c && Array.isArray(c.items)) Object.assign(STORE, {items:c.items, at:c.at || 0, checked:c.checked || ''}); } catch (e) { /* 何もしない */ }
+// コンビニの商品の写真は、全部そろってから一緒に出す（バラバラに出ないように。最大2.5秒待つ）
+(() => {
+  let q = false;
+  const run = () => {
+    q = false;
+    const pend = [...document.querySelectorAll('.mn-img:not(.shown)')]; if (!pend.length) return;
+    let done = false;
+    const show = () => { if (done) return; done = true; pend.forEach(i => i.classList.add('shown')); };
+    const left = () => pend.filter(i => !(i.complete && (i.naturalWidth || i.classList.contains('bad')))).length;
+    if (!left()) { show(); return; }
+    pend.forEach(i => { const f = () => { if (!left()) show(); }; i.addEventListener('load', f, {once:true}); i.addEventListener('error', f, {once:true}); });
+    setTimeout(show, 2500);
+  };
+  new MutationObserver(() => { if (!q && document.querySelector('.mn-img:not(.shown)')) { q = true; requestAnimationFrame(run); } }).observe(document.documentElement, {childList:true, subtree:true});
+})();
 async function storeLoad(force) {
   if (STORE.state === 'loading' || (!force && Date.now() - STORE.at < 6 * 3600000 && STORE.items.length)) return; // 6時間以内に読んだものは、そのまま使う
   STORE.state = 'loading';
@@ -8056,7 +8073,7 @@ function menuHtml() {
   const pickRow = (m, mi, k) => { const home = m.plans.map((pl, i) => [pl, i]).filter(([pl]) => !pl.store), cv = m.plans.map((pl, i) => [pl, i]).filter(([pl]) => pl.store);
     return `<div class="mn-pick" role="tablist">${home.map(([pl, i]) => pb(pl, i, k, mi)).join('')}${cv.length ? `<i class="mn-sep" aria-hidden="true"></i>${cv.map(([pl, i]) => pb(pl, i, k, mi)).join('')}` : ''}</div>`; };
   // 家で作る献立は、料理名を押すと作り方が出る。コンビニの組み合わせは、調べた公式サイトを出す
-  const plan = pl => pl.store && !pl.dishes.length ? `<p class="mn-src" style="margin:4px 0 0">${STORE.state === 'err' ? esc(STORE.err) : STORE.filling ? `${esc(pl.store)}の公式サイトで、体にいい商品を調べています（1〜3分ほど）${STORE.remaining ? `。残り${STORE.remaining}種類` : ''}…` : !acct.user ? 'ログインすると、コンビニの商品が出ます。' : `${esc(pl.store)}の商品が見つかりませんでした。${STORE.note ? `（${esc(STORE.note)}）` : ''}「別の献立にする」でもう一度調べます。`}</p>` : `<ul class="mn-list">${pl.dishes.map(x => `<li>${x.role ? `<span class="mn-role ${ROLE_C[x.role] || ''}">${esc(x.role)}</span>` : ''}${pl.store ? `<span class="mn-item">${x.image ? `<img class="mn-img" src="${esc(x.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove()">` : ''}${x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.name)}</a>` : `<span>${esc(x.name)}</span>`}</span>` : `<button type="button" class="mn-dish" data-recipe="${esc(x.name)}">${esc(x.name)}<span aria-hidden="true">›</span></button>`}</li>`).join('')}</ul>${pl.point ? `<p class="mn-point">${esc(pl.point)}</p>` : ''}
+  const plan = pl => pl.store && !pl.dishes.length ? `<p class="mn-src" style="margin:4px 0 0">${STORE.state === 'err' ? esc(STORE.err) : STORE.filling ? `${esc(pl.store)}の公式サイトで、体にいい商品を調べています（1〜3分ほど）${STORE.remaining ? `。残り${STORE.remaining}種類` : ''}…` : !acct.user ? 'ログインすると、コンビニの商品が出ます。' : `${esc(pl.store)}の商品が見つかりませんでした。${STORE.note ? `（${esc(STORE.note)}）` : ''}「別の献立にする」でもう一度調べます。`}</p>` : `<ul class="mn-list">${pl.dishes.map(x => `<li>${x.role ? `<span class="mn-role ${ROLE_C[x.role] || ''}">${esc(x.role)}</span>` : ''}${pl.store ? `<span class="mn-item">${x.image ? `<img class="mn-img" src="${esc(x.image)}" alt="" referrerpolicy="no-referrer" onerror="this.classList.add('bad')">` : ''}${x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${esc(x.name)}</a>` : `<span>${esc(x.name)}</span>`}</span>` : `<button type="button" class="mn-dish" data-recipe="${esc(x.name)}">${esc(x.name)}<span aria-hidden="true">›</span></button>`}</li>`).join('')}</ul>${pl.point ? `<p class="mn-point">${esc(pl.point)}</p>` : ''}
     ${pl.store ? `<p class="mn-src">${esc(pl.store)}の公式サイトで確かめた商品です${STORE.checked ? `（${esc(fmtShort(STORE.checked))}確認）` : ''}。商品名を押すと公式の商品ページが開きます。地域・時期によって売っていないことがあります。</p>` : '<p class="mn-src">料理名を押すと、作り方が出ます。</p>'}`;
   // 家で作る（和食・洋食）はAIの献立、コンビニ（セブン・ローソン・ファミマ）は保存してある商品の一覧から、すぐに組み合わせる
   if (res) res = Object.assign({}, res, {meals:res.meals.map(m => Object.assign({}, m, {plans:m.plans.filter(pl => !pl.store).slice(0, 2).map((pl, i) => Object.assign({}, pl, {label:['和食', '洋食'][i]})).concat(storePlans(m.meal, d))}))});
