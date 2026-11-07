@@ -1070,7 +1070,7 @@ body::before{content:'';position:fixed;left:0;right:0;top:0;height:env(safe-area
 .tm-opt input:checked+span{background:var(--green-l,#E5F2EA);border-color:var(--green);color:var(--green-d)}
 .tm-opt input:focus-visible+span{outline:2px solid var(--green-d);outline-offset:2px}
 /* 押したときの小さな動き・色の変化を、どこでも自然に */
-.chip,.adv-c,.add-opt,.rx-item,.pop-item,.mrow,.mtools a,.ls-main,.acc-row,.check,.used-tile,.sc-d,.fq-chip{transition:background-color .18s,border-color .18s,color .18s,transform .12s,box-shadow .18s,opacity .18s}
+.chip,.adv-c,.add-opt,.rx-item,.pop-item,.mrow,.mtools a,.ls-main,.acc-row,.check,.sc-d,.fq-chip{transition:background-color .18s,border-color .18s,color .18s,transform .12s,box-shadow .18s,opacity .18s}
 .add-opt:active,.rx-item:active,.pop-item:active,.mtools a:active,.sc-d.has:active{transform:scale(.98)}
 .mrow:active{background:var(--surface2,#F6F3EE)}
 details.fold[open]>*:not(summary){animation:itemIn .3s cubic-bezier(.2,.8,.2,1) both}
@@ -1096,6 +1096,15 @@ details.fold summary{transition:color .18s}
 .wx-tip{margin:0;font-size:12.5px;color:var(--ink2);display:flex;gap:6px;align-items:center;flex-wrap:wrap}
 .wx-tip i.chip{font-style:normal}
 .wx-pref{margin-left:auto;background:none;border:0;padding:2px;color:var(--muted);font-size:10.5px;text-decoration:underline;cursor:pointer;font-family:inherit}
+.st-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}.st-head h2{margin:0;font-size:17px}
+.st-sub{margin:2px 0 0;font-size:12px;color:var(--muted)}
+.st-x{flex:none;width:32px;height:32px;border-radius:50%;border:0;background:var(--surface2,#F4F1EC);color:var(--ink2);font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;margin:-4px -4px 0 0}
+.st-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:0 0 12px}.st-steps i{height:5px;border-radius:3px;background:var(--surface2,#EEE9E1);transition:background .3s}.st-steps i.on{background:var(--green-d)}
+.st-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.start-row.st-tile{display:flex;flex-direction:column;align-items:flex-start;gap:3px;padding:12px;border:1px solid var(--line);border-radius:14px;background:var(--surface);text-align:left;min-height:0;grid-template-columns:none}
+.st-tile .st-ic{width:32px;height:32px;border-radius:10px;background:var(--green-l,#E5F2EA);color:var(--green-d);display:flex;align-items:center;justify-content:center;margin-bottom:4px}.st-tile .st-ic svg{width:17px;height:17px}
+.st-tile b{font-size:14px;line-height:1.35;white-space:nowrap}.st-tile small{font-size:11px;line-height:1.5;color:var(--muted);text-wrap:pretty}
+.start-row.st-tile.done{background:var(--surface2,#F7F4EF);border-color:transparent}.st-tile.done .st-ic{background:var(--green-d);color:#fff}.start-row.st-tile.done b{text-decoration:none;color:var(--ink2)}
 .start-bar{height:6px;border-radius:3px;background:var(--surface2);overflow:hidden;margin:-2px 0 6px}
 .start-bar i{display:block;height:100%;background:var(--green-d);border-radius:3px;transition:width .4s}
 .start-row{display:grid;grid-template-columns:28px minmax(0,1fr) 10px;gap:10px;align-items:center;width:100%;padding:10px 2px;border:0;border-top:1px solid var(--line);background:none;font-family:inherit;text-align:left;color:var(--ink);cursor:pointer}
@@ -1189,21 +1198,23 @@ a.used-tile{color:inherit;text-decoration:none}
 .routine:has(.home-used){grid-template-columns:1fr;gap:14px}
 .used-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
 .used-head .lbl{margin:0}
+.use-all-mini{border:1px solid var(--line2);background:var(--surface);color:var(--green-d);border-radius:999px;padding:3px 10px;font:inherit;font-size:11.5px;font-weight:700;line-height:1.5;cursor:pointer;flex:none}
+.use-all-mini[aria-pressed="true"]{background:var(--green-l,#E5F2EA);border-color:transparent}
 .fp-mode{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;margin:2px 0 10px;background:var(--surface2);border-radius:999px}
 .fp-mode button{border:0;background:transparent;border-radius:999px;padding:8px 6px;font-family:inherit;font-size:13px;font-weight:600;color:var(--ink2);cursor:pointer;transition:background .2s,color .2s}
 .fp-mode button.on{background:var(--surface);color:var(--green-d);box-shadow:var(--shadow)}
 .used-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px}
 .used-tile{position:relative;display:flex;flex-direction:column;gap:3px;cursor:pointer;min-width:0;-webkit-tap-highlight-color:transparent}
 .used-tile input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
-.used-tile .thumb{border-radius:14px;border:2px solid transparent;transition:border-color .18s,transform .18s}
+.used-tile .thumb{border-radius:14px;border:2px solid transparent;transition:transform .18s} /* 枠とチェックは同時に変える（ずれないように、色はアニメーションしない） */
 .used-tile .thumb .ph{font-size:0}
 .used-tile .thumb img{filter:saturate(.85)}
-.used-ck{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.9);border:1px solid var(--line2);color:transparent;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:background .18s,color .18s}
+.used-ck{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.9);border:1px solid var(--line2);color:transparent;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:none}
 .used-nm{font-size:12px;font-weight:600;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .used-sub{font-size:10.5px;color:var(--muted);line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .used-tile input:checked ~ .thumb,.used-tile:has(input:checked) .thumb{border-color:var(--green)}
 .used-tile:has(input:checked) .thumb img{filter:none}
-.used-tile input:checked ~ .used-ck{background:var(--green);border-color:var(--green);color:#fff}
+.used-tile input:checked ~ .used-ck,.used-tile:has(input:checked) .used-ck{background:var(--green);border-color:var(--green);color:#fff}
 .used-tile input:focus-visible ~ .thumb{outline:2px solid var(--green-d);outline-offset:2px}
 .fp-zoom{position:absolute;right:6px;bottom:6px;display:flex;flex-direction:column;gap:6px;z-index:2}
 .fp-zoom .icon-btn{width:32px;height:32px;font-size:16px;background:var(--surface);box-shadow:var(--shadow)}
@@ -5951,20 +5962,21 @@ function careDone(k) {
 function startItems() {
   const life = state.lifeLogs.filter(l => !l.demo);
   return [
-    {k:'skin', l:'肌を記録する', s:'1分ほど。毎日の調子を残します', done:state.skinLogs.some(l => !l.demo), a:'new-log'},
-    {k:'my', l:'化粧品を1つ登録する', s:'使っている化粧水などを1つ', done:state.myProducts.some(p => !p.isSample), a:'add-sheet', id:'my'},
-    {k:'meal', l:'食事を記録する', s:'食べたものから、栄養のバランスがわかります', done:life.some(l => (l.foods || []).length || MEALS.some(m => l.meals && l.meals[m.k] && l.meals[m.k].ate)), a:'life-edit', id:'meal'},
-    {k:'a2hs', l:'ホーム画面に追加する', s:'アプリのように開けて、記録が消えにくくなります', done:isStandalone() || !!state.settings.a2hsDone, a:'a2hs-guide'},
+    {k:'skin', l:'肌を記録', s:'1分で今日の調子を残す', done:state.skinLogs.some(l => !l.demo), a:'new-log'},
+    {k:'my', l:'化粧品を登録', s:'使っている物を1つ', done:state.myProducts.some(p => !p.isSample), a:'add-sheet', id:'my'},
+    {k:'meal', l:'食事を記録', s:'栄養のバランスがわかる', done:life.some(l => (l.foods || []).length || MEALS.some(m => l.meals && l.meals[m.k] && l.meals[m.k].ate)), a:'life-edit', id:'meal'},
+    {k:'a2hs', l:'ホーム画面に追加', s:'アプリのように開ける', done:isStandalone() || !!state.settings.a2hsDone, a:'a2hs-guide'},
   ];
 }
 function startHtml() {
   if (state.settings.startHidden) return '';
   const it = startItems(), n = it.filter(x => x.done).length; if (n === it.length) return '';
-  return `<div class="card start-card"><div class="card-h"><h2>はじめにやること</h2><span class="small muted">${n} / ${it.length}</span></div>
-    <div class="start-bar"><i style="width:${n / it.length * 100}%"></i></div>
-    ${it.map((x, i) => `<button type="button" class="start-row ${x.done ? 'done' : ''}" ${x.done ? 'disabled' : `data-action="${x.a}"${x.id ? ` data-id="${x.id}"` : ''}`}><span class="start-n">${x.done ? icon('check') : i + 1}</span><span class="start-t"><b>${esc(x.l)}</b><small>${esc(x.s)}</small></span>${x.done ? '' : '<i>›</i>'}</button>`).join('')}
+  const IC = {skin:'note', my:'bottle', meal:'leaf', a2hs:'home'};
+  return `<div class="card start-card"><div class="st-head"><div><h2>はじめにやること</h2><p class="st-sub">あと${it.length - n}つで準備完了です</p></div><button type="button" class="st-x" data-action="start-hide" aria-label="この案内を閉じる">×</button></div>
+    <div class="st-steps" aria-hidden="true">${it.map((x, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</div>
+    <div class="st-grid">${it.map((x, i) => `<button type="button" class="start-row st-tile ${x.done ? 'done' : ''}" ${x.done ? 'disabled' : `data-action="${x.a}"${x.id ? ` data-id="${x.id}"` : ''}`}><span class="st-ic">${icon(x.done ? 'check' : IC[x.k] || 'spark')}</span><b>${esc(x.l)}</b><small>${x.done ? 'できました' : esc(x.s)}</small></button>`).join('')}</div>
     ${state.skinLogs.some(l => l.demo) ? '<p class="small muted start-demo">見本のデータが入っています。<button type="button" class="link small" data-action="demo-remove">見本を消す</button></p>' : !state.skinLogs.some(l => !l.demo) ? '<p class="small muted start-demo">記録がたまるとどう見えるか先に知りたいときは <button type="button" class="link small" data-action="demo-add">見本のデータで試す</button>（あとで消せます）</p>' : ''}
-    <button type="button" class="link small start-close" data-action="start-hide">この案内を閉じる</button></div>`;
+    </div>`;
 }
 function openA2hsGuide() {
   const ios = DEV.ios, steps = ios ? [['画面の下の「共有」ボタン（四角から上向きの矢印）を押す', 'Safariで開いているときです。ほかのアプリの中で開いているときは、先にSafariで開きます'], ['「ホーム画面に追加」を押す', '見つからないときは、下に少しスクロールします'], ['右上の「追加」を押す', 'ホーム画面にナカカラモのアイコンができます。次からはそこから開いてください']]
@@ -6444,7 +6456,7 @@ function openLogForm(id) {
       <div class="face-wrap">${faceSvg()}<div><div class="checks">${AREAS.map(a => `<label class="check"><input type="checkbox" name="areas" value="${a.id}" ${d.areas.includes(a.id) ? 'checked' : ''}>${esc(a.name)}</label>`).join('')}</div>
       <p class="hint">イラストを${DEV.tap}しても選べます。イラストは正面から見た顔です（向かって左があなたの右頬）。</p></div></div>
     </div>
-    <div class="field"><div class="used-head"><span class="lbl">今日使った化粧品<span class="opt">任意</span></span>${usable.length ? '<button type="button" class="btn btn-soft btn-sm" id="use-all" aria-pressed="false">すべて選ぶ</button>' : ''}</div>
+    <div class="field"><div class="used-head"><span class="lbl">今日使った化粧品<span class="opt">任意</span></span>${usable.length ? '<button type="button" class="use-all-mini" id="use-all" aria-pressed="false">すべて選ぶ</button>' : ''}</div>
       ${usable.length ? `<div class="used-grid">${usable.map(p => `<label class="used-tile"><input type="checkbox" name="usedProducts" value="${esc(p.id)}" ${d.usedProducts.includes(p.id) ? 'checked' : ''}>${thumbHtml(Object.assign({}, getCat(p.catalogId) || {category:p.category}, {name:p.name, isSample:false}), false)}<span class="used-ck" aria-hidden="true">✓</span><span class="used-nm">${esc(truncate(p.name.replace(/^【[^】]*】\s*/, ''), 10))}</span><span class="used-sub">${esc(p.category || '')}</span></label>`).join('')}</div>
         <p class="hint">使ったものの写真を押してください。予定の使用頻度と実際の使用を比べられます。</p>`
       : '<p class="small muted">使用中の化粧品が登録されていません。</p>'}
