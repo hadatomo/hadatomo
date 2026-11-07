@@ -1425,8 +1425,16 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .ing-kind{flex:none;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surface);color:var(--ink2);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .ing-kind small{font-size:11px;font-weight:600;color:var(--muted)}.ing-kind.on{background:var(--green-d);border-color:var(--green-d);color:#fff}.ing-kind.on small{color:rgba(255,255,255,.8)}.ing-kind:disabled{opacity:.4;cursor:default}
 .ing-more{width:100%;justify-content:center;margin-top:4px}.ing-sales{color:#B0662A;font-weight:700}
+.irk-list{display:grid;gap:8px}.irk-list .hap-keep{display:block}
+.pop-item.ir{display:grid;grid-template-columns:26px 64px minmax(0,1fr) 12px;align-items:center;gap:12px;margin:0;padding:10px 12px;border-radius:16px}
+.ir-n{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:var(--muted);background:var(--surface2,#F4F1EC)}
+.ir-n.top1{background:#E8B43A;color:#fff}.ir-n.top2{background:#A9B1B8;color:#fff}.ir-n.top3{background:#C98B5C;color:#fff}
+.pop-item.ir .ir-img{width:64px;height:64px;border-radius:12px}
+.ir-t{display:flex;flex-direction:column;gap:6px;min-width:0}
+.ir-t b{font-size:13.5px;font-weight:700;line-height:1.45;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ir-t em{font-style:normal;font-size:16px;font-weight:800;color:var(--ink)}
 .ing-amz.main{background:#BF0000;border-color:#BF0000;color:#fff}.ing-amz.main .pr-tag{color:#fff;border-color:rgba(255,255,255,.6)}
-.ing-amz{display:flex;align-items:center;gap:10px;margin-top:10px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);text-decoration:none;font-weight:700;font-size:14px}.ing-amz span{flex:1;min-width:0}.ing-amz i:last-child{font-style:normal;opacity:.6}
+.ing-amz{display:flex;align-items:center;gap:10px;margin-top:10px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);text-decoration:none;font-weight:700;font-size:14px}.ing-amz>span:not(.pr-tag){flex:1;min-width:0}.ing-amz .pr-tag{flex:none;margin:0}.ing-amz i:last-child{font-style:normal;opacity:.6}
 .adv-c{font-size:12.5px;font-weight:600;border-radius:999px;padding:3px 10px;background:#fff;line-height:1.5}
 .adv-c.good{color:var(--green-d);box-shadow:inset 0 0 0 1px #CFE3D4}
 .adv-c.bad{color:#B04A32;box-shadow:inset 0 0 0 1px #F2CFC4}
@@ -4328,7 +4336,7 @@ async function openIngSheet(word) {
     ${e ? `<div class="ing-dl"><div class="ing-b"><b>どんな成分？</b><p>${esc(e.feature)}</p></div><div class="ing-b"><b>何のために入っている？</b><p>${esc(e.purpose)}</p></div><div class="ing-b warn"><b>気をつけること</b><p>${esc(e.caution)}</p></div></div>
       <a class="link small" href="#/ingredients/${e.key}" onclick="closeModal()">成分辞典で詳しく見る ›</a>` : `<p class="small muted">この成分のくわしい説明は準備中です。下の商品の成分表示も参考にしてください。</p>`}
     <h3 class="ing-h">この成分の人気ランキング</h3><div id="ing-pop">${skelHtml(3, {label:'人気の商品を探しています'})}</div>
-    <p class="small muted" style="margin-top:8px">売れている順です。楽天の売上ランキング（毎日更新）に入っている商品はその順位で先に並べ、ほかはレビュー（＝買った人）の多い順にしています。押すと、商品のくわしい情報と購入サイトが見られます。</p></div>`});
+    <p class="small muted" style="margin-top:8px">売れている順です。押すと、商品のくわしい情報と購入サイトが見られます。</p></div>`});
   const keys = ingWords(word, e), hit = x => { const n = fnorm(cleanShopName(x.name) || x.name); return keys.some(k => n.includes(k)); };
   // その成分の商品だけを、楽天市場・Yahoo!ショッピング（美容・コスメ）で人気順（レビューの多い順）に探す
   // 種類ごとにも探して、たくさん集める（すべて・化粧水・美容液・クリーム・その他で分けて見られる）
@@ -4353,17 +4361,17 @@ async function openIngSheet(word) {
   // 押したときにチカチカしないように：ボタンの列・商品の行は1回だけ作って、あとは並べ替え・出し入れだけする
   const amzQ = encodeURIComponent(w0);
   b.innerHTML = (KINDS.length < 2 ? '' : `<div class="ing-kinds">${KINDS.map(([k, l]) => { const c = k === 'all' ? list.length : list.filter(x => x.kind === k).length; return `<button type="button" class="ing-kind ${cur === k ? 'on' : ''}" data-ingkind="${k}" ${c ? '' : 'disabled'}>${l}<small>${c}</small></button>`; }).join('')}</div>`)
-    + `<div class="ing-list"></div><button type="button" class="btn btn-ghost btn-sm ing-more" data-ingmore="1" hidden></button>`
+    + `<div class="irk-list"></div><button type="button" class="btn btn-ghost btn-sm ing-more" data-ingmore="1" hidden></button>`
     + [['rakuten', '楽天市場', '#BF0000', 'https://search.rakuten.co.jp/search/mall/' + amzQ + '/?s=4'], ['amazon', 'Amazon', '#FF9900', 'https://www.amazon.co.jp/s?k=' + amzQ + '&s=exact-aware-popularity-rank'], ['yahoo', 'Yahoo!ショッピング', '#FF0033', 'https://shopping.yahoo.co.jp/search?p=' + amzQ + '&X=4']].filter(z => affSite(z[0])).map(([k, l, c, u]) => `<a class="ing-amz ${k === 'rakuten' ? 'main' : ''}" href="${esc(affUrl(u))}" target="_blank" rel="noopener sponsored"><span class="pr-tag">PR</span><span>${l}で「${esc(w0)}」を見る</span><i>↗</i></a>`).join('');
-  const listBox = b.querySelector('.ing-list'), moreBtn = b.querySelector('.ing-more');
+  const listBox = b.querySelector('.irk-list'), moreBtn = b.querySelector('.ing-more');
   if (none) { listBox.innerHTML = '<p class="small muted">アプリの中では人気商品を見つけられませんでした。下のボタンから楽天市場で探せます。</p>'; const kk = b.querySelector('.ing-kinds'); if (kk) kk.remove(); }
-  const rowHtml = x => `<button type="button" class="pop-item" data-ingpick="${list.indexOf(x)}"><span class="pop-r"></span>${x.image ? extImgHtml(x.image, 'pop-img') : '<span class="pop-img"></span>'}<span class="pop-t"><b>${esc(truncate(tidyName(x.name), 60))}</b><small>${x.sales ? `<span class="ing-sales">売上ランキング${x.sales}位</span>・` : ''}${x.reviews ? `レビュー${Number(x.reviews).toLocaleString()}件` : ''}${x.price ? `${x.reviews ? '・' : ''}¥${Number(x.price).toLocaleString()}` : ''}${x.site ? `・${esc(/yahoo/i.test(x.site) ? 'Yahoo!' : /楽天/.test(x.site) ? '楽天' : x.site)}` : ''}</small></span><i class="ing-go">›</i></button>`;
+  const rowHtml = x => `<button type="button" class="pop-item ir" data-ingpick="${list.indexOf(x)}"><span class="pop-r ir-n"></span>${x.image ? extImgHtml(x.image, 'pop-img ir-img') : '<span class="pop-img ir-img"></span>'}<span class="ir-t"><b>${esc(tidyName(x.name))}</b>${x.price ? `<em>¥${Number(x.price).toLocaleString()}</em>` : ''}</span><i class="ing-go">›</i></button>`;
   const rows = new Map(); // 商品 → 行（作った行は使い回す。画像を読み直さない）
   const rowOf = x => { if (!rows.has(x)) { const t = document.createElement('div'); t.innerHTML = rowHtml(x); rows.set(x, t.firstElementChild); } const el = rows.get(x); return el.parentElement && el.parentElement.classList.contains('hap-keep') ? el.parentElement : el; };
   const paint = () => {
     if (none) return;
     const L = list.filter(x => cur === 'all' || x.kind === cur), want = L.slice(0, shown).map(rowOf);
-    want.forEach((node, i) => { const btn = node.matches('.pop-item') ? node : node.querySelector('.pop-item'); btn.querySelector('.pop-r').textContent = i + 1; btn.dataset.ingpos = i + 1; });
+    want.forEach((node, i) => { const btn = node.matches('.pop-item') ? node : node.querySelector('.pop-item'); const r = btn.querySelector('.pop-r'); r.textContent = i + 1; r.className = 'pop-r ir-n' + (i < 3 ? ' top' + (i + 1) : ''); btn.dataset.ingpos = i + 1; });
     [...listBox.children].forEach(c => { if (!want.includes(c)) c.remove(); });
     want.forEach((node, i) => { if (listBox.children[i] !== node) listBox.insertBefore(node, listBox.children[i] || null); });
     b.querySelectorAll('.ing-kind').forEach(k => k.classList.toggle('on', k.dataset.ingkind === cur));
