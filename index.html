@@ -706,6 +706,8 @@ details.acc-cmp{margin-top:14px}
 .home-pane.hp-in{animation:hpIn .46s cubic-bezier(.22,.7,.2,1)}
 @keyframes hpIn{from{transform:translateX(var(--hp-from,0));opacity:.4}to{transform:none;opacity:1}}
 .home-tabs.my-tabs{grid-template-columns:repeat(2,minmax(0,124px))}
+.my-tabs .ht{display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.my-tabs .ht-n{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;padding:0 5px;border-radius:10px;border:1.5px solid currentColor;font-size:11px;font-weight:700;line-height:1;box-sizing:border-box}
 .home-tabs{position:sticky;top:0;z-index:12;display:grid;grid-template-columns:repeat(3,minmax(0,124px));justify-content:center;gap:0;margin:-20px -16px 14px;padding:0 8px;background:var(--bg);border-bottom:1px solid var(--line)}
 .ht-ind{position:absolute;left:0;bottom:-1px;width:48px;height:3px;border-radius:3px;background:var(--green-d);transition:transform .44s cubic-bezier(.3,.8,.25,1);pointer-events:none}
 .ht{display:flex;align-items:center;justify-content:center;gap:5px;min-height:38px;min-width:0;padding:0 6px!important;border:0;background:none;color:var(--muted);font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;position:relative;white-space:nowrap;padding:0 4px}
@@ -2045,7 +2047,7 @@ const NAV = [
   {r:'my', label:'Myアイテム', icon:'bottle', g:'記録'},
   {r:'charts', label:'肌の変化・比較', icon:'chart', g:'振り返り'},
   {r:'report', label:'週次レポート', icon:'calendar', g:'振り返り'},
-  {r:'combo', label:'成分の組み合わせ', icon:'flask', g:'振り返り'},
+  {r:'combo', label:'成分組み合わせ', icon:'flask', g:'振り返り'},
   {r:'visit', label:'受診用まとめ', icon:'note', g:'振り返り'},
   {r:'suggest', label:'ケアの提案', icon:'leaf', g:'提案・商品'},
   {r:'search', label:'商品検索', icon:'search', g:'提案・商品'},
@@ -2634,7 +2636,7 @@ function hapticize(btn) {
 
 // 押したときにバイブを付けるボタン：今日の肌を記録／睡眠・運動・食事／記録する（ホームの小さいボタン）／メニュー
 // （保存する・記録するの保存ボタンは、下から出る画面を開くときに付ける）
-const HAPTIC_TARGETS = '.care-btn, .life-btns .btn, .t3-side [data-action="new-log"], #top-menu, .sw-opt, .sw-foot .btn, .my-add, [data-action="add-sheet"], .add-opt, .start-row:not(.done)'; // はじめの質問（アンケート）の選択肢・次へ／戻るも
+const HAPTIC_TARGETS = '.care-btn, .life-btns .btn, .t3-side [data-action="new-log"], #top-menu, .sw-opt, .sw-foot .btn, .my-add, [data-action="add-sheet"], [data-action="rx-sheet"], .rx-item, .pop-item, [data-action="find-pick"], [data-action="net-add"], [data-action="reco-add"], .add-opt, .start-row:not(.done)'; // はじめの質問（アンケート）の選択肢・次へ／戻るも
 function hapticizeTargets() { $$(HAPTIC_TARGETS).forEach(hapticizeKeep); }
 // まわりの並び方がくずれないように、ボタンの置き場所・幅をそのまま包む箱に写して、見えないスイッチを重ねる
 function hapticizeKeep(btn) {
@@ -3095,7 +3097,7 @@ function openLifeGoal() {
 const SHORTCUTS = [
   {k:'log', h:'#/log', ic:'note', l:'肌の記録一覧'}, {k:'scan', h:'#/scan', ic:'camera', l:'カメラで化粧品を登録'},
   {k:'charts', h:'#/charts', ic:'chart', l:'肌の変化・比較'}, {k:'report', h:'#/report', ic:'calendar', l:'週次レポート'},
-  {k:'combo', h:'#/combo', ic:'flask', l:'成分の組み合わせ'}, {k:'visit', h:'#/visit', ic:'note', l:'受診用まとめ'},
+  {k:'combo', h:'#/combo', ic:'flask', l:'成分組み合わせ'}, {k:'visit', h:'#/visit', ic:'note', l:'受診用まとめ'},
 
   {k:'ingredients', h:'#/ingredients', ic:'book', l:'成分辞典'}, {k:'my', h:'#/my', ic:'bottle', l:'Myアイテム'},
   {k:'spending', h:'#/spending', ic:'wallet', l:'支出'}, {k:'plan', h:'#/plan', ic:'user', l:'プラン・アカウント'},
@@ -5066,7 +5068,7 @@ function viewSuggest() {
     <li>同じ目的の商品を重ねて使っている場合は、手間と費用が増えていないか見直す材料にしてください。</li>
     <li>初めての商品は、目立たない場所で試してから使うと安心です。</li>
     <li>症状が強い・長引く場合は、商品を増やすより、皮膚科の受診を検討してください。</li></ul>
-    <div class="page-actions" style="margin-top:12px"><a class="btn btn-ghost btn-sm" href="#/combo">成分の組み合わせ</a></div></div>`;
+    <div class="page-actions" style="margin-top:12px"><a class="btn btn-ghost btn-sm" href="#/combo">成分組み合わせ</a></div></div>`;
   return html;
 }
 
@@ -5156,9 +5158,9 @@ function viewMy() {
   const list = state.myProducts.filter(p => kind === 'rx' ? isRx(p) : !isRx(p))
     .sort((a,b) => (a.order == null ? 1e9 : a.order) - (b.order == null ? 1e9 : b.order) || (useN[b.id] || 0) - (useN[a.id] || 0) || FREQS.indexOf(a.frequency) - FREQS.indexOf(b.frequency) || b.startDate.localeCompare(a.startDate));
   let html = ui.myKind === 'rx' ? `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="rx-sheet">${icon('plus')}塗り薬を追加</button></div>` : `<div class="my-adds"><button class="btn btn-primary btn-sm" style="width:100%" data-action="add-sheet" data-id="my">${icon('plus')}化粧品を追加</button></div>`;
-  const tools = !state.myProducts.length ? '' : `<div class="mtools"><a href="#/compare">${icon('compare')}<span>肌との比較</span><i>›</i></a><a href="#/combo">${icon('flask')}<span>成分の組み合わせ</span><i>›</i></a></div>`;
+  const tools = !state.myProducts.length ? '' : `<div class="mtools"><a href="#/compare">${icon('compare')}<span>肌との比較</span><i>›</i></a><a href="#/combo">${icon('flask')}<span>成分組み合わせ</span><i>›</i></a></div>`;
   const kFrom = ui.myKindFrom || kind, kDir = ui.myKindDir || 0; ui.myKindFrom = ''; ui.myKindDir = 0;
-  html = `<nav class="home-tabs my-tabs" role="tablist" aria-label="アイテムの種類">${[['cos', '化粧品'], ['rx', '塗り薬']].map(([k, l]) => `<button type="button" class="ht ${kind === k ? 'active' : ''}" role="tab" aria-selected="${kind === k}" data-action="my-kind" data-id="${k}"><span>${l}</span></button>`).join('')}<i class="ht-ind" aria-hidden="true"></i></nav><div class="mk-pane home-pane ${kDir > 0 ? 'mk-in-r' : kDir < 0 ? 'mk-in-l' : ''}">` + html;
+  html = `<nav class="home-tabs my-tabs" role="tablist" aria-label="アイテムの種類">${[['cos', '化粧品'], ['rx', '塗り薬']].map(([k, l]) => { const n = state.myProducts.filter(x => (x.category === '皮膚科の塗り薬') === (k === 'rx')).length; return `<button type="button" class="ht ${kind === k ? 'active' : ''}" role="tab" aria-selected="${kind === k}" data-action="my-kind" data-id="${k}"><span>${l}</span>${n ? `<b class="ht-n">${n}</b>` : ''}</button>`; }).join('')}<i class="ht-ind" aria-hidden="true"></i></nav><div class="mk-pane home-pane ${kDir > 0 ? 'mk-in-r' : kDir < 0 ? 'mk-in-l' : ''}">` + html;
   if (state.myProducts.length && !list.length) {
     html += `<div class="card">${emptyBox(kind === 'rx' ? 'flask' : 'bottle', kind === 'rx' ? 'まだ塗り薬が登録されていません' : 'まだ化粧品が登録されていません', kind === 'rx' ? '皮膚科で出された塗り薬は、上の「塗り薬を追加」から一覧で選べます。' : '使っている化粧品は、上の「化粧品を追加」から登録できます。')}</div>`;
   } else if (!state.myProducts.length) {
@@ -5628,11 +5630,11 @@ function viewCompare() {
 }
 
 /* =========================================================
-   画面：成分の組み合わせレポート
+   画面：成分組み合わせ
    ========================================================= */
 function viewCombo() {
   const active = state.myProducts.filter(p => p.status === '使用中');
-  let html = pageHead('成分の組み合わせレポート', '使用中の化粧品の成分をまとめ、一般的な注意点を表示します。');
+  let html = pageHead('成分組み合わせ', '使用中の化粧品の成分をまとめ、一般的な注意点を表示します。');
   html += `<div class="notice">成分名が含まれているかどうかだけで判定しています。濃度・処方・使用量・個人差は考慮できないため、<b>安全性や効果を判断するものではありません</b>。各製品の使用方法・注意事項を優先し、気になる症状がある場合は皮膚科医や薬剤師に相談してください。</div>`;
   if (!active.length) return html + `<div class="card">${emptyBox('flask', '使用中の化粧品がありません', 'Myアイテムで「使用中」の商品を登録し、全成分を入力すると、ここにまとめが表示されます。', '<button class="btn btn-primary btn-sm" data-action="new-my">化粧品を登録</button>')}</div>`;
   const r = comboReport(active);
@@ -9960,7 +9962,8 @@ function placeHomeTabInd() {
     const rn = parseRoute(); if (e.touches.length !== 1 || !['home', 'log', 'my'].includes(rn.name) || (rn.name !== 'home' && rn.id)) return;
     const tg = e.target;
     if ($('#modal-root').innerHTML || $('#confirm-root').innerHTML || document.body.classList.contains('no-scroll') || document.querySelector('.fp-big,.f3-full')) return;
-    if (!tg.closest || !tg.closest('.home-pane') || tg.closest('input,textarea,select,.ld-cal,[data-noswipe],#ld-swipe,.ld-stage') || (rn.name === 'my' && tg.closest('button,.btn,.m-sw')) || scrollsX(tg) || document.body.classList.contains('m-dragging')) return; // Myアイテムの行は、左スワイプで削除・長押しで並べ替えに使うので除く // 日付の行（横スワイプで日付を変える）と3Dの顔は除く
+    const blank = tg.closest && !tg.closest('.home-pane') && !tg.closest('.topbar,.bottom-nav,.home-tabs,button,a,input,label,select,textarea') && !!document.querySelector('.home-pane'); // 中身の外の空いたところ（下の余白など）も、横スワイプで動かせる
+    if (!tg.closest || (!tg.closest('.home-pane') && !blank) || tg.closest('input,textarea,select,.ld-cal,[data-noswipe],#ld-swipe,.ld-stage') || (rn.name === 'my' && tg.closest('button,.btn,.m-sw')) || scrollsX(tg) || document.body.classList.contains('m-dragging')) return; // Myアイテムの行は、左スワイプで削除・長押しで並べ替えに使うので除く // 日付の行（横スワイプで日付を変える）と3Dの顔は除く
     pane = document.querySelector('.home-pane'); if (!pane) return;
     x0 = sx = e.touches[0].clientX; y0 = e.touches[0].clientY; t0 = performance.now(); dx = 0; tot = 0;
   }, {passive:true});
