@@ -1423,6 +1423,7 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .ing-kind{flex:none;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surface);color:var(--ink2);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .ing-kind small{font-size:11px;font-weight:600;color:var(--muted)}.ing-kind.on{background:var(--green-d);border-color:var(--green-d);color:#fff}.ing-kind.on small{color:rgba(255,255,255,.8)}.ing-kind:disabled{opacity:.4;cursor:default}
 .ing-more{width:100%;justify-content:center;margin-top:4px}.ing-sales{color:#B0662A;font-weight:700}
+.ing-amz{display:flex;align-items:center;gap:10px;margin-top:10px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);text-decoration:none;font-weight:700;font-size:14px}.ing-amz span{flex:1;min-width:0}.ing-amz i:last-child{font-style:normal;opacity:.6}
 .adv-c{font-size:12.5px;font-weight:600;border-radius:999px;padding:3px 10px;background:#fff;line-height:1.5}
 .adv-c.good{color:var(--green-d);box-shadow:inset 0 0 0 1px #CFE3D4}
 .adv-c.bad{color:#B04A32;box-shadow:inset 0 0 0 1px #F2CFC4}
@@ -4344,16 +4345,26 @@ async function openIngSheet(word) {
   const isType = /日焼け止め|UV|紫外線|洗顔|クレンジング|メイク落とし|化粧水|乳液|美容液|クリーム|パック|マスク|オールインワン|保湿剤|ボディ|リップ|シャンプー|ローション|ジェル|オイル$|ミスト|下地/i.test(w0) || (e && e.key === 'sunscreen');
   const KINDS = isType ? [['all', 'すべて']] : [['all', 'すべて'], ['lotion', '化粧水'], ['serum', '美容液'], ['cream', 'クリーム'], ['other', 'その他']];
   let cur = 'all', shown = 5;
+  // 押したときにチカチカしないように：ボタンの列・商品の行は1回だけ作って、あとは並べ替え・出し入れだけする
+  const amzQ = encodeURIComponent(w0);
+  b.innerHTML = (KINDS.length < 2 ? '' : `<div class="ing-kinds">${KINDS.map(([k, l]) => { const c = k === 'all' ? list.length : list.filter(x => x.kind === k).length; return `<button type="button" class="ing-kind ${cur === k ? 'on' : ''}" data-ingkind="${k}" ${c ? '' : 'disabled'}>${l}<small>${c}</small></button>`; }).join('')}</div>`)
+    + `<div class="ing-list"></div><button type="button" class="btn btn-ghost btn-sm ing-more" data-ingmore="1" hidden></button>`
+    + `<a class="ing-amz" href="${esc(affUrl('https://www.amazon.co.jp/s?k=' + amzQ + '&s=exact-aware-popularity-rank'))}" target="_blank" rel="noopener sponsored"><i class="shop-dot" style="background:#FF9900"></i><span>Amazonの人気順で「${esc(w0)}」を見る</span><i>↗</i></a>`;
+  const listBox = b.querySelector('.ing-list'), moreBtn = b.querySelector('.ing-more');
+  const rowHtml = x => `<button type="button" class="pop-item" data-ingpick="${list.indexOf(x)}"><span class="pop-r"></span>${x.image ? extImgHtml(x.image, 'pop-img') : '<span class="pop-img"></span>'}<span class="pop-t"><b>${esc(truncate(tidyName(x.name), 60))}</b><small>${x.sales ? `<span class="ing-sales">売上ランキング${x.sales}位</span>・` : ''}${x.reviews ? `レビュー${Number(x.reviews).toLocaleString()}件` : ''}${x.price ? `${x.reviews ? '・' : ''}¥${Number(x.price).toLocaleString()}` : ''}${x.site ? `・${esc(/yahoo/i.test(x.site) ? 'Yahoo!' : /楽天/.test(x.site) ? '楽天' : x.site)}` : ''}</small></span><i class="ing-go">›</i></button>`;
+  const rows = new Map(); // 商品 → 行（作った行は使い回す。画像を読み直さない）
+  const rowOf = x => { if (!rows.has(x)) { const t = document.createElement('div'); t.innerHTML = rowHtml(x); rows.set(x, t.firstElementChild); } const el = rows.get(x); return el.parentElement && el.parentElement.classList.contains('hap-keep') ? el.parentElement : el; };
   const paint = () => {
-    const box = document.getElementById('ing-pop'); if (!box) return;
-    const L = list.filter(x => cur === 'all' || x.kind === cur);
-    box.innerHTML = (KINDS.length < 2 ? '' : `<div class="ing-kinds">${KINDS.map(([k, l]) => { const c = k === 'all' ? list.length : list.filter(x => x.kind === k).length; return `<button type="button" class="ing-kind ${cur === k ? 'on' : ''}" data-ingkind="${k}" ${c ? '' : 'disabled'}>${l}<small>${c}</small></button>`; }).join('')}</div>`)
-      + L.slice(0, shown).map((x, i) => `<button type="button" class="pop-item" data-ingpick="${list.indexOf(x)}" data-ingpos="${i + 1}"><span class="pop-r">${i + 1}</span>${x.image ? extImgHtml(x.image, 'pop-img') : '<span class="pop-img"></span>'}<span class="pop-t"><b>${esc(truncate(tidyName(x.name), 60))}</b><small>${x.sales ? `<span class="ing-sales">売上ランキング${x.sales}位</span>・` : ''}${x.reviews ? `レビュー${Number(x.reviews).toLocaleString()}件` : ''}${x.price ? `${x.reviews ? '・' : ''}¥${Number(x.price).toLocaleString()}` : ''}${x.site ? `・${esc(/yahoo/i.test(x.site) ? 'Yahoo!' : /楽天/.test(x.site) ? '楽天' : x.site)}` : ''}</small></span><i class="ing-go">›</i></button>`).join('')
-      + (L.length > shown ? `<button type="button" class="btn btn-ghost btn-sm ing-more" data-ingmore="1">ランキングをもっと見る（あと${L.length - shown}件）</button>` : '');
+    const L = list.filter(x => cur === 'all' || x.kind === cur), want = L.slice(0, shown).map(rowOf);
+    want.forEach((node, i) => { const btn = node.matches('.pop-item') ? node : node.querySelector('.pop-item'); btn.querySelector('.pop-r').textContent = i + 1; btn.dataset.ingpos = i + 1; });
+    [...listBox.children].forEach(c => { if (!want.includes(c)) c.remove(); });
+    want.forEach((node, i) => { if (listBox.children[i] !== node) listBox.insertBefore(node, listBox.children[i] || null); });
+    b.querySelectorAll('.ing-kind').forEach(k => k.classList.toggle('on', k.dataset.ingkind === cur));
+    moreBtn.hidden = L.length <= shown; moreBtn.textContent = `ランキングをもっと見る（あと${Math.max(0, L.length - shown)}件）`;
   };
   paint();
   b.onclick = ev => {
-    const k = ev.target.closest('[data-ingkind]'); if (k) { if (k.disabled) return; cur = k.dataset.ingkind; shown = 5; hapticTick(); paint(); return; }
+    const k = ev.target.closest('[data-ingkind]'); if (k) { if (k.disabled || cur === k.dataset.ingkind) return; cur = k.dataset.ingkind; shown = 5; hapticTick(); paint(); return; }
     if (ev.target.closest('[data-ingmore]')) { shown += 10; paint(); return; }
     const t = ev.target.closest('[data-ingpick]'); if (!t) return; const x = list[Number(t.dataset.ingpick)]; if (!x) return;
     const kl = (KINDS.find(z => z[0] === cur) || [])[1];
