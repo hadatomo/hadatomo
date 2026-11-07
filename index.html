@@ -1415,7 +1415,7 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .shop-name{font-size:17px;line-height:1.5;margin:0}.shop-meta{display:flex;flex-wrap:wrap;gap:6px}
 .shop-price{font-size:24px;font-weight:800}.shop-price small{font-size:12px;font-weight:500;color:var(--muted);margin-left:6px}
 .shop-btn{display:flex;align-items:center;gap:10px;width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);text-decoration:none;font-weight:700;font-size:15px;margin-top:8px;box-sizing:border-box}
-.shop-btn.main{background:var(--green-d);border-color:var(--green-d);color:#fff}.shop-btn span{flex:1;min-width:0}.shop-btn small{font-weight:500;font-size:11.5px;opacity:.8;display:block}.shop-btn i{font-style:normal;font-size:18px;opacity:.7}
+.shop-btn.main{background:var(--green-d);border-color:var(--green-d);color:#fff}.shop-btn.main .pr-tag{color:#fff;border-color:rgba(255,255,255,.6)}.shop-btn span{flex:1;min-width:0}.shop-btn small{font-weight:500;font-size:11.5px;opacity:.8;display:block}.shop-btn i{font-style:normal;font-size:18px;opacity:.7}
 .shop-dot{width:10px;height:10px;border-radius:50%;flex:none}
 .pr-tag{display:inline-block;font-size:10.5px;font-weight:700;border:1px solid var(--line2);color:var(--muted);border-radius:4px;padding:0 5px;margin-right:6px;vertical-align:1px}
 .ing-h{font-size:14.5px;margin:18px 0 8px}
@@ -3984,7 +3984,7 @@ function quickFindHtml() {
 // ===== アフィリエイト（買えるお店へのリンク） =====
 // それぞれのIDを入れると、リンクがアフィリエイトのリンクになる（空のままなら、ふつうのリンク）
 const AFF = {
-  rakuten:'',   // 楽天アフィリエイトID（例：1a2b3c4d.5e6f7a8b.1a2b3c4d.5e6f7a8b）
+  rakuten:'593c38d7.94465535.593c38d8.e9b40707',   // 楽天アフィリエイトID（例：1a2b3c4d.5e6f7a8b.1a2b3c4d.5e6f7a8b）
   amazon:'',    // Amazonアソシエイトのトラッキングタグ（例：nakakaramo-22）
   vcSid:'', vcPid:'', // バリューコマース（Yahoo!ショッピング）の sid と pid
 };
@@ -4013,7 +4013,7 @@ function viewShop() {
   if (!x) return `<a class="back" href="#/home">← 戻る</a><div class="card">${emptyBox('search', '商品が選ばれていません', 'おすすめケアの成分から、商品を選んでください。', '')}</div>`;
   const nm = (cleanShopName(x.name) || x.name).replace(/[＼\\][^／\/]*[／\/]/g, ' ').replace(/\s+/g, ' ').trim();
   const L = shopLinks(x), pr = affOn() ? '<span class="pr-tag">PR</span>' : '';
-  const btn = (o, main) => `<a class="shop-btn ${main ? 'main' : ''}" href="${esc(o.url)}" target="_blank" rel="noopener sponsored">${main ? '' : `<i class="shop-dot" style="background:${SHOP_COL[o.k]}"></i>`}<span>${pr}${esc(o.label)}${o.sub ? `<small>${esc(o.sub)}</small>` : ''}</span><i>↗</i></a>`;
+  const btn = (o, main) => `<a class="shop-btn ${main ? 'main' : ''}" href="${esc(o.url)}" target="_blank" rel="noopener sponsored">${main ? '' : `<i class="shop-dot" style="background:${SHOP_COL[o.k]}"></i>`}<span>${/hb\.afl\.rakuten|valuecommerce|[?&]tag=/.test(o.url) ? '<span class="pr-tag">PR</span>' : ''}${esc(o.label)}${o.sub ? `<small>${esc(o.sub)}</small>` : ''}</span><i>↗</i></a>`;
   return `<a class="back" href="#/home" onclick="history.length > 1 && (event.preventDefault(), history.back())">← 戻る</a>
     <div class="card shop-top">
       ${x.image ? extImgHtml(x.image, 'shop-img') : ''}
