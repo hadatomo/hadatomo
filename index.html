@@ -1422,7 +1422,7 @@ button.link{background:none;border:0;padding:0;font:inherit;color:var(--green-d)
 .ing-kinds{display:flex;gap:6px;overflow-x:auto;margin:0 -2px 10px;padding:2px;scrollbar-width:none}.ing-kinds::-webkit-scrollbar{display:none}
 .ing-kind{flex:none;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surface);color:var(--ink2);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
 .ing-kind small{font-size:11px;font-weight:600;color:var(--muted)}.ing-kind.on{background:var(--green-d);border-color:var(--green-d);color:#fff}.ing-kind.on small{color:rgba(255,255,255,.8)}.ing-kind:disabled{opacity:.4;cursor:default}
-.ing-more{width:100%;justify-content:center;margin-top:4px}
+.ing-more{width:100%;justify-content:center;margin-top:4px}.ing-sales{color:#B0662A;font-weight:700}
 .adv-c{font-size:12.5px;font-weight:600;border-radius:999px;padding:3px 10px;background:#fff;line-height:1.5}
 .adv-c.good{color:var(--green-d);box-shadow:inset 0 0 0 1px #CFE3D4}
 .adv-c.bad{color:#B04A32;box-shadow:inset 0 0 0 1px #F2CFC4}
@@ -4323,7 +4323,7 @@ async function openIngSheet(word) {
     ${e ? `<div class="ing-dl"><div class="ing-b"><b>どんな成分？</b><p>${esc(e.feature)}</p></div><div class="ing-b"><b>何のために入っている？</b><p>${esc(e.purpose)}</p></div><div class="ing-b warn"><b>気をつけること</b><p>${esc(e.caution)}</p></div></div>
       <a class="link small" href="#/ingredients/${e.key}" onclick="closeModal()">成分辞典で詳しく見る ›</a>` : `<p class="small muted">この成分のくわしい説明は準備中です。下の商品の成分表示も参考にしてください。</p>`}
     <h3 class="ing-h">この成分の人気ランキング</h3><div id="ing-pop">${skelHtml(3, {label:'人気の商品を探しています'})}</div>
-    <p class="small muted" style="margin-top:8px">この成分の商品を、人気順（レビューの多い順）に並べています。押すと、商品のくわしい情報と購入サイトが見られます。</p></div>`});
+    <p class="small muted" style="margin-top:8px">売れている順です。楽天の売上ランキング（毎日更新）に入っている商品はその順位で先に並べ、ほかはレビュー（＝買った人）の多い順にしています。押すと、商品のくわしい情報と購入サイトが見られます。</p></div>`});
   const keys = ingWords(word, e), hit = x => { const n = fnorm(cleanShopName(x.name) || x.name); return keys.some(k => n.includes(k)); };
   // その成分の商品だけを、楽天市場・Yahoo!ショッピング（美容・コスメ）で人気順（レビューの多い順）に探す
   // 種類ごとにも探して、たくさん集める（すべて・化粧水・美容液・クリーム・その他で分けて見られる）
@@ -4331,18 +4331,24 @@ async function openIngSheet(word) {
   const qs = [w0, w0 + ' 美容液', w0 + ' クリーム', w0 + ' 化粧水', alias].filter(Boolean);
   const res = await Promise.allSettled(qs.map(q => findFetch({q, mode:'popular'})));
   res.forEach(r => { if (r.status !== 'fulfilled') return; r.value.filter(hit).forEach(x => { if (!list.some(y => sameProduct({name:y.name}, {name:x.name}))) list.push(Object.assign({}, x, {rank:0})); }); });
-  list.sort((a, b) => (Number(b.reviews) || 0) - (Number(a.reviews) || 0));
+  // 並べ方：売れている順。楽天の売上ランキング（毎日更新）に入っている商品はその順位で先に、残りはレビュー（＝買った人）の多い順
+  await popularLoad();
+  const pop = (POPULAR.items || []).filter(hit);
+  pop.forEach(x => { const m = list.find(y => (x.url && y.url && y.url.split('?')[0] === x.url.split('?')[0]) || sameProduct({name:y.name}, {name:x.name})); if (m) m.sales = Number(x.rank) || 0; else list.push(Object.assign({}, x, {sales:Number(x.rank) || 0})); });
+  list.sort((a, b) => (a.sales ? 0 : 1) - (b.sales ? 0 : 1) || (a.sales || 0) - (b.sales || 0) || (Number(b.reviews) || 0) - (Number(a.reviews) || 0));
   const b = document.getElementById('ing-pop'); if (!b) return;
   if (!list.length) { b.innerHTML = '<p class="small muted">この成分の名前が入った人気商品は見つかりませんでした。</p>'; return; }
   const kindOf = x => { const n = tidyName(x.name); return /美容液|セラム|エッセンス|アンプル/i.test(n) ? 'serum' : /化粧水|ローション|トナー/i.test(n) && !/ボディ/.test(n) ? 'lotion' : /クリーム|バーム/.test(n) && !/ハンド|ボディ|日焼け|UV/i.test(n) ? 'cream' : 'other'; };
   list.forEach(x => { x.kind = kindOf(x); });
-  const KINDS = [['all', 'すべて'], ['lotion', '化粧水'], ['serum', '美容液'], ['cream', 'クリーム'], ['other', 'その他']];
+  // 日焼け止め・洗顔など、成分ではなく「商品の種類」そのもののときは、化粧水・美容液…に分けない
+  const isType = /日焼け止め|UV|紫外線|洗顔|クレンジング|メイク落とし|化粧水|乳液|美容液|クリーム|パック|マスク|オールインワン|保湿剤|ボディ|リップ|シャンプー|ローション|ジェル|オイル$|ミスト|下地/i.test(w0) || (e && e.key === 'sunscreen');
+  const KINDS = isType ? [['all', 'すべて']] : [['all', 'すべて'], ['lotion', '化粧水'], ['serum', '美容液'], ['cream', 'クリーム'], ['other', 'その他']];
   let cur = 'all', shown = 5;
   const paint = () => {
     const box = document.getElementById('ing-pop'); if (!box) return;
     const L = list.filter(x => cur === 'all' || x.kind === cur);
-    box.innerHTML = `<div class="ing-kinds">${KINDS.map(([k, l]) => { const c = k === 'all' ? list.length : list.filter(x => x.kind === k).length; return `<button type="button" class="ing-kind ${cur === k ? 'on' : ''}" data-ingkind="${k}" ${c ? '' : 'disabled'}>${l}<small>${c}</small></button>`; }).join('')}</div>`
-      + L.slice(0, shown).map((x, i) => `<button type="button" class="pop-item" data-ingpick="${list.indexOf(x)}" data-ingpos="${i + 1}"><span class="pop-r">${i + 1}</span>${x.image ? extImgHtml(x.image, 'pop-img') : '<span class="pop-img"></span>'}<span class="pop-t"><b>${esc(truncate(tidyName(x.name), 60))}</b><small>${x.reviews ? `レビュー${Number(x.reviews).toLocaleString()}件` : ''}${x.price ? `${x.reviews ? '・' : ''}¥${Number(x.price).toLocaleString()}` : ''}${x.site ? `・${esc(/yahoo/i.test(x.site) ? 'Yahoo!' : /楽天/.test(x.site) ? '楽天' : x.site)}` : ''}</small></span><i class="ing-go">›</i></button>`).join('')
+    box.innerHTML = (KINDS.length < 2 ? '' : `<div class="ing-kinds">${KINDS.map(([k, l]) => { const c = k === 'all' ? list.length : list.filter(x => x.kind === k).length; return `<button type="button" class="ing-kind ${cur === k ? 'on' : ''}" data-ingkind="${k}" ${c ? '' : 'disabled'}>${l}<small>${c}</small></button>`; }).join('')}</div>`)
+      + L.slice(0, shown).map((x, i) => `<button type="button" class="pop-item" data-ingpick="${list.indexOf(x)}" data-ingpos="${i + 1}"><span class="pop-r">${i + 1}</span>${x.image ? extImgHtml(x.image, 'pop-img') : '<span class="pop-img"></span>'}<span class="pop-t"><b>${esc(truncate(tidyName(x.name), 60))}</b><small>${x.sales ? `<span class="ing-sales">売上ランキング${x.sales}位</span>・` : ''}${x.reviews ? `レビュー${Number(x.reviews).toLocaleString()}件` : ''}${x.price ? `${x.reviews ? '・' : ''}¥${Number(x.price).toLocaleString()}` : ''}${x.site ? `・${esc(/yahoo/i.test(x.site) ? 'Yahoo!' : /楽天/.test(x.site) ? '楽天' : x.site)}` : ''}</small></span><i class="ing-go">›</i></button>`).join('')
       + (L.length > shown ? `<button type="button" class="btn btn-ghost btn-sm ing-more" data-ingmore="1">ランキングをもっと見る（あと${L.length - shown}件）</button>` : '');
   };
   paint();
